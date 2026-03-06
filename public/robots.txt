@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://web.malidag.com
+
+# Sitemaps
+Sitemap: https://web.malidag.com/sitemap.xml

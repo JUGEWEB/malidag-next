@@ -1,0 +1,258 @@
+/* Container for the page */
+.item-pge-container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333;
+    margin-top: 0;
+    margin-right: 10px;
+  }
+  
+  /* Page Title */
+  .item-pge-tile {
+    display: flex;
+    text-align: center;
+    font-size: 1rem;
+    color: #222;
+    padding: 20px;
+    top: 0;
+    margin-bottom: 20px;
+  }
+  
+  /* Search Results Container */
+  .search-reslts-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 5 columns */
+    gap: 7px;
+    padding: 20px 0;
+    margin-left: 10px;
+  }
+  
+  /* Item Card */
+  .itm-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: box-shadow 0.3s ease;
+    border-color: #bbb;
+    padding-bottom: 20px;
+     padding-right: 0px;
+     padding-left: 0px;
+  }
+
+  .itm-card:hover{
+    border-color: #ffffff;
+    cursor: pointer;
+  }
+  
+  /* Item Image */
+  .item-imageof {
+    width: 230px;
+    height: 300px;
+    object-fit: cover;
+  }
+  
+  /* Item Details */
+  .item-details {
+    width: 100%;
+  }
+  
+  /* Name */
+  .item-name {
+    font-size: 0.8rem;
+    color: #444;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Prices */
+  .item-prices {
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.9rem;
+  }
+  
+  .item-price {
+    font-weight: bold;
+    color: #28a745;
+  }
+  
+  .item-original-price {
+    text-decoration: line-through;
+    color: #777;
+    margin-left: 10px;
+  }
+  
+  .item-crypto-price {
+    font-weight: bold;
+    color: #007bff;
+  }
+  
+  /* Stars */
+  .item-stars {
+    margin-top: 5px;
+    font-size: 0.8rem;
+    color: #ffb400;
+  }
+  
+  /* Loading & No Results */
+  .loading-message,
+  .no-results-message {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #777;
+  }
+
+  .crypto-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-right: 5px;
+  }
+
+  /* Crypto Section */
+.item-crypto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .related-ifo {
+    display: flex;
+    font-size: 1rem;
+    margin-left: 10px;
+  }
+  
+  .related-catgories{
+    display: flex;
+  }
+  
+  .related-catgory{
+    margin-left: 20px;
+    color: #555;
+    cursor: pointer;
+  }
+  .related-catgory:hover {
+    background-color: #e6e6e64c;
+  }
+  
+  .dropdown-arrow {
+    font-size: 0.9rem;
+    margin-left: 10px;
+    transition: transform 0.3s ease;
+  }
+  
+  .arrow-open {
+    color: red;
+    transform: rotate(180deg);
+  }
+  
+  .arrow-closed {
+    transform: rotate(0deg);
+  }
+
+
+  .stable-catgory-dropdown {
+    position: absolute;
+    justify-content: flex-start;
+    align-items: center;
+    display: flex;
+    padding: 20px;
+    margin-top: 20px;
+    left: 0;
+    width: 97%;
+    height: 400px;
+    background-color: #ffffff;
+    border-top: 2px solid #ddd;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+  
+  .stable-catgory-types {
+    margin-right: 30px;
+    padding: 20px;
+    justify-content: flex-start;
+  }
+  .stable-tpe-item{
+    margin-top: 10px;
+  }
+  
+  .stable-category-item {
+    flex: 0 1 200px;
+    text-align: center;
+    padding: 10px;
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  
+  .stable-category-item:hover {
+    transform: translateY(-5px);
+  
+  }
+  
+  .stable-category-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+  }
+  
+  .stable-ht-items {
+    margin-top: 10px;
+    max-width: 300px;
+    display: flex;
+  }
+  
+  .stable-hot-items-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .stable-ht-item {
+    display:block;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  
+  .stable-ht-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  .stable-ht-item-image {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 15px;
+  }
+  
+  .stable-ht-item-name {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #333;
+  }
+  
+  .stable-ht-item-sold {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #ff4d4f;
+  }
+  

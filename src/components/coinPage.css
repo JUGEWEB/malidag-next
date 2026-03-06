@@ -1,0 +1,11 @@
+.item-coin-container{
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  color: #333;
+  margin-top: 50px;
+}
+
+.item-coin-card{
+  background: #fff;
+}

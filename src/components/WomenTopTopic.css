@@ -1,0 +1,175 @@
+.beauty-top-container {
+  max-width: 100%;
+  margin: 10px auto;
+  padding: 0px;
+}
+
+.beauty-top-title {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+  color: black;
+}
+
+.ms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+}
+
+.m-card {
+  display: flex;
+  align-items: stretch; /* ✅ makes children equal height */
+  padding: 5px;
+  background: #fff;
+  border-radius: 0px;
+}
+
+.m-image {
+  width: 200px;
+  height: 100%; /* ✅ fill full card height */
+  object-fit: contain;
+  border-radius:0 ;
+  background: white;
+  filter: brightness(0.880000000) contrast(1.2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.m-details {
+  flex: 1;
+  padding-left: 10px;
+  width: 100%;
+}
+
+.m-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+
+.m-name:hover {
+  color: #ff8b06;
+}
+
+.m-sold {
+  font-size: 14px;
+  color: #666;
+  margin-top: 5px;
+}
+
+.name-rating-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.item-starstop {
+  font-size: 16px;
+  color: orange;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  z-index: 1000;
+  color: black;
+}
+
+.close-btn {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  color: black;
+}
+
+/* Make grid stack vertically on small screens */
+@media (max-width: 1024px) {
+  .ms-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .m-card {
+    flex-direction: row; /* ✅ keep image left, details right */
+    align-items: stretch;
+  }
+
+  .m-image {
+    width: 150px;         /* ✅ adjust size for smaller screens */
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0px;
+  }
+
+  .m-details {
+    padding-left: 0px;
+    padding-top: 0;
+    width: 100%;
+  }
+
+  .modal-content {
+    left: 10px !important;
+    right: 10px;
+    top: auto !important;
+    bottom: 20px;
+    max-width: 90%;
+  }
+   .ms-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .m-card {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 100%; /* ✅ ensures consistent card height */
+  }
+
+  .m-image {
+    width: 150px;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px 0 0 8px;
+  }
+
+  .m-details {
+    padding-left: 5px;
+    padding-top: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* ✅ spreads content vertically */
+  }
+
+  .m-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* ✅ Limit to 3 lines */
+    -webkit-box-orient: vertical;
+  }
+}

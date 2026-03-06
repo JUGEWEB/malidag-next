@@ -1,0 +1,112 @@
+.you-may-like-carous{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-right: 0px;
+  margin-top: 0px !important;
+  height: auto;
+  position: relative;
+}
+
+.carousel-slid {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 10px;
+  padding: 10px 0;
+   width: 100%;
+}
+
+.carousel-it {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  width: calc(50% - 10px); /* Show 2 per row on small */
+  max-width: 200px;
+}
+
+@media (min-width: 769px) {
+  .carousel-slid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    overflow-x: hidden;
+  }
+
+  .carousel-it {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.carousel-ima {
+  width: 100%; 
+  height: 200px; 
+  object-fit: contain; 
+  border-radius: 5px;
+}
+
+.item-na {
+  font-size: 14px;
+  color: #067a42;
+  margin-top: 5px;
+  text-align: start;
+  max-width: 150px;
+}
+
+.item-na:hover {
+  font-size: 14px;
+  color:#cf7704;
+  margin-top: 5px;
+  text-align: start;
+  max-width: 150px;
+  cursor: pointer;
+}
+
+.carousel-arro {
+  position: absolute;
+  top: 50%; 
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.arrow-butt {
+  font-size: 24px;
+  color: #007bff;
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 10px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.arrow-butt:hover {
+  transform: scale(1.2); 
+  background: #0056b3;
+  color: white;
+}
+
+ 
+ .item-s {
+  display: flex;
+  justify-content: start;
+  font-size: 1rem;
+  color: #ffb400 !important;
+  margin-left: 0px;
+}
+
+.reconded-price {
+  display: flex;
+  justify-content: start;
+  color: #000000;
+  font-size: 18px;
+  font-weight: bold;
+  margin-left: 0px;
+  top: 0;
+}

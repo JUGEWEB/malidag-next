@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Malidag Beauty Player</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ✅ Twitter Player Card meta -->
+  <meta name="twitter:card" content="player">
+  <meta name="twitter:site" content="@mag353O"> <!-- your handle -->
+  <meta name="twitter:title" content="Beauty & Personal Care | Malidag">
+  <meta name="twitter:description" content="Shop beauty, skincare, makeup, and personal care on Malidag.">
+  <meta name="twitter:image" content="https://web.malidag.com/og/beauty-cover.webp">
+
+  <!-- ✅ Player (iframe) -->
+  <meta name="twitter:player" content="https://web.malidag.com/player/beauty.html">
+  <meta name="twitter:player:width" content="1280">
+  <meta name="twitter:player:height" content="720">
+
+  <!-- ✅ Video stream -->
+  <meta name="twitter:player:stream" content="https://web.malidag.com/og/beauty.mp4">
+  <meta name="twitter:player:stream:content_type" content="video/mp4">
+  
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    video {
+      max-width: 100%;
+      max-height: 100vh;
+    }
+    a.redirect {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      text-decoration: none;
+      font-family: sans-serif;
+    }
+    a.redirect:hover {
+      background: rgba(255,255,255,0.8);
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <!-- ✅ Video player -->
+  <video 
+    src="https://web.malidag.com/og/beauty.mp4" 
+    controls 
+    autoplay 
+    muted 
+    playsinline>
+  </video>
+
+  <!-- ✅ Link to redirect users to Beauty page -->
+  <a class="redirect" href="https://web.malidag.com/beauty" target="_blank">
+    🌸 Explore Beauty on Malidag
+  </a>
+</body>
+</html>

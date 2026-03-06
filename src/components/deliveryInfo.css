@@ -1,0 +1,120 @@
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f8f8;
+    margin: 0;
+    padding: 0;
+  }
+  
+ 
+  .delivery-info-container {
+    max-width: 700px;
+    margin: 30px auto;
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+ 
+  h2 {
+    font-size: 1.5rem;
+    color: #333;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  
+  
+  form input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    font-size: 1rem;
+  }
+  
+  form input:focus {
+    outline: none;
+    border-color: #5b9bd5;
+    background-color: #e6f4ff;
+  }
+  
+  form button {
+    width: 100%;
+    padding: 14px;
+    background-color: #3498db;
+    color: white;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  form button:hover {
+    background-color: #2980b9;
+  }
+  
+  form button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+  }
+  
+  
+  .saved-addresses {
+    margin-top: 30px;
+  }
+  
+  .saved-addresses h3 {
+    font-size: 1.25rem;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .saved-addresses ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .saved-addresses li {
+    background-color: #f9fafb;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+  }
+  
+  .saved-addresses li p {
+    margin: 5px 0;
+  }
+  
+  .saved-addresses li strong {
+    color: #2c3e50;
+  }
+  
+  .error-message {
+    color: #e74c3c;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  
+ 
+  .loader {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  

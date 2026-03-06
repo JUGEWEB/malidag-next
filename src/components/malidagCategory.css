@@ -1,0 +1,17 @@
+.categories-container{
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: auto;
+  justify-content: start;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.skeleton-card {
+  animation: pulse 1.5s infinite ease-in-out;
+}

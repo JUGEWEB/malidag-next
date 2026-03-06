@@ -1,0 +1,65 @@
+/* fetchReview.css */
+.reviews-container {
+  max-width: 600px;
+  padding: 0px;
+  margin-left: 10px;
+ 
+}
+
+.reviews-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #444;
+}
+
+.review-card {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd; /*  Instead of box-shadow, just a separator */
+}
+
+.review-card:last-child {
+  border-bottom: none; /*  Remove border from last review */
+}
+
+.review-author {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.review-rating {
+  font-size: 14px;
+  color: #777;
+  cursor: pointer;
+}
+
+.review-comment {
+  font-size: 14px;
+  color: #444;
+  margin-top: 5px;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.show-more-btn {
+  color: blue;
+  text-decoration: underline;
+  font-size: 14px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+

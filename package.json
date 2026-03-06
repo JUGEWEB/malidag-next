@@ -1,0 +1,49 @@
+{
+  "name": "malidag-next",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "NEXT_DISABLE_ESLINT=true next build",
+    "start": "next start",
+    "postbuild": "next-sitemap",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.0.0",
+    "@google-cloud/translate": "^9.2.0",
+    "antd": "^5.26.6",
+    "axios": "^1.11.0",
+    "chart.js": "^4.5.0",
+    "dotenv": "^17.2.1",
+    "firebase": "^12.0.0",
+    "i18next": "^25.3.2",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-fs-backend": "^2.6.0",
+    "mongodb": "^6.18.0",
+    "next": "15.4.3",
+    "next-sitemap": "^4.2.3",
+    "pino-pretty": "^13.1.1",
+    "react": "19.1.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "19.1.0",
+    "react-helmet": "^6.1.0",
+    "react-i18next": "^15.6.1",
+    "react-icons": "^5.5.0",
+    "react-lazy-load-image-component": "^1.6.3",
+    "react-modal": "^3.16.3",
+    "react-slick": "^0.30.3",
+    "slick-carousel": "^1.8.1",
+    "twemoji": "^14.0.2",
+    "wagmi": "^2.16.0",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/react": "19.1.10",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.3",
+    "tailwindcss": "^4"
+  }
+}

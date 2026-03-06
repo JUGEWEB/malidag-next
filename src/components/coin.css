@@ -1,0 +1,41 @@
+
+.coin-scroll-container {
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  
+  
+  .coin-scroll {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    scrollbar-width: none;
+  }
+  
+  
+  .coin-item {
+   color: white;
+   display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 2px;
+    padding: 10px;
+    text-align: center;
+    font-size: 14px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  
+  }
+  
+  .coin-item:hover {
+   
+    border: 1px solid #ddd;
+  }
+
+  .coin-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+
+  }
+  

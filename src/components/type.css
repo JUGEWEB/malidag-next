@@ -1,0 +1,54 @@
+
+.type-scroll-container {
+   
+    overflow-x: auto;
+    background-color: #333;
+    display: flex; 
+    align-items: center; 
+  scrollbar-width: none;
+  }
+  
+  
+  .type-scroll {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  justify-content: space-between;
+  width: 60%;
+  }
+  
+  
+  .type-item {
+    background-color: #333;
+    border-radius: 1px;
+    margin: 0;
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap; 
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+   
+   .type-itemT {
+    background-color: #333;
+    border-radius: 1px;
+    margin: 0; 
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap; 
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .type-item:hover {
+    border: 0.1px solid white;
+  }
+
+  .type-itemT:hover {
+    border: 0.1px solid white;
+    font-weight: bold;
+  }
+  

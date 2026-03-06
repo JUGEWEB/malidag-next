@@ -1,0 +1,105 @@
+
+
+.brandDepartmentContainer {
+    display: flex;
+    flex-direction: row;
+    padding: 20px;
+    gap: 20px;
+}
+
+.leftColumn {
+    width: 30%;
+    padding-right: 20px;
+    border-right: 2px solid #ddd;
+}
+
+.rightColumn {
+    width: 70%;
+}
+
+.backButton {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.brandDepartmentTitle {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.loadingMessage, .errorMessage {
+    font-size: 18px;
+    color: #555;
+}
+
+.itemsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.itemCard {
+    border: 1px solid #ddd;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.itemImage {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.itemDetails {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.itemTitle {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.itemPrice {
+    font-size: 16px;
+    color: #333;
+    margin: 10px 0;
+}
+
+.viewItemButton {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.viewItemButton:hover {
+    background-color: #0056b3;
+}
+
+.clickableBrandType {
+    cursor: pointer;
+    padding: 5px;
+    margin: 3px;
+    color: black; 
+    transition: color 0.3s ease-in-out;
+}
+
+.clickableBrandType:hover {
+    color: #007bff; 
+}
+
+.selectedBrandType {
+    color: blue;
+    font-weight: bold;
+}
+

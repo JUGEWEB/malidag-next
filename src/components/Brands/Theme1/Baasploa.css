@@ -1,0 +1,269 @@
+.blaasploaContainer {
+    display: flex;
+   
+    justify-content: space-between;
+    color: #222;
+    width: 100%;
+    height: auto;
+    margin-top: 10px;
+}
+
+.clickableBrandTypeforsmall {
+  padding: 5px 10px;
+  cursor: pointer;
+  background-color: #f9f9f9;
+  margin: 3px 0;
+  border-radius: 4px;
+}
+
+.clickableBrandTypeforsmall:hover {
+  background-color: #eaeaea;
+   padding: 5px 10px;
+    margin: 3px 0;
+  border-radius: 4px;
+}
+
+
+.topItemsSection{
+    position: relative;
+    margin-top: 10px;
+    width: 100%;
+    height: auto;
+}
+
+.blaDepartement {
+    width: 10%;
+    height: auto;
+    margin-left: 20px;
+    padding-right: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.bladeprt{
+    display: flex;
+    width: 90%;
+    align-items: center;
+    justify-content: start;
+}
+
+
+.logoImage {
+    width: 100px;
+    height: auto;
+}
+
+.departementTitle {
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.blaStyle {
+    width: 100%;
+    height: auto;
+    padding: 10px;
+   
+}
+
+
+.headerImgStyle {
+    height: 200px;
+    max-width: 100%;
+    width: 100%;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.baasploaT{
+    position: absolute;
+    top: 30px;
+    left: 50px;
+    font-weight: bold;
+    font-size: 34px;
+    color: black;
+}
+
+.headerImage{
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    background-color: white;
+}
+
+.loadingText {
+    font-size: 16px;
+    font-weight: bold;
+    color: #777;
+}
+
+.topItemsSection{
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+    justify-content: space-between;
+    
+   
+}
+
+.topLabel{
+    position: absolute;
+    background-color: #222;
+    top: 20px;
+    left: 10px;
+    z-index: 1;
+    color: #fff;
+    border-radius: 5px;
+    padding: 5px;
+    font-weight: bold;
+}
+
+.topItemCard{
+    position: relative;
+    width: 330px;
+    height: auto;
+}
+
+.topItemDetails{
+    max-width: 330px;
+    max-height: auto;
+    font-weight: bold;
+}
+
+.topItemImage{
+    width: 330px;
+    height: 230px;
+    object-fit: contain;
+    z-index: 1; 
+    mix-blend-mode: multiply; 
+}
+
+.discountBadge{
+    background-color: red;
+    width: 50px;
+    color: white;
+    font-weight: bold;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 11px;
+    margin-top: 10px;
+}
+
+.priceContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.rrpLabel {
+    font-size: 14px;
+    color: #777;
+    font-weight: bold;
+}
+
+.originalPrice {
+    text-decoration: line-through;
+    color: #777;
+    font-size: 14px;
+}
+
+.discountedPrice {
+    color: #222;
+    font-weight: bold;
+    font-size: 23px;
+}
+
+
+.imageContainIm{
+    position: relative;
+    width: 345px;
+    height: 240px;
+    background-color:#f7f8f7d0;
+   
+}
+
+.imageContainImfd{
+    width: 320px;
+    height: 240px;
+    background-color: white;
+    filter: brightness(0.97123);
+}
+
+.topItemImagewi{
+    width: 320px;
+    height: 300px;
+    object-fit: cover;
+    filter: brightness(1.05) contrast(1.1);
+    background-color: white;
+}
+
+.bestSellerSection {
+    position: relative;
+    display: flex;
+    align-items: start;  
+    justify-content: end; 
+    width: 100%;
+   top: 0;
+   gap: 10px;
+   margin-top: 10px;
+   margin-bottom: 10px;
+   
+}
+
+.bestSellerContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; 
+    background: #fff;
+}
+
+.bestSellerImage {
+    width: 430px;
+    height: 300px;
+    object-fit: cover;
+    filter: brightness(0.978);
+}
+
+.bestSellerTitle{
+    max-width: 430px;
+    height: auto;
+    font-weight: bold;
+}
+
+
+.videoContainer {
+    width: 100%;
+    height: 300px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.videoContainer video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.bestSellerBadge {
+    position: absolute;
+    top: 10px;   
+    left: 10px;  
+    background-color: rgb(255, 102, 0);  
+    color: white;
+    padding: 5px 10px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 5px;
+    z-index: 2;  
+}
+
+.bestSellerContainer {
+    position: relative;
+    display: inline-block; 
+}

@@ -1,0 +1,79 @@
+/* General styling for the carousel container */
+.fashion-carousel {
+    position: relative;
+    max-width: 100%;
+    margin: 0 auto; 
+    overflow: hidden; 
+  }
+  
+  /* Styling for the carousel slides container */
+  .carousel-slides {
+    display: flex;
+    transition: transform 0.3s ease-in-out; /* Smooth transition for sliding */
+  }
+  
+  
+  .carousel-item {
+    flex: 0 0 auto; /* Ensure items are aligned horizontally */
+    box-sizing: border-box;
+    text-align: center;
+  }
+  
+  /* Styling for carousel images */
+  .carousel-imageof {
+    width: 100%;
+    height: 200px;
+    border-radius: 40px;
+    object-fit: contain; 
+    background-color: #cccccc7a;
+  }
+  
+  /* Styling for the arrow buttons (left and right) */
+  .carousel-arrows {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+  }
+  
+  /* Individual arrow button styling */
+  .arrow-button {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white; /* White arrow color */
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    z-index: 1;
+    transition: background-color 0.3s ease;
+  }
+  
+  /* Hover effect for arrow buttons */
+  .arrow-button:hover {
+    background-color: rgba(0, 0, 0, 0.8); 
+  }
+  
+  /* Responsiveness: Adjust for smaller screens */
+  @media (max-width: 768px) {
+    .fashion-carousel {
+      width: 100%; /* Full width on smaller screens */
+    }
+  
+    .carousel-item {
+      width: calc(100% / 3);
+    }
+  
+    .arrow-button {
+      font-size: 20px; /* Smaller arrow size for mobile */
+      padding: 8px; /* Smaller padding */
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .carousel-item {
+      width: 100%;
+    }
+  }
+  

@@ -1,0 +1,12 @@
+.Stars {
+    cursor: pointer !important;
+    transition: color 0.3s ease-in-out, text-decoration 0.3s ease-in-out !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .Stars:hover {
+    color: orange !important;
+    text-decoration: underline !important;
+  }
+  

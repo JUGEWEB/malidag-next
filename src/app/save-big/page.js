@@ -2,13 +2,13 @@ import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import SaveBig from "@/components/saveBig";
 
-export const dynamic = "force-dynamic"; // ✅ allow headers for i18n
+export const dynamic = "force-dynamic";
 
 // ✅ SEO Metadata
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0];
+  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
@@ -49,28 +49,29 @@ export default async function SaveBigPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "Save Big with Crypto | Malidag",
-    "url": url,
-    "description": "Exclusive discounts on Malidag when paying with crypto. Save big with BTC, ETH, BNB, and more.",
-    "breadcrumb": {
+    name: "Save Big with Crypto | Malidag",
+    url,
+    description:
+      "Exclusive discounts on Malidag when paying with crypto. Save big with BTC, ETH, BNB, and more.",
+    breadcrumb: {
       "@type": "BreadcrumbList",
-      "itemListElement": [
+      itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: `${baseUrl}/` },
         { "@type": "ListItem", position: 2, name: "Save Big", item: url },
       ],
     },
-    "offers": {
+    offers: {
       "@type": "SpecialOffer",
-      "name": "Crypto Discounts - Save Big",
-      "url": url,
-      "priceCurrency": "USD",
-      "price": "0", // ✅ generic since multiple discounts
-      "eligibleRegion": {
+      name: "Crypto Discounts - Save Big",
+      url,
+      priceCurrency: "USD",
+      price: "0",
+      eligibleRegion: {
         "@type": "Place",
-        "name": "Worldwide"
+        name: "Worldwide",
       },
-      "availability": "https://schema.org/InStock",
-      "validFrom": new Date().toISOString(),
+      availability: "https://schema.org/InStock",
+      validFrom: new Date().toISOString(),
     },
   };
 

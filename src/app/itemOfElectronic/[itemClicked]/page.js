@@ -5,8 +5,7 @@ import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 
 export async function generateMetadata({ params }) {
-  // ✅ detect language
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -14,13 +13,11 @@ export async function generateMetadata({ params }) {
   const t = i18n.t.bind(i18n);
 
   const { itemClicked } = params;
-
-  // ✅ translate (fallback to raw if missing)
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
   const baseUrl = "https://www.malidag.com";
   const url = `${baseUrl}/itemOfElectronic?itemClicked=${encodeURIComponent(itemClicked)}`;
-  const ogImage = "https://web.malidag.com/og/electronics.jpg"; // change to your real OG image
+  const ogImage = "https://web.malidag.com/og/electronics.jpg";
 
   return {
     title: `${t("buy")} ${translatedItem} | Malidag Electronics`,
@@ -41,7 +38,14 @@ export async function generateMetadata({ params }) {
       url,
       siteName: "Malidag",
       type: "website",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${t("electronics")} - ${translatedItem}` }],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${t("electronics")} - ${translatedItem}`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -58,17 +62,22 @@ export default function Page({ params }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": `Electronics — ${itemClicked} | Malidag`,
-    "url": `https://www.malidag.com/itemOfElectronic?itemClicked=${encodeURIComponent(itemClicked)}`,
-    "description": `Browse ${itemClicked} on Malidag with prices, videos, and reviews.`,
-    "breadcrumb": {
+    name: `Electronics — ${itemClicked} | Malidag`,
+    url: `https://www.malidag.com/itemOfElectronic?itemClicked=${encodeURIComponent(itemClicked)}`,
+    description: `Browse ${itemClicked} on Malidag with prices, videos, and reviews.`,
+    breadcrumb: {
       "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.malidag.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Electronics", "item": "https://www.malidag.com/itemOfElectronic" },
-        { "@type": "ListItem", "position": 3, "name": itemClicked, "item": `https://www.malidag.com/itemOfElectronic?itemClicked=${encodeURIComponent(itemClicked)}` }
-      ]
-    }
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://www.malidag.com/" },
+        { "@type": "ListItem", position: 2, name: "Electronics", item: "https://www.malidag.com/itemOfElectronic" },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: itemClicked,
+          item: `https://www.malidag.com/itemOfElectronic?itemClicked=${encodeURIComponent(itemClicked)}`,
+        },
+      ],
+    },
   };
 
   return (

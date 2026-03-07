@@ -1,12 +1,12 @@
 import { headers } from "next/headers";
-import initI18n from "@/components/i18nServer"; // ✅ server-side i18n
+import initI18n from "@/components/i18nServer";
 import TypePage from "@/components/typePage.js";
 
-export const dynamic = "force-dynamic"; // allow headers in metadata
+export const dynamic = "force-dynamic";
 
 // ✅ SEO Metadata with translations
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -21,7 +21,7 @@ export async function generateMetadata() {
 
   const baseUrl = "https://www.malidag.com";
   const url = `${baseUrl}/type-page`;
-  const ogImage = `${baseUrl}/og/new-arrivals.jpg`; // ✅ create this image
+  const ogImage = `${baseUrl}/og/new-arrivals.jpg`;
 
   const keywordsCsv =
     t("new_crypto_products_keywords", {

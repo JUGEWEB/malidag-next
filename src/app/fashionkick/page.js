@@ -7,16 +7,17 @@ const BASE_URL = "https://api.malidag.com";
 
 // SEO
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
 
-  // Optionally fetch categories (safe fallback if API fails)
   let categories = [];
   try {
-    const categoriesRes = await fetch(`${BASE_URLs}/categories/FashionKick`, { cache: "no-store" });
+    const categoriesRes = await fetch(`${BASE_URLs}/categories/FashionKick`, {
+      cache: "no-store",
+    });
     if (categoriesRes.ok) {
       categories = await categoriesRes.json();
     }
@@ -63,14 +64,15 @@ export async function generateMetadata() {
 
 // Page
 export default async function Page() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
-  // Fetch categories (mtypes)
   let mtypes = [];
   try {
-    const categoriesRes = await fetch(`${BASE_URLs}/categories/FashionKick`, { cache: "no-store" });
+    const categoriesRes = await fetch(`${BASE_URLs}/categories/FashionKick`, {
+      cache: "no-store",
+    });
     if (categoriesRes.ok) {
       mtypes = await categoriesRes.json();
     }
@@ -78,7 +80,6 @@ export default async function Page() {
     console.error("FashionKick categories error:", err);
   }
 
-  // Fetch items (types)
   let types = {};
   try {
     const itemsRes = await fetch(`${BASE_URL}/items`, { cache: "no-store" });

@@ -1,13 +1,12 @@
-// app/beauty/page.tsx
 import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import PersonalCare from "@/components/persCareFY";
 import Head from "next/head";
 
-export const dynamic = "force-dynamic"; // allow headers() in metadata
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -19,15 +18,18 @@ export async function generateMetadata() {
 
   const url = "https://web.malidag.com/beauty";
   const ogImage = "https://web.malidag.com/og/beauty-cover.webp";
-  const ogVideo = "https://web.malidag.com/og/beauty.mp4"; // ✅ add a short branded video
+  const ogVideo = "https://web.malidag.com/og/beauty.mp4";
 
-  // ✅ localized CSV keywords -> array
   const keywordsCsv =
     t("beauty_keywords", {
       defaultValue:
         "beauty, skincare, makeup, haircare, fragrance, personal care, cosmetics, organic skincare, luxury beauty, buy beauty products online, global beauty shopping, crypto beauty shopping",
     }) || "";
-  const keywords = keywordsCsv.split(",").map((k) => k.trim()).filter(Boolean);
+
+  const keywords = keywordsCsv
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
 
   return {
     title,
@@ -46,16 +48,12 @@ export async function generateMetadata() {
       description,
       url,
       siteName: "Malidag",
-       type: "video.other", // ✅ Facebook will now parse as video
+      type: "video.other",
       locale: lang,
-      images: [
-        { url: ogImage, width: 1200, height: 630, alt: title }, // ✅ fallback image
-      ],
-      videos: [
-        { url: ogVideo, width: 1280, height: 720, type: "video/mp4" }, // ✅ video
-      ],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+      videos: [{ url: ogVideo, width: 1280, height: 720, type: "video/mp4" }],
     },
-   twitter: {
+    twitter: {
       card: "summary_large_image",
       title,
       description,
@@ -65,7 +63,7 @@ export async function generateMetadata() {
 }
 
 export default async function BeautyPage() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -74,16 +72,16 @@ export default async function BeautyPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "Beauty & Personal Care | Malidag",
-    "url": url,
-    "description": "Shop beauty, skincare, makeup, and personal care on Malidag.",
-    "breadcrumb": {
+    name: "Beauty & Personal Care | Malidag",
+    url,
+    description: "Shop beauty, skincare, makeup, and personal care on Malidag.",
+    breadcrumb: {
       "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://web.malidag.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Beauty", "item": url }
-      ]
-    }
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://web.malidag.com/" },
+        { "@type": "ListItem", position: 2, name: "Beauty", item: url },
+      ],
+    },
   };
 
   return (

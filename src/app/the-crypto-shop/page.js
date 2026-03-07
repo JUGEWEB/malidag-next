@@ -3,16 +3,16 @@ import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import TheCryptoShop from "@/components/theCryptoShop";
 
-export const dynamic = "force-dynamic"; // ✅ ensure fresh prices
+export const dynamic = "force-dynamic";
 
 // 🔎 Fetch live prices from your API
 async function fetchPrices() {
   try {
     const res = await fetch("https://api.malidag.com/crypto-prices", {
-      next: { revalidate: 300 }, // cache 5 mins
+      next: { revalidate: 300 },
     });
     if (!res.ok) return {};
-    return await res.json(); // { bnb: 220, eth: 1800, usdt: 1, sol: 20, usdc: 1 }
+    return await res.json();
   } catch {
     return {};
   }
@@ -20,7 +20,7 @@ async function fetchPrices() {
 
 // 🔎 SEO Metadata
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -90,7 +90,6 @@ export default async function Page() {
   const prices = await fetchPrices();
   const baseUrl = "https://www.malidag.com";
 
-  // Google requires these fields
   const today = new Date();
   const nextMonth = new Date();
   nextMonth.setMonth(today.getMonth() + 1);
@@ -101,7 +100,7 @@ export default async function Page() {
       "@type": "Product",
       name: `${symbol.toUpperCase()} Price on Malidag`,
       description: `Live price of ${symbol.toUpperCase()} on Malidag.`,
-      image: `${baseUrl}/og/crypto-shop.png`, // ✅ required for rich results
+      image: `${baseUrl}/og/crypto-shop.png`,
       brand: { "@type": "Brand", name: "Malidag" },
       offers: {
         "@type": "Offer",
@@ -109,15 +108,14 @@ export default async function Page() {
         price: price,
         priceCurrency: "USD",
         availability: "https://schema.org/InStock",
-        itemCondition: "https://schema.org/NewCondition", // ✅ required
-        priceValidUntil: nextMonth.toISOString().split("T")[0], // ✅ required
+        itemCondition: "https://schema.org/NewCondition",
+        priceValidUntil: nextMonth.toISOString().split("T")[0],
       },
     })),
   };
 
   return (
     <>
-      {/* ✅ SEO Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

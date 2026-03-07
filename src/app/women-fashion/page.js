@@ -3,11 +3,11 @@ import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import WoFashion from "@/components/woFashion";
 
-export const dynamic = "force-dynamic"; // ✅ allow headers in metadata
+export const dynamic = "force-dynamic";
 
 // ✅ SEO Metadata with translations
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -50,7 +50,14 @@ export async function generateMetadata() {
       siteName: "Malidag",
       type: "website",
       locale: lang,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: "Stylish women's fashion banner" }],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: "Stylish women's fashion banner",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -83,7 +90,6 @@ export default function Page() {
 
   return (
     <>
-      {/* ✅ SEO Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -2,14 +2,14 @@ import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer"; 
 import ItemOfPetCare from "@/components/itemOfPetCare";
 
-export const dynamic = "force-dynamic"; // ✅ allow dynamic metadata per request
+export const dynamic = "force-dynamic";
 
 // ✅ SEO Metadata with translations
 export async function generateMetadata({ params }) {
   const { gender, type } = params;
 
   // detect language
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -48,7 +48,14 @@ export async function generateMetadata({ params }) {
       siteName: "Malidag",
       locale: lang,
       type: "website",
-      images: [{ url: image, width: 800, height: 600, alt: `${t(type)} ${t("petcare_item_title_connector")} ${t(gender)}` }],
+      images: [
+        {
+          url: image,
+          width: 800,
+          height: 600,
+          alt: `${t(type)} ${t("petcare_item_title_connector")} ${t(gender)}`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -63,4 +70,3 @@ export async function generateMetadata({ params }) {
 export default function Page({ params }) {
   return <ItemOfPetCare params={params} />;
 }
-

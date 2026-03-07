@@ -3,10 +3,10 @@ import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import InternationalShipping from "@/components/internationnalShipping";
 
-export const dynamic = "force-dynamic"; // so headers() is allowed
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -15,21 +15,26 @@ export async function generateMetadata() {
 
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/international-shipping`;
-  const ogImage = `${baseUrl}/og/international-shipping.jpg`; // put your real image in /public/og/
+  const ogImage = `${baseUrl}/og/international-shipping.jpg`;
 
-  const title = t("intl_ship_title", { defaultValue: "International Shipping | Malidag" });
+  const title = t("intl_ship_title", {
+    defaultValue: "International Shipping | Malidag",
+  });
   const description = t("intl_ship_desc", {
     defaultValue:
       "Learn how Malidag delivers products internationally. Shipping times, regions, and fees explained.",
   });
 
-  // Keywords from i18n (CSV -> array) with safe fallback
   const keywordsCsv =
     t("intl_ship_keywords", {
       defaultValue:
         "international shipping, Malidag shipping policy, crypto shopping delivery, Malidag shipping, global delivery",
     }) || "";
-  const keywords = keywordsCsv.split(",").map((k) => k.trim()).filter(Boolean);
+
+  const keywords = keywordsCsv
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
 
   return {
     title,
@@ -62,14 +67,13 @@ export async function generateMetadata() {
 }
 
 export default async function Page() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/international-shipping`;
 
-  // ——— JSON-LD: Article + FAQ + Breadcrumbs ———
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -102,8 +106,7 @@ export default async function Page() {
           name: "Which countries do you ship to?",
           acceptedAnswer: {
             "@type": "Answer",
-            text:
-              "We ship to most countries worldwide. Shipping availability depends on the item and destination regulations.",
+            text: "We ship to most countries worldwide. Shipping availability depends on the item and destination regulations.",
           },
         },
         {
@@ -111,8 +114,7 @@ export default async function Page() {
           name: "How long does international shipping take?",
           acceptedAnswer: {
             "@type": "Answer",
-            text:
-              "Typical delivery times range from 7–20 business days depending on the region, carrier, and customs processing.",
+            text: "Typical delivery times range from 7–20 business days depending on the region, carrier, and customs processing.",
           },
         },
         {
@@ -120,8 +122,7 @@ export default async function Page() {
           name: "How are shipping fees calculated?",
           acceptedAnswer: {
             "@type": "Answer",
-            text:
-              "Fees are based on the destination, package weight and dimensions, and the selected shipping method.",
+            text: "Fees are based on the destination, package weight and dimensions, and the selected shipping method.",
           },
         },
         {
@@ -129,8 +130,7 @@ export default async function Page() {
           name: "Do I pay customs or import taxes?",
           acceptedAnswer: {
             "@type": "Answer",
-            text:
-              "Some countries require duties or taxes upon import. These charges are the responsibility of the recipient.",
+            text: "Some countries require duties or taxes upon import. These charges are the responsibility of the recipient.",
           },
         },
         {
@@ -138,8 +138,7 @@ export default async function Page() {
           name: "Can I track my order?",
           acceptedAnswer: {
             "@type": "Answer",
-            text:
-              "Yes, most shipments include tracking. A tracking link is provided as soon as your order is dispatched.",
+            text: "Yes, most shipments include tracking. A tracking link is provided as soon as your order is dispatched.",
           },
         },
       ],

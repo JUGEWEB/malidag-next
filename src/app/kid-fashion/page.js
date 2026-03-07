@@ -7,21 +7,27 @@ const API_BASE = "https://api.malidag.com";
 
 async function getData() {
   const [mtypesRes, itemsRes, cryptoRes] = await Promise.all([
-    fetch(`${API_BASE}/categories/FashionKick`, { next: { revalidate: 3600 } }).then(r => r.json()),
-    fetch(`${API_BASE}/items`, { next: { revalidate: 3600 } }).then(r => r.json()),
-    fetch(`${API_BASE}/crypto-prices`, { next: { revalidate: 600 } }).then(r => r.json()),
+    fetch(`${API_BASE}/categories/FashionKick`, {
+      next: { revalidate: 3600 },
+    }).then((r) => r.json()),
+    fetch(`${API_BASE}/items`, {
+      next: { revalidate: 3600 },
+    }).then((r) => r.json()),
+    fetch(`${API_BASE}/crypto-prices`, {
+      next: { revalidate: 600 },
+    }).then((r) => r.json()),
   ]);
 
   const mtypes = mtypesRes;
   const data = itemsRes.items;
   const cryptoPrices = cryptoRes;
 
-  // 🎯 filter only kids’ genres
-  const filteredData = data.filter(item =>
-    ["boy", "girl", "baby", "girls", "boys", "babies", "baby-girl", "baby-boy"].includes(item.item.genre)
+  const filteredData = data.filter((item) =>
+    ["boy", "girl", "baby", "girls", "boys", "babies", "baby-girl", "baby-boy"].includes(
+      item.item.genre
+    )
   );
 
-  // group items by type
   const groupedData = filteredData.reduce((acc, item) => {
     const type = item.item.type || "Other";
     if (!acc[type]) acc[type] = { type, items: [] };
@@ -32,9 +38,8 @@ async function getData() {
   return { mtypes, groupedData, cryptoPrices, filteredData };
 }
 
-// ✅ Metadata (SEO)
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const lang = (h.get("accept-language") || "en").split(",")[0].split("-")[0];
 
   const i18n = await initI18n(lang);
@@ -55,7 +60,11 @@ export async function generateMetadata() {
       defaultValue:
         "kids fashion, boys clothes, girls clothes, baby fashion, children clothing, kids wear, Malidag shopping, crypto kids wear, USD kids clothing",
     }) || "";
-  const keywords = keywordsCsv.split(",").map(k => k.trim()).filter(Boolean);
+
+  const keywords = keywordsCsv
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
 
   return {
     title,
@@ -93,44 +102,42 @@ export default async function KidFashionPage() {
   const baseUrl = "https://www.malidag.com";
   const url = `${baseUrl}/kid-fashion`;
 
-  // ✅ Schema.org JSON-LD
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "Kids' Fashion | Malidag",
-    "url": url,
-    "description": "Shop stylish kids' fashion—boys, girls, and babies—pay with crypto or USD.",
-    "breadcrumb": {
+    name: "Kids' Fashion | Malidag",
+    url,
+    description: "Shop stylish kids' fashion—boys, girls, and babies—pay with crypto or USD.",
+    breadcrumb: {
       "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": `${baseUrl}/` },
-        { "@type": "ListItem", "position": 2, "name": "Kids' Fashion", "item": url }
-      ]
-    }
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${baseUrl}/` },
+        { "@type": "ListItem", position: 2, name: "Kids' Fashion", item: url },
+      ],
+    },
   };
 
-  // ✅ ItemList schema for products
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "Kids' Fashion Products",
-    "url": url,
-    "numberOfItems": filteredData.length,
-    "itemListElement": filteredData.slice(0, 20).map((item, index) => ({
+    name: "Kids' Fashion Products",
+    url,
+    numberOfItems: filteredData.length,
+    itemListElement: filteredData.slice(0, 20).map((item, index) => ({
       "@type": "Product",
-      "position": index + 1,
-      "name": item.item.name,
-      "image": item.item.images?.[0] || `${baseUrl}/malidag.png`,
-      "brand": item.item.brand || "Malidag",
-      "category": item.item.type || "Kids Fashion",
-      "offers": {
+      position: index + 1,
+      name: item.item.name,
+      image: item.item.images?.[0] || `${baseUrl}/malidag.png`,
+      brand: item.item.brand || "Malidag",
+      category: item.item.type || "Kids Fashion",
+      offers: {
         "@type": "Offer",
-        "priceCurrency": "USD",
-        "price": item.item.usdPrice || "0.00",
-        "availability": "https://schema.org/InStock",
-        "url": `${baseUrl}/product/${item.id}`,
-      }
-    }))
+        priceCurrency: "USD",
+        price: item.item.usdPrice || "0.00",
+        availability: "https://schema.org/InStock",
+        url: `${baseUrl}/product/${item.id}`,
+      },
+    })),
   };
 
   return (

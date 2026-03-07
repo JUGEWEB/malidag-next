@@ -1,16 +1,16 @@
 // app/men-fashion/page.js
 import { headers } from "next/headers";
-import initI18n from "@/components/i18nServer"; // ✅ server-side i18n
+import initI18n from "@/components/i18nServer";
 import MenFashion from "@/components/MenFa";
 
 const BASE_URL = "https://api.malidag.com";
 const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
 
-export const dynamic = "force-dynamic"; // ✅ allow headers in metadata
+export const dynamic = "force-dynamic";
 
 // ✅ SEO Metadata with translations
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -25,7 +25,7 @@ export async function generateMetadata() {
 
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/men-fashion`;
-  const ogImage = `${baseUrl}/og/menFashion.jpg`; // ✅ host in /public/og/
+  const ogImage = `${baseUrl}/og/menFashion.jpg`;
 
   const keywordsCsv =
     t("men_fashion_keywords", {
@@ -64,7 +64,6 @@ export async function generateMetadata() {
   };
 }
 
-// ✅ Fetch data
 async function getData() {
   const [categoriesRes, itemsRes, cryptoRes] = await Promise.all([
     fetch(`${BASE_URL}/categories/MenFashion`).then((res) => res.json()),
@@ -102,12 +101,12 @@ export default async function Page() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "Men's Fashion | Malidag",
-    "url": url,
-    "description": "Shop the best men's fashion on Malidag with crypto or USD.",
-    "breadcrumb": {
+    name: "Men's Fashion | Malidag",
+    url,
+    description: "Shop the best men's fashion on Malidag with crypto or USD.",
+    breadcrumb: {
       "@type": "BreadcrumbList",
-      "itemListElement": [
+      itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: `${baseUrl}/` },
         { "@type": "ListItem", position: 2, name: "Men's Fashion", item: url },
       ],

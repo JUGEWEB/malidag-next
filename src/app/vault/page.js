@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 
-export const dynamic = "force-static";
-
 const VAULT_URL = "https://vault.malidag.com/";
-const VAULT_OG_IMAGE = "https://vault.malidag.com/static/media/bbb.3b89bece17b09ae0318d.png";
+const VAULT_OG_IMAGE =
+  "https://vault.malidag.com/static/media/bbb.3b89bece17b09ae0318d.png";
 
 export async function generateMetadata() {
   const title = "Vault Presale | Powered by MALIDAG Enterprise";
@@ -40,7 +39,5 @@ export async function generateMetadata() {
 }
 
 export default function VaultRedirectPage() {
-  // Instant redirect to your live Vault App
   redirect(VAULT_URL);
-  return null;
 }

@@ -3,7 +3,7 @@ import initI18n from "@/components/i18nServer";
 import { headers as nextHeaders } from "next/headers";
 import clientPromise from "../../../../lib/mongodb";
 
-export const revalidate = 60; // ISR
+export const revalidate = 60;
 
 const norm = (v) => (v == null ? null : String(v));
 
@@ -16,7 +16,6 @@ async function findProduct(idParam) {
   const product = await db.collection("products").findOne({ id: wanted });
   if (!product) return null;
 
-  // ✅ remove Mongo _id
   const { _id, ...rest } = product;
   return rest;
 }
@@ -103,8 +102,7 @@ export default async function Page(context) {
   const acceptLanguage = headers.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
-  const i18nInstance = await initI18n(lang);
-  const translations = i18nInstance.getDataByLanguage(lang)?.translation || {};
+  await initI18n(lang);
 
   let product = null;
 
@@ -128,7 +126,6 @@ export default async function Page(context) {
 
   return (
     <>
-      {/* ✅ JSON-LD Structured Data for SEO */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -154,9 +151,7 @@ export default async function Page(context) {
           }),
         }}
       />
-      <ProductDetails
-        product={product}
-      />
+      <ProductDetails product={product} />
     </>
   );
 }

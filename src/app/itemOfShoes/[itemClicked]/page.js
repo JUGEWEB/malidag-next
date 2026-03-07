@@ -3,10 +3,10 @@ import ItemOfShoes from "@/components/itemsOfShoes";
 import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 
-export const dynamic = "force-dynamic"; // allow headers() in metadata
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -40,7 +40,14 @@ export async function generateMetadata({ params }) {
       url,
       siteName: "Malidag",
       locale: lang,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${t("malidag")} ${t("shoes_collection")}` }],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${t("malidag")} ${t("shoes_collection")}`,
+        },
+      ],
       type: "website",
     },
     twitter: {

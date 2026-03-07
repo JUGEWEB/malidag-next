@@ -3,14 +3,13 @@ import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 
 export async function generateMetadata({ params }) {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-  // Format type (e.g., "dresses" → "Dresses")
   const readableType = params.type
     .replace("-", " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());

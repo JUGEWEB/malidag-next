@@ -3,10 +3,10 @@ import ItemOfKids from "@/components/itemOfKids";
 import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 
-export const dynamic = "force-dynamic"; // required for headers()
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 

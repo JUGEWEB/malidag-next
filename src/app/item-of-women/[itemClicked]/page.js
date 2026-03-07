@@ -6,14 +6,13 @@ export async function generateMetadata({ params }) {
   const { itemClicked } = params;
 
   // ✅ detect language from request
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-  // ✅ translate itemClicked (fallback to itself)
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
   const url = `https://www.malidag.com/item-of-women/${encodeURIComponent(itemClicked)}`;

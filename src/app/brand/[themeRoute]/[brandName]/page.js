@@ -7,15 +7,15 @@ import Theme1 from "@/components/Brands/Theme1/Theme1";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-  const themeRoute = params.themeRoute || "theme1"; // raw param, no translation
-  const brandName = params.brandName || "unknown"; // raw param, no translation
+  const themeRoute = params.themeRoute || "theme1";
+  const brandName = params.brandName || "unknown";
 
   const url = `https://web.malidag.com/brand/${encodeURIComponent(themeRoute)}/${encodeURIComponent(brandName)}`;
   const ogImage = "https://web.malidag.com/og/brand-default.jpg";
@@ -63,7 +63,6 @@ export default function Page({ params }) {
   switch (themeRoute) {
     case "theme1":
       return <Theme1 brandName={brandName} />;
-    // later: add more themes
     default:
       return <p className="p-6 text-red-600">Unknown theme: {themeRoute}</p>;
   }

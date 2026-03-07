@@ -4,7 +4,7 @@ import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();   // ✅ FIX
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -14,10 +14,9 @@ export async function generateMetadata() {
   const description =
     i18n.t("fashion_description") ||
     "Explore top clothing, shoes, and bags from leading fashion brands.";
-  const keywords =
-    i18n.t("fashion_keywords", {
-      defaultValue: "fashion, clothing, shoes, bags, crypto fashion",
-    });
+  const keywords = i18n.t("fashion_keywords", {
+    defaultValue: "fashion, clothing, shoes, bags, crypto fashion",
+  });
 
   return {
     title,
@@ -39,7 +38,7 @@ export async function generateMetadata() {
           alt: title,
         },
       ],
-      locale: lang, // ← detected from headers
+      locale: lang,
       type: "website",
     },
     twitter: {

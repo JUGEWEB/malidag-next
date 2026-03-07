@@ -2,18 +2,25 @@ import CoinPage from "@/components/coinPage.js";
 import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 
-export const dynamic = "force-dynamic";   // 👈 ensures headers() + params work here
+export const dynamic = "force-dynamic";
 
 const PUBLIC_OG_BASE = "https://web.malidag.com/og";
-const SYMBOL_OG = { usdt: "usdt.jpg", eth: "eth.jpg", usdc: "usdc.jpg", sol: "sol.jpg", bnb: "bnb.jpg" };
+const SYMBOL_OG = {
+  usdt: "usdt.jpg",
+  eth: "eth.jpg",
+  usdc: "usdc.jpg",
+  sol: "sol.jpg",
+  bnb: "bnb.jpg",
+};
 const FALLBACK_FILE = "malidag-coin.jpg";
 
 export async function generateMetadata({ params }) {
   const symbol = String(params?.symbol || "").toLowerCase();
 
-  const h = headers(); // ✅ no await
+  const h = await headers(); // ✅ FIX
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+
   const i18n = await initI18n(lang);
 
   const isSupported = Object.prototype.hasOwnProperty.call(SYMBOL_OG, symbol);
@@ -34,11 +41,23 @@ export async function generateMetadata({ params }) {
       title,
       description,
       url: `https://web.malidag.com/coin/${symbol}`,
-      images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
       locale: lang,
       type: "website",
     },
-    twitter: { card: "summary_large_image", title, description, images: [imageUrl] },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
   };
 }
 

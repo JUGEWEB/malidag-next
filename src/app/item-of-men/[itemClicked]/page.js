@@ -6,14 +6,13 @@ export async function generateMetadata({ params }) {
   const { itemClicked } = params;
 
   // ✅ detect language
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-  // ✅ translate itemClicked (fallback to raw if missing)
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
   const url = `https://www.malidag.com/item-of-men/${encodeURIComponent(itemClicked)}`;
@@ -28,7 +27,7 @@ export async function generateMetadata({ params }) {
       "Malidag fashion",
       "crypto fashion store",
       "buy clothes with cryptocurrency",
-      "men clothing"
+      "men clothing",
     ],
     alternates: { canonical: url },
     openGraph: {
@@ -41,17 +40,17 @@ export async function generateMetadata({ params }) {
           url: ogImage,
           width: 1200,
           height: 630,
-          alt: `${t("men_s")} ${translatedItem} | Malidag`
-        }
+          alt: `${t("men_s")} ${translatedItem} | Malidag`,
+        },
       ],
-      type: "website"
+      type: "website",
     },
     twitter: {
       card: "summary_large_image",
       title: `${t("buy")} ${translatedItem} ${t("for_men")} | Malidag`,
       description: `${t("explore_high_quality")} ${translatedItem} ${t("and_shop_with_crypto")}`,
-      images: [ogImage]
-    }
+      images: [ogImage],
+    },
   };
 }
 

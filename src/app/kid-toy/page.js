@@ -1,17 +1,17 @@
 // app/kid-toy/page.jsx
 import React from "react";
 import { headers } from "next/headers";
-import initI18n from "@/components/i18nServer"; // ✅ reuse your server i18n
+import initI18n from "@/components/i18nServer";
 import KidToy from "@/components/kidsToy";
 
 const BASE_URL = "https://api.malidag.com";
 const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
 
-export const dynamic = "force-dynamic"; // allow headers() in metadata
+export const dynamic = "force-dynamic";
 
 // ✅ SEO Metadata
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -26,7 +26,7 @@ export async function generateMetadata() {
 
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/kid-toy`;
-  const ogImage = `${baseUrl}/malidag.png`; // add this image under /public/og/
+  const ogImage = `${baseUrl}/malidag.png`;
 
   const keywordsCsv =
     t("kid_toys_keywords", {
@@ -101,7 +101,6 @@ async function getData() {
   return { mtypes, groupedData, cryptoPrices: cryptoRes };
 }
 
-
 // ✅ Page
 export default async function KidToyPage() {
   const { mtypes, groupedData, cryptoPrices } = await getData();
@@ -109,16 +108,15 @@ export default async function KidToyPage() {
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/kid-toy`;
 
-  // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "Kids Toys | Malidag",
-    "url": url,
-    "description": "Shop kids toys on Malidag — pay with crypto or USD.",
-    "breadcrumb": {
+    name: "Kids Toys | Malidag",
+    url,
+    description: "Shop kids toys on Malidag — pay with crypto or USD.",
+    breadcrumb: {
       "@type": "BreadcrumbList",
-      "itemListElement": [
+      itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: `${baseUrl}/` },
         { "@type": "ListItem", position: 2, name: "Kids Toys", item: url },
       ],

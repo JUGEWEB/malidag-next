@@ -1,11 +1,10 @@
-// app/page.js
 import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import Malidag from "@/components/malidag";
 
 // ✅ SEO metadata (server-side only)
 export async function generateMetadata() {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -60,15 +59,11 @@ export async function generateMetadata() {
   };
 }
 
-// ✅ Page (UI gets language from Layout/Providers, not SSR props)
+// ✅ Page
 export default function Page() {
   return (
     <>
-      {/* Hidden SEO fallback H1 (can stay static or use t() in client if needed) */}
-      <h1 className="sr-only">
-        Global Shopping Made Simple | Malidag
-      </h1>
-
+      <h1 className="sr-only">Global Shopping Made Simple | Malidag</h1>
       <Malidag view="home" />
     </>
   );

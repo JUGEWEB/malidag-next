@@ -3,17 +3,17 @@ import ItemOfHome from "@/components/itemOfHome";
 import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 
-export const dynamic = "force-dynamic"; // allow headers() in metadata
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-   const { itemClicked } = params;
+  const { itemClicked } = params;
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
   const url = `https://www.malidag.com/itemOfHome?itemClicked=${encodeURIComponent(
@@ -41,7 +41,14 @@ export async function generateMetadata({ params }) {
       url,
       siteName: "Malidag",
       locale: lang,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${t("malidag")} ${t("home_kitchen")}` }],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${t("malidag")} ${t("home_kitchen")}`,
+        },
+      ],
       type: "website",
     },
     twitter: {

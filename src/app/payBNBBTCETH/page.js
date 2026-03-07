@@ -1,12 +1,11 @@
 import { headers } from "next/headers";
-import initI18n from "@/components/i18nServer"; // ✅ server-side i18n
+import initI18n from "@/components/i18nServer";
 import PayBBE from "@/components/payBNBBTCETH";
 
-export const dynamic = "force-dynamic"; // ✅ allow headers in metadata
+export const dynamic = "force-dynamic";
 
-// ✅ SEO Metadata
 export async function generateMetadata() {
-  const headersList = headers();
+  const headersList = await headers();
   const acceptLanguage = headersList.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -20,7 +19,7 @@ export async function generateMetadata() {
 
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/payBNBBTCETH`;
-  const ogImage = `${baseUrl}/og/payBNBBTCETH.jpg`; // ✅ put image in /public/og
+  const ogImage = `${baseUrl}/og/payBNBBTCETH.jpg`;
 
   return {
     title,
@@ -44,7 +43,6 @@ export async function generateMetadata() {
   };
 }
 
-// ✅ Page
 export default function Page() {
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/payBNBBTCETH`;

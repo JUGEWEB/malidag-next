@@ -6,21 +6,18 @@ import { headers } from "next/headers";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const h = headers();
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
-  // 👇 load both "translation" and "keywords"
   const i18n = await initI18n(lang, ["translation", "keywords"]);
   const t = i18n.t.bind(i18n);
 
   const { searchTerm } = params;
 
-  // 🔑 split by "-", "+", or space → translate word by word
   const parts = decodeURIComponent(searchTerm).split(/[-+\s]+/);
 
   const translatedParts = parts.map((p) =>
-    // first check "keywords", then fallback to "translation", then fallback to raw
     t(p.toLowerCase(), { ns: ["keywords", "translation"], defaultValue: p })
   );
 

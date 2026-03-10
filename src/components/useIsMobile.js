@@ -6,9 +6,9 @@ function getScreenSize() {
 
   const width = window.innerWidth;
   return {
-     isVerySmall: width <= 480,
-    isSmallMobile: width > 480 && width <= 600,
-    isMobile: width > 600 && width < 768,
+     isVerySmall: width < 480,
+    isSmallMobile: width >= 480 && width < 600,
+    isMobile: width >= 600 && width < 768,
     isTablet: width >= 768 && width < 1024,
     isDesktop: width >= 1024,
   };

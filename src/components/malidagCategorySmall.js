@@ -17,7 +17,7 @@ function MalidagCategorySmall({ user }) {
   const [categories, setCategories] = useState([]);
   const [searchedItems, setSearchedItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall } = useScreenSize();
+  const { isSmallMobile, isVerySmall } = useScreenSize();
 
   const userId = user?.uid;
 

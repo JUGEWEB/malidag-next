@@ -571,14 +571,7 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
         ))}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-          gap: "12px",
-          padding: "10px 15px",
-        }}
-      >
+      <div className="fashionkick-products-grid">
         {allItems.map(({ id, item, itemId }) => {
           const reviewData = reviews[itemId];
           const averageRating = reviewData?.averageRating;
@@ -590,8 +583,8 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
               onClick={() => handleItemClick(id)}
               style={{
                 background: "#fff",
-                padding: "10px",
-                border: "1px solid #eee",
+                padding: "2px",
+                width: "100%",
                 borderRadius: "8px",
                 cursor: "pointer",
                 display: "flex",
@@ -599,16 +592,13 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
                 alignItems: "center",
               }}
             >
-              <img
-                src={item?.images?.[0] || "/placeholder.png"}
-                alt={item?.name || "Product"}
-                style={{
-                  width: "100%",
-                  height: "180px",
-                  objectFit: "contain",
-                  marginBottom: "8px",
-                }}
-              />
+              <div className="fashionkick-product-fil">
+             <img
+  src={item?.images?.[0] || "/placeholder.png"}
+  alt={item?.name || "Product"}
+  className="fashionkick-product-image"
+/>
+</div>
 
               <div
                 style={{

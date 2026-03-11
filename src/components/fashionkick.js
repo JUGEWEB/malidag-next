@@ -362,11 +362,33 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
     router.push(`/itemOfShoes/${encodeURIComponent(formattedCategory)}`);
   };
 
-  if (loading && !hasCachedContent) {
+ if (loading && !hasCachedContent) {
   return (
     <div className="fashionkick-slider">
-      <section className="fashionkick-panel fashionkick-panel-dark">
+      <section className="fashionkick-panel fashionkick-panel-dark fashionkick-hero-panel">
         <div className="fashionkick-page-inner">
+          <section className="fashionkick-hero-shell skeleton-hero-shell">
+            <div className="fashionkick-hero-copy">
+              <div className="skeleton skeleton-badge" />
+              <div className="skeleton skeleton-hero-title" />
+              <div className="skeleton skeleton-hero-title short" />
+              <div className="skeleton skeleton-hero-text" />
+              <div className="skeleton skeleton-hero-text short" />
+              <div className="fashionkick-hero-trust-row">
+                <div className="skeleton skeleton-trust-pill" />
+                <div className="skeleton skeleton-trust-pill" />
+                <div className="skeleton skeleton-trust-pill" />
+              </div>
+            </div>
+
+            <div className="fashionkick-hero-visual skeleton-hero-visual" />
+          </section>
+
+          <div className="fashionkick-section-header">
+            <h2>Shop by Category</h2>
+            <span>Premium picks</span>
+          </div>
+
           <div className="fashionkick-types-row">
             {Array.from({ length: 4 }).map((_, index) => (
               <TypeSkeleton key={index} />
@@ -375,18 +397,24 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
         </div>
       </section>
 
-      <section className="fashionkick-panel fashionkick-panel-dark">
+      <section className="fashionkick-panel fashionkick-panel-dark fashionkick-banner-panel">
         <div className="fashionkick-page-inner">
-          <div className="fashionkick-topic-row">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <TopicSkeleton key={index} />
-            ))}
+          <div className="fashionkick-section-header">
+            <h2>Top Topics</h2>
+            <span>Trending collections</span>
           </div>
+
+          <div className="fashionkick-topic-banner topic-skeleton" />
         </div>
       </section>
 
       <section className="fashionkick-catalog-section">
         <div className="fashionkick-page-inner">
+          <div className="fashionkick-section-header">
+            <h2>Trending Products</h2>
+            <span>Loading items</span>
+          </div>
+
           <div className="fashionkick-products-grid">
             {Array.from({ length: 8 }).map((_, index) => (
               <ProductSkeleton key={index} />
@@ -402,38 +430,103 @@ return (
   <div className="fashionkick-slider">
     <section className="fashionkick-panel fashionkick-panel-dark fashionkick-hero-panel">
       <div className="fashionkick-page-inner">
-        <section className="fashionkick-hero-intro">
-          <span className="fashionkick-hero-label">Luxury Footwear</span>
-          <h1 className="fashionkick-hero-heading">Curated Styles For Every Step</h1>
-          <p className="fashionkick-hero-subtext">
-            Explore premium sneakers and boots crafted for bold looks, everyday comfort, and modern elegance.
-          </p>
+        <section className="fashionkick-hero-shell">
+          <div className="fashionkick-hero-copy">
+            <span className="fashionkick-hero-label">Luxury Footwear</span>
+
+            <h1 className="fashionkick-hero-heading">
+              Curated Styles
+              <span className="fashionkick-hero-heading-accent"> For Every Step</span>
+            </h1>
+
+            <p className="fashionkick-hero-subtext">
+              Explore premium sneakers and boots crafted for bold looks, everyday comfort,
+              and modern elegance. Designed to turn every walk into a statement.
+            </p>
+
+            <div className="fashionkick-hero-actions">
+              <button
+                type="button"
+                className="fashionkick-primary-btn"
+                onClick={() => {
+                  const el = document.getElementById("fashionkick-products");
+                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                Shop Trending
+              </button>
+
+              <button
+                type="button"
+                className="fashionkick-secondary-btn"
+                onClick={() => {
+                  const el = document.getElementById("fashionkick-categories");
+                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                Explore Categories
+              </button>
+            </div>
+
+            <div className="fashionkick-hero-trust-row">
+              <div className="fashionkick-trust-pill">Best-selling styles</div>
+              <div className="fashionkick-trust-pill">Premium comfort</div>
+              <div className="fashionkick-trust-pill">Modern luxury</div>
+            </div>
+          </div>
+
+          <div className="fashionkick-hero-visual">
+            <div className="fashionkick-hero-visual-card fashionkick-hero-card-main">
+              <img
+                src="https://cdn.malidag.com/themes/1773233374853-869b7d85-8687-4f39-8301-83679b8afd83.webp"
+                alt="Luxury footwear showcase"
+                className="fashionkick-hero-visual-image"
+              />
+              <div className="fashionkick-hero-visual-overlay" />
+              <div className="fashionkick-hero-visual-content">
+                <span className="fashionkick-mini-badge">New Season</span>
+                <h3>Statement Sneakers & Boots</h3>
+                <p>Elevated essentials for every wardrobe.</p>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section className="fashionkick-types-row">
+        <section id="fashionkick-categories" className="fashionkick-categories-section">
+          <div className="fashionkick-section-header">
+            <h2>Shop by Category</h2>
+            <span>{mtypes.length} collections</span>
+          </div>
+
           {mtypes.length === 0 ? (
             <div className="fashionkick-empty">{t("no_types_found_fashion")}</div>
           ) : (
-            mtypes.map((typeObj, index) => (
-              <div
-                key={typeObj?._id || index}
-                className="type-section"
-                onClick={() => handleCategoryClick(typeObj?.type)}
-              >
-                <div className="type-image-id">
-                  <img
-                    src={typeObj?.image}
-                    alt={typeObj?.type || "Fashion category"}
-                    className="type-image-imgid"
-                    loading="lazy"
-                  />
-                </div>
+            <div className="fashionkick-types-row">
+              {mtypes.map((typeObj, index) => (
+                <article
+                  key={typeObj?._id || index}
+                  className="type-section"
+                  onClick={() => handleCategoryClick(typeObj?.type)}
+                >
+                  <div className="type-image-id">
+                    <img
+                      src={typeObj?.image}
+                      alt={typeObj?.type || "Fashion category"}
+                      className="type-image-imgid"
+                      loading="lazy"
+                    />
+                  </div>
 
-                <h3 className="type-title">
-                  {t(TYPE_TRANSLATION_KEYS[typeObj?.type] || typeObj?.type)}
-                </h3>
-              </div>
-            ))
+                  <div className="type-content">
+                    <span className="type-kicker">Collection</span>
+                    <h3 className="type-title">
+                      {t(TYPE_TRANSLATION_KEYS[typeObj?.type] || typeObj?.type)}
+                    </h3>
+                    <span className="type-link">Explore now</span>
+                  </div>
+                </article>
+              ))}
+            </div>
           )}
         </section>
       </div>
@@ -441,6 +534,11 @@ return (
 
     <section className="fashionkick-panel fashionkick-panel-dark fashionkick-banner-panel">
       <div className="fashionkick-page-inner">
+        <div className="fashionkick-section-header">
+          <h2>Top Topics</h2>
+          <span>{topicCards.length} style directions</span>
+        </div>
+
         <section className="fashionkick-topic-banner">
           <img
             src="https://cdn.malidag.com/themes/1773233374853-869b7d85-8687-4f39-8301-83679b8afd83.webp"
@@ -454,74 +552,118 @@ return (
             <span className="fashionkick-badge">Premium Collection</span>
             <h2 className="fashionkick-banner-title">Step Into Luxury</h2>
             <p className="fashionkick-banner-text">
-              Discover best-selling sneakers and boots designed for style, comfort, and confidence.
+              Discover best-selling sneakers and boots designed for style, comfort,
+              and confidence. Scroll through the most wanted looks and enter your next obsession.
             </p>
 
-            {topicCards.map(({ type, genre, key }) => (
-              <button
-                key={key}
-                type="button"
-                className="fashionkick-topic-vertical-item"
-                onClick={() =>
-                  router.push(
-                    `/shoesTopTopic/${encodeURIComponent(type)}/${encodeURIComponent(genre)}`
-                  )
-                }
-              >
-                {t(type) || type}
-              </button>
-            ))}
+            <div className="fashionkick-topic-scroll">
+              {topicCards.length === 0 ? (
+                <div className="fashionkick-topic-empty">
+                  {t("no_types_found_fashion") || "No topics found"}
+                </div>
+              ) : (
+                topicCards.map(({ type, genre, key }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="fashionkick-topic-vertical-item"
+                    onClick={() =>
+                      router.push(
+                        `/shoesTopTopic/${encodeURIComponent(type)}/${encodeURIComponent(genre)}`
+                      )
+                    }
+                  >
+                    <span className="fashionkick-topic-item-type">{t(type) || type}</span>
+                    <span className="fashionkick-topic-item-genre">{genre}</span>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </section>
       </div>
     </section>
 
-    <section className="fashionkick-catalog-section">
+    <section id="fashionkick-products" className="fashionkick-catalog-section">
       <div className="fashionkick-page-inner">
-        <section className="fashionkick-products-grid">
-          {allItems.map(({ id, item, itemId }) => {
-            const reviewData = reviews[itemId];
-            const averageRating = reviewData?.averageRating;
-            const reviewCount = reviewData?.count || 0;
+        <div className="fashionkick-section-header">
+          <h2>Trending Products</h2>
+          <span>{allItems.length} items</span>
+        </div>
 
-            return (
-              <article
-                key={id}
-                className="fashionkick-product-card"
-                onClick={() => handleItemClick(id)}
-              >
-                <div className="fashionkick-product-media">
-                  <img
-                    src={item?.images?.[0] || "/placeholder.png"}
-                    alt={item?.name || "Product"}
-                    className="fashionkick-product-image"
-                    loading="lazy"
-                  />
-                </div>
+        {allItems.length === 0 ? (
+          <div className="fashionkick-empty">
+            {t("no_products_found") || "No products found right now."}
+          </div>
+        ) : (
+          <section className="fashionkick-products-grid">
+            {allItems.map(({ id, item, itemId }) => {
+              const reviewData = reviews[itemId];
+              const averageRating = reviewData?.averageRating;
+              const reviewCount = reviewData?.count || 0;
+              const translatedName = getTranslatedName(item, itemId);
 
-                <div className="fashionkick-product-content">
-                  <div className="fashionkick-price">
-                    ${Number(item?.usdPrice || 0).toLocaleString()}
+              return (
+                <article
+                  key={id}
+                  className="fashionkick-product-card"
+                  onClick={() => handleItemClick(id)}
+                >
+                  <div className="fashionkick-product-media">
+                    <img
+                      src={item?.images?.[0] || "/placeholder.png"}
+                      alt={item?.name || "Product"}
+                      className="fashionkick-product-image"
+                      loading="lazy"
+                    />
+
+                    <div className="fashionkick-product-floating-tag">
+                      {item?.type || "Premium"}
+                    </div>
                   </div>
 
-                  <StarRating rating={averageRating || 0} />
+                  <div className="fashionkick-product-content">
+                    <div className="fashionkick-product-topline">
+                      <div className="fashionkick-price">
+                        ${Number(item?.usdPrice || 0).toLocaleString()}
+                      </div>
 
-                  <div className="fashionkick-review-text">
-                    {averageRating
-                      ? `${averageRating.toFixed(1)}/5 (${reviewCount})`
-                      : t("no_reviews_yet") || "No reviews yet"}
-                  </div>
+                      {item?.originalPrice && Number(item.originalPrice) > Number(item?.usdPrice) ? (
+                        <div className="fashionkick-old-price">
+                          ${Number(item.originalPrice).toLocaleString()}
+                        </div>
+                      ) : null}
+                    </div>
 
-                  <div className="fashionkick-name">
-                    {getTranslatedName(item, itemId)}
+                    <StarRating rating={averageRating || 0} />
+
+                    <div className="fashionkick-review-text">
+                      {averageRating
+                        ? `${averageRating.toFixed(1)}/5 (${reviewCount} reviews)`
+                        : t("no_reviews_yet") || "No reviews yet"}
+                    </div>
+
+                    <div className="fashionkick-name">{translatedName}</div>
+
+                    <div className="fashionkick-product-footer">
+                      <span className="fashionkick-product-genre">
+                        {item?.genre || "Fashion"}
+                      </span>
+                      <span className="fashionkick-product-cta">View details</span>
+                    </div>
                   </div>
-                </div>
-              </article>
-            );
-          })}
-        </section>
+                </article>
+              );
+            })}
+          </section>
+        )}
 
         <div className="fashionkick-recommended-wrap">
+          <div className="fashionkick-section-header">
+            <h2>Recommended For You</h2>
+            <span>Picked from your style</span>
+          </div>
+
           <ShoeRecommended />
         </div>
       </div>

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import "./FashionKick.css";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import ShoeRecommended from "./shoeRecomended";
 
-const BASE_URLs = "https://api.malidag.com";
 const BASE_URL = "https://api.malidag.com";
 
 const CACHE_KEYS = {
@@ -18,84 +17,199 @@ const CACHE_KEYS = {
 
 const CACHE_TTL = 1000 * 60 * 30;
 
+const TYPE_TRANSLATION_KEYS = {
+  "Men sneakers": "men_sneakers",
+  "Girls boots": "girls_boots",
+  "Women boots": "women_boots",
+  "Women sneakers": "women_sneakers",
+  "Men boots": "men_boots",
+};
+
+function getCache(key) {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed?.timestamp || Date.now() - parsed.timestamp > CACHE_TTL) {
+      localStorage.removeItem(key);
+      return null;
+    }
+
+    return parsed.data ?? null;
+  } catch (error) {
+    console.error(`Cache read error for ${key}:`, error);
+    return null;
+  }
+}
+
+function setCache(key, data) {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      })
+    );
+  } catch (error) {
+    console.error(`Cache write error for ${key}:`, error);
+  }
+}
+
+function formatGroupedItems(data = []) {
+  const filtered = data.filter((item) => {
+    const category = (item?.category || "").toLowerCase();
+    const sold = Number(item?.item?.sold ?? 0);
+    return category === "shoes" && sold >= 100;
+  });
+
+  return filtered.reduce((acc, item) => {
+    const type = item?.item?.type || "Other";
+    const genre = item?.item?.genre || "General";
+
+    if (!acc[type]) acc[type] = {};
+    if (!acc[type][genre]) {
+      acc[type][genre] = { genre, items: [] };
+    }
+
+    if (acc[type][genre].items.length < 10) {
+      acc[type][genre].items.push({
+        id: item?.id,
+        itemId: item?.itemId,
+        item: item?.item || {},
+      });
+    }
+
+    return acc;
+  }, {});
+}
+
+function ProductSkeleton() {
+  return (
+    <div className="fashionkick-product-card skeleton-card">
+      <div className="skeleton skeleton-image" />
+      <div className="skeleton skeleton-price" />
+      <div className="skeleton skeleton-stars" />
+      <div className="skeleton skeleton-text short" />
+      <div className="skeleton skeleton-text" />
+    </div>
+  );
+}
+
+function TypeSkeleton() {
+  return (
+    <div className="type-section">
+      <div className="type-image-id skeleton" />
+      <div className="skeleton skeleton-type-title" />
+    </div>
+  );
+}
+
+function TopicSkeleton() {
+  return <div className="fashionkick-topic-card skeleton topic-skeleton" />;
+}
+
+function StarRating({ rating = 0 }) {
+  const rounded = Math.round(Number(rating) || 0);
+
+  return (
+    <div className="fashionkick-stars" aria-label={`Rating: ${rounded} out of 5`}>
+      {Array.from({ length: 5 }, (_, index) => (
+        <span key={index} className={index < rounded ? "star filled" : "star"}>
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function FashionKick({ initialMTypes = [], initialTypes = {} }) {
+  const router = useRouter();
+  const { t } = useTranslation();
+
   const [types, setTypes] = useState(initialTypes);
   const [mtypes, setMTypes] = useState(initialMTypes);
   const [loading, setLoading] = useState(true);
   const [translations, setTranslations] = useState({});
   const [reviews, setReviews] = useState({});
-  const router = useRouter();
-  const { t } = useTranslation();
 
-  const typeTranslationKeys = {
-    "Men sneakers": "men_sneakers",
-    "Girls boots": "girls_boots",
-    "Women boots": "women_boots",
-    "Women sneakers": "women_sneakers",
-    "Men boots": "men_boots",
-  };
+  const translationRequestsRef = useRef(new Set());
+  const reviewRequestsRef = useRef(new Set());
+
+  const currentLang = i18n.language || "en";
 
   const hasCachedContent = useMemo(() => {
     return mtypes.length > 0 || Object.keys(types).length > 0;
   }, [mtypes, types]);
 
-  const getCache = (key) => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return null;
+  const topicCards = useMemo(() => {
+    return Object.entries(types).flatMap(([type, genres]) =>
+      Object.keys(genres).map((genre) => ({
+        type,
+        genre,
+        key: `${type}-${genre}`,
+      }))
+    );
+  }, [types]);
 
-      const parsed = JSON.parse(raw);
-      const isExpired = Date.now() - parsed.timestamp > CACHE_TTL;
+  const allItems = useMemo(() => {
+    return Object.values(types)
+      .flatMap((genreMap) => Object.values(genreMap))
+      .flatMap((genreObj) => genreObj.items || []);
+  }, [types]);
 
-      if (isExpired) {
-        localStorage.removeItem(key);
-        return null;
+  const getTranslatedName = useCallback(
+    (item, itemId) => {
+      const translated = translations[itemId]?.[currentLang]?.name;
+      const fallback = item?.name || "Unnamed product";
+      const value = translated || fallback;
+      return value.length > 60 ? `${value.slice(0, 60)}...` : value;
+    },
+    [translations, currentLang]
+  );
+
+  const fetchTranslation = useCallback(
+    async (productId, lang) => {
+      if (!productId) return;
+      if (translations[productId]?.[lang]) return;
+
+      const requestKey = `${productId}_${lang}`;
+      if (translationRequestsRef.current.has(requestKey)) return;
+
+      translationRequestsRef.current.add(requestKey);
+
+      try {
+        const response = await axios.get(
+          `${BASE_URL}/translate/product/translate/${productId}/${lang}`
+        );
+
+        setTranslations((prev) => ({
+          ...prev,
+          [productId]: {
+            ...(prev[productId] || {}),
+            [lang]: response.data?.translation || {},
+          },
+        }));
+      } catch (error) {
+        console.error(`Translation fetch error for ${productId}:`, error.message);
+      } finally {
+        translationRequestsRef.current.delete(requestKey);
       }
+    },
+    [translations]
+  );
 
-      return parsed.data;
-    } catch (error) {
-      console.error(`Error reading cache for ${key}:`, error);
-      return null;
-    }
-  };
-
-  const setCache = (key, data) => {
-    try {
-      localStorage.setItem(
-        key,
-        JSON.stringify({
-          data,
-          timestamp: Date.now(),
-        })
-      );
-    } catch (error) {
-      console.error(`Error writing cache for ${key}:`, error);
-    }
-  };
-
-  const fetchTranslation = async (productId, lang) => {
+  const fetchReviews = useCallback(async (productId) => {
     if (!productId) return;
-    if (translations[productId]?.[lang]) return;
+    if (reviewRequestsRef.current.has(productId)) return;
+    if (reviews[productId]) return;
 
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/translate/product/translate/${productId}/${lang}`
-      );
-
-      setTranslations((prev) => ({
-        ...prev,
-        [productId]: {
-          ...(prev[productId] || {}),
-          [lang]: response.data?.translation || {},
-        },
-      }));
-    } catch (error) {
-      console.error(`Translation fetch error for ${productId}:`, error.message);
-    }
-  };
-
-  const fetchReviews = async (productId) => {
-    if (!productId) return;
+    reviewRequestsRef.current.add(productId);
 
     try {
       const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
@@ -143,502 +257,233 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
           },
         }));
       } else {
-        console.error("Error fetching reviews:", error);
+        console.error(`Review fetch error for ${productId}:`, error);
       }
+    } finally {
+      reviewRequestsRef.current.delete(productId);
     }
-  };
+  }, [reviews]);
 
-  useEffect(() => {
-    const cachedTypes = getCache(CACHE_KEYS.FASHION_TYPES);
-    const cachedItems = getCache(CACHE_KEYS.FASHION_ITEMS);
-
-    if (cachedTypes) {
-      setMTypes(cachedTypes);
-    }
-
-    if (cachedItems) {
-      setTypes(cachedItems);
-    }
-
-    if (cachedTypes || cachedItems) {
-      setLoading(false);
-
-      const cachedProductIds = Object.values(cachedItems || {})
+  const hydrateProductMeta = useCallback(
+    async (groupedData, lang) => {
+      const productIds = Object.values(groupedData)
         .flatMap((genreMap) => Object.values(genreMap))
         .flatMap((genreObj) => genreObj.items || [])
         .map((product) => product?.itemId)
         .filter(Boolean);
 
-      Promise.all(
-        cachedProductIds.map((itemId) =>
-          Promise.all([
-            fetchReviews(itemId),
-            fetchTranslation(itemId, i18n.language || "en"),
-          ])
+      await Promise.all(
+        productIds.map((itemId) =>
+          Promise.all([fetchTranslation(itemId, lang), fetchReviews(itemId)])
         )
-      ).catch((error) => {
-        console.error("Error fetching cached reviews/translations:", error);
-      });
-    }
-  }, []);
+      );
+    },
+    [fetchTranslation, fetchReviews]
+  );
 
   useEffect(() => {
-    const fetchFashionCategories = async () => {
-      try {
-        const response = await axios.get(`${BASE_URLs}/categories/FashionKick`);
-        const data = Array.isArray(response.data) ? response.data : [];
-        setMTypes(data);
-        setCache(CACHE_KEYS.FASHION_TYPES, data);
-      } catch (error) {
-        console.error("Error fetching FashionKick categories:", error);
-        setMTypes([]);
-      }
-    };
+    const cachedTypes = getCache(CACHE_KEYS.FASHION_TYPES);
+    const cachedItems = getCache(CACHE_KEYS.FASHION_ITEMS);
 
-    const fetchItems = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/items`);
-        const data = Array.isArray(response.data) ? response.data : [];
+    if (cachedTypes) setMTypes(cachedTypes);
+    if (cachedItems) setTypes(cachedItems);
 
-        const filteredData = data.filter((item) => {
-          const category = (item?.category || "").toLowerCase();
-          const sold = Number(item?.item?.sold ?? 0);
-          return category === "shoes" && sold >= 100;
+    if (cachedTypes || cachedItems) {
+      setLoading(false);
+
+      if (cachedItems) {
+        hydrateProductMeta(cachedItems, currentLang).catch((error) => {
+          console.error("Error hydrating cached product data:", error);
         });
+      }
+    }
+  }, [currentLang, hydrateProductMeta]);
 
-        const groupedData = filteredData.reduce((acc, item) => {
-          const type = item?.item?.type || "Other";
-          const genre = item?.item?.genre || "General";
+  useEffect(() => {
+    let cancelled = false;
 
-          if (!acc[type]) acc[type] = {};
-          if (!acc[type][genre]) acc[type][genre] = { genre, items: [] };
+    const fetchData = async () => {
+      try {
+        const [categoriesRes, itemsRes] = await Promise.all([
+          axios.get(`${BASE_URL}/categories/FashionKick`),
+          axios.get(`${BASE_URL}/items`),
+        ]);
 
-          // cache/store only first 10 items per type+genre
-          if (acc[type][genre].items.length < 10) {
-            acc[type][genre].items.push({
-              id: item?.id,
-              itemId: item?.itemId,
-              item: item?.item || {},
-            });
-          }
+        if (cancelled) return;
 
-          return acc;
-        }, {});
+        const categories = Array.isArray(categoriesRes.data) ? categoriesRes.data : [];
+        const items = Array.isArray(itemsRes.data) ? itemsRes.data : [];
+        const groupedData = formatGroupedItems(items);
 
+        setMTypes(categories);
         setTypes(groupedData);
+
+        setCache(CACHE_KEYS.FASHION_TYPES, categories);
         setCache(CACHE_KEYS.FASHION_ITEMS, groupedData);
 
-        const lang = i18n.language || "en";
-
-        const productIds = Object.values(groupedData)
-          .flatMap((genreMap) => Object.values(genreMap))
-          .flatMap((genreObj) => genreObj.items || [])
-          .map((product) => product?.itemId)
-          .filter(Boolean);
-
-        await Promise.all(
-          productIds.map((itemId) =>
-            Promise.all([fetchTranslation(itemId, lang), fetchReviews(itemId)])
-          )
-        );
+        await hydrateProductMeta(groupedData, currentLang);
       } catch (error) {
-        console.error("Error fetching items:", error);
-        setTypes({});
+        console.error("Error fetching FashionKick data:", error);
+        if (!cancelled) {
+          setMTypes((prev) => prev || []);
+          setTypes((prev) => prev || {});
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchFashionCategories();
-    fetchItems();
-  }, []);
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentLang, hydrateProductMeta]);
 
   useEffect(() => {
     if (!Object.keys(types).length) return;
 
-    const lang = i18n.language || "en";
-
     Object.values(types).forEach((genreMap) => {
       Object.values(genreMap).forEach((genreObj) => {
         genreObj.items.forEach(({ itemId }) => {
-          fetchTranslation(itemId, lang);
+          fetchTranslation(itemId, currentLang);
         });
       });
     });
-  }, [types, i18n.language]);
-
-  const getTranslatedName = (item, itemId) => {
-    const lang = i18n.language || "en";
-    const translated = translations[itemId]?.[lang]?.name;
-    const fallback = item?.name || "Unnamed product";
-    const nameToShow = translated || fallback;
-
-    return nameToShow.length > 60
-      ? `${nameToShow.substring(0, 60)}...`
-      : nameToShow;
-  };
-
-  const renderStars = (rating) => {
-    const rounded = Math.round(Number(rating) || 0);
-
-    return (
-      <div
-        style={{
-          display: "flex",
-          gap: "2px",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: "4px",
-        }}
-      >
-        {Array.from({ length: 5 }, (_, index) => (
-          <span
-            key={index}
-            style={{
-              color: index < rounded ? "#f5a623" : "#d9d9d9",
-              fontSize: "14px",
-            }}
-          >
-            ★
-          </span>
-        ))}
-      </div>
-    );
-  };
+  }, [types, currentLang, fetchTranslation]);
 
   const handleItemClick = (id) => {
     if (id) router.push(`/product/${id}`);
   };
 
   const handleCategoryClick = (category) => {
-    if (category) {
-      const formattedCategory = category.toLowerCase().replace(/\s+/g, "-");
-      router.push(`/itemOfShoes/${encodeURIComponent(formattedCategory)}`);
-    }
+    if (!category) return;
+    const formattedCategory = category.toLowerCase().replace(/\s+/g, "-");
+    router.push(`/itemOfShoes/${encodeURIComponent(formattedCategory)}`);
   };
-
-  const topicCards = useMemo(() => {
-    return Object.entries(types).flatMap(([type, genres]) =>
-      Object.keys(genres).map((genre) => ({
-        type,
-        genre,
-        key: `${type}-${genre}`,
-      }))
-    );
-  }, [types]);
-
-  const allItems = useMemo(() => {
-    return Object.values(types)
-      .flatMap((genreMap) => Object.values(genreMap))
-      .flatMap((genreObj) => genreObj.items);
-  }, [types]);
 
   if (loading && !hasCachedContent) {
     return (
-      <div style={{ padding: "20px" }}>
-        <div
-          style={{
-            display: "flex",
-            gap: "16px",
-            overflowX: "auto",
-            padding: "10px 0 20px 0",
-          }}
-        >
-          {[...Array(4)].map((_, index) => (
-            <div key={index} style={{ minWidth: "100px", textAlign: "center" }}>
-              <div
-                style={{
-                  width: "100px",
-                  height: "100px",
-                  borderRadius: "50%",
-                  margin: "0 auto 10px auto",
-                  background:
-                    "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shine 1.4s ease infinite",
-                }}
-              />
-              <div
-                style={{
-                  width: "70px",
-                  height: "12px",
-                  borderRadius: "8px",
-                  margin: "0 auto",
-                  background:
-                    "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shine 1.4s ease infinite",
-                }}
-              />
-            </div>
+      <div className="fashionkick-page">
+        <div className="fashionkick-types-row">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <TypeSkeleton key={index} />
           ))}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            overflowX: "auto",
-            padding: "10px 0 20px 0",
-          }}
-        >
-          {[...Array(4)].map((_, index) => (
-            <div
-              key={index}
-              style={{
-                minWidth: "160px",
-                height: "100px",
-                borderRadius: "10px",
-                background:
-                  "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                backgroundSize: "400% 100%",
-                animation: "shine 1.4s ease infinite",
-              }}
-            />
+        <div className="fashionkick-topic-row">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <TopicSkeleton key={index} />
           ))}
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-            gap: "12px",
-            padding: "10px 0",
-          }}
-        >
-          {[...Array(8)].map((_, cardIndex) => (
-            <div
-              key={cardIndex}
-              style={{
-                borderRadius: "16px",
-                overflow: "hidden",
-                background: "#fff",
-                border: "1px solid #eee",
-                padding: "10px",
-              }}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: "180px",
-                  borderRadius: "10px",
-                  background:
-                    "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shine 1.4s ease infinite",
-                  marginBottom: "10px",
-                }}
-              />
-              <div
-                style={{
-                  width: "60px",
-                  height: "16px",
-                  borderRadius: "8px",
-                  margin: "0 auto 10px auto",
-                  background:
-                    "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shine 1.4s ease infinite",
-                }}
-              />
-              <div
-                style={{
-                  width: "90%",
-                  height: "14px",
-                  borderRadius: "8px",
-                  margin: "0 auto 8px auto",
-                  background:
-                    "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shine 1.4s ease infinite",
-                }}
-              />
-              <div
-                style={{
-                  width: "70%",
-                  height: "14px",
-                  borderRadius: "8px",
-                  margin: "0 auto",
-                  background:
-                    "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shine 1.4s ease infinite",
-                }}
-              />
-            </div>
+        <div className="fashionkick-products-grid">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <ProductSkeleton key={index} />
           ))}
         </div>
-
-        <style jsx>{`
-          @keyframes shine {
-            0% {
-              background-position: 100% 0;
-            }
-            100% {
-              background-position: -100% 0;
-            }
-          }
-        `}</style>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="beauty-fackik">
+    <div className="fashionkick-page">
+      <section className="fashionkick-types-row">
         {mtypes.length === 0 ? (
-          <div>{t("no_types_found_fashion")}</div>
+          <div className="fashionkick-empty">{t("no_types_found_fashion")}</div>
         ) : (
           mtypes.map((typeObj, index) => (
-            <div key={typeObj?._id || index} className="type-section">
+            <div
+              key={typeObj?._id || index}
+              className="type-section"
+              onClick={() => handleCategoryClick(typeObj?.type)}
+            >
               <div className="type-image-id">
                 <img
                   src={typeObj?.image}
-                  alt={typeObj?.type}
+                  alt={typeObj?.type || "Fashion category"}
                   className="type-image-imgid"
-                  onClick={() => handleCategoryClick(typeObj?.type)}
+                  loading="lazy"
                 />
               </div>
-              <h3
-                className="type-title"
-                style={{
-                  color: "green",
-                  fontSize: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginLeft: "20px",
-                }}
-              >
-                {t(typeTranslationKeys[typeObj?.type] || typeObj?.type)}
+
+              <h3 className="type-title">
+                {t(TYPE_TRANSLATION_KEYS[typeObj?.type] || typeObj?.type)}
               </h3>
             </div>
           ))
         )}
-      </div>
+      </section>
 
-      <div
-        style={{
-          display: "flex",
-          overflowX: "auto",
-          gap: "12px",
-          padding: "10px 15px",
-          marginBottom: "20px",
-          scrollbarWidth: "none",
-        }}
+   <section className="fashionkick-topic-banner">
+  <img
+    src="https://cdn.malidag.com/themes/1760454867065-11f21540-298a-4a46-92ae-170e536f8e91.webp"
+    alt="Fashion topics"
+    className="fashionkick-topic-banner-image"
+  />
+
+  <div className="fashionkick-topic-banner-overlay" />
+
+  <div className="fashionkick-topic-banner-vertical">
+    {topicCards.map(({ type, genre, key }) => (
+      <button
+        key={key}
+        type="button"
+        className="fashionkick-topic-vertical-item"
+        onClick={() =>
+          router.push(
+            `/shoesTopTopic/${encodeURIComponent(type)}/${encodeURIComponent(genre)}`
+          )
+        }
       >
-        {topicCards.map(({ type, genre, key }) => (
-          <div
-            key={key}
-            onClick={() =>
-              router.push(
-                `/shoesTopTopic/${encodeURIComponent(type)}/${encodeURIComponent(
-                  genre
-                )}`
-              )
-            }
-            style={{
-              flex: "0 0 auto",
-              width: "160px",
-              height: "100px",
-              backgroundImage:
-                "url('https://cdn.malidag.com/themes/1760454867065-11f21540-298a-4a46-92ae-170e536f8e91.webp')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              borderRadius: "10px",
-              position: "relative",
-              cursor: "pointer",
-              color: "#fff",
-              fontWeight: "bold",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textShadow: "0 2px 4px rgba(0,0,0,0.7)",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "rgba(0,0,0,0.4)",
-                borderRadius: "10px",
-              }}
-            />
-            <span style={{ position: "relative", zIndex: 1 }}>
-              {t("top")} {t(type) || type}
-            </span>
-          </div>
-        ))}
-      </div>
+        {t(type) || type}
+      </button>
+    ))}
+  </div>
+</section>
 
-      <div className="fashionkick-products-grid">
+      <section className="fashionkick-products-grid">
         {allItems.map(({ id, item, itemId }) => {
           const reviewData = reviews[itemId];
           const averageRating = reviewData?.averageRating;
           const reviewCount = reviewData?.count || 0;
 
           return (
-            <div
+            <article
               key={id}
+              className="fashionkick-product-card"
               onClick={() => handleItemClick(id)}
-              style={{
-                background: "#fff",
-                padding: "2px",
-                width: "100%",
-                borderRadius: "8px",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
             >
-              <div className="fashionkick-product-fil">
-             <img
-  src={item?.images?.[0] || "/placeholder.png"}
-  alt={item?.name || "Product"}
-  className="fashionkick-product-image"
-/>
-</div>
-
-              <div
-                style={{
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                  marginBottom: "4px",
-                  color: "#333",
-                }}
-              >
-                ${item?.usdPrice || "0"}
+              <div className="fashionkick-product-media">
+                <img
+                  src={item?.images?.[0] || "/placeholder.png"}
+                  alt={item?.name || "Product"}
+                  className="fashionkick-product-image"
+                  loading="lazy"
+                />
               </div>
 
-              {renderStars(averageRating || 0)}
+              <div className="fashionkick-product-content">
+                <div className="fashionkick-price">
+                  ${Number(item?.usdPrice || 0).toLocaleString()}
+                </div>
 
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "#777",
-                  marginBottom: "6px",
-                  textAlign: "center",
-                }}
-              >
-                {averageRating
-                  ? `${averageRating.toFixed(1)}/5 (${reviewCount})`
-                  : "No reviews yet"}
-              </div>
+                <StarRating rating={averageRating || 0} />
 
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#555",
-                  textAlign: "center",
-                }}
-              >
-                {getTranslatedName(item, itemId)}
+                <div className="fashionkick-review-text">
+                  {averageRating
+                    ? `${averageRating.toFixed(1)}/5 (${reviewCount})`
+                    : t("no_reviews_yet") || "No reviews yet"}
+                </div>
+
+                <div className="fashionkick-name">
+                  {getTranslatedName(item, itemId)}
+                </div>
               </div>
-            </div>
+            </article>
           );
         })}
-      </div>
+      </section>
 
       <ShoeRecommended />
     </div>

@@ -1,296 +1,345 @@
-.personal-care-container {
-    margin: 0px;
-    font-family: Arial, sans-serif;
-  }
-  
-  .personal-care-title {
-    text-align: center;
-    background-color: hsl(315, 96%, 36%);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    font-size: 2rem;
-    padding: 10px;
-    margin-bottom: 20px;
-    color: white;
-  }
-
-  /* Default dot style (optional) */
-.slick-dots li button:before {
-  font-size: 10px;
-  color: #888;
-}
-
-/* On active dot */
-.slick-dots li.slick-active button:before {
-  color: #333;
-}
-
-/* ✅ Increase dot size on small screens */
-@media (max-width: 768px) {
-  .slick-dots li button:before {
-    font-size: 28px; /* Increase dot size */
-  }
-}
-
-  
-  .category-secti {
-    margin-bottom: 40px;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 20px;
-  }
-  
-  .category-tit {
-    font-size: 1.8rem;
-    color: #333;
-    margin-bottom: 15px;
-
-  }
-  
-  .type-secti {
-    margin-bottom: 20px;
-  }
-  
-  .type-tit {
-    font-size: 1.5rem;
-    color: #555;
-    margin-bottom: 10px;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-
-  }
-  
-  .items-contain {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0px;
-    justify-content: start;
-  }
-  
-  .item-ca {
-    width: 235px;
-    
-    background: #dddddd53;
-    height: 290px;
-    overflow: hidden;
-   
-    transition: transform 0.3s ease;
-    align-items: center;
-    margin-bottom: 10px;
-   
-  }
-  
-  .item-ima {
-    width: 235px;
-    height: 290px;
-  
-    align-items: center;
-    object-fit: contain;
-   
-   
-   
-   cursor: pointer;
-  
-  
-   
-  }
-  
-  .item-in {
-    padding: 10px;
-    text-align: center;
-  }
-
-  .ca{
-    background-color: white;
-    filter: brightness(1);
-   
-  }
-  .c{
-    border: 5px solid white;
-  }
-  
-  .item- {
-    font-size: 1rem;
-    margin-bottom: 5px;
-    color: black;
-    background-color: white;
-   
-    max-width: 235px;
-    max-height: 200px;
-    height: 150px;
-    margin: 0 !important;
-    cursor: pointer;
-   
-
-  }
-
-  .item-:hover {
-    font-size: 1rem;
-    margin-bottom: 5px;
-    color: rgb(211, 151, 10);
-    background-color: white;
-   
-    max-width: 235px;
-    max-height: 200px;
-    height: 150px;
-    margin: 0 !important;
-    cursor: pointer;
-   
-
-  }
-  
-  .item-pri {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: black;
-    margin-left: 5px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-  }
-  
-  .item-butt {
-    padding: 8px 12px;
-    font-size: 0.9rem;
-    color: #fff;
-    background: #ff69b4;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-  
-  .item-butt:hover {
-    background: #ff85c0;
-  }
-
-  .stars-container {
-    display: flex;
-    align-items: center;
-  }
-  
-  .star {
-    font-size: 16px;
-    color: #ddd;
-    margin-right: 2px;
-  }
-  
-  .star.filled {
-    color: #f39c12; 
-  }
-  .item-rating {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .item-crypto-pri{
-    max-width: 235px;
-    width: 235px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    color: blue;
-    font-weight: bold;
-    margin-left: 5px;
-    font-size: 14px;
-  }
-
- 
-  .crypto-icon {
-    width: 20px;
-    height: 20px;
-    margin-left: 5px;
-    vertical-align: middle;
-
-  }
-
-  .type-image-imgid {
+.women-fashion-page {
+  min-height: 100vh;
   width: 100%;
-  height: 300px; /* or less — 400px was too tall */
-  object-fit: contain;
-  border-radius: 12px;
-   transition: transform 0.3s ease; /* Optional hover effect */
+  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 30%, #faf7f8 100%);
+  color: #1f2937;
 }
 
-.type-image-imgid:hover {
-  transform: scale(1.03);
-}
-
-.type-image-id {
-  width: 100%;
+/* HEADER */
+.women-fashion-header {
   position: relative;
-  height: auto;
+  padding: 56px 20px 28px;
+  background:
+    radial-gradient(circle at top left, rgba(244, 114, 182, 0.16), transparent 35%),
+    radial-gradient(circle at top right, rgba(236, 72, 153, 0.12), transparent 30%),
+    linear-gradient(135deg, #fff6fa 0%, #ffffff 50%, #fff8fc 100%);
+}
+
+.women-fashion-header-content {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+}
+
+.women-fashion-badge {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.1);
+  color: #be185d;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.women-fashion-header h1 {
+  margin: 0 0 12px;
+  font-size: clamp(30px, 4vw, 50px);
+  line-height: 1.05;
+  font-weight: 800;
+  color: #111827;
+}
+
+.women-fashion-header p {
+  margin: 0;
+  max-width: 720px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #6b7280;
+}
+
+/* COMMON SECTION */
+.women-slider-section,
+.women-topics-section,
+.women-products-section,
+.women-recommended-section {
+  width: min(1280px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 24px 0 12px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.section-header span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.empty-state {
+  padding: 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  color: #6b7280;
+}
+
+/* SLIDER */
+.slider-card-shell {
+  padding: 6px;
+}
+
+.slider-card {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  height: 360px;
+  cursor: pointer;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.slider-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s ease;
+}
+
+.slider-card:hover .slider-card-image {
+  transform: scale(1.04);
+}
+
+.slider-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(17, 24, 39, 0.06) 0%,
+    rgba(17, 24, 39, 0.22) 45%,
+    rgba(17, 24, 39, 0.74) 100%
+  );
+  display: flex;
+  align-items: flex-end;
+}
+
+.slider-card-content {
+  padding: 22px;
+  width: 100%;
+  color: #ffffff;
+}
+
+.slider-card-content h3 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.slider-card-button {
+  border: none;
+  background: #ffffff;
+  color: #111827;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.slider-card-button:hover {
+  transform: translateY(-2px);
+  background: #fce7f3;
+}
+
+/* TOPICS */
+.women-topics-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 6px 2px 12px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.women-topics-row::-webkit-scrollbar {
+  display: none;
+}
+
+.topic-banner {
+  position: relative;
+  flex: 0 0 auto;
+  width: 180px;
+  height: 108px;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: white;
-  filter: brightness(0.880000000) contrast(1.2);
-  padding: 10px;
-  border-radius: 0px;
+  background-image: url("https://api.malidag.com/images/1752764163519-steptodown.com980265.webp");
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
 }
 
+.topic-banner:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.14);
+}
 
-  .beauty-catego {
-  display: flex;
-  gap: 10px;
-   flex-direction: row;
-  overflow-x: auto;
+.topic-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(0, 0, 0, 0.48) 100%
+  );
+}
+
+.topic-banner span {
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* PRODUCTS */
+.women-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 18px;
+}
+
+.women-product-card {
+  background: #ffffff;
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  border-radius: 22px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.women-product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.11);
+  border-color: rgba(236, 72, 153, 0.18);
+}
+
+.women-product-image-wrap {
   width: 100%;
-  height: auto;
-   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  /* Firefox */
-  scrollbar-width: none;
-  /* Chrome, Safari */
-  -ms-overflow-style: none; /* IE and Edge */
-
-}
-
-.beauty-catego::-webkit-scrollbar {
-  display: none;
-}
-
-.beauty-fackik{
-   display: flex;
-  gap: 10px;
-   flex-direction: row;
-  overflow-x: auto;
-  width: 100%;
-  height: auto;
-   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  /* Firefox */
-  scrollbar-width: none;
-  /* Chrome, Safari */
-  -ms-overflow-style: none; /* IE and Edge */
-
-}
-
-.beauty-fackik::-webkit-scrollbar {
-  display: none;
-}
-
-.type-section {
-  flex: 0 0 auto; /* prevents growing/shrinking */
-  width: 300px;    /* or whatever is slightly bigger than image */
+  height: 220px;
+  background: linear-gradient(180deg, #fffafb 0%, #f9f1f5 100%);
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 14px;
 }
 
+.women-product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.35s ease;
+}
+
+.women-product-card:hover .women-product-image {
+  transform: scale(1.05);
+}
+
+.women-product-info {
+  padding: 14px 14px 16px;
+}
+
+.women-product-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.women-product-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.women-product-old-price {
+  font-size: 13px;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.women-product-title {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #374151;
+  font-weight: 600;
+  min-height: 40px;
+}
+
+/* SKELETON */
+.skeleton-card {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.05);
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 180px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #f3f4f6, #eceff3, #f3f4f6);
+  margin-bottom: 12px;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f3f4f6, #eceff3, #f3f4f6);
+  margin-bottom: 8px;
+}
+
+.skeleton-line.short {
+  width: 45%;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.85;
+  }
+}
+
+/* SPINNER */
 .section-spinner-wrapper {
-  width: 100%;
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 40px 0;
+  justify-content: center;
+  min-height: 90px;
+  width: 100%;
 }
 
 .section-spinner {
-  width: 40px;
-  height: 40px;
-  border: 5px solid #ddd;
-  border-top: 5px solid #3498db;
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(236, 72, 153, 0.15);
+  border-top-color: #ec4899;
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -299,41 +348,264 @@
   }
 }
 
-.skeleton-card {
-  background: #fff;
+/* RECOMMENDED */
+.women-recommended-section {
+  padding-bottom: 30px;
+}
+
+/* SLICK */
+.slick-dots li button:before {
+  font-size: 10px;
+  color: #ec4899;
+  opacity: 0.35;
+}
+
+.slick-dots li.slick-active button:before {
+  color: #ec4899;
+  opacity: 1;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .women-fashion-header {
+    padding: 42px 16px 20px;
+  }
+
+  .women-slider-section,
+  .women-topics-section,
+  .women-products-section,
+  .women-recommended-section {
+    width: calc(100% - 16px);
+    padding-top: 20px;
+  }
+
+  .women-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .women-product-image-wrap {
+    height: 180px;
+  }
+
+  .slider-card {
+    height: 300px;
+  }
+
+  .section-header h2 {
+    font-size: 19px;
+  }
+}
+
+@media (max-width: 480px) {
+  .women-fashion-header h1 {
+    font-size: 28px;
+  }
+
+  .women-fashion-header p {
+    font-size: 14px;
+  }
+
+  .topic-banner {
+    width: 150px;
+    height: 95px;
+  }
+
+  .women-product-card {
+    border-radius: 18px;
+  }
+
+  .women-product-image-wrap {
+    height: 160px;
+    padding: 10px;
+  }
+
+  .women-product-info {
+    padding: 12px;
+  }
+
+  .women-product-price {
+    font-size: 16px;
+  }
+
+  .women-product-title {
+    font-size: 13px;
+    min-height: 36px;
+  }
+}
+
+.women-topics-section {
+  width: min(1280px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 24px 0 12px;
+}
+
+.topics-center-hero {
+  position: relative;
+  width: 100%;
+  height: 620px;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+}
+
+.topics-center-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.topics-center-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(17, 24, 39, 0.32) 0%,
+    rgba(17, 24, 39, 0.52) 45%,
+    rgba(17, 24, 39, 0.72) 100%
+  );
+}
+
+.topics-center-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  width: 100%;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+}
+
+.topics-center-badge {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.topics-center-content h3 {
+  margin: 0 0 10px;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.topics-center-content p {
+  margin: 0 0 22px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.topics-center-scroll {
+  width: 100%;
+  max-width: 520px;
+  max-height: 300px;
+  overflow-y: auto;
   padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #eee;
-  animation: pulse 1.5s infinite ease-in-out;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.45) transparent;
 }
 
-.skeleton-image {
-  height: 160px;
-  background: #e0e0e0;
-  border-radius: 4px;
-  margin-bottom: 8px;
+.topics-center-scroll::-webkit-scrollbar {
+  width: 8px;
 }
 
-.skeleton-line {
-  height: 14px;
-  background: #e0e0e0;
-  border-radius: 4px;
-  margin-bottom: 6px;
+.topics-center-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.skeleton-line.short {
-  width: 60%;
+.topics-center-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
 }
 
-@keyframes pulse {
-  0% {
-    background-color: #eee;
+.topics-center-item {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 16px 18px;
+  border: none;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.topics-center-item:last-child {
+  margin-bottom: 0;
+}
+
+.topics-center-item:hover {
+  transform: scale(1.02);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 768px) {
+  .topics-center-hero {
+    height: 540px;
+    border-radius: 22px;
   }
-  50% {
-    background-color: #ddd;
+
+  .topics-center-content {
+    padding: 18px;
   }
-  100% {
-    background-color: #eee;
+
+  .topics-center-scroll {
+    max-width: 100%;
+    max-height: 260px;
+  }
+
+  .topics-center-content h3 {
+    font-size: 28px;
+  }
+
+  .topics-center-content p {
+    font-size: 14px;
   }
 }
 
+@media (max-width: 480px) {
+  .topics-center-hero {
+    height: 500px;
+    border-radius: 18px;
+  }
+
+  .topics-center-badge {
+    font-size: 11px;
+    padding: 7px 12px;
+  }
+
+  .topics-center-content h3 {
+    font-size: 24px;
+  }
+
+  .topics-center-scroll {
+    max-height: 230px;
+    border-radius: 18px;
+  }
+
+  .topics-center-item {
+    padding: 14px;
+    font-size: 14px;
+    border-radius: 14px;
+  }
+}

@@ -1,117 +1,131 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useCheckoutStore } from "./checkoutStore";
 import "./topTopic.css";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import useScreenSize from "./useIsMobile";
 import axios from "axios";
 
 const BASE_URL = "https://api.malidag.com";
+const MAX_ITEMS = 100;
+const CACHED_ITEMS_COUNT = 10;
+const CACHE_KEY = "topTopic_first10";
 
 function TopTopic() {
-   const router = useRouter();
+  const router = useRouter();
+  const scrollRef = useRef(null);
   const [topItems, setTopItems] = useState([]);
   const [cryptoPrices, setCryptoPrices] = useState({});
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [reviews, setReviews] = useState({});
-  const { isMobile, isTablet, isSmallMobile, isDesktop, isVerySmall } = useScreenSize();
+  const { isMobile, isTablet, isSmallMobile, isVerySmall } = useScreenSize();
   const { setItemData } = useCheckoutStore();
 
-  const itemsPerSlide = 7;
-  const itemsPerRow = isSmallMobile || isVerySmall ? 2 : isMobile ? 3 : 7;
+  const itemWidth = isSmallMobile || isVerySmall
+    ? "calc(100% / 2)"
+    : isMobile || isTablet
+    ? "calc(100% / 3)"
+    : "calc(100% / 7)";
 
   const fetchCryptoPrices = async () => {
     try {
       const response = await fetch(`${BASE_URL}/crypto-prices`);
       const prices = await response.json();
-      setCryptoPrices(prices);
+      setCryptoPrices(prices || {});
     } catch (error) {
       console.error("Error fetching crypto prices:", error);
     }
   };
 
-  const fetchReviews = async (productId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
-    if (response.data.success) {
-      const reviewsArray = response.data.reviews || [];
-      const totalRating = reviewsArray.reduce((acc, review) => {
-        let rating = parseFloat(review.rating);
-        return acc + (isNaN(rating) ? 4 : rating);
-      }, 0);
-      const averageRating = reviewsArray.length
-        ? (totalRating / reviewsArray.length).toFixed(2)
-        : null;
-
-      setReviews((prevReviews) => ({
-        ...prevReviews,
-        [productId]: { averageRating, reviewsArray },
-      }));
-    }
-  } catch (error) {
-    if (error.response && error.response.status === 404) {
-      // ✅ No reviews found, just skip
-      setReviews((prevReviews) => ({
-        ...prevReviews,
-        [productId]: { averageRating: null, reviewsArray: [] },
-      }));
-    } else {
-      console.error("Error fetching reviews:", error);
-    }
-  }
-};
-
-
- useEffect(() => {
-  const fetchTopItems = async () => {
+  const fetchReviewsForItems = async (items) => {
     try {
-      const response = await fetch(`${BASE_URL}/top-items?limit=100`);
-      const sortedItems = await response.json();
+      await Promise.all(
+        items.map(async (item) => {
+          const productId = item.itemId;
+          if (!productId) return;
 
-      setTopItems(sortedItems);
+          try {
+            const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
 
-      // Fetch reviews in parallel
-      await Promise.all(sortedItems.map((item) => fetchReviews(item.itemId)));
+            if (response.data.success) {
+              const reviewsArray = response.data.reviews || [];
+              const totalRating = reviewsArray.reduce((acc, review) => {
+                const rating = parseFloat(review.rating);
+                return acc + (isNaN(rating) ? 4 : rating);
+              }, 0);
 
-      // Collect crypto symbols
-      const symbols = [
-        ...new Set(
-          sortedItems
-            .map((item) => item.item.cryptocurrency && `${item.item.cryptocurrency}USDT`)
-            .filter(Boolean)
-        ),
-      ];
+              const averageRating = reviewsArray.length
+                ? (totalRating / reviewsArray.length).toFixed(2)
+                : null;
 
-      await fetchCryptoPrices(symbols);
+              setReviews((prevReviews) => ({
+                ...prevReviews,
+                [productId]: { averageRating, reviewsArray },
+              }));
+            }
+          } catch (error) {
+            if (error.response && error.response.status === 404) {
+              setReviews((prevReviews) => ({
+                ...prevReviews,
+                [productId]: { averageRating: null, reviewsArray: [] },
+              }));
+            } else {
+              console.error("Error fetching reviews:", error);
+            }
+          }
+        })
+      );
     } catch (error) {
-      console.error("❌ Error fetching top items:", error);
+      console.error("Error fetching review batch:", error);
     }
   };
 
-  fetchTopItems();
-}, []);
+  useEffect(() => {
+    const loadCachedItems = () => {
+      try {
+        const cachedItems = localStorage.getItem(CACHE_KEY);
+        if (!cachedItems) return;
 
+        const parsedItems = JSON.parse(cachedItems);
+        if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+          setTopItems(parsedItems);
+        }
+      } catch (error) {
+        console.error("Error reading top-topic cache:", error);
+      }
+    };
 
-  const totalSlides = Math.ceil(topItems.length / itemsPerSlide);
+    const fetchTopItems = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/top-items?limit=${MAX_ITEMS}`);
+        const sortedItems = await response.json();
 
-  const handleNextSlide = () => {
-    setCurrentSlide((prevSlide) => (prevSlide + 1) % totalSlides);
-  };
+        const freshItems = Array.isArray(sortedItems) ? sortedItems : [];
+        setTopItems(freshItems);
 
-  const handlePrevSlide = () => {
-    setCurrentSlide((prevSlide) => (prevSlide === 0 ? totalSlides - 1 : prevSlide - 1));
-  };
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify(freshItems.slice(0, CACHED_ITEMS_COUNT))
+        );
 
-  const startIdx = currentSlide * itemsPerSlide;
-  const currentItems = isDesktop
-    ? topItems.slice(startIdx, startIdx + itemsPerSlide)
-    : topItems;
+        await Promise.all([
+          fetchReviewsForItems(freshItems),
+          fetchCryptoPrices(),
+        ]);
+      } catch (error) {
+        console.error("Error fetching top items:", error);
+      }
+    };
+
+    loadCachedItems();
+    fetchTopItems();
+  }, []);
 
   const convertToCrypto = (usdPrice, crypto) => {
-    if (!cryptoPrices[crypto]) return null;
+    if (!crypto || !cryptoPrices[crypto]) return null;
     const cryptoPrice = parseFloat(cryptoPrices[crypto]);
+    if (!cryptoPrice || isNaN(cryptoPrice)) return null;
     return (usdPrice / cryptoPrice).toFixed(2);
   };
 
@@ -121,41 +135,59 @@ function TopTopic() {
     }
   };
 
+  const scrollCarousel = (direction) => {
+    if (!scrollRef.current) return;
+
+    const container = scrollRef.current;
+    const scrollAmount = container.clientWidth * 0.8;
+
+    container.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <div className="top-topic-caou">
-      <div
-        className="carousel-sli"
-        style={{
-          overflowX: isMobile || isSmallMobile || isVerySmall || isTablet ? "auto" : "hidden",
-        }}
-      >
-        {currentItems.map((item) => {
+      <div ref={scrollRef} className="carousel-sli">
+        {topItems.map((item, index) => {
           const ratingObj = reviews[item.itemId];
           const averageRating = ratingObj ? ratingObj.averageRating : null;
+          const cryptoValue =
+            item.item?.usdPrice && item.item?.cryptocurrency
+              ? convertToCrypto(Number(item.item.usdPrice), item.item.cryptocurrency)
+              : null;
 
           return (
-            <div key={item.id}>
+            <div
+              key={item.id || index}
+              className="top-topic-card"
+              style={{ width: itemWidth, flex: "0 0 auto" }}
+            >
               <div className="carousel-i">
                 <img
-                  src={item.item.images[0]}
-                  alt={item.item.name}
+                  src={item.item?.images?.[0] || "/fallback.png"}
+                  alt={item.item?.name || "Top item"}
                   onClick={() => handleItemClick(item.id)}
                   className="carousel-im"
                   style={{ cursor: "pointer" }}
                 />
               </div>
-              <div className="item-pr">${item.item.usdPrice}</div>
+
+              <div className="item-pr">${item.item?.usdPrice}</div>
+
               <div className="recommended-price">
-                {item.item.usdPrice && item.item.cryptocurrency
-                  ? `${convertToCrypto(Number(item.item.usdPrice), item.item.cryptocurrency)} ${item.item.cryptocurrency}`
+                {cryptoValue
+                  ? `${cryptoValue} ${item.item.cryptocurrency}`
                   : "Price in crypto N/A"}
               </div>
+
               <div
                 className="item-type-stars"
                 onClick={() => {
-    setItemData(item); // 🔥 Save to global store
-    router.push("/reviewPage");
-  }}
+                  setItemData(item);
+                  router.push("/reviewPage");
+                }}
                 title="View reviews of this item"
               >
                 {averageRating
@@ -163,19 +195,19 @@ function TopTopic() {
                     "☆".repeat(5 - Math.round(averageRating))
                   : "No rating"}
               </div>
+
               <div onClick={() => handleItemClick(item.id)} className="item-n">
-                {item.item.name}
+                {item.item?.name}
               </div>
             </div>
           );
         })}
       </div>
-      {isDesktop && topItems.length > itemsPerSlide && (
-        <div className="carousel-arr">
-          <LeftOutlined onClick={handlePrevSlide} className="arrow-but" />
-          <RightOutlined onClick={handleNextSlide} className="arrow-but" />
-        </div>
-      )}
+
+      <div className="carousel-arr">
+        <LeftOutlined onClick={() => scrollCarousel("left")} className="arrow-but" />
+        <RightOutlined onClick={() => scrollCarousel("right")} className="arrow-but" />
+      </div>
     </div>
   );
 }

@@ -8,7 +8,6 @@ const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
 
 export const dynamic = "force-dynamic";
 
-// ✅ SEO Metadata with translations
 export async function generateMetadata() {
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
@@ -66,23 +65,33 @@ export async function generateMetadata() {
 
 async function getData() {
   const [categoriesRes, itemsRes, cryptoRes] = await Promise.all([
-    fetch(`${BASE_URL}/categories/MenFashion`).then((res) => res.json()),
-    fetch(`${BASE_URL}/items`).then((res) => res.json()),
-    fetch(CRYPTO_URL).then((res) => res.json()),
+    fetch(`${BASE_URL}/categories/MenFashion`, { cache: "no-store" }),
+    fetch(`${BASE_URL}/items`, { cache: "no-store" }),
+    fetch(CRYPTO_URL, { cache: "no-store" }),
   ]);
 
-  const mtypes = categoriesRes;
-  const allItems = itemsRes.items;
-  const cryptoPrices = cryptoRes;
+  if (!categoriesRes.ok || !itemsRes.ok || !cryptoRes.ok) {
+    throw new Error("Failed to fetch one or more API endpoints");
+  }
+
+  const [categoriesData, itemsData, cryptoData] = await Promise.all([
+    categoriesRes.json(),
+    itemsRes.json(),
+    cryptoRes.json(),
+  ]);
+
+  const mtypes = Array.isArray(categoriesData) ? categoriesData : [];
+  const allItems = Array.isArray(itemsData) ? itemsData : itemsData?.items || [];
+  const cryptoPrices = cryptoData ?? [];
 
   const menItems = allItems.filter(
     (item) =>
-      (item.item.genre || "").toLowerCase().includes("men") &&
-      (item.category || "").toLowerCase() !== "beauty"
+      (item?.item?.genre || "").toLowerCase().includes("men") &&
+      (item?.category || "").toLowerCase() !== "beauty"
   );
 
   const groupedTypes = menItems.reduce((acc, item) => {
-    const type = item.item.type || "Other";
+    const type = item?.item?.type || "Other";
     if (!acc[type]) acc[type] = [];
     acc[type].push(item);
     return acc;
@@ -91,7 +100,6 @@ async function getData() {
   return { mtypes, groupedTypes, cryptoPrices };
 }
 
-// ✅ Page
 export default async function Page() {
   const { mtypes, groupedTypes, cryptoPrices } = await getData();
 

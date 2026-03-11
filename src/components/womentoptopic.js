@@ -1,103 +1,156 @@
-"use client"
+"use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useRouter, useParams } from "next/navigation";
 import "./WomenTopTopic.css";
-import AnalyseReview from "./analyseReview"; // Import your AnalyseReview component
+import AnalyseReview from "./analyseReview";
 
 const BASE_URL = "https://api.malidag.com";
 
+const normalize = (value = "") =>
+  String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/-/g, " ")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ");
+
+const formatTypeLabel = (value = "") =>
+  String(value)
+    .replace(/-/g, " ")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 
 const WomenTopTopic = () => {
-const params = useParams()
+  const params = useParams();
   const router = useRouter();
-  const { type } = params
+  const type = params?.type || "";
+
   const [topBeautyItems, setTopBeautyItems] = useState([]);
-  const [selectedItem, setSelectedItem] = useState(null); // Store the selected item (instead of just itemId)
+  const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemId, setSelectedItemId] = useState(null);
-  const [selectedItemProductId, setSelectedItemProductId] = useState(null); // Store `itemId` for AnalyseReview
+  const [selectedItemProductId, setSelectedItemProductId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-   const [reviews, setReviews] = useState({}); // Store reviews data
- 
+  const [reviews, setReviews] = useState({});
   const [loading, setLoading] = useState(true);
+
+  const readableType = useMemo(() => formatTypeLabel(type), [type]);
+
+  const fetchReviews = async (productId) => {
+    if (!productId) return;
+
+    try {
+      const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
+
+      if (response?.data?.success) {
+        const reviewsArray = response.data.reviews || [];
+
+        const totalRating = reviewsArray.reduce((acc, review) => {
+          const rating = parseFloat(review?.rating);
+          return acc + (isNaN(rating) ? 4 : rating);
+        }, 0);
+
+        const averageRating = reviewsArray.length
+          ? (totalRating / reviewsArray.length).toFixed(2)
+          : null;
+
+        setReviews((prevReviews) => ({
+          ...prevReviews,
+          [productId]: {
+            averageRating,
+            reviewsArray,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchTopBeautyItems = async () => {
       try {
+        setLoading(true);
+
         const response = await axios.get(`${BASE_URL}/items`);
-        const data = response.data.items;
 
+        const data = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.data?.items)
+          ? response.data.items
+          : [];
 
-        // Filter items by type and where sold >= 100
-        const filteredItems = data.filter(
-          (item) => item.category !== "Beauty" && item.item.genre === "women" && item.item.type.toLowerCase() === type.toLowerCase() && item.item.sold >= 100
-        );
+        const normalizedType = normalize(type);
+
+        const filteredItems = data
+          .filter((itemData) => {
+            const genre = normalize(itemData?.item?.genre);
+            const itemType = normalize(itemData?.item?.type);
+            const sold = Number(itemData?.item?.sold || 0);
+
+            return genre === "women" && itemType === normalizedType && sold >= 100;
+          })
+          .sort((a, b) => Number(b?.item?.sold || 0) - Number(a?.item?.sold || 0));
+
         setTopBeautyItems(filteredItems);
 
-          filteredItems.forEach((itemData) => {
-  if (itemData?.itemId) {
-    fetchReviews(itemData.itemId);
-  }
-});
+        filteredItems.forEach((itemData) => {
+          if (itemData?.itemId) {
+            fetchReviews(itemData.itemId);
+          }
+        });
       } catch (error) {
-        console.error("Error fetching top beauty items:", error);
+        console.error("Error fetching top women items:", error);
+        setTopBeautyItems([]);
       } finally {
         setLoading(false);
       }
     };
 
-   
-
     if (type) {
       fetchTopBeautyItems();
-      
+    } else {
+      setTopBeautyItems([]);
+      setLoading(false);
     }
   }, [type]);
 
-   // Fetch reviews from the endpoint
-     const fetchReviews = async (productId) => {
-      try {
-        const response = await axios.get(`https://api.malidag.com/get-reviews/${productId}`);
-        if (response.data.success) {
-         
-          const reviewsArray = response.data.reviews || [];
-          const totalRating = reviewsArray.reduce((acc, review) => {
-            let rating = parseFloat(review.rating);
-            return acc + (isNaN(rating) ? 4 : rating); // If rating is invalid, treat as 5 stars
-          }, 0);
-          const averageRating = reviewsArray.length ? (totalRating / reviewsArray.length).toFixed(2) : null;
-  
-          setReviews((prevReviews) => ({
-            ...prevReviews,
-            [productId]: { averageRating, reviewsArray },
-          }));
-  
-        }
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
+  useEffect(() => {
+    const handleCloseOnOutsideClick = (event) => {
+      if (
+        modalOpen &&
+        !event.target.closest(".modal-content") &&
+        !event.target.closest(".item-starstop")
+      ) {
+        closeModal();
       }
     };
-  
 
-  const openModal = (item, event) => {
-    setSelectedItem(item); // Store the entire item object
-    setSelectedItemId(item.id); // Store only the ID for navigation
-    setSelectedItemProductId(item.itemId); // Store `itemId` for AnalyseReview
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    };
 
-    // Get button position relative to the page
-    const rect = event.target.getBoundingClientRect();
-    setModalPosition({
-      top: rect.top + window.scrollY + 30, 
-      left: rect.left + window.scrollX + 10,
-    });
+    document.addEventListener("mousedown", handleCloseOnOutsideClick);
+    document.addEventListener("keydown", handleEscape);
 
-    setModalOpen(true);
+    return () => {
+      document.removeEventListener("mousedown", handleCloseOnOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [modalOpen]);
+
+  const openModal = (item) => {
+  setSelectedItem(item);
+  setSelectedItemId(item?.id || null);
+  setSelectedItemProductId(item?.itemId || null);
+  setModalOpen(true);
 };
 
-
-const closeModal = () => {
+  const closeModal = () => {
+    setSelectedItem(null);
     setSelectedItemId(null);
     setSelectedItemProductId(null);
     setModalOpen(false);
@@ -105,6 +158,7 @@ const closeModal = () => {
 
   const handleRatingClick = (rating) => {
     console.log(`User selected ${rating} stars for product ID: ${selectedItemId}`);
+
     if (selectedItemId) {
       router.push(`/product/${selectedItemId}`);
     } else {
@@ -112,85 +166,113 @@ const closeModal = () => {
     }
   };
 
-
-  if (loading) return <div className="loading-message">Loading {type} Top Items...</div>;
+  if (loading) {
+    return (
+      <div className="beauty-top-container">
+        <h2 className="beauty-top-title">{readableType} - Top Items</h2>
+        <div className="loading-message">Loading {readableType} top items...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="beauty-top-container">
-    <h2 className="beauty-top-title">{type.replace("-", " ")} - Top Items</h2>
-    <div className="ms-grid">
-      {topBeautyItems.length === 0 ? (
-        <p>No top-selling items found for {type}.</p>
-      ) : (
-        topBeautyItems.map((itemData) => {
-           const { id, itemId, item } = itemData;
-           const reviewsData = reviews[itemId] || {}; // Ensure it exists
-            const finalRating = reviewsData ? reviewsData.averageRating : "No rating";
+      <h2 className="beauty-top-title">{readableType} - Top Items</h2>
+
+      <div className="ms-grid">
+        {topBeautyItems.length === 0 ? (
+          <div className="empty-state">
+            <p>No top-selling items found for {readableType}.</p>
+          </div>
+        ) : (
+          topBeautyItems.map((itemData) => {
+            const { id, itemId, item } = itemData;
+            const reviewsData = reviews[itemId] || {};
+            const finalRating = reviewsData?.averageRating || null;
+            const soldCount = Number(item?.sold || 0);
+            const imageSrc = item?.images?.[0] || itemData?.image_url || "";
 
             return (
-           
-          <div
-            key={id}
-            className="m-card"
-           
-          >
-            {/* Image on the left */}
-            <img
-              src={item.images[0]}
-              alt={item.name}
-              className="m-image"
-              onClick={() => router.push(`/product/${id}`)}
-            />
+              <div key={id} className="m-card">
+                <div className="m-image-wrap">
+                  <img
+                    src={imageSrc}
+                    alt={item?.name || "Product image"}
+                    className="m-image"
+                    onClick={() => router.push(`/product/${id}`)}
+                  />
+                </div>
 
-            {/* Details on the right */}
-            <div className="m-details">
-                <div className="name-rating-wrapper">
-  <div className="m-name" onClick={() => router.push(`/product/${id}`)}>
-    {item.name.length > 80 ? item.name.slice(0, 80) + '...' : item.name}
-  </div>
-  <div
-    className="item-starstop"
-    onClick={(e) => openModal({ id, itemId, item }, e)}
-  >
-    {finalRating
-      ? "★".repeat(Math.round(finalRating)) +
-        "☆".repeat(5 - Math.round(finalRating))
-      : "No rating"}
-  </div>
-</div>
+                <div className="m-details">
+                  <div className="name-rating-wrapper">
+                    <div
+                      className="m-name"
+                      onClick={() => router.push(`/product/${id}`)}
+                      title={item?.name || ""}
+                    >
+                      {item?.name?.length > 80
+                        ? `${item.name.slice(0, 80)}...`
+                        : item?.name || "Unnamed product"}
+                    </div>
 
-              <p className="m-sold">Sold: {item.sold} items</p>
-             
-            </div>
-           
-          </div>
-            )
-        })
-      )}
-    </div>
-     {/* Modal (Always Appears Next to Clicked Button) */}
-     {modalOpen && selectedItemProductId && (
-        <div
-          className="modal-content"
-          style={{
-            position: "absolute",
-            top: `${modalPosition.top}px`,
-            left: `${modalPosition.left}px`,
-            background: "white",
-            padding: "10px",
-            borderRadius: "8px",
-            boxShadow: "0px 4px 8px rgba(0,0,0,0.2)",
-            zIndex: 1000,
-            color: "black"
-          }}
-        >
-          <span className="close-btn" onClick={closeModal}>&times;</span>
-          <AnalyseReview productId={selectedItemProductId} id={selectedItemId} onRatingClick={handleRatingClick} />
+                   <button
+                    type="button"
+                    className="item-starstop"
+                    onClick={() => openModal({ id, itemId, item })}
+                    title="View reviews"
+                  >
+                    {finalRating
+                      ? "★".repeat(Math.round(finalRating)) +
+                        "☆".repeat(5 - Math.round(finalRating))
+                      : "No rating"}
+                  </button>
+                  </div>
+
+                  <div className="m-meta-row">
+                    <p className="m-sold">Sold: {soldCount} items</p>
+                    {!!item?.usdPrice && <p className="m-price">${item.usdPrice}</p>}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {modalOpen && selectedItemProductId && (
+  <div className="review-modal-overlay" onClick={closeModal}>
+    <div
+      className="review-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="review-modal-close"
+        onClick={closeModal}
+        aria-label="Close modal"
+      >
+        ×
+      </button>
+
+      {selectedItem?.item?.name && (
+        <div className="review-modal-header">
+          <h3 className="review-modal-title">{selectedItem.item.name}</h3>
+          <p className="review-modal-subtitle">Customer reviews and rating details</p>
         </div>
       )}
-  </div>
-);
-};
 
+      <div className="review-modal-body">
+        <AnalyseReview
+          productId={selectedItemProductId}
+          id={selectedItemId}
+          onRatingClick={handleRatingClick}
+        />
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+  );
+};
 
 export default WomenTopTopic;

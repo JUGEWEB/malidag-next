@@ -363,131 +363,171 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
   };
 
   if (loading && !hasCachedContent) {
-    return (
-      <div className="fashionkick-page">
-        <div className="fashionkick-types-row">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <TypeSkeleton key={index} />
-          ))}
-        </div>
-
-        <div className="fashionkick-topic-row">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <TopicSkeleton key={index} />
-          ))}
-        </div>
-
-        <div className="fashionkick-products-grid">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <ProductSkeleton key={index} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="fashionkick-page">
-      <section className="fashionkick-types-row">
-        {mtypes.length === 0 ? (
-          <div className="fashionkick-empty">{t("no_types_found_fashion")}</div>
-        ) : (
-          mtypes.map((typeObj, index) => (
-            <div
-              key={typeObj?._id || index}
-              className="type-section"
-              onClick={() => handleCategoryClick(typeObj?.type)}
-            >
-              <div className="type-image-id">
-                <img
-                  src={typeObj?.image}
-                  alt={typeObj?.type || "Fashion category"}
-                  className="type-image-imgid"
-                  loading="lazy"
-                />
-              </div>
-
-              <h3 className="type-title">
-                {t(TYPE_TRANSLATION_KEYS[typeObj?.type] || typeObj?.type)}
-              </h3>
-            </div>
-          ))
-        )}
+    <div className="fashionkick-slider">
+      <section className="fashionkick-panel fashionkick-panel-dark">
+        <div className="fashionkick-page-inner">
+          <div className="fashionkick-types-row">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <TypeSkeleton key={index} />
+            ))}
+          </div>
+        </div>
       </section>
 
-   <section className="fashionkick-topic-banner">
-  <img
-    src="https://cdn.malidag.com/themes/1760454867065-11f21540-298a-4a46-92ae-170e536f8e91.webp"
-    alt="Fashion topics"
-    className="fashionkick-topic-banner-image"
-  />
-
-  <div className="fashionkick-topic-banner-overlay" />
-
-  <div className="fashionkick-topic-banner-vertical">
-    {topicCards.map(({ type, genre, key }) => (
-      <button
-        key={key}
-        type="button"
-        className="fashionkick-topic-vertical-item"
-        onClick={() =>
-          router.push(
-            `/shoesTopTopic/${encodeURIComponent(type)}/${encodeURIComponent(genre)}`
-          )
-        }
-      >
-        {t(type) || type}
-      </button>
-    ))}
-  </div>
-</section>
-
-      <section className="fashionkick-products-grid">
-        {allItems.map(({ id, item, itemId }) => {
-          const reviewData = reviews[itemId];
-          const averageRating = reviewData?.averageRating;
-          const reviewCount = reviewData?.count || 0;
-
-          return (
-            <article
-              key={id}
-              className="fashionkick-product-card"
-              onClick={() => handleItemClick(id)}
-            >
-              <div className="fashionkick-product-media">
-                <img
-                  src={item?.images?.[0] || "/placeholder.png"}
-                  alt={item?.name || "Product"}
-                  className="fashionkick-product-image"
-                  loading="lazy"
-                />
-              </div>
-
-              <div className="fashionkick-product-content">
-                <div className="fashionkick-price">
-                  ${Number(item?.usdPrice || 0).toLocaleString()}
-                </div>
-
-                <StarRating rating={averageRating || 0} />
-
-                <div className="fashionkick-review-text">
-                  {averageRating
-                    ? `${averageRating.toFixed(1)}/5 (${reviewCount})`
-                    : t("no_reviews_yet") || "No reviews yet"}
-                </div>
-
-                <div className="fashionkick-name">
-                  {getTranslatedName(item, itemId)}
-                </div>
-              </div>
-            </article>
-          );
-        })}
+      <section className="fashionkick-panel fashionkick-panel-dark">
+        <div className="fashionkick-page-inner">
+          <div className="fashionkick-topic-row">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <TopicSkeleton key={index} />
+            ))}
+          </div>
+        </div>
       </section>
 
-      <ShoeRecommended />
+      <section className="fashionkick-catalog-section">
+        <div className="fashionkick-page-inner">
+          <div className="fashionkick-products-grid">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <ProductSkeleton key={index} />
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
+}
+
+return (
+  <div className="fashionkick-slider">
+    <section className="fashionkick-panel fashionkick-panel-dark fashionkick-hero-panel">
+      <div className="fashionkick-page-inner">
+        <section className="fashionkick-hero-intro">
+          <span className="fashionkick-hero-label">Luxury Footwear</span>
+          <h1 className="fashionkick-hero-heading">Curated Styles For Every Step</h1>
+          <p className="fashionkick-hero-subtext">
+            Explore premium sneakers and boots crafted for bold looks, everyday comfort, and modern elegance.
+          </p>
+        </section>
+
+        <section className="fashionkick-types-row">
+          {mtypes.length === 0 ? (
+            <div className="fashionkick-empty">{t("no_types_found_fashion")}</div>
+          ) : (
+            mtypes.map((typeObj, index) => (
+              <div
+                key={typeObj?._id || index}
+                className="type-section"
+                onClick={() => handleCategoryClick(typeObj?.type)}
+              >
+                <div className="type-image-id">
+                  <img
+                    src={typeObj?.image}
+                    alt={typeObj?.type || "Fashion category"}
+                    className="type-image-imgid"
+                    loading="lazy"
+                  />
+                </div>
+
+                <h3 className="type-title">
+                  {t(TYPE_TRANSLATION_KEYS[typeObj?.type] || typeObj?.type)}
+                </h3>
+              </div>
+            ))
+          )}
+        </section>
+      </div>
+    </section>
+
+    <section className="fashionkick-panel fashionkick-panel-dark fashionkick-banner-panel">
+      <div className="fashionkick-page-inner">
+        <section className="fashionkick-topic-banner">
+          <img
+            src="https://cdn.malidag.com/themes/1773233374853-869b7d85-8687-4f39-8301-83679b8afd83.webp"
+            alt="Fashion topics"
+            className="fashionkick-topic-banner-image"
+          />
+
+          <div className="fashionkick-topic-banner-overlay" />
+
+          <div className="fashionkick-topic-banner-vertical">
+            <span className="fashionkick-badge">Premium Collection</span>
+            <h2 className="fashionkick-banner-title">Step Into Luxury</h2>
+            <p className="fashionkick-banner-text">
+              Discover best-selling sneakers and boots designed for style, comfort, and confidence.
+            </p>
+
+            {topicCards.map(({ type, genre, key }) => (
+              <button
+                key={key}
+                type="button"
+                className="fashionkick-topic-vertical-item"
+                onClick={() =>
+                  router.push(
+                    `/shoesTopTopic/${encodeURIComponent(type)}/${encodeURIComponent(genre)}`
+                  )
+                }
+              >
+                {t(type) || type}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section className="fashionkick-catalog-section">
+      <div className="fashionkick-page-inner">
+        <section className="fashionkick-products-grid">
+          {allItems.map(({ id, item, itemId }) => {
+            const reviewData = reviews[itemId];
+            const averageRating = reviewData?.averageRating;
+            const reviewCount = reviewData?.count || 0;
+
+            return (
+              <article
+                key={id}
+                className="fashionkick-product-card"
+                onClick={() => handleItemClick(id)}
+              >
+                <div className="fashionkick-product-media">
+                  <img
+                    src={item?.images?.[0] || "/placeholder.png"}
+                    alt={item?.name || "Product"}
+                    className="fashionkick-product-image"
+                    loading="lazy"
+                  />
+                </div>
+
+                <div className="fashionkick-product-content">
+                  <div className="fashionkick-price">
+                    ${Number(item?.usdPrice || 0).toLocaleString()}
+                  </div>
+
+                  <StarRating rating={averageRating || 0} />
+
+                  <div className="fashionkick-review-text">
+                    {averageRating
+                      ? `${averageRating.toFixed(1)}/5 (${reviewCount})`
+                      : t("no_reviews_yet") || "No reviews yet"}
+                  </div>
+
+                  <div className="fashionkick-name">
+                    {getTranslatedName(item, itemId)}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+
+        <div className="fashionkick-recommended-wrap">
+          <ShoeRecommended />
+        </div>
+      </div>
+    </section>
+  </div>
+);
 }
 
 export default FashionKick;

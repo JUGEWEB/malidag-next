@@ -1,650 +1,607 @@
-.fashionkick-page {
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.fashionkick-slider {
+  height: 100vh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  background: #111111;
+}
+
+.fashionkick-page-inner {
   width: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(255, 214, 229, 0.18), transparent 26%),
-    radial-gradient(circle at top right, rgba(206, 232, 255, 0.16), transparent 24%),
-    linear-gradient(180deg, #fffdfd 0%, #ffffff 38%, #fafafa 100%);
-  color: #121212;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
-/* ---------- shared ---------- */
-
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(240, 240, 240, 0.9) 20%,
-    rgba(226, 226, 226, 0.95) 50%,
-    rgba(240, 240, 240, 0.9) 80%
-  );
-  background-size: 300% 100%;
-  animation: shine 1.3s linear infinite;
+/* =========================
+   SNAP PANELS
+========================= */
+.fashionkick-panel {
+  min-height: 150vh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  padding: 28px 0;
 }
 
-@keyframes shine {
-  0% {
-    background-position: 120% 0;
-  }
-  100% {
-    background-position: -120% 0;
-  }
+.fashionkick-panel-dark {
+  background: linear-gradient(180deg, #0f0f10 0%, #151515 35%, #111111 100%);
+  color: #ffffff;
 }
 
-.fashionkick-empty {
-  padding: 14px 18px;
-  color: #7a7a7a;
-  font-size: 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+.fashionkick-hero-panel .fashionkick-page-inner,
+.fashionkick-banner-panel .fashionkick-page-inner {
+  width: 100%;
 }
 
-/* ---------- types ---------- */
+/* =========================
+   HERO
+========================= */
+.fashionkick-hero-intro {
+  max-width: 760px;
+  margin: 0 auto 30px;
+  text-align: center;
+}
 
+.fashionkick-hero-label {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 224, 180, 0.1);
+  border: 1px solid rgba(255, 224, 180, 0.16);
+  color: #ffe0b4;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.fashionkick-hero-heading {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.fashionkick-hero-subtext {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* =========================
+   CATEGORY SLIDES
+========================= */
 .fashionkick-types-row {
   display: flex;
-  gap: 18px;
+  gap: 22px;
   overflow-x: auto;
-  padding: 22px 18px 18px;
-  scrollbar-width: none;
-  scroll-behavior: smooth;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
 }
 
 .fashionkick-types-row::-webkit-scrollbar {
-  display: none;
+  height: 8px;
+}
+
+.fashionkick-types-row::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
 }
 
 .type-section {
-  flex: 0 0 auto;
-  width: 220px;
-  cursor: pointer;
+  min-width: 260px;
+  flex: 0 0 260px;
+  scroll-snap-align: start;
   position: relative;
-}
-
-.type-image-id {
-  width: 100%;
-  height: 310px;
-  border-radius: 26px;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(245, 245, 245, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 28px;
+  cursor: pointer;
+  min-height: 320px;
+  background: linear-gradient(180deg, #1c1c1d 0%, #121212 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 10px 30px rgba(17, 17, 17, 0.08),
-    0 2px 8px rgba(17, 17, 17, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition:
-    transform 0.35s ease,
-    box-shadow 0.35s ease,
-    border-color 0.35s ease;
-  position: relative;
+    transform 0.45s ease,
+    box-shadow 0.45s ease,
+    border-color 0.45s ease;
 }
 
-.type-image-id::after {
+.type-section::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.02),
-    rgba(255, 255, 255, 0.08)
-  );
-  pointer-events: none;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 10%, rgba(0, 0, 0, 0.08) 45%, rgba(0, 0, 0, 0.15) 100%);
+  z-index: 1;
 }
 
-.type-section:hover .type-image-id {
-  transform: translateY(-8px) scale(1.01);
-  border-color: rgba(255, 255, 255, 0.95);
+.type-section::after {
+  content: "";
+  position: absolute;
+  inset: auto auto 0 0;
+  width: 100%;
+  height: 45%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  z-index: 1;
+}
+
+.type-section:hover {
+  transform: translateY(-10px) scale(1.01);
   box-shadow:
-    0 20px 40px rgba(17, 17, 17, 0.12),
-    0 8px 18px rgba(17, 17, 17, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    0 22px 60px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 215, 160, 0.14);
+  border-color: rgba(255, 215, 160, 0.22);
+}
+
+.type-image-id {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .type-image-imgid {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition:
-    transform 0.55s ease,
-    filter 0.4s ease;
   display: block;
+  transform: scale(1);
+  transition: transform 0.8s ease;
+  filter: saturate(1.03) contrast(1.02);
 }
 
 .type-section:hover .type-image-imgid {
   transform: scale(1.08);
-  filter: saturate(1.05) contrast(1.02);
 }
 
 .type-title {
-  margin-top: 12px;
-  font-size: 15px;
-  font-weight: 800;
-  text-align: center;
-  color: #171717;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
-}
-
-.skeleton-type-title {
-  width: 70%;
-  height: 14px;
-  border-radius: 999px;
-  margin: 14px auto 0;
-}
-
-/* ---------- topic row ---------- */
-
-.fashionkick-topic-row {
-  display: flex;
-  overflow-x: auto;
-  gap: 14px;
-  padding: 6px 18px 24px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.fashionkick-topic-row::-webkit-scrollbar {
-  display: none;
-}
-
-.fashionkick-topic-card {
-  flex: 0 0 auto;
-  width: 180px;
-  height: 112px;
-  border-radius: 22px;
-  position: relative;
-  cursor: pointer;
-  color: #fff;
-  font-weight: 700;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.12),
-    0 3px 8px rgba(0, 0, 0, 0.06);
-  transition:
-    transform 0.28s ease,
-    box-shadow 0.28s ease,
-    filter 0.28s ease;
-  padding: 16px;
-}
-
-.fashionkick-topic-card:hover {
-  transform: translateY(-5px) scale(1.01);
-  box-shadow:
-    0 18px 34px rgba(0, 0, 0, 0.16),
-    0 6px 12px rgba(0, 0, 0, 0.08);
-  filter: saturate(1.05);
-}
-
-.fashionkick-topic-card::before {
-  content: "";
   position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(to top, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.2)),
-    linear-gradient(to right, rgba(255, 255, 255, 0.04), transparent);
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2;
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 8px 24px rgba(0, 0, 0, 0.28);
 }
 
-.fashionkick-topic-card span {
-  position: relative;
-  z-index: 1;
-  font-size: 15px;
-  line-height: 1.35;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+.type-section .type-title::before {
+  content: "Collection";
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 230, 190, 0.86);
+  margin-bottom: 6px;
 }
 
-.topic-skeleton {
-  background-image: none !important;
-  border-radius: 22px;
+.fashionkick-empty {
+  width: 100%;
+  text-align: center;
+  padding: 28px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-/* ---------- banner ---------- */
-
+/* =========================
+   BANNER PANEL
+========================= */
 .fashionkick-topic-banner {
   position: relative;
-  width: calc(100% - 36px);
-  height: 440px;
   overflow: hidden;
-  margin: 8px auto 28px;
-  border-radius: 30px;
+  border-radius: 34px;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
   box-shadow:
-    0 20px 45px rgba(0, 0, 0, 0.14),
-    0 8px 18px rgba(0, 0, 0, 0.08);
-  isolation: isolate;
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .fashionkick-topic-banner-image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-  transform: scale(1.01);
+  transform: scale(1.02);
 }
 
 .fashionkick-topic-banner-overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.5) 0%,
-      rgba(0, 0, 0, 0.22) 32%,
-      rgba(0, 0, 0, 0.12) 58%,
-      rgba(0, 0, 0, 0.28) 100%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.04) 0%,
-      rgba(255, 255, 255, 0) 20%,
-      rgba(0, 0, 0, 0.15) 100%
-    );
+    linear-gradient(90deg, rgba(8, 8, 8, 0.86) 0%, rgba(8, 8, 8, 0.68) 32%, rgba(8, 8, 8, 0.18) 70%, rgba(8, 8, 8, 0.28) 100%),
+    linear-gradient(180deg, rgba(255, 204, 128, 0.06), transparent 22%, rgba(0, 0, 0, 0.16));
   z-index: 1;
-}
-
-.fashionkick-topic-banner::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.22), transparent 25%),
-    radial-gradient(circle at bottom right, rgba(255, 194, 220, 0.18), transparent 24%);
-  z-index: 1;
-  pointer-events: none;
 }
 
 .fashionkick-topic-banner-vertical {
-  position: absolute;
-  top: 24px;
-  left: 24px;
-  bottom: 24px;
+  position: relative;
   z-index: 2;
+  max-width: 560px;
+  padding: 52px 42px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 8px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  max-height: calc(100% - 48px);
+  gap: 16px;
 }
 
-.fashionkick-topic-banner-vertical::-webkit-scrollbar {
-  display: none;
+.fashionkick-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 220, 170, 0.12);
+  border: 1px solid rgba(255, 220, 170, 0.2);
+  color: #ffe0b4;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.fashionkick-banner-title {
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  line-height: 0.95;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  max-width: 520px;
+}
+
+.fashionkick-banner-text {
+  font-size: 1.02rem;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 0 12px;
+  max-width: 500px;
 }
 
 .fashionkick-topic-vertical-item {
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  width: fit-content;
+  border: none;
   outline: none;
   cursor: pointer;
-  padding: 11px 18px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 800;
+  padding: 14px 20px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.07));
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 600;
   text-align: left;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 6px 18px rgba(0, 0, 0, 0.14);
   transition:
-    transform 0.25s ease,
-    background 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+    transform 0.3s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .fashionkick-topic-vertical-item:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.28);
-  transform: translateX(6px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 10px 24px rgba(0, 0, 0, 0.18);
+  transform: translateX(8px);
+  background: linear-gradient(180deg, rgba(255, 224, 180, 0.2), rgba(255, 224, 180, 0.1));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 
-/* ---------- product grid ---------- */
+/* =========================
+   WHITE CATALOG AREA
+========================= */
+.fashionkick-catalog-section {
+  min-height: 150vh;
+  background: #ffffff;
+  color: #111111;
+  scroll-snap-align: start;
+  padding: 56px 0 80px;
+}
 
+/* =========================
+   PRODUCTS
+========================= */
 .fashionkick-products-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-  padding: 0 18px 28px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
 }
 
 .fashionkick-product-card {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 250, 250, 0.96));
-  border: 1px solid rgba(17, 17, 17, 0.06);
+  background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%);
   border-radius: 24px;
   overflow: hidden;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+  border: 1px solid rgba(20, 20, 20, 0.08);
   box-shadow:
-    0 10px 24px rgba(17, 17, 17, 0.05),
-    0 2px 8px rgba(17, 17, 17, 0.03);
+    0 12px 30px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
   transition:
-    transform 0.28s ease,
-    box-shadow 0.28s ease,
-    border-color 0.28s ease,
-    background 0.28s ease;
-  position: relative;
-}
-
-.fashionkick-product-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.18),
-    rgba(255, 255, 255, 0)
-  );
-  pointer-events: none;
+    transform 0.35s ease,
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
 }
 
 .fashionkick-product-card:hover {
   transform: translateY(-8px);
-  border-color: rgba(17, 17, 17, 0.1);
   box-shadow:
-    0 22px 40px rgba(17, 17, 17, 0.1),
-    0 10px 18px rgba(17, 17, 17, 0.05);
+    0 18px 45px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(212, 178, 124, 0.18);
+  border-color: rgba(212, 178, 124, 0.26);
 }
 
 .fashionkick-product-media {
+  position: relative;
   width: 100%;
-  height: 240px;
-  background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.95), rgba(245, 245, 245, 0.95));
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
+  background: #f1f1f1;
 }
 
 .fashionkick-product-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
-  padding: 10px;
-  transition:
-    transform 0.45s ease,
-    filter 0.35s ease;
-  filter: saturate(1.02);
+  transition: transform 0.7s ease;
 }
 
 .fashionkick-product-card:hover .fashionkick-product-image {
   transform: scale(1.06);
-  filter: saturate(1.08) contrast(1.03);
 }
 
 .fashionkick-product-content {
-  padding: 14px 14px 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  padding: 18px 18px 20px;
 }
 
 .fashionkick-price {
-  font-weight: 900;
-  font-size: 18px;
+  font-size: 1.08rem;
+  font-weight: 800;
   color: #111111;
-  letter-spacing: 0.015em;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
 }
 
 .fashionkick-stars {
   display: flex;
-  gap: 3px;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 3px;
+  gap: 4px;
+  margin-bottom: 8px;
 }
 
 .star {
-  color: #d8d8d8;
-  font-size: 15px;
-  transition: transform 0.2s ease, color 0.2s ease;
+  font-size: 0.95rem;
+  color: rgba(0, 0, 0, 0.16);
 }
 
 .star.filled {
-  color: #ffb22e;
-  text-shadow: 0 2px 8px rgba(255, 178, 46, 0.25);
-}
-
-.fashionkick-product-card:hover .star.filled {
-  transform: translateY(-1px);
+  color: #d4a95f;
 }
 
 .fashionkick-review-text {
-  font-size: 11px;
-  color: #7b7b7b;
-  margin-bottom: 6px;
-  text-align: center;
-  line-height: 1.4;
+  font-size: 0.88rem;
+  color: rgba(0, 0, 0, 0.54);
+  margin-bottom: 12px;
 }
 
 .fashionkick-name {
-  font-size: 13px;
-  color: #474747;
-  text-align: center;
+  font-size: 0.96rem;
+  font-weight: 600;
   line-height: 1.5;
-  min-height: 40px;
-  max-width: 95%;
+  color: #1b1b1b;
 }
 
-/* ---------- product skeleton ---------- */
+.fashionkick-recommended-wrap {
+  margin-top: 48px;
+}
+
+/* =========================
+   SKELETONS
+========================= */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 25%,
+    rgba(0, 0, 0, 0.08) 50%,
+    rgba(0, 0, 0, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
 
 .skeleton-card {
-  padding: 12px;
-  border-radius: 24px;
-  border: 1px solid rgba(17, 17, 17, 0.05);
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow:
-    0 10px 24px rgba(17, 17, 17, 0.04),
-    0 2px 8px rgba(17, 17, 17, 0.02);
+  border-radius: 26px;
+  padding: 16px;
+  background: #f8f8f8;
+  border: 1px solid rgba(20, 20, 20, 0.06);
 }
 
 .skeleton-image {
   width: 100%;
-  height: 240px;
+  aspect-ratio: 1 / 1;
   border-radius: 18px;
   margin-bottom: 14px;
 }
 
 .skeleton-price {
-  width: 72px;
+  width: 80px;
   height: 18px;
-  border-radius: 999px;
-  margin: 0 auto 10px;
+  border-radius: 8px;
+  margin-bottom: 12px;
 }
 
 .skeleton-stars {
-  width: 90px;
+  width: 110px;
   height: 14px;
-  border-radius: 999px;
-  margin: 0 auto 10px;
+  border-radius: 8px;
+  margin-bottom: 12px;
 }
 
 .skeleton-text {
-  width: 88%;
-  height: 13px;
-  border-radius: 999px;
-  margin: 0 auto 8px;
+  width: 100%;
+  height: 14px;
+  border-radius: 8px;
+  margin-bottom: 10px;
 }
 
 .skeleton-text.short {
-  width: 62%;
+  width: 70%;
 }
 
-/* ---------- focus states ---------- */
-
-.type-section:focus-visible,
-.fashionkick-product-card:focus-visible,
-.fashionkick-topic-vertical-item:focus-visible {
-  outline: 2px solid rgba(20, 20, 20, 0.65);
-  outline-offset: 3px;
+.skeleton-type-title {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  height: 58px;
+  border-radius: 18px;
 }
 
-/* ---------- responsive ---------- */
-
-@media (max-width: 1200px) {
-  .fashionkick-products-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.topic-skeleton {
+  min-height: 200px;
+  border-radius: 26px;
 }
 
+/* =========================
+   RESPONSIVE
+========================= */
 @media (max-width: 1024px) {
-  .type-section {
-    width: 190px;
-  }
-
-  .type-image-id {
-    height: 255px;
-    border-radius: 22px;
-  }
-
   .fashionkick-topic-banner {
-    height: 380px;
+    min-height: 480px;
   }
 
-  .fashionkick-product-media,
-  .skeleton-image {
-    height: 210px;
+  .fashionkick-topic-banner-vertical {
+    max-width: 100%;
+    padding: 36px 28px;
+  }
+
+  .fashionkick-banner-title {
+    font-size: clamp(2rem, 7vw, 3.2rem);
   }
 }
 
 @media (max-width: 768px) {
+  .fashionkick-slider {
+    scroll-snap-type: y proximity;
+  }
+
+  .fashionkick-panel {
+    min-height: auto;
+    padding: 22px 0 28px;
+  }
+
+  .fashionkick-hero-panel {
+    min-height: 100vh;
+    justify-content: center;
+  }
+
+  .fashionkick-banner-panel {
+    min-height: 100vh;
+    justify-content: center;
+  }
+
+  .fashionkick-page-inner {
+    padding: 0 14px;
+  }
+
   .fashionkick-types-row {
-    gap: 12px;
-    padding: 16px 12px 14px;
+    gap: 14px;
   }
 
   .type-section {
-    width: 128px;
-  }
-
-  .type-image-id {
-    height: 165px;
-    border-radius: 18px;
-  }
-
-  .type-title {
-    font-size: 12px;
-    margin-top: 9px;
-  }
-
-  .fashionkick-topic-row {
-    padding: 2px 12px 18px;
-  }
-
-  .fashionkick-topic-card {
-    width: 150px;
-    height: 96px;
-    border-radius: 16px;
-  }
-
-  .fashionkick-topic-banner {
-    width: calc(100% - 24px);
-    height: 290px;
-    margin: 8px auto 20px;
+    min-width: 220px;
+    flex: 0 0 220px;
+    min-height: 240px;
     border-radius: 22px;
   }
 
+  .type-title {
+    font-size: 0.95rem;
+    padding: 12px 14px;
+  }
+
+  .fashionkick-topic-banner {
+    min-height: auto;
+    border-radius: 24px;
+  }
+
   .fashionkick-topic-banner-vertical {
-    top: 14px;
-    left: 14px;
-    bottom: 14px;
-    gap: 8px;
-    max-height: calc(100% - 28px);
+    padding: 26px 18px;
+  }
+
+  .fashionkick-banner-text {
+    font-size: 0.95rem;
+    line-height: 1.65;
   }
 
   .fashionkick-topic-vertical-item {
-    padding: 8px 12px;
-    font-size: 12px;
+    width: 100%;
   }
 
   .fashionkick-products-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    padding: 0 12px 20px;
-  }
-
-  .fashionkick-product-card {
-    border-radius: 18px;
-  }
-
-  .fashionkick-product-media,
-  .skeleton-image {
-    height: 170px;
-  }
-
-  .fashionkick-product-content {
-    padding: 12px 10px 14px;
-  }
-
-  .fashionkick-price {
-    font-size: 15px;
-  }
-
-  .fashionkick-name {
-    font-size: 12px;
-    min-height: 36px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
 }
 
 @media (max-width: 480px) {
-  .fashionkick-types-row {
-    padding-top: 14px;
+  .fashionkick-products-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .type-section {
-    width: 108px;
+    min-height: 280px;
   }
 
-  .type-image-id {
-    height: 138px;
-    border-radius: 16px;
+  .fashionkick-banner-title {
+    font-size: 2rem;
   }
+}
 
-  .fashionkick-topic-card {
-    width: 138px;
-    height: 90px;
-  }
-
-  .fashionkick-topic-banner {
-    height: 250px;
-    border-radius: 18px;
-  }
-
-  .fashionkick-product-media,
-  .skeleton-image {
-    height: 150px;
-  }
-
-  .fashionkick-price {
-    font-size: 14px;
-  }
-
-  .fashionkick-review-text {
-    font-size: 10px;
-  }
-
-  .fashionkick-name {
-    font-size: 11.5px;
-  }
+.fashionkick-catalog-section {
+  min-height: 150vh;
+  background: #ffffff;
+  color: #111111;
+  scroll-snap-align: start;
+  padding: 56px 0 80px;
+  border-top-left-radius: 36px;
+  border-top-right-radius: 36px;
+  margin-top: -18px;
+  position: relative;
+  z-index: 3;
 }

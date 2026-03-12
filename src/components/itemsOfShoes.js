@@ -1,156 +1,136 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import './itemOfShoes.css';
-import useScreenSize from "./useIsMobile";
+import "./itemOfShoes.css";
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
 
-function ItemOfShoes({itemClicked}) {
-   const router = useRouter()
+const BASE_URL = "https://api.malidag.com";
+const STABLE_COINS = new Set(["USDT", "USDC", "BUSD"]);
+
+function ItemOfShoes({ itemClicked }) {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const setItemData = useCheckoutStore((state) => state.setItemData);
+
   const [items, setItems] = useState([]);
-  const [cryptoPrices, setCryptoPrices] = useState({});
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [activeVideoId, setActiveVideoId] = useState(null);
-  const [beautyImages, setBeautyImages] = useState([]); // Store beauty images
-  const [selectedSize, setSelectedSize] = useState(null); // Track selected size
-   const [reviews, setReviews] = useState({}); // Store reviews data
-   const { t } = useTranslation();
-   // Extract gender and type from itemClicked (e.g., "men-sneakers")
-   const [gender, type] = itemClicked.split("-");
-  const {isMobile, isDesktop, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall} = useScreenSize()
+  const [beautyImages, setBeautyImages] = useState([]);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [reviews, setReviews] = useState({});
+  const [loading, setLoading] = useState(true);
 
-   const setItemData = useCheckoutStore((state) => state.setItemData);
+  const brandUrls = {
+    adidas: "https://cdn.malidag.com/brand-logos/1760351238093-o8o8u03t57.png",
+    blaasploa: "https://cdn.malidag.com/brand-logos/1760350881442-21d07lv31mz.png",
+    kickers: "https://cdn.malidag.com/brand-logos/1760351836064-85ubmyqapww.png",
+  };
 
-  const fetchCryptoPrices = async (symbols) => {
+  const fetchReviews = async (productId) => {
     try {
-      const response = await axios.get("https://api.malidag.com/crypto-prices");
-      console.log("Response data:", response.data);
-  
-      // Filter the response data based on the provided symbols
-      const prices = symbols.reduce((acc, symbol) => {
-        if (response.data[symbol]) {
-          acc[symbol] = parseFloat(response.data[symbol]); // Parse the price to a float
-        }
-        return acc;
-      }, {});
-  
-      setCryptoPrices(prices);
+      const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
+
+      if (response.data?.success) {
+        const reviewsArray = Array.isArray(response.data.reviews)
+          ? response.data.reviews
+          : [];
+
+        const totalRating = reviewsArray.reduce((acc, review) => {
+          const rating = parseFloat(review?.rating);
+          return acc + (Number.isNaN(rating) ? 4 : rating);
+        }, 0);
+
+        const averageRating = reviewsArray.length
+          ? (totalRating / reviewsArray.length).toFixed(2)
+          : null;
+
+        setReviews((prev) => ({
+          ...prev,
+          [productId]: { averageRating, reviewsArray },
+        }));
+      }
     } catch (error) {
-      console.error("Error fetching crypto prices:", error);
+      console.error("Error fetching reviews:", error);
     }
   };
 
-  // Fetch reviews from the endpoint
-    const fetchReviews = async (productId) => {
-      try {
-        const response = await axios.get(`https://api.malidag.com/get-reviews/${productId}`);
-        if (response.data.success) {
-         
-          const reviewsArray = response.data.reviews || [];
-          const totalRating = reviewsArray.reduce((acc, review) => {
-            let rating = parseFloat(review.rating);
-            return acc + (isNaN(rating) ? 4 : rating); // If rating is invalid, treat as 5 stars
-          }, 0);
-          const averageRating = reviewsArray.length ? (totalRating / reviewsArray.length).toFixed(2) : null;
-  
-          setReviews((prevReviews) => ({
-            ...prevReviews,
-            [productId]: { averageRating, reviewsArray },
-          }));
-  
-        }
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-      }
-    };
-  
-   
-    
-
   useEffect(() => {
     const fetchBeautyImages = async () => {
+      if (!itemClicked || typeof itemClicked !== "string") {
+        setBeautyImages([]);
+        return;
+      }
+
       try {
-        const response = await axios.get("https://api.malidag.com/shoes/images");
+        const response = await axios.get(`${BASE_URL}/shoes/images`);
+        const filteredImages = Array.isArray(response.data)
+          ? response.data.filter(
+              (image) => image.type?.toLowerCase() === itemClicked.toLowerCase()
+            )
+          : [];
 
-        // ✅ Filter images where type matches itemClicked
-        const filteredImages = response.data.filter(
-          (image) => image.type.toLowerCase() === itemClicked.toLowerCase()
-        );
-          console.log("filtered", filteredImages)
         setBeautyImages(filteredImages);
-
-        
-
       } catch (error) {
         console.error("Error fetching beauty images:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
-   
-
     fetchBeautyImages();
-  }, [itemClicked]); // ✅ Re-fetch when `itemClicked` changes
+  }, [itemClicked]);
 
   useEffect(() => {
     const fetchItems = async () => {
-      try {
-        const [, type] = itemClicked.split("-");
-        console.log("type:", type)
-        const response = await axios.get(`https://api.malidag.com/items/${type}`);
-        const fetchedItems = response.data.items || [];
+      if (!itemClicked || typeof itemClicked !== "string") {
+        setItems([]);
+        setCategories([]);
+        setLoading(false);
+        return;
+      }
 
-        const [gender] = itemClicked.split("-");
-       // Ensure case-insensitive filtering
-      const filteredItems = fetchedItems.filter(
-        (item) => item.item.genre.toLowerCase() === gender.toLowerCase()
-      );
-        
+      setLoading(true);
+
+      try {
+        const [gender, ...typeParts] = itemClicked.split("-");
+        const type = typeParts.join("-");
+
+        const response = await axios.get(`${BASE_URL}/items/${type}`);
+        const fetchedItems = response?.data?.items || [];
+
+        const filteredItems = fetchedItems.filter((entry) => {
+          const genre = entry?.item?.genre?.toLowerCase()?.trim();
+          return genre === gender.toLowerCase().trim();
+        });
+
         setItems(filteredItems);
-       const uniqueCategories = [
-  ...new Set(filteredItems.map(item => item.category?.toLowerCase()))
-];
-       // Fetch reviews for each item
-       filteredItems.forEach((item) => {
-        fetchReviews(item.itemId); // Fetch reviews for each product
-      });
+
+        const uniqueCategories = [
+          ...new Set(
+            filteredItems
+              .map((item) => item.category?.toLowerCase()?.trim())
+              .filter(Boolean)
+          ),
+        ];
+
         setCategories(uniqueCategories);
 
-        const cryptoSymbols = [...new Set(filteredItems.map((item) => `${item.item.cryptocurrency}`))];
-        await fetchCryptoPrices(cryptoSymbols);
+        filteredItems.forEach((item) => {
+          fetchReviews(item.itemId);
+        });
       } catch (error) {
         console.error("Error fetching items:", error);
+        setItems([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchItems();
   }, [itemClicked]);
-
-  // Extracts and splits size values
-  const getAllSizes = (items) => {
-    const allSizes = items.map((item) => {
-      const sizes = Object.values(item.item.size || {});
-      // Flatten the array of sizes, then split by commas to get individual sizes
-      return sizes.flat().map((size) => size.split(",").map((s) => s.trim())).flat();
-    });
-    return [...new Set(allSizes.flat())]; // Flatten and remove duplicates
-  };
-
-  // Filter items based on the selected size
-  const filterItemsBySize = (size) => {
-    return items.filter((item) => {
-      const availableSizes = Object.values(item.item.size || {}).flat();
-      // Check if the size is included in any of the available size strings
-      return availableSizes.some((s) => s.split(",").map((s) => s.trim()).includes(size));
-    });
-  };
 
   const toggleDropdown = (category) => {
     setDropdownOpen((prev) => ({
@@ -159,27 +139,62 @@ function ItemOfShoes({itemClicked}) {
     }));
   };
 
-  if (loading) return <div className="loading-message">{t("loading")}</div>;
+  const getAllSizes = (itemsList) => {
+    const allSizes = itemsList.map((entry) => {
+      const sizes = Object.values(entry?.item?.size || {});
+      return sizes
+        .flat()
+        .map((size) => String(size).split(",").map((s) => s.trim()))
+        .flat();
+    });
 
- 
-
-  const categorizedItems = categories.reduce((acc, category) => {
-    acc[category] = items.filter((item) => item.category === category);
-    return acc;
-  }, {});
-
-  const getHotItems = (categoryItems) => {
-    return [...categoryItems]
-      .sort((a, b) => b.item.sold - a.item.sold)
-      .slice(0, 4); // Top 3 sold items
+    return [...new Set(allSizes.flat().filter(Boolean))];
   };
 
+  const filterItemsBySize = (size) => {
+    return items.filter((entry) => {
+      const availableSizes = Object.values(entry?.item?.size || {}).flat();
+      return availableSizes.some((s) =>
+        String(s)
+          .split(",")
+          .map((x) => x.trim())
+          .includes(size)
+      );
+    });
+  };
 
-  const handleVideoPlay = (id, videoUrl) => {
-    console.log('Playing video:', videoUrl); // Debugging line
+  const categorizedItems = useMemo(() => {
+    return categories.reduce((acc, category) => {
+      acc[category] = items.filter(
+        (item) => item.category?.toLowerCase()?.trim() === category
+      );
+      return acc;
+    }, {});
+  }, [categories, items]);
+
+  const brands = useMemo(() => {
+    return [
+      ...new Set(
+        items
+          .map((entry) => entry?.item?.brand?.trim())
+          .filter(Boolean)
+      ),
+    ];
+  }, [items]);
+
+  const displayedItems = selectedSize ? filterItemsBySize(selectedSize) : items;
+  const allSizes = getAllSizes(items);
+
+  const getHotItems = (categoryItems = []) => {
+    return [...categoryItems]
+      .sort((a, b) => (b?.item?.sold || 0) - (a?.item?.sold || 0))
+      .slice(0, 4);
+  };
+
+  const handleVideoPlay = (id) => {
     setActiveVideoId(id);
   };
-  
+
   const handleVideoStop = () => {
     setActiveVideoId(null);
   };
@@ -188,277 +203,414 @@ function ItemOfShoes({itemClicked}) {
     router.push(`/product/${id}`);
   };
 
-   // Apply size filter if selectedSize is set
-   const displayedItems = selectedSize ? filterItemsBySize(selectedSize) : items;
+  const handleBrandNavigate = (brandName) => {
+    if (!brandName) return;
 
+    const brandSlug = brandName
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-");
+
+    router.push(`/brand/theme1/${brandSlug}`);
+  };
+
+  const handleReviewNavigate = (itemData) => {
+    setItemData(itemData);
+    router.push("/reviewPage");
+  };
+
+  const formatStablePrice = (usdPrice, cryptocurrency) => {
+    const coin = String(cryptocurrency || "USDT").toUpperCase();
+    const value = Number(usdPrice || 0);
+
+    if (STABLE_COINS.has(coin)) {
+      return `${value.toFixed(2)} ${coin}`;
+    }
+
+    return t("price_unavailable");
+  };
+
+  const pageTitle = itemClicked
+    ? `Malidag ${itemClicked.replace(/-/g, " ")}`
+    : "Malidag Shoes";
+
+ if (loading) {
   return (
-    <div style={{maxWidth: "100%", overflow: "hidden"}}>
-    <div  style={{maxWidth: "100%", width: "100%", color: "black"}}>
-      <div style={{width: "100%", overflowX: "auto"}}>
-      <div style={{width: "100%", maxWidth: "100%", display: "flex", alignItems: "center", justifyContent: "start", padding: "10px"}}>
-        <div>Malidag {itemClicked}.</div>
-       <div style={{ marginLeft: "20px" }}>{t("related_categories")}</div>
-           <div style={{ marginLeft: "20px" }}>
-        {categories.map((category, index) => (
-  <div key={index}>
-    <div
-      onClick={() => toggleDropdown(category)}
-    >
-      {category}
-      <span className={`dropdown-arrow ${dropdownOpen[category] ? "arrow-open" : "arrow-closed"}`}>
-        ▼
-      </span>
-    </div>
-  </div>
-))}
-</div>
-</div>
-</div>
-        <div>
-
-          <div style={{position: "relative", width: "100%"}}>
-
-{/* Render dropdown separately so you can move it wherever you want */}
-<div style={{position: "absolute", width: "100%", zIndex: "1000", backgroundColor: "white"}}>
-{categories.map((category) =>
-  dropdownOpen[category] ? (
-    <div key={category}  style={{position: "relative", width: "100%", display: "flex", alignItems: "center"}}>
-      <div className="stable-catgory-types">
-        <strong>malidag {category}</strong>
-        {categorizedItems[category]
-          .map((item) => item.item.type)
-          .filter((type, idx, arr) => arr.indexOf(type) === idx)
-          .map((type, idx) => (
-            <div key={idx} className="stable-tpe-item">
-              {type}
-            </div>
-          ))}
-      </div>
-      <div>
-       <strong style={{ marginLeft: "50%" , width: "100%" }}>{t("hot_label")}</strong>
-        <div style={{width: "100%", backgroundColor: "white"}}>
-          {getHotItems(categorizedItems[category]).map((hotItem, idx) => (
-            <div key={idx} style={{width: "250px"}}>
-              <img
-                src={hotItem.item.images[0]}
-                alt={hotItem.item.name}
-                onClick={() => handleNavigate(hotItem.id)}
-                className="stable-ht-item-image"
-              />
-              <div className="stable-ht-item-name">{hotItem.item.name}</div>
-              <div className="stable-ht-item-sold">{hotItem.item.sold} {t("sold")}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  ) : null
-)}
-</div>
-
+    <div className="shoe-page">
+      <div className="shoe-shell">
+        <div className="shoe-loading-wrap">
+          <div className="shoe-loading-line shoe-loading-line-lg" />
+          <div className="shoe-loading-line shoe-loading-line-sm" />
+          <div className="shoe-loading-grid">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="shoe-skeleton-card">
+                <div className="shoe-skeleton-media" />
+                <div className="shoe-skeleton-line shoe-skeleton-line-short" />
+                <div className="shoe-skeleton-line" />
+                <div className="shoe-skeleton-line shoe-skeleton-line-tiny" />
+              </div>
+            ))}
           </div>
         </div>
       </div>
-      {loading ? (
-        <p>{t("loading_images")}</p>
-      ) : (
-        <div className="beauty-images-container" 
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center", maxWidth: "100%"
-        }}
-        >
-          {beautyImages.length > 0 ? (
-            beautyImages.map((img, index) => (
-              <img
-                key={index}
-                src={img.imageUrl} // ✅ Corrected URL
-                alt={itemClicked}
-                className="beauty-image"
-                style={{maxHeight: "400px", width: "100%", objectFit: "cover"}}
-              />
-            ))
-          ) : (
-            <p ></p>
-          )}
+    </div>
+  );
+}
+
+return (
+  <div className="shoe-page">
+    <div className="shoe-shell">
+      <section className="shoe-hero">
+        <div className="shoe-hero-copy">
+          <div className="shoe-hero-topline">
+            <span className="shoe-kicker">Malidag Footwear</span>
+            <span className="shoe-kicker-muted">
+              {displayedItems.length} {t("items") || "items"}
+            </span>
+          </div>
+
+          <h1 className="shoe-hero-title">{pageTitle}</h1>
+
+          <p className="shoe-hero-text">
+            Explore premium sneakers and statement footwear with clean styling,
+            size filtering, brand discovery, stable coin pricing, and fast product access.
+          </p>
+
+          <div className="shoe-hero-stats">
+            <div className="shoe-stat">
+              <span className="shoe-stat-value">{brands.length}</span>
+              <span className="shoe-stat-label">{t("brands") || "Brands"}</span>
+            </div>
+            <div className="shoe-stat">
+              <span className="shoe-stat-value">{allSizes.length}</span>
+              <span className="shoe-stat-label">{t("sizes") || "Sizes"}</span>
+            </div>
+            <div className="shoe-stat">
+              <span className="shoe-stat-value">{items.length}</span>
+              <span className="shoe-stat-label">{t("products") || "Products"}</span>
+            </div>
+          </div>
         </div>
+
+        {beautyImages.length > 0 ? (
+          <div className="shoe-hero-visual">
+            <img
+              src={beautyImages[0].imageUrl}
+              alt={itemClicked || "Shoes collection"}
+              className="shoe-hero-image"
+            />
+            <div className="shoe-hero-gradient" />
+
+            <div className="shoe-hero-floating-panel">
+              <span className="shoe-floating-label">
+                {selectedSize
+                  ? `${t("selected") || "Selected"}: ${selectedSize}`
+                  : t("footwear_collection") || "Footwear Collection"}
+              </span>
+              <strong>{itemClicked?.replace(/-/g, " ") || "Shoes"}</strong>
+            </div>
+          </div>
+        ) : (
+          <div className="shoe-hero-placeholder">
+            <div className="shoe-hero-placeholder-inner">
+              <span className="shoe-placeholder-kicker">Malidag</span>
+              <strong>Curated Footwear</strong>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {beautyImages.length > 1 && (
+        <section className="shoe-gallery-strip">
+          {beautyImages.slice(0, 3).map((img, index) => (
+            <div key={index} className="shoe-gallery-card">
+              <img
+                src={img.imageUrl}
+                alt={`${itemClicked}-${index}`}
+                className="shoe-gallery-image"
+              />
+            </div>
+          ))}
+        </section>
       )}
 
-      <div className="size-filter-container">
-            <h3>{t("filter_by_size")}</h3>
-            <div className="sizes-list">
-              {getAllSizes(items).map((size) => (
-                <button
-                  key={size}
-                  className={`size-button ${selectedSize === size ? "active" : ""}`}
-                  onClick={() => setSelectedSize(size)}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
+      <section className="shoe-toolbar">
+        <div className="shoe-toolbar-main">
+          <div className="shoe-section-heading">
+            <span className="shoe-section-kicker">{t("filter_by_size")}</span>
+            <h2>{t("choose_size") || "Choose your size"}</h2>
+          </div>
 
-            {selectedSize && (
-              <button className="clear-filter" onClick={() => setSelectedSize(null)}>
-                ❌ {t("clear_filter")}
-              </button>
-            )}
-          
-</div>
-    <div className="item-pge-container" style={{maxWidth: "100%"}}>
-
-
-      <div 
-      style={{
-  display: "grid",
-  width: "100%",
-  gap: "5px",
-  padding: "1px",
-  gridTemplateColumns:
-    isVerySmall
-      ? "repeat(2, 1fr)"
-      : isVeryVerySmall
-      ? "repeat(1, 1fr)"
-      : isSmallMobile
-      ? "repeat(2, 1fr)"
-      : isMobile
-      ? "repeat(3, 1fr)"
-      : isTablet
-      ? "repeat(3, 1fr)"
-      : "repeat(4, 1fr)",
-}}
-      >
-        {displayedItems.map((itemData) => {
-          const {itemId, id, item } = itemData;
-          const { name, usdPrice, originalPrice, cryptocurrency, sold, videos } = item;
-          const cryptoSymbol = `${cryptocurrency}`;
-          const crypto = String(cryptocurrency);
-           const reviewsData = reviews[itemId] || {}; // Ensure it exists
-            const finalRating = reviewsData ? reviewsData.averageRating : "No rating";
-          const cryptoPriceInUSD = cryptoPrices[cryptoSymbol] || 0;
-          const itemPriceInCrypto =
-            cryptoPriceInUSD > 0 ? (usdPrice / cryptoPriceInUSD).toFixed(6) : "N/A";
-
-            const normalizedVideos = Array.isArray(videos) ? videos : [videos];
-            const firstVideoUrl = normalizedVideos.find(
-              (video) => typeof video === "string" && video.endsWith(".mp4")
-            );
-
-          return (
-            <div key={id} >
-              <div
-                style={{
-                  background: '#dddddd53',
-                  zIndex: '1',
-                 paddingTop: "20px",
-                 filter: "brightness(0.880000000) contrast(1.2)",
-                  width: '100%',
-                  height:(isVerySmall) ? "230px" :  "300px",
-                  marginBottom: '10px',
-                  marginTop: '10px',
-                  position: 'relative',
-                }}
+          <div className="shoe-size-list">
+            {allSizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={`shoe-size-chip ${selectedSize === size ? "active" : ""}`}
+                onClick={() => setSelectedSize(size)}
               >
-                {activeVideoId === id && firstVideoUrl  ? (
-                  <video
-                    src={firstVideoUrl}
-                    controls
-                    autoPlay
-                    onEnded={handleVideoStop}
-                    style={{ width: "100%",
-                      height: (isVerySmall) ? "230px" :  "300px",
-                      objectFit: "contain" }}
-                  />
-                ) : (
-                  <>
-                    <img
-                      className="item-imageofshoes"
-                      src={item.images[0]}
-                      alt={name}
-                      onClick={() => handleNavigate(id)} // Navigate when clicking the card
-                       style={{ width: "100%",
-                        height:(isVerySmall) ? "230px" :  "250px",
-                        objectFit: "contain"}}
-                    />
-                     {firstVideoUrl && ( 
-                      <div
-                        className="play-button"
-                        onClick={() => handleVideoPlay(id)}
-                        style={{
-                          position: 'absolute',
-                          left: '20px',
-                          bottom: '0px',
-                          zIndex: '2',
-                          transform: 'translate(-50%, -50%)',
-                          fontSize: '1.5rem',
-                          color: 'white',
-                          textShadow: '0 0 5px rgba(0,0,0,0.5)',
-                          cursor: 'pointer',
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="shoe-toolbar-side">
+          <div className="shoe-toolbar-info">
+            <span>{t("results") || "Results"}</span>
+            <strong>{displayedItems.length}</strong>
+          </div>
+
+          {selectedSize && (
+            <button
+              type="button"
+              className="shoe-clear-btn"
+              onClick={() => setSelectedSize(null)}
+            >
+              {t("clear_filter") || "Clear filter"}
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className="shoe-brand-section">
+        <div className="shoe-section-heading shoe-section-heading-row">
+          <div>
+            <span className="shoe-section-kicker">{t("brands") || "Brands"}</span>
+            <h2>Shop by brand</h2>
+          </div>
+          <span className="shoe-section-meta">{brands.length} results</span>
+        </div>
+
+        {brands.length === 0 ? (
+          <div className="shoe-empty-card">
+            {t("no_brands_found") || "No brands found."}
+          </div>
+        ) : (
+          <div className="shoe-brand-grid">
+            {brands.map((brandName) => {
+              const brandKey = brandName.toLowerCase().trim();
+              const brandLogo = brandUrls[brandKey];
+
+              return (
+                <button
+                  key={brandName}
+                  type="button"
+                  className="shoe-brand-tile"
+                  onClick={() => handleBrandNavigate(brandName)}
+                >
+                  <div className="shoe-brand-tile-top">
+                    {brandLogo ? (
+                      <img
+                        src={brandLogo}
+                        alt={brandName}
+                        className="shoe-brand-logo"
+                      />
+                    ) : (
+                      <div className="shoe-brand-monogram">
+                        {brandName.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="shoe-brand-tile-bottom">
+                    <span className="shoe-brand-label">{brandName}</span>
+                    <span className="shoe-brand-link">
+                      {t("view_more") || "Explore"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="shoe-products-section">
+        <div className="shoe-section-heading shoe-section-heading-row">
+          <div>
+            <span className="shoe-section-kicker">{t("hot_label") || "Products"}</span>
+            <h2>Curated product selection</h2>
+          </div>
+          <span className="shoe-section-meta">{displayedItems.length} results</span>
+        </div>
+
+        {displayedItems.length === 0 ? (
+          <div className="shoe-empty-card">
+            {t("no_products_found") || "No products found."}
+          </div>
+        ) : (
+          <div className="shoe-product-grid">
+            {displayedItems.map((itemData) => {
+              const { itemId, id, item } = itemData;
+              const {
+                name,
+                usdPrice,
+                originalPrice,
+                cryptocurrency,
+                sold,
+                videos,
+                genre,
+                type,
+                brand,
+              } = item;
+
+              const reviewsData = reviews[itemId] || {};
+              const finalRating = reviewsData?.averageRating;
+              const crypto = String(cryptocurrency || "USDT").toUpperCase();
+
+              const normalizedVideos = Array.isArray(videos)
+                ? videos
+                : videos
+                ? [videos]
+                : [];
+
+              const firstVideoUrl = normalizedVideos.find(
+                (video) => typeof video === "string" && video.endsWith(".mp4")
+              );
+
+              const ratingNumber = finalRating
+                ? Math.round(Number(finalRating))
+                : 0;
+
+              return (
+                <article key={id} className="shoe-card">
+                  <div className="shoe-card-media">
+                    {activeVideoId === id && firstVideoUrl ? (
+                      <video
+                        src={firstVideoUrl}
+                        controls
+                        autoPlay
+                        onEnded={handleVideoStop}
+                        className="shoe-card-video"
+                      />
+                    ) : (
+                      <>
+                        <img
+                          className="shoe-card-image"
+                          src={item?.images?.[0]}
+                          alt={name}
+                          onClick={() => handleNavigate(id)}
+                        />
+
+                        <div className="shoe-card-badges">
+                          <span className="shoe-card-badge shoe-card-badge-dark">
+                            {type || "Premium"}
+                          </span>
+                          {brand && (
+                            <span className="shoe-card-badge">
+                              {brand}
+                            </span>
+                          )}
+                        </div>
+
+                        {firstVideoUrl && (
+                          <button
+                            type="button"
+                            className="shoe-video-btn"
+                            onClick={() => handleVideoPlay(id)}
+                            aria-label="Play product video"
+                          >
+                            ▶
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="shoe-card-body">
+                    <div
+                      className="shoe-card-content"
+                      onClick={() => handleNavigate(id)}
+                    >
+                      <div className="shoe-card-header">
+                        <div className="shoe-card-title" title={name}>
+                          {name?.length > 52
+                            ? `${name.substring(0, 52)}...`
+                            : name}
+                        </div>
+
+                        <div className="shoe-card-rating">
+                          <span className="shoe-rating-stars">
+                            {ratingNumber > 0
+                              ? "★".repeat(ratingNumber) +
+                                "☆".repeat(5 - ratingNumber)
+                              : "☆☆☆☆☆"}
+                          </span>
+                          <span className="shoe-rating-value">
+                            {finalRating || t("no_rating") || "No rating"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="shoe-card-price-row">
+                        <div className="shoe-card-price-main">
+                          ${Number(usdPrice || 0).toFixed(2)}
+                        </div>
+
+                        {Number(originalPrice) > 0 && (
+                          <div className="shoe-card-price-old">
+                            ${Number(originalPrice).toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="shoe-card-stable">
+                        <img
+                          src={`https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/svg/color/${crypto.toLowerCase()}.svg`}
+                          alt={cryptocurrency}
+                          className="shoe-card-crypto"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src =
+                              "https://cryptologos.cc/logos/binance-usd-busd-logo.png";
+                          }}
+                        />
+                        <span>{formatStablePrice(usdPrice, cryptocurrency)}</span>
+                      </div>
+
+                      <div className="shoe-card-meta">
+                        <span>{genre || "Fashion"}</span>
+                        <span>
+                          {Number(sold || 0)} {t("sold")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="shoe-card-actions">
+                      <button
+                        type="button"
+                        className="shoe-secondary-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReviewNavigate(itemData);
+                        }}
+                        title={t("view_reviews")}
+                      >
+                        {t("view_reviews") || "View reviews"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="shoe-primary-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNavigate(id);
                         }}
                       >
-                        ▶️
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-              <div className="item-details"  onClick={() => handleNavigate(id)} >
-                <div className="item-name" title={name}>
-                  {name.length > 20 ? `${name.substring(0, 20)}...` : name}
-                </div>
-                <div className="item-prices">
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span className="item-price">${usdPrice}</span>
-                    {originalPrice > 0 && (
-                      <span className="item-original-price">${originalPrice}</span>
-                    )}
-                    <span
-                      className="item-sold"
-                      style={{ display: "flex", marginLeft: "10px", fontSize: "0.8rem" }}
-                    >
-                      {sold}{" "}
-                      <div style={{ marginLeft: "5px", fontWeight: "bold", color: "red" }}>
-                       {t("sold")}
-                      </div>
-                    </span>
+                        {t("view_product") || "View product"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="item-crypto">
-                    <img
-                      src={`https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/svg/color/${crypto.toLowerCase()}.svg`}
-                      alt={cryptocurrency}
-                      className="crypto-icon"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "https://cryptologos.cc/logos/binance-usd-busd-logo.png";
-                      }}
-                    />
-                    <span className="item-crypto-price">
-                      {itemPriceInCrypto !== "N/A"
-                        ? `${itemPriceInCrypto} ${cryptocurrency}`
-                        :  t("price_unavailable")}
-                    </span>
-                  </div>
-                </div>
-                <div
-  className="item-type-stars"
-  onClick={() => {
-    setItemData(itemData); // Store the item data in Zustand
-    router.push("/reviewPage"); // Navigate to the review page
-  }}
-  title={t("view_reviews")}
->
-  {finalRating
-    ? "★".repeat(Math.round(finalRating)) + "☆".repeat(5 - Math.round(finalRating))
-    : t("no_rating")}
-</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
-    </div>
-    
-  );
+  </div>
+);
 }
 
 export default ItemOfShoes;

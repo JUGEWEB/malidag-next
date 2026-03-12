@@ -5,9 +5,9 @@ import ShoesTopTopic from "@/components/shoesTopTopic";
 
 export const dynamic = "force-dynamic";
 
-// ✅ SEO Metadata with i18n
+// SEO Metadata with i18n
 export async function generateMetadata({ params }) {
-  const { type, genre } = params;
+  const { type, genre } = await params;
 
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
@@ -52,7 +52,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// ✅ Page
-export default function Page({ params }) {
-  return <ShoesTopTopic params={params} />;
+// Page
+export default async function Page({ params }) {
+  const resolvedParams = await params;
+  return <ShoesTopTopic params={resolvedParams} />;
 }

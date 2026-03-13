@@ -29,37 +29,43 @@ function KidFashion({ mtypes = [], types = {} }) {
     router.push(`/product/${id}`);
   };
 
+  const getSafeImage = (src) => {
+    return src && String(src).trim() ? src : "https://via.placeholder.com/300x300?text=Kids+Fashion";
+  };
+
   return (
     <div className="personal-care-container">
-      <h2 className="personal-care-title">
-        {t("kid_fashion") || "Kid Fashion"}
-      </h2>
+      <div className="kids-hero">
+        <div className="kids-hero-badge">{t("new_collection") || "New Collection"}</div>
+        <h2 className="personal-care-title">
+          {t("kid_fashion") || "Kid Fashion"}
+        </h2>
+        <p className="kids-hero-subtitle">
+          {t("kids_fashion_subtitle") ||
+            "Soft styles, playful colors, and adorable looks for every little star."}
+        </p>
+      </div>
 
       <div className="beauty-category">
         {mtypes.length === 0 ? (
-          <div>{t("no_kid_fashion_types") || "No kid fashion types found."}</div>
+          <div className="empty-state">
+            {t("no_kid_fashion_types") || "No kid fashion types found."}
+          </div>
         ) : (
           mtypes.map((typeObj, idx) => (
-            <div key={idx} className="type-section">
+            <div
+              key={typeObj?._id || idx}
+              className="type-section"
+            >
               <div className="type-image-id">
                 <img
-                  src={typeObj?.imageUrl || typeObj?.image || "/placeholder.png"}
+                  src={getSafeImage(typeObj?.image)}
                   alt={typeObj?.type || "Category"}
                   className="type-image-imgid"
                 />
               </div>
 
-              <h3
-                className="type-title"
-                style={{
-                  color: "green",
-                  fontSize: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginLeft: "20px",
-                }}
-              >
+              <h3 className="type-title">
                 {typeObj?.type || "Category"}
               </h3>
             </div>
@@ -68,7 +74,9 @@ function KidFashion({ mtypes = [], types = {} }) {
       </div>
 
       {Object.keys(types).length === 0 ? (
-        <div>{t("no_kid_fashion_types") || "No kid fashion products found."}</div>
+        <div className="empty-state">
+          {t("no_kid_fashion_products") || "No kid fashion products found."}
+        </div>
       ) : (
         Object.entries(types).map(([key, group]) => {
           const type = group?.type || key;
@@ -76,23 +84,17 @@ function KidFashion({ mtypes = [], types = {} }) {
           const items = Array.isArray(group?.items) ? group.items : [];
 
           return (
-            <div className="type-secti" key={type}>
-              <h3 className="type-tit" style={{ display: "flex" }}>
-                {genre ? `${genre} ` : ""}
-                {type} {t("top_topic")}
-                <div
-                  style={{
-                    marginLeft: "10px",
-                    fontSize: "14px",
-                    fontWeight: "bold",
-                    color: "green",
-                    marginTop: "10px",
-                    cursor: "pointer",
-                  }}
-                >
-                  {t("see_more")}
-                </div>
-              </h3>
+            <section className="type-secti" key={type}>
+              <div className="section-head">
+                <h3 className="type-tit">
+                  <span className="section-genre">{genre ? `${genre} ` : ""}</span>
+                  {type} {t("top_topic") || "Top Picks"}
+                </h3>
+
+                <button type="button" className="see-more-btn">
+                  {t("see_more") || "See more"}
+                </button>
+              </div>
 
               <div className="items-contain">
                 {items.map(({ id, item = {} }) => (
@@ -100,21 +102,21 @@ function KidFashion({ mtypes = [], types = {} }) {
                     <div className="ca">
                       <div className="item-ca">
                         <img
-                          src={item?.images?.[0] || "/placeholder.png"}
+                          src={getSafeImage(item?.images?.[0])}
                           alt={item?.name || "Product"}
                           className="item-ima"
                           onClick={() => handleItemClick(id)}
                         />
                       </div>
 
-                      <div onClick={() => handleItemClick(id)} className="item-">
-                        <div style={{ display: "flex", alignItems: "center" }}>
+                      <div onClick={() => handleItemClick(id)} className="item-content">
+                        <div className="item-top-row">
                           <div className="item-pri">${item?.usdPrice || "0.00"}</div>
                         </div>
 
-                        <div>
-                          {(item?.name || "").length > 150
-                            ? `${item.name.substring(0, 150)}...`
+                        <div className="item-name">
+                          {(item?.name || "").length > 90
+                            ? `${item.name.substring(0, 90)}...`
                             : item?.name || "Unnamed product"}
                         </div>
 
@@ -126,7 +128,7 @@ function KidFashion({ mtypes = [], types = {} }) {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           );
         })
       )}

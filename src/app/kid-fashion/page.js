@@ -30,7 +30,12 @@ async function getData() {
     ]);
 
     const mtypes = Array.isArray(mtypesRes) ? mtypesRes : [];
-    const data = Array.isArray(itemsRes?.items) ? itemsRes.items : [];
+
+    const data = Array.isArray(itemsRes)
+      ? itemsRes
+      : Array.isArray(itemsRes?.items)
+      ? itemsRes.items
+      : [];
 
     const allowedGenres = new Set([
       "boy",
@@ -49,7 +54,7 @@ async function getData() {
     ]);
 
     const filteredData = data.filter((entry) => {
-      const genre = String(entry?.item?.genre || "")
+      const genre = String(entry?.item?.genre || entry?.details?.genre || "")
         .trim()
         .toLowerCase();
 
@@ -57,8 +62,13 @@ async function getData() {
     });
 
     const groupedData = filteredData.reduce((acc, entry) => {
-      const type = String(entry?.item?.type || "Other").trim();
-      const genre = String(entry?.item?.genre || "").trim();
+      const type = String(
+        entry?.item?.type || entry?.details?.type || "Other"
+      ).trim();
+
+      const genre = String(
+        entry?.item?.genre || entry?.details?.genre || ""
+      ).trim();
 
       if (!acc[type]) {
         acc[type] = {

@@ -53,13 +53,19 @@ async function getData() {
       "children",
     ]);
 
-    const filteredData = data.filter((entry) => {
-      const genre = String(entry?.item?.genre || entry?.details?.genre || "")
-        .trim()
-        .toLowerCase();
+    const allowedCategories = new Set(["clothes", "shoes"]);
 
-      return allowedGenres.has(genre);
-    });
+const filteredData = data.filter((entry) => {
+  const genre = String(entry?.item?.genre || entry?.details?.genre || "")
+    .trim()
+    .toLowerCase();
+
+  const category = String(entry?.category || entry?.details?.category || "")
+    .trim()
+    .toLowerCase();
+
+  return allowedGenres.has(genre) && allowedCategories.has(category);
+});
 
     const groupedData = filteredData.reduce((acc, entry) => {
       const type = String(

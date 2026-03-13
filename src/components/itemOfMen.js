@@ -1,503 +1,526 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useParams, usePathname } from 'next/navigation';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import useScreenSize from "./useIsMobile";
-import './itemOfWomen.css';
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
+import "./itemOfmen.css";
+
+const BASE_URL = "https://api.malidag.com";
+
+const brandUrls = {
+  addidas: "https://cdn.malidag.com/brand-logos/1760351238093-o8o8u03t57.png",
+  blaasploa: "https://cdn.malidag.com/brand-logos/1760350881442-21d07lv31mz.png",
+  kickers: "https://cdn.malidag.com/brand-logos/1760351836064-85ubmyqapww.png",
+};
+
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
+const slugify = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+
+const parseSizes = (sizeObject) => {
+  if (!sizeObject || typeof sizeObject !== "object") return [];
+
+  return [
+    ...new Set(
+      Object.values(sizeObject)
+        .flat()
+        .flatMap((entry) =>
+          String(entry || "")
+            .split(",")
+            .map((size) => size.trim())
+            .filter(Boolean)
+        )
+    ),
+  ];
+};
+
+const getFirstVideoUrl = (videos) => {
+  const normalized = Array.isArray(videos) ? videos : videos ? [videos] : [];
+  return normalized.find(
+    (video) => typeof video === "string" && video.toLowerCase().endsWith(".mp4")
+  );
+};
+
+const formatPrice = (price) => `$${Number(price || 0).toFixed(2)}`;
+
+const getRatingView = (averageRating) => {
+  const numeric = Number(averageRating);
+  if (!numeric || Number.isNaN(numeric)) {
+    return {
+      value: null,
+      rounded: 0,
+      stars: "☆☆☆☆☆",
+    };
+  }
+
+  const rounded = Math.max(0, Math.min(5, Math.round(numeric)));
+
+  return {
+    value: numeric.toFixed(1),
+    rounded,
+    stars: "★".repeat(rounded) + "☆".repeat(5 - rounded),
+  };
+};
 
 function ItemOfMen() {
-   const router = useRouter()
+  const router = useRouter();
   const params = useParams();
-  const { itemClicked } = params;
-  const [items, setItems] = useState([]);
-  const [cryptoPrices, setCryptoPrices] = useState({});
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState({});
-  const [activeVideoId, setActiveVideoId] = useState(null);
-  const [beautyImages, setBeautyImages] = useState([]); // Store beauty images
-  const [selectedSize, setSelectedSize] = useState(null); // Track selected size
-   const [reviews, setReviews] = useState({}); // Store reviews data
-        const {isMobile, isDesktop, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall} = useScreenSize()
-
   const { t } = useTranslation();
-
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
-  const fetchCryptoPrices = async (symbols) => {
-    try {
-      const response = await axios.get("https://api.malidag.com/crypto-prices");
-      console.log("Response data:", response.data);
-  
-      // Filter the response data based on the provided symbols
-      const prices = symbols.reduce((acc, symbol) => {
-        if (response.data[symbol]) {
-          acc[symbol] = parseFloat(response.data[symbol]); // Parse the price to a float
-        }
-        return acc;
-      }, {});
-  
-      setCryptoPrices(prices);
-    } catch (error) {
-      console.error("Error fetching crypto prices :", error);
-    }
-  };
+  const itemClicked =
+    typeof params?.itemClicked === "string" ? params.itemClicked : "";
 
-  useEffect(() => {
-    const fetchBeautyImages = async () => {
-      try {
-        const response = await axios.get("https://api.malidag.com/men/images");
+  const [items, setItems] = useState([]);
+  const [beautyImages, setBeautyImages] = useState([]);
+  const [reviews, setReviews] = useState({});
+  const [selectedSize, setSelectedSize] = useState("");
+  const [activeVideoId, setActiveVideoId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-        // ✅ Filter images where type matches itemClicked
-        const filteredImages = response.data.filter(
-          (image) => image.type.toLowerCase() === itemClicked.toLowerCase()
-        );
-          console.log("filtered", filteredImages)
-        setBeautyImages(filteredImages);
-      } catch (error) {
-        console.error("Error fetching beauty images:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBeautyImages();
-  }, [itemClicked]); // ✅ Re-fetch when `itemClicked` changes
-
-  // Fetch reviews from the endpoint
-            const fetchReviews = async (productId) => {
-              try {
-                const response = await axios.get(`https://api.malidag.com/get-reviews/${productId}`);
-                if (response.data.success) {
-                 
-                  const reviewsArray = response.data.reviews || [];
-                  const totalRating = reviewsArray.reduce((acc, review) => {
-                    let rating = parseFloat(review.rating);
-                    return acc + (isNaN(rating) ? 4 : rating); // If rating is invalid, treat as 5 stars
-                  }, 0);
-                  const averageRating = reviewsArray.length ? (totalRating / reviewsArray.length).toFixed(2) : null;
-          
-                  setReviews((prevReviews) => ({
-                    ...prevReviews,
-                    [productId]: { averageRating, reviewsArray },
-                  }));
-          
-                }
-              } catch (error) {
-                console.error("Error fetching reviews:", error);
-              }
-            };
-          
-           
-
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await axios.get(`https://api.malidag.com/items/${itemClicked}`);
-        const fetchedItems = response.data.items || [];
-        const filteredItems = fetchedItems.filter(item => item.item.genre === "men");
-       setItems(filteredItems)
-
-        const uniqueCategories = [...new Set(fetchedItems.map(item => item.category))];
-        setCategories(uniqueCategories);
-
-          // Fetch reviews for each item
-       filteredItems.forEach((item) => {
-        fetchReviews(item.itemId); // Fetch reviews for each product
-      });
-       
-
-        const cryptoSymbols = [
-          ...new Set(fetchedItems.map((item) => `${item.item.cryptocurrency}`)),
-        ];
-        await fetchCryptoPrices(cryptoSymbols);
-      } catch (error) {
-        console.error("Error fetching items:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchItems();
+  const pageTitle = useMemo(() => {
+    return itemClicked ? itemClicked.replace(/-/g, " ") : "Menswear";
   }, [itemClicked]);
 
-  // Extracts and splits size values
-  const getAllSizes = (items) => {
-    const allSizes = items.map((item) => {
-      const sizes = Object.values(item.item.size || {});
-      // Flatten the array of sizes, then split by commas to get individual sizes
-      return sizes.flat().map((size) => size.split(",").map((s) => s.trim())).flat();
-    });
-    return [...new Set(allSizes.flat())]; // Flatten and remove duplicates
-  };
+  const fetchReviews = useCallback(async (productId) => {
+    try {
+      const { data } = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
+      const reviewsArray = Array.isArray(data?.reviews) ? data.reviews : [];
 
-  // Filter items based on the selected size
-  const filterItemsBySize = (size) => {
-    return items.filter((item) => {
-      const availableSizes = Object.values(item.item.size || {}).flat();
-      // Check if the size is included in any of the available size strings
-      return availableSizes.some((s) => s.split(",").map((s) => s.trim()).includes(size));
-    });
-  };
+      const totalRating = reviewsArray.reduce((sum, review) => {
+        const rating = parseFloat(review?.rating);
+        return sum + (Number.isNaN(rating) ? 4 : rating);
+      }, 0);
 
-  const toggleDropdown = (category) => {
-    setDropdownOpen((prev) => ({
-      ...prev,
-      [category]: !prev[category],
-    }));
-  };
+      const averageRating =
+        reviewsArray.length > 0 ? totalRating / reviewsArray.length : null;
 
-  if (loading) return <div className="loading-message">{t("loading")}</div>;
+      return [
+        productId,
+        {
+          averageRating,
+          reviewsArray,
+        },
+      ];
+    } catch (error) {
+      console.error(`Error fetching reviews for product ${productId}:`, error);
+      return [
+        productId,
+        {
+          averageRating: null,
+          reviewsArray: [],
+        },
+      ];
+    }
+  }, []);
 
- 
+  useEffect(() => {
+    let isMounted = true;
 
-  const categorizedItems = categories.reduce((acc, category) => {
-    acc[category] = items.filter((item) => item.category === category);
-    return acc;
-  }, {});
+    const loadPageData = async () => {
+      if (!itemClicked) {
+        setItems([]);
+        setBeautyImages([]);
+        setReviews({});
+        setIsLoading(false);
+        return;
+      }
 
-  const getHotItems = (categoryItems) => {
-    return [...categoryItems]
-      .sort((a, b) => b.item.sold - a.item.sold)
-      .slice(0, 4); // Top 3 sold items
-  };
+      setIsLoading(true);
 
+      try {
+        const [itemsResponse, imagesResponse] = await Promise.allSettled([
+          axios.get(`${BASE_URL}/items/${itemClicked}`),
+          axios.get(`${BASE_URL}/men/images`),
+        ]);
 
-  const handleVideoPlay = (id, videoUrl) => {
-    console.log('Playing video:', videoUrl); // Debugging line
-    setActiveVideoId(id);
-  };
-  
-  const handleVideoStop = () => {
-    setActiveVideoId(null);
-  };
+        if (!isMounted) return;
 
-  const handleNavigate = (id) => {
-    router.push(`/product/${id}`);
-  };
+        const fetchedItems =
+          itemsResponse.status === "fulfilled"
+            ? itemsResponse.value?.data?.items || []
+            : [];
 
-   // Apply size filter if selectedSize is set
-   const displayedItems = selectedSize ? filterItemsBySize(selectedSize) : items;
+        const menItems = fetchedItems.filter(
+          (entry) => normalizeText(entry?.item?.genre) === "men"
+        );
 
+        const fetchedImages =
+          imagesResponse.status === "fulfilled" && Array.isArray(imagesResponse.value?.data)
+            ? imagesResponse.value.data.filter(
+                (image) => normalizeText(image?.type) === normalizeText(itemClicked)
+              )
+            : [];
+
+        setItems(menItems);
+        setBeautyImages(fetchedImages);
+
+        const reviewEntries = await Promise.all(
+          menItems.map((entry) => fetchReviews(entry?.itemId))
+        );
+
+        if (!isMounted) return;
+
+        setReviews(Object.fromEntries(reviewEntries));
+      } catch (error) {
+        console.error("Error loading page data:", error);
+        if (!isMounted) return;
+        setItems([]);
+        setBeautyImages([]);
+        setReviews({});
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadPageData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [itemClicked, fetchReviews]);
+
+  const allSizes = useMemo(() => {
+    return [...new Set(items.flatMap((entry) => parseSizes(entry?.item?.size)))];
+  }, [items]);
+
+  const brands = useMemo(() => {
+    return [
+      ...new Set(
+        items
+          .map((entry) => entry?.item?.brand?.trim())
+          .filter(Boolean)
+      ),
+    ];
+  }, [items]);
+
+  const displayedItems = useMemo(() => {
+    if (!selectedSize) return items;
+
+    return items.filter((entry) =>
+      parseSizes(entry?.item?.size).includes(selectedSize)
+    );
+  }, [items, selectedSize]);
+
+  const openFilter = useCallback(() => setIsFilterOpen(true), []);
+  const closeFilter = useCallback(() => setIsFilterOpen(false), []);
+
+  const clearFilter = useCallback(() => {
+    setSelectedSize("");
+    setIsFilterOpen(false);
+  }, []);
+
+  const handleNavigate = useCallback(
+    (id) => {
+      if (!id) return;
+      router.push(`/product/${id}`);
+    },
+    [router]
+  );
+
+  const handleBrandNavigate = useCallback(
+    (brandName) => {
+      if (!brandName) return;
+      router.push(`/brand/theme1/${slugify(brandName)}`);
+    },
+    [router]
+  );
+
+  const handleReviewNavigate = useCallback(
+    (itemData) => {
+      setItemData(itemData);
+      router.push("/reviewPage");
+    },
+    [router, setItemData]
+  );
+
+  const handleSelectSize = useCallback((size) => {
+    setSelectedSize(size);
+    setIsFilterOpen(false);
+  }, []);
+
+  if (isLoading) {
   return (
-    <div style={{maxWidth: "100%", overflow: "hidden"}} >
-   <div  style={{maxWidth: "100%", width: "100%", color: "black"}}>
-      <div style={{width: "100%", overflowX: "auto"}}>
-      <div style={{width: "100%", maxWidth: "100%", display: "flex", alignItems: "center", justifyContent: "start", padding: "10px"}}>
-        <div>Malidag {itemClicked}</div>
-        <div style={{ marginLeft: "20px" }}>{t("related_categories")}</div>
-           <div style={{ marginLeft: "20px" }}>
-        {categories.map((category, index) => (
-  <div key={index}>
-    <div
-      onClick={() => toggleDropdown(category)}
-    >
-      {category}
-      <span className={`dropdown-arrow ${dropdownOpen[category] ? "arrow-open" : "arrow-closed"}`}>
-        ▼
-      </span>
-    </div>
-  </div>
-))}
-</div>
-</div>
-</div>
-        <div>
-
-          <div style={{position: "relative", width: "100%"}}>
-
-{/* Render dropdown separately so you can move it wherever you want */}
-<div style={{position: "absolute", width: "100%", zIndex: "1000", backgroundColor: "white"}}>
-{categories.map((category) =>
-  dropdownOpen[category] ? (
-    <div key={category}  style={{position: "relative", width: "100%", display: "flex", alignItems: "center"}}>
-      <div className="stable-catgory-types">
-        <strong>malidag {category}</strong>
-        {categorizedItems[category]
-          .map((item) => item.item.type)
-          .filter((type, idx, arr) => arr.indexOf(type) === idx)
-          .map((type, idx) => (
-            <div key={idx} className="stable-tpe-item">
-              {type}
-            </div>
-          ))}
-      </div>
-      <div>
-        <strong style={{ marginLeft: "50%" , width: "100%"}}>{t("hot_label")}</strong>
-        <div style={{width: "100%", backgroundColor: "white"}}>
-          {getHotItems(categorizedItems[category]).map((hotItem, idx) => (
-            <div key={idx} style={{width: "250px"}}>
-              <img
-                src={hotItem.item.images[0]}
-                alt={hotItem.item.name}
-                onClick={() => handleNavigate(hotItem.id)}
-                className="stable-ht-item-image"
-              />
-              <div className="stable-ht-item-name">{hotItem.item.name}</div>
-              <div className="stable-ht-item-sold">{hotItem.item.sold} {t("sold")}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  ) : null
-)}
-</div>
-
+    <div className="men-page">
+      <div className="men-shell">
+        <div className="men-loading-wrap">
+          <div className="men-loading-title" />
+          <div className="men-loading-subtitle" />
+          <div className="men-skeleton-grid">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="men-skeleton-card">
+                <div className="men-skeleton-media" />
+                <div className="men-skeleton-line men-skeleton-line-short" />
+                <div className="men-skeleton-line" />
+                <div className="men-skeleton-line men-skeleton-line-tiny" />
+              </div>
+            ))}
           </div>
         </div>
       </div>
-      {loading ? (
-        <p>{t("loading_images")}</p>
-      ) : (
-        <div className="beauty-images-container" 
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center", maxWidth: "100%"
-        }}
-        >
-          {beautyImages.length > 0 ? (
-            beautyImages.map((img, index) => (
-              <img
-                key={index}
-                src={img.imageUrl} // ✅ Corrected URL
-                alt={itemClicked}
-                className="beauty-image"
-                style={{maxHeight: "400px", width: "100%", objectFit: "cover", padding: "20px"}}
-              />
-            ))
-          ) : (
-            <p ></p>
+    </div>
+  );
+}
+
+return (
+  <div className="men-page">
+    <div className="men-shell">
+      <header className="men-topbar">
+        <div className="men-topbar-left">
+          <h1 className="men-page-title">{pageTitle}</h1>
+          <span className="men-page-count">
+            {displayedItems.length} {t("products") || "products"}
+          </span>
+        </div>
+
+        <div className="men-topbar-right">
+          <button
+            type="button"
+            className="men-filter-btn"
+            onClick={openFilter}
+          >
+            {selectedSize
+              ? `${t("size") || "Size"}: ${selectedSize}`
+              : t("filter_by_size") || "Filter"}
+          </button>
+
+          {selectedSize && (
+            <button
+              type="button"
+              className="men-clear-btn"
+              onClick={clearFilter}
+            >
+              {t("clear_filter") || "Clear"}
+            </button>
           )}
         </div>
+      </header>
+
+      {beautyImages[0]?.imageUrl && (
+        <section className="men-banner">
+          <img
+            src={beautyImages[0].imageUrl}
+            alt={pageTitle}
+            className="men-banner-image"
+          />
+        </section>
       )}
 
-       <div style={{
-       display: (isDesktop) ? "none" : "",
-  backgroundColor: '#f8f9fa', 
-  borderLeft: '5px solid #4CAF50', 
-  padding: '15px', 
-  borderRadius: '8px', 
-  fontFamily: 'Arial, sans-serif', 
-  lineHeight: '1.5', 
-  color: '#333',
-  margin: '20px 0',
-   maxHeight: "auto",
-  maxWidth: "100%"
-}}>
-  <div className="size-filter-container">
-            <h3>{t("filter_by_size")}</h3>
-            <div className="sizes-list">
-              {getAllSizes(items).map((size) => (
-                <button
-                  key={size}
-                  className={`size-button ${selectedSize === size ? "active" : ""}`}
-                  onClick={() => setSelectedSize(size)}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-
-            {selectedSize && (
-              <button className="clear-filter" onClick={() => setSelectedSize(null)}>
-              {t("clear_filter")}
-              </button>
-            )}
+      {brands.length > 0 && (
+        <section className="men-brand-section">
+          <div className="men-section-head">
+            <h2 className="men-section-title">
+              {t("browse_by_brand") || "Browse by brand"}
+            </h2>
           </div>
-</div>
 
+          <div className="men-brand-strip">
+            {brands.map((brandName) => {
+              const brandKey = normalizeText(brandName);
+              const brandLogo = brandUrls[brandKey];
 
-    <div style={{display: "flex"}} >
-    <div style={{
-       display: (!isDesktop) ? "none" : "",
-  backgroundColor: '#f8f9fa', 
-  borderLeft: '5px solid #4CAF50', 
-  padding: '15px', 
-  borderRadius: '8px', 
-  fontFamily: 'Arial, sans-serif', 
-  lineHeight: '1.5', 
-  color: '#333',
-  margin: '20px 0',
-   maxHeight: "auto",
-  maxWidth: "210px"
-}}>
-  <div className="size-filter-container">
-            <h3>{t("filter_by_size")}</h3>
-            <div className="sizes-list">
-              {getAllSizes(items).map((size) => (
+              return (
                 <button
-                  key={size}
-                  className={`size-button ${selectedSize === size ? "active" : ""}`}
-                  onClick={() => setSelectedSize(size)}
+                  key={brandName}
+                  type="button"
+                  className="men-brand-chip"
+                  onClick={() => handleBrandNavigate(brandName)}
+                  aria-label={`View ${brandName} brand page`}
                 >
-                  {size}
-                </button>
-              ))}
-            </div>
-
-            {selectedSize && (
-              <button className="clear-filter" onClick={() => setSelectedSize(null)}>
-                {t("clear_filter")}
-              </button>
-            )}
-          </div>
-</div>
-
-
-      <div  style={{
-  display: "grid",
-  width: "100%",
-  maxWidth: "100%",
-  gap: "5px",
-  padding: "5px",
-  gridTemplateColumns:
-    isVerySmall
-      ? "repeat(2, 1fr)"
-      : isVeryVerySmall
-      ? "repeat(1, 1fr)"
-      : isSmallMobile
-      ? "repeat(2, 1fr)"
-      : isMobile
-      ? "repeat(3, 1fr)"
-      : isTablet
-      ? "repeat(3, 1fr)"
-      : "repeat(3, 1fr)",
-}}>
-        {displayedItems.map((itemData) => {
-          const {itemId, id, item } = itemData;
-          const { name, usdPrice, originalPrice, cryptocurrency, sold, videos } = item;
-          const cryptoSymbol = `${cryptocurrency}`;
-          const crypto = String(cryptocurrency);
-         const reviewsData = reviews[itemId] || {}; // Ensure it exists
-            const finalRating = reviewsData ? reviewsData.averageRating : t("no_rating");
-          const cryptoPriceInUSD = cryptoPrices[cryptoSymbol] || 0;
-          const itemPriceInCrypto =
-            cryptoPriceInUSD > 0 ? (usdPrice / cryptoPriceInUSD).toFixed(6) : "N/A";
-
-            const normalizedVideos = Array.isArray(videos) ? videos : [videos];
-            const firstVideoUrl = normalizedVideos.find(
-              (video) => typeof video === "string" && video.endsWith(".mp4")
-            );
-
-          return (
-            <div key={id} style={{width :"100%", maxWidth: "100%", margin: " 0 auto"}} >
-              <div
-                 style={{
-                  background: '#dddddd53',
-                  zIndex: '1',
-                 paddingTop: "20px",
-                 filter: "brightness(0.880000000) contrast(1.2)",
-                  width: '100%',
-                  height:(isVerySmall) ? "230px" :  "300px",
-                  marginBottom: '10px',
-                  marginTop: '10px',
-                  position: 'relative',
-                }}
-              >
-                {activeVideoId === id && firstVideoUrl  ? (
-                  <video
-                    src={firstVideoUrl}
-                    controls
-                    autoPlay
-                    onEnded={handleVideoStop}
-                    style={{ width: "100%",
-                      height: (isVerySmall) ? "230px" :  "300px",
-                      objectFit: "contain" }}
-                  />
-                ) : (
-                  <>
+                  {brandLogo ? (
                     <img
-                      className="item-imageof"
-                      src={item.images[0]}
-                      alt={name}
-                      onClick={() => handleNavigate(id)} // Navigate when clicking the card
-                       style={{ width: "100%",
-                        height:(isVerySmall) ? "230px" :  "300px",
-                        objectFit: "contain"}}
+                      src={brandLogo}
+                      alt={brandName}
+                      className="men-brand-chip-logo"
                     />
-                     {firstVideoUrl && ( 
-                      <div
-                        className="play-button"
-                        onClick={() => handleVideoPlay(id)}
-                        style={{
-                          position: 'absolute',
-                          left: '20px',
-                          bottom: '0px',
-                          zIndex: '2',
-                          transform: 'translate(-50%, -50%)',
-                          fontSize: '1.5rem',
-                          color: 'white',
-                          textShadow: '0 0 5px rgba(0,0,0,0.5)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        ▶️
-                      </div>
+                  ) : (
+                    <span className="men-brand-chip-text">{brandName}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {displayedItems.length === 0 ? (
+        <div className="men-empty-card">
+          {t("no_products_found") || "No products found."}
+        </div>
+      ) : (
+        <section className="men-products-wrap">
+          <div className="men-section-head">
+            <h2 className="men-section-title">
+              {t("products") || "Products"}
+            </h2>
+          </div>
+
+          <div className="men-product-grid compact">
+            {displayedItems.map((itemData) => {
+              const { itemId, id, item = {} } = itemData;
+              const {
+                name,
+                usdPrice,
+                originalPrice,
+                sold,
+                videos,
+                brand,
+                images = [],
+              } = item;
+
+              const firstVideoUrl = getFirstVideoUrl(videos);
+              const ratingData = getRatingView(reviews[itemId]?.averageRating);
+
+              return (
+                <article key={id} className="men-card">
+                  <div className="men-card-media">
+                    {activeVideoId === id && firstVideoUrl ? (
+                      <video
+                        src={firstVideoUrl}
+                        controls
+                        autoPlay
+                        onEnded={() => setActiveVideoId(null)}
+                        className="men-card-video"
+                      />
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="men-card-image-button"
+                          onClick={() => handleNavigate(id)}
+                          aria-label={`View ${name || "product"}`}
+                        >
+                          <img
+                            className="men-card-image"
+                            src={images[0] || "/placeholder.png"}
+                            alt={name || "Product image"}
+                          />
+                        </button>
+
+                        {brand && (
+                          <div className="men-card-topbar">
+                            <span className="men-tag men-tag-strong">
+                              {brand}
+                            </span>
+                          </div>
+                        )}
+
+                        {firstVideoUrl && (
+                          <button
+                            type="button"
+                            className="men-video-btn"
+                            onClick={() => setActiveVideoId(id)}
+                            aria-label={`Play video for ${name || "product"}`}
+                          >
+                            ▶
+                          </button>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </div>
-              <div className="item-details"  onClick={() => handleNavigate(id)} >
-                <div className="item-name" title={name}>
-                  {name.length > 20 ? `${name.substring(0, 20)}...` : name}
-                </div>
-                <div className="item-prices">
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span className="item-price">${usdPrice}</span>
-                    {originalPrice > 0 && (
-                      <span className="item-original-price">${originalPrice}</span>
-                    )}
-                    <span
-                      className="item-sold"
-                      style={{ display: "flex", marginLeft: "10px", fontSize: "0.8rem" }}
+                  </div>
+
+                  <div className="men-card-body">
+                    <button
+                      type="button"
+                      className="men-card-content men-reset-button"
+                      onClick={() => handleNavigate(id)}
                     >
-                      {sold}{" "}
-                      <div style={{ marginLeft: "5px", fontWeight: "bold", color: "red" }}>
-                        {t("sold")}
+                      <div className="men-card-title" title={name}>
+                        {name?.length > 42 ? `${name.slice(0, 42)}...` : name}
                       </div>
-                    </span>
+
+                      <div className="men-card-price-row">
+                        <div className="men-card-price-main">
+                          {formatPrice(usdPrice)}
+                        </div>
+
+                        {Number(originalPrice) > 0 && (
+                          <div className="men-card-price-old">
+                            {formatPrice(originalPrice)}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="men-card-meta compact">
+                        <span className="men-rating-inline">
+                          {ratingData.value || "—"} · {ratingData.stars}
+                        </span>
+                        <span>
+                          {Number(sold || 0)} {t("sold") || "sold"}
+                        </span>
+                      </div>
+                    </button>
                   </div>
-                  <div className="item-crypto">
-                    <img
-                      src={`https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/svg/color/${crypto.toLowerCase()}.svg`}
-                      alt={cryptocurrency}
-                      className="crypto-icon"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "https://cryptologos.cc/logos/binance-usd-busd-logo.png";
-                      }}
-                    />
-                    <span className="item-crypto-price">
-                      {itemPriceInCrypto !== "N/A"
-                        ? `${itemPriceInCrypto} ${cryptocurrency}`
-                        : t("price_unavailable")}
-                    </span>
-                  </div>
-                </div>
-                <div
-  className="item-type-stars"
-  onClick={() => {
-    setItemData(itemData); // Store the item data in Zustand
-    router.push("/reviewPage"); // Navigate to the review page
-  }}
-  title={t("view_reviews")}
->
-  {finalRating
-    ? "★".repeat(Math.round(finalRating)) + "☆".repeat(5 - Math.round(finalRating))
-    : t("no_rating")}
-</div>
-              </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
+    </div>
+
+    <div className={`men-filter-drawer-wrap ${isFilterOpen ? "open" : ""}`}>
+      <div className="men-filter-backdrop" onClick={closeFilter} />
+
+      <aside className="men-filter-drawer" aria-label="Size filter drawer">
+        <div className="men-filter-head">
+          <h3>{t("choose_size") || "Choose size"}</h3>
+
+          <button
+            type="button"
+            className="men-filter-close"
+            onClick={closeFilter}
+            aria-label="Close filter drawer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="men-filter-sizes">
+          {allSizes.length === 0 ? (
+            <div className="men-empty-card">
+              {t("no_sizes_found") || "No sizes found."}
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            allSizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={`men-size-block ${
+                  selectedSize === size ? "active" : ""
+                }`}
+                onClick={() => handleSelectSize(size)}
+              >
+                {size}
+              </button>
+            ))
+          )}
+        </div>
+
+        {selectedSize && (
+          <div className="men-filter-footer">
+            <button
+              type="button"
+              className="men-clear-btn"
+              onClick={clearFilter}
+            >
+              {t("clear_filter") || "Clear filter"}
+            </button>
+          </div>
+        )}
+      </aside>
     </div>
-    </div>
-    
-  );
+  </div>
+);
 }
 
 export default ItemOfMen;

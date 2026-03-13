@@ -1,41 +1,91 @@
-// app/kid-fashion/page.jsx
 import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import KidFashion from "@/components/kidFashion";
 
 const API_BASE = "https://api.malidag.com";
+const SITE_URL = "https://web.malidag.com";
 
 async function getData() {
-  const [mtypesRes, itemsRes, cryptoRes] = await Promise.all([
-    fetch(`${API_BASE}/categories/FashionKick`, {
-      next: { revalidate: 3600 },
-    }).then((r) => r.json()),
-    fetch(`${API_BASE}/items`, {
-      next: { revalidate: 3600 },
-    }).then((r) => r.json()),
-    fetch(`${API_BASE}/crypto-prices`, {
-      next: { revalidate: 600 },
-    }).then((r) => r.json()),
-  ]);
+  try {
+    const [mtypesResponse, itemsResponse] = await Promise.all([
+      fetch(`${API_BASE}/categories/kidFashion`, {
+        next: { revalidate: 3600 },
+      }),
+      fetch(`${API_BASE}/items`, {
+        next: { revalidate: 3600 },
+      }),
+    ]);
 
-  const mtypes = mtypesRes;
-  const data = itemsRes.items;
-  const cryptoPrices = cryptoRes;
+    if (!mtypesResponse.ok) {
+      throw new Error(`Kid categories fetch failed: ${mtypesResponse.status}`);
+    }
 
-  const filteredData = data.filter((item) =>
-    ["boy", "girl", "baby", "girls", "boys", "babies", "baby-girl", "baby-boy"].includes(
-      item.item.genre
-    )
-  );
+    if (!itemsResponse.ok) {
+      throw new Error(`Items fetch failed: ${itemsResponse.status}`);
+    }
 
-  const groupedData = filteredData.reduce((acc, item) => {
-    const type = item.item.type || "Other";
-    if (!acc[type]) acc[type] = { type, items: [] };
-    acc[type].items.push(item);
-    return acc;
-  }, {});
+    const [mtypesRes, itemsRes] = await Promise.all([
+      mtypesResponse.json(),
+      itemsResponse.json(),
+    ]);
 
-  return { mtypes, groupedData, cryptoPrices, filteredData };
+    const mtypes = Array.isArray(mtypesRes) ? mtypesRes : [];
+    const data = Array.isArray(itemsRes?.items) ? itemsRes.items : [];
+
+    const allowedGenres = new Set([
+      "boy",
+      "girl",
+      "baby",
+      "girls",
+      "boys",
+      "babies",
+      "baby-girl",
+      "baby-boy",
+      "baby girl",
+      "baby boy",
+      "kid",
+      "kids",
+      "children",
+    ]);
+
+    const filteredData = data.filter((entry) => {
+      const genre = String(entry?.item?.genre || "")
+        .trim()
+        .toLowerCase();
+
+      return allowedGenres.has(genre);
+    });
+
+    const groupedData = filteredData.reduce((acc, entry) => {
+      const type = String(entry?.item?.type || "Other").trim();
+      const genre = String(entry?.item?.genre || "").trim();
+
+      if (!acc[type]) {
+        acc[type] = {
+          type,
+          genre,
+          items: [],
+        };
+      }
+
+      acc[type].items.push(entry);
+      return acc;
+    }, {});
+
+    return {
+      mtypes,
+      groupedData,
+      filteredData,
+    };
+  } catch (error) {
+    console.error("getData error:", error);
+
+    return {
+      mtypes: [],
+      groupedData: {},
+      filteredData: [],
+    };
+  }
 }
 
 export async function generateMetadata() {
@@ -48,17 +98,16 @@ export async function generateMetadata() {
   const title = `${t("kids_fashion_title", { defaultValue: "Kids' Fashion" })} | Malidag`;
   const description = t("kids_fashion_description", {
     defaultValue:
-      "Discover stylish kids' fashion on Malidag. Shop for boys, girls, and babies with crypto or USD, shipped worldwide.",
+      "Discover stylish kids' fashion on Malidag. Shop for boys, girls, and babies with stablecoin or USD pricing, shipped worldwide.",
   });
 
-  const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/kid-fashion`;
-  const ogImage = `${baseUrl}/og/kids-default.jpg`;
+  const url = `${SITE_URL}/kid-fashion`;
+  const ogImage = `${SITE_URL}/og/kids-default.jpg`;
 
   const keywordsCsv =
     t("kids_fashion_keywords", {
       defaultValue:
-        "kids fashion, boys clothes, girls clothes, baby fashion, children clothing, kids wear, Malidag shopping, crypto kids wear, USD kids clothing",
+        "kids fashion, boys clothes, girls clothes, baby fashion, children clothing, kids wear, Malidag shopping, stablecoin kids wear, USD kids clothing",
     }) || "";
 
   const keywords = keywordsCsv
@@ -70,7 +119,9 @@ export async function generateMetadata() {
     title,
     description,
     keywords,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+    },
     robots: {
       index: true,
       follow: true,
@@ -85,7 +136,14 @@ export async function generateMetadata() {
       siteName: "Malidag",
       type: "website",
       locale: lang,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -97,22 +155,32 @@ export async function generateMetadata() {
 }
 
 export default async function KidFashionPage() {
-  const { mtypes, groupedData, cryptoPrices, filteredData } = await getData();
+  const { mtypes, groupedData, filteredData } = await getData();
 
-  const baseUrl = "https://www.malidag.com";
-  const url = `${baseUrl}/kid-fashion`;
+  const url = `${SITE_URL}/kid-fashion`;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "Kids' Fashion | Malidag",
     url,
-    description: "Shop stylish kids' fashion—boys, girls, and babies—pay with crypto or USD.",
+    description:
+      "Shop stylish kids' fashion for boys, girls, and babies on Malidag.",
     breadcrumb: {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: `${baseUrl}/` },
-        { "@type": "ListItem", position: 2, name: "Kids' Fashion", item: url },
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: `${SITE_URL}/`,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Kids' Fashion",
+          item: url,
+        },
       ],
     },
   };
@@ -123,19 +191,19 @@ export default async function KidFashionPage() {
     name: "Kids' Fashion Products",
     url,
     numberOfItems: filteredData.length,
-    itemListElement: filteredData.slice(0, 20).map((item, index) => ({
+    itemListElement: filteredData.slice(0, 20).map((entry, index) => ({
       "@type": "Product",
       position: index + 1,
-      name: item.item.name,
-      image: item.item.images?.[0] || `${baseUrl}/malidag.png`,
-      brand: item.item.brand || "Malidag",
-      category: item.item.type || "Kids Fashion",
+      name: entry?.item?.name || "Product",
+      image: entry?.item?.images?.[0] || `${SITE_URL}/malidag.png`,
+      brand: entry?.item?.brand || "Malidag",
+      category: entry?.item?.type || "Kids Fashion",
       offers: {
         "@type": "Offer",
         priceCurrency: "USD",
-        price: item.item.usdPrice || "0.00",
+        price: String(entry?.item?.usdPrice || "0.00"),
         availability: "https://schema.org/InStock",
-        url: `${baseUrl}/product/${item.id}`,
+        url: `${SITE_URL}/product/${entry?.id || ""}`,
       },
     })),
   };
@@ -150,7 +218,7 @@ export default async function KidFashionPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
-      <KidFashion mtypes={mtypes} types={groupedData} cryptoPrices={cryptoPrices} />
+      <KidFashion mtypes={mtypes} types={groupedData} />
     </>
   );
 }

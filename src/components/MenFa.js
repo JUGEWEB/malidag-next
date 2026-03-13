@@ -41,7 +41,7 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices }) {
             <button
               key={idx}
               className="type-chip"
-              onClick={() => router.push(`/men-top-topic/${type.toLowerCase()}`)}
+              onClick={() => router.push(`/item-of-men/${type.toLowerCase()}`)}
             >
               {type}
             </button>

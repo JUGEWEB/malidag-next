@@ -278,8 +278,8 @@ function KidFashion({ mtypes = [], types = {} }) {
         </h2>
 
         <p className="kids-hero-subtitle">
-          {t("kids_fashion_subtitle") ||
-            "Soft styles, playful colors, and elevated essentials designed for every little personality."}
+         
+            Soft styles, playful colors, and elevated essentials designed for every little personality.
         </p>
 
         <div className="kids-hero-stats" aria-label="Collection overview">

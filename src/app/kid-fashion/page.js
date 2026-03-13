@@ -9,10 +9,10 @@ async function getData() {
   try {
     const [mtypesResponse, itemsResponse] = await Promise.all([
       fetch(`${API_BASE}/categories/kidFashion`, {
-        next: { revalidate: 3600 },
+        cache: "no-store",
       }),
       fetch(`${API_BASE}/items`, {
-        next: { revalidate: 3600 },
+        cache: "no-store",
       }),
     ]);
 
@@ -53,19 +53,33 @@ async function getData() {
       "children",
     ]);
 
-    const allowedCategories = new Set(["clothes", "shoes"]);
+    const allowedCategories = new Set([
+      "clothes",
+      "clothing",
+      "shoes",
+      "shoe",
+    ]);
 
-const filteredData = data.filter((entry) => {
-  const genre = String(entry?.item?.genre || entry?.details?.genre || "")
-    .trim()
-    .toLowerCase();
+    const normalize = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[-_]/g, " ")
+        .replace(/\s+/g, " ");
 
-  const category = String(entry?.category || entry?.details?.category || "")
-    .trim()
-    .toLowerCase();
+    const filteredData = data.filter((entry) => {
+      const genre = normalize(
+        entry?.item?.genre || entry?.details?.genre || entry?.genre
+      );
 
-  return allowedGenres.has(genre) && allowedCategories.has(category);
-});
+      const category = normalize(
+        entry?.item?.category ||
+          entry?.category ||
+          entry?.details?.category
+      );
+
+      return allowedGenres.has(genre) && allowedCategories.has(category);
+    });
 
     const groupedData = filteredData.reduce((acc, entry) => {
       const type = String(

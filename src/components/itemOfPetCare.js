@@ -1,49 +1,57 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
-import './itemOfWomen.css';
+import "./itemOfPetcare.css";
 import { useCheckoutStore } from "./checkoutStore";
 
 function ItemOfPetCare() {
-const params = useParams();
-   const router = useRouter()
- const { gender, type } = params
+  const params = useParams();
+  const router = useRouter();
+  const { gender, type } = params;
+
   const [items, setItems] = useState([]);
-  const [cryptoPrices, setCryptoPrices] = useState({});
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [activeVideoId, setActiveVideoId] = useState(null);
-  const [beautyImages, setBeautyImages] = useState([]); // Store beauty images
-  const [selectedSize, setSelectedSize] = useState(null); // Track selected size
-   const [reviews, setReviews] = useState({}); // Store reviews data
-      const {isMobile, isDesktop, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall} = useScreenSize()
- 
-   const { t } = useTranslation();
-   const setItemData = useCheckoutStore((state) => state.setItemData);
+  const [beautyImages, setBeautyImages] = useState([]);
+  const [reviews, setReviews] = useState({});
 
- 
+  const { isMobile, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall } =
+    useScreenSize();
 
-  const fetchCryptoPrices = async (symbols) => {
+  const { t } = useTranslation();
+  const setItemData = useCheckoutStore((state) => state.setItemData);
+
+  const fetchReviews = async (productId) => {
     try {
-      const response = await axios.get("https://api.malidag.com/crypto-prices");
-      console.log("Response data:", response.data);
-  
-      // Filter the response data based on the provided symbols
-      const prices = symbols.reduce((acc, symbol) => {
-        if (response.data[symbol]) {
-          acc[symbol] = parseFloat(response.data[symbol]); // Parse the price to a float
-        }
-        return acc;
-      }, {});
-  
-      setCryptoPrices(prices);
+      const response = await axios.get(
+        `https://api.malidag.com/get-reviews/${productId}`
+      );
+
+      if (response.data.success) {
+        const reviewsArray = response.data.reviews || [];
+
+        const totalRating = reviewsArray.reduce((acc, review) => {
+          const rating = parseFloat(review.rating);
+          return acc + (isNaN(rating) ? 4 : rating);
+        }, 0);
+
+        const averageRating = reviewsArray.length
+          ? (totalRating / reviewsArray.length).toFixed(2)
+          : null;
+
+        setReviews((prev) => ({
+          ...prev,
+          [productId]: { averageRating, reviewsArray },
+        }));
+      }
     } catch (error) {
-      console.error("Error fetching crypto prices:", error);
+      console.error("Error fetching reviews:", error);
     }
   };
 
@@ -52,84 +60,56 @@ const params = useParams();
       try {
         const response = await axios.get("https://api.malidag.com/women/images");
 
-        // ✅ Filter images where type matches itemClicked
         const filteredImages = response.data.filter(
-          (image) => image.type.toLowerCase() === type.toLowerCase()
+          (image) => image.type?.toLowerCase() === String(type).toLowerCase()
         );
-          console.log("filtered", filteredImages)
+
         setBeautyImages(filteredImages);
       } catch (error) {
         console.error("Error fetching beauty images:", error);
+      }
+    };
+
+    if (type) {
+      fetchBeautyImages();
+    }
+  }, [type]);
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        setLoading(true);
+
+        const response = await axios.get(`https://api.malidag.com/items/${type}`);
+        const fetchedItems = response.data.items || [];
+
+        const filteredItems = fetchedItems.filter(
+          (item) =>
+            item.item.genre?.toLowerCase() === String(gender).toLowerCase() &&
+            item.category === "Pet care"
+        );
+
+        setItems(filteredItems);
+
+        const uniqueCategories = [
+          ...new Set(filteredItems.map((item) => item.category).filter(Boolean)),
+        ];
+        setCategories(uniqueCategories);
+
+        filteredItems.forEach((item) => {
+          fetchReviews(item.itemId);
+        });
+      } catch (error) {
+        console.error("Error fetching pet care items:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBeautyImages();
-  }, [type]); // ✅ Re-fetch when `itemClicked` changes
-
-   // Fetch reviews from the endpoint
-          const fetchReviews = async (productId) => {
-            try {
-              const response = await axios.get(`https://api.malidag.com/get-reviews/${productId}`);
-              if (response.data.success) {
-               
-                const reviewsArray = response.data.reviews || [];
-                const totalRating = reviewsArray.reduce((acc, review) => {
-                  let rating = parseFloat(review.rating);
-                  return acc + (isNaN(rating) ? 4 : rating); // If rating is invalid, treat as 5 stars
-                }, 0);
-                const averageRating = reviewsArray.length ? (totalRating / reviewsArray.length).toFixed(2) : null;
-        
-                setReviews((prevReviews) => ({
-                  ...prevReviews,
-                  [productId]: { averageRating, reviewsArray },
-                }));
-        
-              }
-            } catch (error) {
-              console.error("Error fetching reviews:", error);
-            }
-          };
-        
-         
-
-  useEffect(() => {
-  const fetchItems = async () => {
-    try {
-      const response = await axios.get(`https://api.malidag.com/items/${type}`);
-      const fetchedItems = response.data.items || [];
-
-      const filteredItems = fetchedItems.filter(item =>
-        item.item.genre?.toLowerCase() === gender.toLowerCase() &&
-        item.category === "Pet care"
-      );
-
-      setItems(filteredItems);
-
-      const uniqueCategories = [...new Set(filteredItems.map(item => item.category))];
-      setCategories(uniqueCategories);
-
-        // Fetch reviews for each item
-       filteredItems.forEach((item) => {
-        fetchReviews(item.itemId); // Fetch reviews for each product
-      });
-
-      const cryptoSymbols = [
-        ...new Set(filteredItems.map((item) => item.item.cryptocurrency)),
-      ];
-      await fetchCryptoPrices(cryptoSymbols);
-    } catch (error) {
-      console.error("Error fetching pet care items:", error);
-    } finally {
-      setLoading(false);
+    if (type && gender) {
+      fetchItems();
     }
-  };
-
-  fetchItems();
-}, [type, gender, router.isReady]);
-
-
+  }, [type, gender]);
 
   const toggleDropdown = (category) => {
     setDropdownOpen((prev) => ({
@@ -138,27 +118,23 @@ const params = useParams();
     }));
   };
 
-  if (loading) return <div className="loading-message">{t("loading")}</div>;
-
- 
-
-  const categorizedItems = categories.reduce((acc, category) => {
-    acc[category] = items.filter((item) => item.category === category);
-    return acc;
-  }, {});
+  const categorizedItems = useMemo(() => {
+    return categories.reduce((acc, category) => {
+      acc[category] = items.filter((item) => item.category === category);
+      return acc;
+    }, {});
+  }, [categories, items]);
 
   const getHotItems = (categoryItems) => {
     return [...categoryItems]
-      .sort((a, b) => b.item.sold - a.item.sold)
-      .slice(0, 4); // Top 3 sold items
+      .sort((a, b) => (b.item.sold || 0) - (a.item.sold || 0))
+      .slice(0, 4);
   };
 
-
-  const handleVideoPlay = (id, videoUrl) => {
-    console.log('Playing video:', videoUrl); // Debugging line
+  const handleVideoPlay = (id) => {
     setActiveVideoId(id);
   };
-  
+
   const handleVideoStop = () => {
     setActiveVideoId(null);
   };
@@ -167,251 +143,217 @@ const params = useParams();
     router.push(`/product/${id}`);
   };
 
-   // Apply size filter if selectedSize is set
-   const displayedItems = selectedSize ? filterItemsBySize(selectedSize) : items;
+  const gridClass = isVeryVerySmall
+    ? "pet-grid cols-1"
+    : isVerySmall || isSmallMobile
+    ? "pet-grid cols-2"
+    : isMobile || isTablet
+    ? "pet-grid cols-3"
+    : "pet-grid cols-desktop";
+
+  if (loading) {
+    return <div className="loading-message">{t("loading")}</div>;
+  }
 
   return (
-    <div>
-    <div  style={{maxWidth: "100%", width: "100%", color: "black"}}>
-      <div style={{width: "100%", overflowX: "auto"}}>
-      <div style={{width: "100%", maxWidth: "100%", display: "flex", alignItems: "center", justifyContent: "start", padding: "10px"}}>
-        <div>Malidag {gender} - {type}</div>
-        <div style={{ marginLeft: "20px" }}>{t("related_categories")}</div>
-           <div style={{ marginLeft: "20px" }}>
-        {categories.map((category, index) => (
-  <div key={index}>
-    <div
-      onClick={() => toggleDropdown(category)}
-    >
-      {category}
-      <span className={`dropdown-arrow ${dropdownOpen[category] ? "arrow-open" : "arrow-closed"}`}>
-        ▼
-      </span>
-    </div>
-  </div>
-))}
-</div>
-</div>
-</div>
-        <div>
-
-          <div style={{position: "relative", width: "100%"}}>
-
-{/* Render dropdown separately so you can move it wherever you want */}
-<div style={{position: "absolute", width: "100%", zIndex: "1000", backgroundColor: "white"}}>
-{categories.map((category) =>
-  dropdownOpen[category] ? (
-    <div key={category}  style={{position: "relative", width: "100%", display: "flex", alignItems: "center"}}>
-      <div className="stable-catgory-types">
-        <strong>malidag {category}</strong>
-        {categorizedItems[category]
-          .map((item) => item.item.type)
-          .filter((type, idx, arr) => arr.indexOf(type) === idx)
-          .map((type, idx) => (
-            <div key={idx} className="stable-tpe-item">
-              {type}
+    <div className="pet-page">
+      <div className="pet-shell">
+        <header className="pet-topbar">
+          <div className="pet-topbar__inner">
+            <div className="pet-title-wrap">
+              <p className="pet-eyebrow">Malidag Pet Care</p>
+              <h1 className="pet-title">
+                {gender} / {type}
+              </h1>
             </div>
-          ))}
-      </div>
-      <div>
-        <strong style={{ marginLeft: "50%" , width: "100%"}}>{t("hot_label")}</strong>
-        <div style={{width: "100%", backgroundColor: "white"}}>
-          {getHotItems(categorizedItems[category]).map((hotItem, idx) => (
-            <div key={idx} style={{width: "250px"}}>
-              <img
-                src={hotItem.item.images[0]}
-                alt={hotItem.item.name}
-                onClick={() => handleNavigate(hotItem.id)}
-                className="stable-ht-item-image"
-              />
-              <div className="stable-ht-item-name">{hotItem.item.name}</div>
-              <div className="stable-ht-item-sold">{hotItem.item.sold} {t("sold")}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  ) : null
-)}
-</div>
 
-          </div>
-        </div>
-      </div>
-      {loading ? (
-        <p>{t("loading_images")}</p>
-      ) : (
-        <div className="beauty-images-container" 
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center", maxWidth: "100%"
-        }}
-        >
-          {beautyImages.length > 0 ? (
-            beautyImages.map((img, index) => (
-              <img
-                key={index}
-                src={img.imageUrl} // ✅ Corrected URL
-                alt={itemClicked}
-                className="beauty-image"
-                style={{maxHeight: "400px", width: "100%", objectFit: "cover"}}
-              />
-            ))
-          ) : (
-            <p ></p>
-          )}
-        </div>
-      )}
-    <div className="item-pge-container">
+            <div className="pet-categories">
+              <span className="pet-categories__label">
+                {t("related_categories")}
+              </span>
 
-      <div style={{
-  display: "grid",
-  width: "100%",
-  gap: "5px",
-  padding: "1px",
-  gridTemplateColumns:
-    isVerySmall
-      ? "repeat(2, 1fr)"
-      : isVeryVerySmall
-      ? "repeat(1, 1fr)"
-      : isSmallMobile
-      ? "repeat(2, 1fr)"
-      : isMobile
-      ? "repeat(3, 1fr)"
-      : isTablet
-      ? "repeat(3, 1fr)"
-      : "repeat(4, 1fr)",
-}}>
-        {displayedItems.map((itemData) => {
-          const {itemId, id, item } = itemData;
-          const { name, usdPrice, originalPrice, cryptocurrency, sold, videos } = item;
-          const cryptoSymbol = `${cryptocurrency}`;
-          const crypto = String(cryptocurrency);
-         const reviewsData = reviews[itemId] || {}; // Ensure it exists
-            const finalRating = reviewsData ? reviewsData.averageRating :  t("no_rating");
-          const cryptoPriceInUSD = cryptoPrices[cryptoSymbol] || 0;
-          const itemPriceInCrypto =
-            cryptoPriceInUSD > 0 ? (usdPrice / cryptoPriceInUSD).toFixed(6) : "N/A";
-
-            const normalizedVideos = Array.isArray(videos) ? videos : [videos];
-            const firstVideoUrl = normalizedVideos.find(
-              (video) => typeof video === "string" && video.endsWith(".mp4")
-            );
-
-          return (
-            <div key={id} className="itm-card">
-              <div
-                style={{
-                  background: '#dddddd53',
-                  zIndex: '1',
-                 paddingTop: "20px",
-                 filter: "brightness(0.880000000) contrast(1.2)",
-                  width: '100%',
-                  height:(isVerySmall) ? "230px" :  "300px",
-                  marginBottom: '10px',
-                  marginTop: '10px',
-                  position: 'relative',
-                }}
-              >
-                {activeVideoId === id && firstVideoUrl  ? (
-                  <video
-                    src={firstVideoUrl}
-                    controls
-                    autoPlay
-                    onEnded={handleVideoStop}
-                     style={{ width: "100%",
-                      height: (isVerySmall) ? "230px" :  "300px",
-                      objectFit: "contain" }}
-                  />
-                ) : (
-                  <>
-                    <img
-                      className="item-imageof"
-                      src={item.images[0]}
-                      alt={name}
-                      onClick={() => handleNavigate(id)} // Navigate when clicking the card
-                      style={{ width: "100%",
-                        height:(isVerySmall) ? "230px" :  "250px",
-                        objectFit: "contain"}}
-                    />
-                     {firstVideoUrl && ( 
-                      <div
-                        className="play-button"
-                        onClick={() => handleVideoPlay(id)}
-                        style={{
-                          position: 'absolute',
-                          left: '20px',
-                          bottom: '0px',
-                          zIndex: '2',
-                          transform: 'translate(-50%, -50%)',
-                          fontSize: '1.5rem',
-                          color: 'white',
-                          textShadow: '0 0 5px rgba(0,0,0,0.5)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        ▶️
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-              <div className="item-details"  onClick={() => handleNavigate(id)} >
-                <div className="item-name" title={name}>
-                  {name.length > 20 ? `${name.substring(0, 20)}...` : name}
-                </div>
-                <div className="item-prices">
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span className="item-price">${usdPrice}</span>
-                    {originalPrice > 0 && (
-                      <span className="item-original-price">${originalPrice}</span>
-                    )}
+              <div className="pet-categories__list">
+                {categories.map((category, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className={`pet-category-chip ${
+                      dropdownOpen[category] ? "is-active" : ""
+                    }`}
+                    onClick={() => toggleDropdown(category)}
+                  >
+                    <span>{category}</span>
                     <span
-                      className="item-sold"
-                      style={{ display: "flex", marginLeft: "10px", fontSize: "0.8rem" }}
+                      className={`dropdown-arrow ${
+                        dropdownOpen[category] ? "arrow-open" : "arrow-closed"
+                      }`}
                     >
-                      {sold}{" "}
-                      <div style={{ marginLeft: "5px", fontWeight: "bold", color: "red" }}>
-                        {t("sold")}
-                      </div>
+                      ▼
                     </span>
-                  </div>
-                  <div className="item-crypto">
-                    <img
-                      src={`https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/svg/color/${crypto.toLowerCase()}.svg`}
-                      alt={cryptocurrency}
-                      className="crypto-icon"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "https://cryptologos.cc/logos/binance-usd-busd-logo.png";
-                      }}
-                    />
-                    <span className="item-crypto-price">
-                      {itemPriceInCrypto !== "N/A"
-                        ? `${itemPriceInCrypto} ${cryptocurrency}`
-                        : t("price_unavailable")}
-                    </span>
-                  </div>
-                </div>
-                 <div
-  className="item-type-stars"
-  onClick={() => {
-    setItemData(itemData); // Store the item data in Zustand
-    router.push("/reviewPage"); // Navigate to the review page
-  }}
-  title={t("view_reviews")}
->
-  {finalRating
-    ? "★".repeat(Math.round(finalRating)) + "☆".repeat(5 - Math.round(finalRating))
-    : t("no_rating")}
-</div>
+                  </button>
+                ))}
               </div>
             </div>
-          );
-        })}
+          </div>
+
+          <div className="pet-mega-layer">
+            {categories.map((category) =>
+              dropdownOpen[category] ? (
+                <div key={category} className="pet-mega-menu">
+                  <div className="pet-mega-menu__section">
+                    <h3 className="pet-mega-menu__title">Malidag {category}</h3>
+
+                    <div className="pet-type-list">
+                      {categorizedItems[category]
+                        ?.map((item) => item.item.type)
+                        .filter((value, idx, arr) => arr.indexOf(value) === idx)
+                        .map((typeItem, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className="pet-type-item"
+                          >
+                            {typeItem}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+
+                  <div className="pet-mega-menu__section pet-mega-menu__section--hot">
+                    <h3 className="pet-mega-menu__title">{t("hot_label")}</h3>
+
+                    <div className="pet-hot-grid">
+                      {getHotItems(categorizedItems[category] || []).map(
+                        (hotItem, idx) => (
+                          <article key={idx} className="pet-hot-card">
+                            <img
+                              src={hotItem.item.images?.[0]}
+                              alt={hotItem.item.name}
+                              onClick={() =>
+                                handleNavigate(hotItem.id || hotItem.itemId)
+                              }
+                              className="pet-hot-card__image"
+                            />
+                            <div className="pet-hot-card__body">
+                              <div className="pet-hot-card__name">
+                                {hotItem.item.name}
+                              </div>
+                              <div className="pet-hot-card__sold">
+                                {hotItem.item.sold} {t("sold")}
+                              </div>
+                            </div>
+                          </article>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : null
+            )}
+          </div>
+        </header>
+
+        <section className="pet-products-section">
+          <div className={gridClass}>
+            {items.map((itemData) => {
+              const { itemId, id, item } = itemData;
+              const { name, usdPrice, originalPrice, sold, videos, images } = item;
+
+              const reviewsData = reviews[itemId] || {};
+              const finalRating = reviewsData?.averageRating || null;
+
+              const normalizedVideos = Array.isArray(videos)
+                ? videos
+                : videos
+                ? [videos]
+                : [];
+
+              const firstVideoUrl = normalizedVideos.find(
+                (video) => typeof video === "string" && video.endsWith(".mp4")
+              );
+
+              return (
+                <article key={id} className="pet-card">
+                  <div className="pet-card__media">
+                    {activeVideoId === id && firstVideoUrl ? (
+                      <video
+                        src={firstVideoUrl}
+                        controls
+                        autoPlay
+                        onEnded={handleVideoStop}
+                        className="pet-card__video"
+                      />
+                    ) : (
+                      <>
+                        <img
+                          className="pet-card__image"
+                          src={images?.[0]}
+                          alt={name}
+                          onClick={() => handleNavigate(id)}
+                        />
+
+                        {firstVideoUrl && (
+                          <button
+                            type="button"
+                            className="pet-card__play"
+                            onClick={() => handleVideoPlay(id)}
+                            aria-label="Play product video"
+                          >
+                            ▶
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <div
+                    className="pet-card__body"
+                    onClick={() => handleNavigate(id)}
+                  >
+                    <h3 className="pet-card__name" title={name}>
+                      {name.length > 32 ? `${name.substring(0, 32)}...` : name}
+                    </h3>
+
+                    <div className="pet-card__prices">
+                      <div className="pet-price-row">
+                        <span className="pet-price-current">
+                          ${Number(usdPrice || 0).toFixed(2)}
+                        </span>
+
+                        {Number(originalPrice) > 0 && (
+                          <span className="pet-price-original">
+                            ${Number(originalPrice).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="pet-sold">
+                        {sold} {t("sold")}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="pet-rating"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setItemData(itemData);
+                        router.push("/reviewPage");
+                      }}
+                      title={t("view_reviews")}
+                    >
+                      {finalRating
+                        ? `${Number(finalRating).toFixed(1)} ★`
+                        : t("no_rating")}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
       </div>
     </div>
-    </div>
-    
   );
 }
 

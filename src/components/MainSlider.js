@@ -171,7 +171,7 @@ const MainSlider = ({ user }) => {
   const settings = {
     dots: false,
     infinite: false,
-    speed: 50,
+    speed: 100,
     slidesToShow: 1,
     slidesToScroll: 1,
     initialSlide: initialSlideIndex,

@@ -14,7 +14,6 @@ function Item() {
   const itemClicked = params?.itemClicked;
 
   const [items, setItems] = useState([]);
-  const [cryptoPrices, setCryptoPrices] = useState({});
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState({});
@@ -33,21 +32,10 @@ function Item() {
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
-  const fetchCryptoPrices = async (symbols) => {
-    try {
-      const response = await axios.get("https://api.malidag.com/crypto-prices");
-
-      const prices = symbols.reduce((acc, symbol) => {
-        if (response.data[symbol]) {
-          acc[symbol] = parseFloat(response.data[symbol]);
-        }
-        return acc;
-      }, {});
-
-      setCryptoPrices(prices);
-    } catch (error) {
-      console.error("Error fetching crypto prices:", error);
-    }
+  const stablecoinIcons = {
+    usdt: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
+    usdc: "https://api.malidag.com/learn/videos/1769909942070-0xaf88d065e77c8cc2239327c5edb3a432268e5831.png",
+    busd: "https://api.malidag.com/learn/videos/1773502639247-BUSD.png",
   };
 
   const fetchReviews = async (productId) => {
@@ -109,12 +97,6 @@ function Item() {
         fetchedItems.forEach((item) => {
           fetchReviews(item.itemId);
         });
-
-        const cryptoSymbols = [
-          ...new Set(fetchedItems.map((item) => `${item.item.cryptocurrency}`)),
-        ];
-
-        await fetchCryptoPrices(cryptoSymbols);
       } catch (error) {
         console.error("Error fetching items:", error);
       } finally {
@@ -151,6 +133,15 @@ function Item() {
 
   const handleNavigate = (id) => {
     router.push(`/product/${id}`);
+  };
+
+  const getStablecoinIcon = (crypto) => {
+    if (!crypto) return stablecoinIcons.usdt;
+    return stablecoinIcons[crypto.toLowerCase()] || stablecoinIcons.usdt;
+  };
+
+  const getStablecoinPrice = (usdPrice) => {
+    return Number(usdPrice).toFixed(2);
   };
 
   const gridClassName = isVeryVerySmall
@@ -268,14 +259,11 @@ function Item() {
               const { itemId, id, item } = itemData;
               const { name, usdPrice, originalPrice, cryptocurrency, sold, videos } = item;
 
-              const cryptoSymbol = `${cryptocurrency}`;
-              const crypto = String(cryptocurrency);
+              const crypto = String(cryptocurrency || "USDT").toUpperCase();
               const reviewsData = reviews[itemId] || {};
               const finalRating = reviewsData?.averageRating;
-              const cryptoPriceInUSD = cryptoPrices[cryptoSymbol] || 0;
 
-              const itemPriceInCrypto =
-                cryptoPriceInUSD > 0 ? (usdPrice / cryptoPriceInUSD).toFixed(6) : "N/A";
+              const itemPriceInStablecoin = getStablecoinPrice(usdPrice);
 
               const normalizedVideos = Array.isArray(videos) ? videos : [videos];
               const firstVideoUrl = normalizedVideos.find(
@@ -337,19 +325,12 @@ function Item() {
 
                       <div className="item-crypto">
                         <img
-                          src={`https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/svg/color/${crypto.toLowerCase()}.svg`}
-                          alt={cryptocurrency}
+                          src={getStablecoinIcon(crypto)}
+                          alt={crypto}
                           className="crypto-icon"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src =
-                              "https://cryptologos.cc/logos/binance-usd-busd-logo.png";
-                          }}
                         />
                         <span className="item-crypto-price">
-                          {itemPriceInCrypto !== "N/A"
-                            ? `${itemPriceInCrypto} ${cryptocurrency}`
-                            : t("price_unavailable")}
+                          {itemPriceInStablecoin} {crypto}
                         </span>
                       </div>
                     </div>

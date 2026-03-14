@@ -17,46 +17,25 @@ const Coin = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation();
-  const [loadedImages, setLoadedImages] = useState({});
 
   const coinImages = {
-    ETH: "https://assets.coingecko.com/coins/images/279/large/ethereum.png?1595348880",
-    USDC: "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png?1547042389",
-    BUSD: "https://assets.coingecko.com/coins/images/9576/large/BUSD.png?1568947766",
-    SOL: "https://assets.coingecko.com/coins/images/4128/large/solana.png?1640133422",
-    BNB: "https://assets.coingecko.com/coins/images/825/large/binance-coin-logo.png?1547034615",
-    USDT: "https://assets.coingecko.com/coins/images/325/large/Tether-logo.png?1598003707",
+    USDC: "https://api.malidag.com/learn/videos/1769909942070-0xaf88d065e77c8cc2239327c5edb3a432268e5831.png",
+    BUSD: "https://api.malidag.com/learn/videos/1773502639247-BUSD.png",
+    USDT: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
   };
-
-  // ✅ Preload coin images
-  useEffect(() => {
-    Object.entries(coinImages).forEach(([symbol, url]) => {
-      const img = new Image();
-      img.src = url;
-      img.onload = () => {
-        setLoadedImages((prev) => ({ ...prev, [symbol]: true }));
-      };
-    });
-  }, []);
 
   useEffect(() => {
     const fetchCoins = async () => {
       try {
-        // ✅ Step 1: Fetch only unique crypto symbols
-        const symbolResponse = await axios.get(`${BASE_URL}/items/cryptos`);
-        const symbols = symbolResponse.data.cryptos;
+        const response = await axios.get(`${BASE_URL}/items/cryptos`);
+        const symbols = response.data.cryptos || [];
 
-        // ✅ Step 2: Fetch live prices
-        const priceResponse = await axios.get(`${BASE_URL}/crypto-prices`);
-        const prices = priceResponse.data;
+        // keep only supported coins that have images
+        const filteredCoins = symbols
+          .filter((symbol) => coinImages[symbol])
+          .map((symbol) => ({ symbol }));
 
-        // ✅ Step 3: Map symbols to price
-        const coinPrices = symbols.map((symbol) => ({
-          symbol,
-          price: prices[symbol] ? prices[symbol].toFixed(2) : "0.00",
-        }));
-
-        setCoins(coinPrices);
+        setCoins(filteredCoins);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching coin data:", err);
@@ -66,62 +45,60 @@ const Coin = () => {
     };
 
     fetchCoins();
-    const intervalId = setInterval(fetchCoins, 1000);
+  }, [t]);
 
-    return () => clearInterval(intervalId);
-  }, []);
-
-  // ✅ Hide on small screens except home
   if ((isMobile || isSmallMobile || isVerySmall) && pathname !== "/") {
     return null;
   }
 
-  if (loading) return <div style={{ height: "60px", backgroundColor: (isDesktop || isTablet) ? "#333" : "white" }}></div>;
+  if (loading) {
+    return (
+      <div
+        style={{
+          height: "60px",
+          backgroundColor: (isDesktop || isTablet) ? "#333" : "white",
+        }}
+      />
+    );
+  }
+
   if (error) return <div>{error}</div>;
 
   const handleCoinClick = (symbol) => {
     router.push(`/coin/${symbol}`);
   };
 
- return (
-  <div
-    className="coin-scroll-container"
-    style={{
-      backgroundColor: (isDesktop || isTablet) ? "#333" : "white",
-    }}
-  >
-    <div className="coin-scroll">
-      {/* Duplicate array for seamless infinite scroll */}
-      {[...coins, ...coins].map((coin, index) => (
-        <div
-          key={`${coin.symbol}-${index}`}
-          className="coin-item"
-          onClick={() => handleCoinClick(coin.symbol)}
-        >
-          <img
-            loading="lazy"
-            src={coinImages[coin.symbol] || "https://via.placeholder.com/40"}
-            alt={coin.symbol}
-            className="coin-image"
-          />
-          <span
-            className="coin-symbol"
-            style={{ color: (isDesktop || isTablet) ? "white" : "black" }}
+  return (
+    <div
+      className="coin-scroll-container"
+      style={{
+        backgroundColor: (isDesktop || isTablet) ? "#333" : "white",
+      }}
+    >
+      <div className="coin-scroll">
+        {coins.map((coin) => (
+          <div
+            key={coin.symbol}
+            className="coin-item"
+            onClick={() => handleCoinClick(coin.symbol)}
           >
-            {coin.symbol}
-          </span>
-          <span
-            className="coin-price"
-            style={{ color: (isDesktop || isTablet) ? "white" : "black" }}
-          >
-            ${coin.price}
-          </span>
-        </div>
-      ))}
+            <img
+              loading="lazy"
+              src={coinImages[coin.symbol] || "https://via.placeholder.com/40"}
+              alt={coin.symbol}
+              className="coin-image"
+            />
+            <span
+              className="coin-symbol"
+              style={{ color: (isDesktop || isTablet) ? "white" : "black" }}
+            >
+              {coin.symbol}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
-);
-
+  );
 };
 
 export default Coin;

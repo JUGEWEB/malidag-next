@@ -25,6 +25,15 @@ function normalizeType(value) {
     .replace(/\s+/g, " ");
 }
 
+function slugifyType(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+}
+
 function getSafeImage(src, fallback) {
   return src && String(src).trim() ? src : fallback;
 }
@@ -95,13 +104,14 @@ function EmptyState({ message }) {
   );
 }
 
-function TypeImageCard({ title, image }) {
+function TypeImageCard({ title, image, onClick }) {
   return (
     <button
       type="button"
       className="type-image-card"
       aria-label={title}
       title={title}
+      onClick={onClick}
     >
       <img
         src={getSafeImage(image, TYPES_FALLBACK_IMAGE)}
@@ -117,7 +127,7 @@ function TypeImageCard({ title, image }) {
   );
 }
 
-function PillBanner({ image, alt, pills = [], className = "" }) {
+function PillBanner({ image, alt, pills = [], className = "", onPillClick }) {
   return (
     <div className={`center-banner ${className}`.trim()}>
       <img
@@ -139,12 +149,14 @@ function PillBanner({ image, alt, pills = [], className = "" }) {
         <div className="center-banner-scroll">
           <div className="center-pill-list">
             {pills.map((pill, index) => (
-              <span
+              <button
                 key={`${pill.label}-${index}`}
+                type="button"
                 className={`center-pill ${pill.variant || ""}`.trim()}
+                onClick={() => onPillClick?.(pill.label)}
               >
                 {pill.label}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -214,6 +226,14 @@ function KidFashion({ mtypes = [], types = {} }) {
     },
     [router]
   );
+
+  const handleTypeClick = useCallback(
+  (type) => {
+    if (!type) return;
+    router.push(`/kid-fashionTypes/${slugifyType(type)}`);
+  },
+  [router]
+);
 
   const preparedData = useMemo(() => {
     const groupedEntries = Object.entries(types || {});
@@ -313,24 +333,26 @@ function KidFashion({ mtypes = [], types = {} }) {
             {preparedData.typesWithImage.length > 0 && (
               <div className="types-image-grid">
                 {preparedData.typesWithImage.map((typeObj, index) => (
-                  <TypeImageCard
-                    key={`${typeObj.type}-image-${index}`}
-                    title={typeObj.type}
-                    image={typeObj.image}
-                  />
+                 <TypeImageCard
+                  key={`${typeObj.type}-image-${index}`}
+                  title={typeObj.type}
+                  image={typeObj.image}
+                  onClick={() => handleTypeClick(typeObj.type)}
+                />
                 ))}
               </div>
             )}
 
             {preparedData.typesWithoutImage.length > 0 && (
-              <PillBanner
-                image={TYPES_FALLBACK_IMAGE}
-                alt={t("collection_types") || "Collection Types"}
-                pills={preparedData.typesWithoutImage.map((typeObj) => ({
-                  label: typeObj.type,
-                  variant: "no-image",
-                }))}
-              />
+             <PillBanner
+              image={TYPES_FALLBACK_IMAGE}
+              alt={t("collection_types") || "Collection Types"}
+              pills={preparedData.typesWithoutImage.map((typeObj) => ({
+                label: typeObj.type,
+                variant: "no-image",
+              }))}
+              onPillClick={handleTypeClick}
+            />
             )}
           </>
         )}
@@ -353,15 +375,16 @@ function KidFashion({ mtypes = [], types = {} }) {
             }
           />
         ) : (
-          <PillBanner
-            image={TOP_TOPIC_IMAGE}
-            alt={t("top_topic") || "Top Topic"}
-            className="top-topic-banner"
-            pills={preparedData.allGroups.map((group) => ({
-              label: group.type,
-              variant: group.hasTypeImage ? "has-image" : "no-image",
-            }))}
-          />
+         <PillBanner
+          image={TOP_TOPIC_IMAGE}
+          alt={t("top_topic") || "Top Topic"}
+          className="top-topic-banner"
+          pills={preparedData.allGroups.map((group) => ({
+            label: group.type,
+            variant: group.hasTypeImage ? "has-image" : "no-image",
+          }))}
+          onPillClick={handleTypeClick}
+        />
         )}
       </section>
 

@@ -15,9 +15,10 @@ const SYMBOL_OG = {
 const FALLBACK_FILE = "malidag-coin.jpg";
 
 export async function generateMetadata({ params }) {
-  const symbol = String(params?.symbol || "").toLowerCase();
+  const resolvedParams = await params;
+  const symbol = String(resolvedParams?.symbol || "").toLowerCase();
 
-  const h = await headers(); // ✅ FIX
+  const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }) {
 
   const title = isSupported
     ? `${symbol.toUpperCase()} ${i18n.t("title_suffix")}`
-    : `Unsupported coin | Malidag`;
+    : "Unsupported coin | Malidag";
 
   const description = isSupported
     ? `${i18n.t("description_prefix")} ${symbol.toUpperCase()} ${i18n.t("description_suffix")}`
@@ -61,6 +62,6 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default function Page({ params }) {
-  return <CoinPage params={params} />;
+export default function Page() {
+  return <CoinPage />;
 }

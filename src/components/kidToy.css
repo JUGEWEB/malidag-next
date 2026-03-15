@@ -1,0 +1,332 @@
+.kid-toy-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  box-sizing: border-box;
+}
+
+.kid-toy-hero {
+  margin-bottom: 28px;
+  padding: 28px 24px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  border: 1px solid #e7eef8;
+}
+
+.kid-toy-hero-badge {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eef5ff;
+  color: #3867b4;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kid-toy-title {
+  margin: 0 0 12px;
+  font-size: 34px;
+  line-height: 1.1;
+  color: #1f1f1f;
+}
+
+.kid-toy-subtitle {
+  margin: 0 0 18px;
+  max-width: 720px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #555;
+}
+
+.kid-toy-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.kid-toy-stat {
+  min-width: 120px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kid-toy-stat strong {
+  font-size: 18px;
+  color: #1f1f1f;
+}
+
+.kid-toy-stat span {
+  font-size: 13px;
+  color: #666;
+}
+
+.types-main-section,
+.top-topic-section,
+.products-main-section {
+  margin-bottom: 32px;
+}
+
+.section-header {
+  margin-bottom: 16px;
+}
+
+.section-eyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a6fa5;
+}
+
+.main-section-title {
+  margin: 0 0 8px;
+  font-size: 26px;
+  color: #1f1f1f;
+}
+
+.section-subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666;
+  max-width: 720px;
+}
+
+.empty-state {
+  padding: 28px 20px;
+  border: 1px dashed #d8dde6;
+  border-radius: 18px;
+  background: #fafcff;
+  text-align: center;
+  color: #666;
+}
+
+.pill-section {
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid #e8edf5;
+  background: #fff;
+}
+
+.pill-section-copy {
+  margin-bottom: 16px;
+}
+
+.pill-section-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: #1f1f1f;
+}
+
+.pill-section-subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666;
+}
+
+.pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pill-chip {
+  border: 1px solid #dce5f2;
+  background: #f5f9ff;
+  color: #355e9a;
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  transition: all 0.2s ease;
+}
+
+.pill-chip:hover {
+  background: #eaf3ff;
+  border-color: #c9d8ee;
+}
+
+.type-pill {
+  background: #f7fbff;
+}
+
+.top-topic-pill {
+  background: #eef6ff;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 280px));
+  gap: 16px;
+  justify-content: start;
+}
+
+.products-grid.single-item {
+  grid-template-columns: 280px;
+  justify-content: center;
+}
+
+.product-card {
+  width: 100%;
+  max-width: 280px;
+  border: 1px solid #ececec;
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.product-card-media {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: block;
+}
+
+.product-card-image {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  display: block;
+}
+
+.product-card-body {
+  padding: 14px;
+}
+
+.product-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.product-card-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.item-type-badge {
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f3f7fc;
+  color: #4e6b8f;
+  border: 1px solid #dde7f2;
+  text-transform: capitalize;
+}
+
+.product-card-title {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0 0 12px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #222;
+  font-weight: 600;
+}
+
+.product-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.stars-container {
+  display: flex;
+  gap: 2px;
+}
+
+.star {
+  font-size: 14px;
+}
+
+.star.filled {
+  color: #f4b400;
+}
+
+.star.empty {
+  color: #d6d6d6;
+}
+
+@media (max-width: 992px) {
+  .kid-toy-title {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .kid-toy-page {
+    padding: 18px 12px 32px;
+  }
+
+  .kid-toy-hero {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+
+  .kid-toy-title {
+    font-size: 26px;
+  }
+
+  .main-section-title {
+    font-size: 22px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+
+  .product-card {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .kid-toy-title {
+    font-size: 24px;
+  }
+
+  .kid-toy-subtitle,
+  .section-subtitle,
+  .pill-section-subtitle {
+    font-size: 13px;
+  }
+
+  .pill-chip {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .product-card-image {
+    height: 200px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}

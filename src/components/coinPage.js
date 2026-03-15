@@ -412,44 +412,57 @@ function CoinPage() {
                 </div>
 
                 <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: isPhone ? "1fr" : "1fr 1.3fr",
-                    gap: "20px",
-                    alignItems: "start",
-                  }}
-                >
-                  <div
-                    style={{
-                      minWidth: 0,
-                      maxHeight: "360px",
-                      overflowY: "auto",
-                      borderRight: isPhone ? "none" : "1px solid #eee",
-                      paddingRight: isPhone ? "0" : "16px",
-                    }}
-                  >
-                    <div style={{ color: "#222", marginBottom: "12px" }}>
-                      <strong>malidag {t(category)}</strong>
-                    </div>
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isPhone ? "1fr" : "1fr 1.3fr",
+                  gap: isPhone ? "14px" : "20px",
+                  alignItems: "start",
+                }}
+              >
+                 <div
+  style={{
+    minWidth: 0,
+    maxHeight: isPhone ? "unset" : "360px",
+    overflowY: isPhone ? "visible" : "auto",
+    borderRight: isPhone ? "none" : "1px solid #eee",
+    paddingRight: isPhone ? "0" : "16px",
+  }}
+>
+  <div style={{ color: "#222", marginBottom: "12px" }}>
+    <strong>malidag {t(category)}</strong>
+  </div>
 
-                    {categorizedItems[category]
-                      ?.map((item) => item.item.type)
-                      .filter((type, idx, arr) => arr.indexOf(type) === idx)
-                      .map((type, idx) => (
-                        <div
-                          key={idx}
-                          className="stale-ty-item"
-                          style={{
-                            color: "blue",
-                            padding: "10px 0",
-                            textDecoration: "underline",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {t(type)}
-                        </div>
-                      ))}
-                  </div>
+  <div
+    className="types-list"
+    style={{
+      display: "flex",
+      flexWrap: "wrap",
+      gap: isPhone ? "8px" : "0",
+    }}
+  >
+    {categorizedItems[category]
+      ?.map((item) => item.item.type)
+      .filter((type, idx, arr) => arr.indexOf(type) === idx)
+      .map((type, idx) => (
+        <div
+          key={idx}
+          className="stale-ty-item"
+          style={{
+            color: "blue",
+            padding: isPhone ? "8px 12px" : "10px 0",
+            textDecoration: isPhone ? "none" : "underline",
+            border: isPhone ? "1px solid #dcdcdc" : "none",
+            borderRadius: isPhone ? "999px" : "0",
+            background: isPhone ? "#f8f8f8" : "transparent",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {t(type)}
+        </div>
+      ))}
+  </div>
+</div>
 
                   <div
                     style={{
@@ -470,11 +483,13 @@ function CoinPage() {
                       {t("hot_label")}
                     </strong>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
-                        gap: "12px",
+                      <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: isPhone
+                              ? "repeat(3, minmax(0, 1fr))"
+                              : "repeat(auto-fill, minmax(170px, 1fr))",
+                            gap: isPhone ? "8px" : "12px",
                       }}
                     >
                       {getHotItems(categorizedItems[category] || []).map((hotItem, idx) => (

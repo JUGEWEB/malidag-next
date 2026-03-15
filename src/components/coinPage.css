@@ -392,3 +392,53 @@
     padding: 8px;
   }
 }
+
+.types-list {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .types-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .stale-ty-item {
+    width: auto;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .types-list {
+    gap: 6px;
+  }
+
+  .stale-ty-item {
+    font-size: 11px;
+    padding: 7px 10px !important;
+    border-radius: 999px;
+  }
+
+  .stable-hot-item {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    padding: 6px;
+  }
+
+  .stable-hot-item-image {
+    height: 56px;
+  }
+
+  .stable-hot-item-name {
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .stable-hot-item-sold {
+    font-size: 9px;
+    margin-top: 4px;
+  }
+}

@@ -1,0 +1,210 @@
+.kid-fashion-type-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  box-sizing: border-box;
+}
+
+.kid-fashion-type-loading {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #555;
+}
+
+.kid-type-hero {
+  margin-bottom: 24px;
+}
+
+.back-button {
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #222;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.kid-type-hero-content {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 22px;
+  align-items: center;
+  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 100%);
+  border: 1px solid #f2e6ec;
+  border-radius: 22px;
+  padding: 24px;
+}
+
+.kid-type-eyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #c24b7c;
+}
+
+.kid-type-title {
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.1;
+  color: #1f1f1f;
+  text-transform: capitalize;
+}
+
+.kid-type-subtitle {
+  margin: 0 0 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #555;
+  max-width: 650px;
+}
+
+.kid-type-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.kid-type-stat {
+  min-width: 110px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kid-type-stat strong {
+  font-size: 18px;
+  color: #1f1f1f;
+}
+
+.kid-type-stat span {
+  font-size: 13px;
+  color: #666;
+}
+
+.kid-type-hero-media {
+    background-color: white;
+    filter: brightness(0.8) contrast(1.05) saturate(1.03);
+  width: 100%;
+}
+
+.kid-type-hero-image {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+}
+
+.kid-type-genre-section {
+  margin-bottom: 20px;
+}
+
+.kid-type-genre-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.kid-type-genre-chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff2f7;
+  border: 1px solid #f4d5e2;
+  font-size: 13px;
+  color: #8a3f61;
+  text-transform: capitalize;
+}
+
+.kid-type-products-section .products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 280px));
+  gap: 16px;
+  justify-content: start;
+}
+
+.product-card {
+  width: 100%;
+  max-width: 280px;
+}
+
+.kid-type-genre-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  color: #7b4d63;
+  background: #faf2f6;
+  border: 1px solid #efdbe4;
+  padding: 4px 8px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+
+@media (max-width: 992px) {
+  .kid-type-hero-content {
+    grid-template-columns: 1fr;
+  }
+
+  .kid-type-hero-image {
+    height: 260px;
+  }
+
+  .kid-type-products-section .products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .kid-fashion-type-page {
+    padding: 18px 12px 32px;
+  }
+
+  .kid-type-title {
+    font-size: 28px;
+  }
+
+  .kid-type-products-section .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .kid-type-hero-content {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .kid-type-title {
+    font-size: 24px;
+  }
+
+  .kid-type-subtitle {
+    font-size: 13px;
+  }
+
+  .kid-type-hero-image {
+    height: 200px;
+    border-radius: 14px;
+  }
+
+  .back-button {
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  .kid-type-products-section .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

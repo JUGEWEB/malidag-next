@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "./payBNBBTCETH.css";
+import "./saveBig.css";
 import { useRouter } from 'next/navigation';
 
 const BASE_URL = "https://api.malidag.com";

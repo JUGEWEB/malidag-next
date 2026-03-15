@@ -1,0 +1,180 @@
+.bbe-container {
+    display: flex;
+    flex-direction: row;
+    padding: 15px;
+    background-color: white;
+  }
+  
+  /* ========== TYPE LIST (LEFT SIDE ON DESKTOP & TABLET) ========== */
+  .bbe-type-list {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    max-width: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+    border-right: 1px solid #ddd;
+    padding: 10px 0;
+  }
+
+  .bbe-type-item:hover {
+    background-color: #d5d5d5;
+  }
+  
+  .bbe-type-item {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background-color: #ece5e5;
+    cursor: pointer;
+    color: #333;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: background-color 0.2s ease-in-out;
+    margin: 4px 10px;
+  }
+  
+  .bbe-type-item.active {
+    background-color: #333;
+    color: white;
+  }
+  
+  /* ========== PRODUCT GRID ========== */
+  .bbe-item-grid {
+    flex: 1;
+    display: grid;
+    width: 100%;
+    gap: 5px;
+    padding: 5px 15px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+  
+  /* ========== CARD STYLE ========== */
+  .bbe-item-card {
+    background-color: white;
+    
+    overflow: hidden;
+   
+    cursor: pointer;
+   
+  }
+  
+  .bbe-item-image {
+    width: 100%;
+    height: 300px;
+    object-fit: contain;
+    margin-bottom: 10px;
+  }
+  
+  .bbe-item-info {
+    font-size: 14px;
+    color: #333;
+  }
+  
+  .bbe-item-price {
+    font-weight: bold;
+    color: #28a745;
+    margin-bottom: 4px;
+  }
+  
+  .crypto-price {
+    display: block;
+    font-size: 12px;
+    color: #555;
+    margin-top: 2px;
+  }
+  
+  .crypto-icon {
+    width: 14px;
+    height: 14px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  
+  .bbe-item-name {
+    margin: 5px 0;
+    font-size: 25px;
+    font-weight: bold;
+  }
+  
+  .bbe-item-rating .star {
+    font-size: 12px;
+    color: #f4c150;
+  }
+  
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 767px) {
+    .bbe-container {
+      flex-direction: column;
+      padding: 10px;
+    }
+  
+    .bbe-type-list {
+      flex-direction: row;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      height: auto;
+      max-width: 100%;
+      position: static;
+      background-color: #f9f9f9;
+      border-bottom: 1px solid #ccc;
+      border-right: none;
+      padding: 10px 0;
+    }
+  
+    .bbe-item-grid {
+      grid-template-columns: repeat(2, 1fr);
+      padding-left: 0;
+    }
+  
+    .bbe-type-item {
+      margin: 0 10px;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .bbe-item-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 345px) {
+    .bbe-item-grid {
+      grid-template-columns: repeat(1, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+  .bbe-item-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.item-spinner-wrapper {
+  width: 100%;
+  padding: 50px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 5px solid #ddd;
+  border-top: 5px solid #28a745;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+  

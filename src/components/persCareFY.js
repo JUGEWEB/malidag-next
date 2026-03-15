@@ -1,34 +1,279 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import "./personalCare.css";
-import RecommendedItem from "./personalRecommend";
-import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
-const BASE_URLs = "https://api.malidag.com";
-const BASE_URL = "https://api.malidag.com";
-const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
+import "./personalCare.css";
+import RecommendedItem from "./personalRecommend";
+import useScreenSize from "./useIsMobile";
+
+const API_BASE_URL = "https://api.malidag.com";
+
+const API_ENDPOINTS = {
+  categories: `${API_BASE_URL}/categories/Beauty`,
+  items: `${API_BASE_URL}/items`,
+  reviews: (productId) => `${API_BASE_URL}/get-reviews/${productId}`,
+};
 
 const CACHE_KEYS = {
-  BEAUTY_TYPES: "beauty_types_cache",
-  BEAUTY_ITEMS: "beauty_items_cache",
+  BEAUTY_TYPES: "beauty_types_cache_v2",
+  BEAUTY_ITEMS: "beauty_items_cache_v2",
 };
 
 const CACHE_TTL = 1000 * 60 * 30;
+const MAX_ITEMS_PER_TYPE = 10;
+const MAX_RENDERED_ITEMS_PER_TYPE = 5;
+const MIN_SOLD_THRESHOLD = 100;
+
+const FALLBACK_CRYPTO_ICON =
+  "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png";
+
+const CRYPTO_ICONS = {
+  USDT: FALLBACK_CRYPTO_ICON,
+  USDC: FALLBACK_CRYPTO_ICON,
+  BUSD: FALLBACK_CRYPTO_ICON,
+};
+
+const initialState = {
+  types: {},
+  categoryTypes: [],
+  reviews: {},
+  loading: true,
+  error: null,
+};
+
+function getCache(key) {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    const isExpired = Date.now() - parsed.timestamp > CACHE_TTL;
+
+    if (isExpired) {
+      localStorage.removeItem(key);
+      return null;
+    }
+
+    return parsed.data;
+  } catch (error) {
+    console.error(`[Cache] Failed reading key: ${key}`, error);
+    return null;
+  }
+}
+
+function setCache(key, data) {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      })
+    );
+  } catch (error) {
+    console.error(`[Cache] Failed writing key: ${key}`, error);
+  }
+}
+
+function groupBeautyItems(items = []) {
+  const filtered = items.filter(
+    (entry) =>
+      entry?.category?.toLowerCase() === "beauty" &&
+      Number(entry?.item?.sold ?? 0) >= MIN_SOLD_THRESHOLD
+  );
+
+  return filtered.reduce((acc, entry) => {
+    const type = entry?.item?.type?.trim() || "Other";
+
+    if (!acc[type]) acc[type] = [];
+    if (acc[type].length < MAX_ITEMS_PER_TYPE) {
+      acc[type].push(entry);
+    }
+
+    return acc;
+  }, {});
+}
+
+function calculateReviewSummary(reviewsArray = []) {
+  if (!Array.isArray(reviewsArray) || reviewsArray.length === 0) {
+    return {
+      averageRating: null,
+      reviewsArray: [],
+      totalReviews: 0,
+    };
+  }
+
+  const totalRating = reviewsArray.reduce((acc, review) => {
+    const rating = Number.parseFloat(review?.rating);
+    return acc + (Number.isNaN(rating) ? 4 : rating);
+  }, 0);
+
+  return {
+    averageRating: (totalRating / reviewsArray.length).toFixed(2),
+    reviewsArray,
+    totalReviews: reviewsArray.length,
+  };
+}
+
+function ProductCard({ product, review, onClick }) {
+  const item = product?.item || {};
+  const crypto = item?.cryptocurrency || "USDT";
+  const cryptoIcon = CRYPTO_ICONS[crypto] || FALLBACK_CRYPTO_ICON;
+  const averageRating = review?.averageRating;
+  const totalReviews = review?.totalReviews || 0;
+  const productName = item?.name || "Unnamed product";
+  const productImage = item?.images?.[0] || "/placeholder.png";
+  const productPrice = item?.usdPrice || "0";
+  const roundedRating = Math.round(Number(averageRating) || 0);
+
+  return (
+    <article
+      className="pc-gallery-item"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onClick();
+      }}
+      aria-label={`Open ${productName}`}
+    >
+      <div className="pc-gallery-image-wrap">
+        <img
+          src={productImage}
+          alt={productName}
+          className="pc-gallery-image"
+          loading="lazy"
+        />
+      </div>
+
+      <div className="pc-gallery-info">
+        <div className="pc-gallery-top">
+          <span className="pc-price">${productPrice}</span>
+
+          <div className="pc-crypto" aria-label={`Paid with ${crypto}`}>
+            <span>{crypto}</span>
+            <img
+              src={cryptoIcon}
+              alt={crypto}
+              className="crypto-icon"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        <h4 className="pc-gallery-name" title={productName}>
+          {productName}
+        </h4>
+
+        <div className="pc-rating-row">
+          <div
+            className="stars-container"
+            aria-label={`Rating ${averageRating || 0} out of 5`}
+          >
+            {Array.from({ length: 5 }, (_, index) => (
+              <span
+                key={index}
+                className={`star ${index < roundedRating ? "filled" : "empty"}`}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+
+          <span className="pc-rating-text">
+            {averageRating ? `${averageRating}/5` : "No reviews yet"}
+            {totalReviews > 0 ? ` (${totalReviews})` : ""}
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function CategoryPills({ types, onClick }) {
+  if (!types.length) return null;
+
+  return (
+    <nav className="pc-pill-nav" aria-label="Beauty type navigation">
+      {types.map((type) => (
+        <button
+          key={type}
+          type="button"
+          className="pc-pill"
+          onClick={() => onClick(type)}
+        >
+          Top {type}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function LoadingSkeleton({ isDesktop, isTablet }) {
+  return (
+    <div className="personal-care-container">
+      <div className="pc-skeleton-wrapper">
+        <div className="pc-skeleton pc-skeleton-title" />
+
+        <div className="pc-skeleton-circles">
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="pc-skeleton-circle-block">
+              <div
+                className="pc-skeleton pc-skeleton-circle"
+                style={{
+                  width: isDesktop || isTablet ? 140 : 90,
+                  height: isDesktop || isTablet ? 140 : 90,
+                }}
+              />
+              <div className="pc-skeleton pc-skeleton-line short" />
+            </div>
+          ))}
+        </div>
+
+        {[...Array(2)].map((_, sectionIndex) => (
+          <section key={sectionIndex} className="pc-skeleton-section">
+            <div className="pc-skeleton pc-skeleton-heading" />
+
+            <div
+              className="pc-skeleton-grid"
+              style={{
+                gridTemplateColumns:
+                  isDesktop || isTablet ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
+              }}
+            >
+              {[...Array(6)].map((_, cardIndex) => (
+                <div key={cardIndex} className="pc-skeleton-card">
+                  <div className="pc-skeleton pc-skeleton-image" />
+                  <div className="pc-skeleton-card-body">
+                    <div className="pc-skeleton pc-skeleton-line short" />
+                    <div className="pc-skeleton pc-skeleton-line" />
+                    <div className="pc-skeleton pc-skeleton-line medium" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function PersonalCare({ lang }) {
   const router = useRouter();
-  const [types, setTypes] = useState({});
-  const [mtypes, setMTypes] = useState([]);
-  const [reviews, setReviews] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  const { isDesktop, isTablet } = useScreenSize();
   const { t } = useTranslation();
+  const { isDesktop, isTablet } = useScreenSize();
+
+  const [state, setState] = useState(initialState);
+  const { types, categoryTypes, reviews, loading, error } = state;
 
   useEffect(() => {
     if (i18n.language !== lang) {
@@ -37,565 +282,273 @@ function PersonalCare({ lang }) {
   }, [lang]);
 
   const hasCachedContent = useMemo(() => {
-    return mtypes.length > 0 || Object.keys(types).length > 0;
-  }, [mtypes, types]);
+    return categoryTypes.length > 0 || Object.keys(types).length > 0;
+  }, [categoryTypes, types]);
 
-  const getCache = (key) => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return null;
+  const fetchReviewsBatch = useCallback(async (productIds, signal) => {
+    const uniqueIds = [...new Set(productIds.filter(Boolean))];
+    if (!uniqueIds.length) return {};
 
-      const parsed = JSON.parse(raw);
-      const isExpired = Date.now() - parsed.timestamp > CACHE_TTL;
+    const results = await Promise.allSettled(
+      uniqueIds.map(async (productId) => {
+        try {
+          const response = await axios.get(API_ENDPOINTS.reviews(productId), {
+            signal,
+          });
 
-      if (isExpired) {
-        localStorage.removeItem(key);
-        return null;
+          if (response?.data?.success) {
+            return [productId, calculateReviewSummary(response.data.reviews || [])];
+          }
+
+          return [productId, calculateReviewSummary([])];
+        } catch (error) {
+          if (axios.isCancel?.(error) || error?.name === "CanceledError") {
+            throw error;
+          }
+
+          if (error?.response?.status === 404) {
+            return [productId, calculateReviewSummary([])];
+          }
+
+          console.error(`[Reviews] Failed for product ${productId}`, error);
+          return [productId, calculateReviewSummary([])];
+        }
+      })
+    );
+
+    return results.reduce((acc, result) => {
+      if (result.status === "fulfilled") {
+        const [productId, reviewData] = result.value;
+        acc[productId] = reviewData;
+      }
+      return acc;
+    }, {});
+  }, []);
+
+  const hydrateFromCache = useCallback(
+    async (signal) => {
+      const cachedCategoryTypes = getCache(CACHE_KEYS.BEAUTY_TYPES) || [];
+      const cachedItems = getCache(CACHE_KEYS.BEAUTY_ITEMS) || {};
+
+      if (!cachedCategoryTypes.length && !Object.keys(cachedItems).length) {
+        return false;
       }
 
-      return parsed.data;
-    } catch (error) {
-      console.error(`Error reading cache for ${key}:`, error);
-      return null;
-    }
-  };
+      setState((prev) => ({
+        ...prev,
+        categoryTypes: cachedCategoryTypes,
+        types: cachedItems,
+        loading: false,
+      }));
 
-  const setCache = (key, data) => {
-    try {
-      localStorage.setItem(
-        key,
-        JSON.stringify({
-          data,
-          timestamp: Date.now(),
-        })
-      );
-    } catch (error) {
-      console.error(`Error writing cache for ${key}:`, error);
-    }
-  };
-
-  const fetchReviews = async (productId) => {
-    try {
-      const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
-
-      if (response.data.success) {
-        const reviewsArray = response.data.reviews || [];
-
-        const totalRating = reviewsArray.reduce((acc, review) => {
-          const rating = parseFloat(review.rating);
-          return acc + (isNaN(rating) ? 4 : rating);
-        }, 0);
-
-        const averageRating = reviewsArray.length
-          ? (totalRating / reviewsArray.length).toFixed(2)
-          : null;
-
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: { averageRating, reviewsArray },
-        }));
-      }
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: { averageRating: null, reviewsArray: [] },
-        }));
-      } else {
-        console.error("Error fetching reviews:", error);
-      }
-    }
-  };
-
-  useEffect(() => {
-    const cachedTypes = getCache(CACHE_KEYS.BEAUTY_TYPES);
-    const cachedItems = getCache(CACHE_KEYS.BEAUTY_ITEMS);
-
-    if (cachedTypes) {
-      setMTypes(cachedTypes);
-    }
-
-    if (cachedItems) {
-      setTypes(cachedItems);
-    }
-
-    if (cachedTypes || cachedItems) {
-      setLoading(false);
-
-      const cachedProductIds = Object.values(cachedItems || {})
+      const cachedProductIds = Object.values(cachedItems)
         .flat()
-       .map((product) => product?.itemId)
+        .map((product) => product?.itemId)
         .filter(Boolean);
 
-      Promise.all(cachedProductIds.map((id) => fetchReviews(id))).catch((error) =>
-        console.error("Error fetching cached reviews:", error)
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    const fetchCategoryTypes = async () => {
       try {
-        const response = await axios.get(`${BASE_URLs}/categories/Beauty`);
-        const data = Array.isArray(response.data) ? response.data : [];
+        const cachedReviews = await fetchReviewsBatch(cachedProductIds, signal);
 
-        setMTypes(data);
-        setCache(CACHE_KEYS.BEAUTY_TYPES, data);
+        setState((prev) => ({
+          ...prev,
+          reviews: cachedReviews,
+        }));
       } catch (error) {
-        console.error("Error fetching Beauty category items:", error);
-        setMTypes([]);
+        if (error?.name !== "CanceledError") {
+          console.error("[Cache hydrate] Failed fetching cached reviews", error);
+        }
       }
-    };
 
-    const fetchBeautyItems = async () => {
+      return true;
+    },
+    [fetchReviewsBatch]
+  );
+
+  const fetchFreshData = useCallback(
+    async (signal) => {
       try {
-        const response = await axios.get(`${BASE_URL}/items`);
-        const data = Array.isArray(response.data) ? response.data : [];
+        const [categoryResponse, itemsResponse] = await Promise.all([
+          axios.get(API_ENDPOINTS.categories, { signal }),
+          axios.get(API_ENDPOINTS.items, { signal }),
+        ]);
 
-        const filteredData = data.filter(
-          (item) =>
-            item?.category?.toLowerCase() === "beauty" &&
-            Number(item?.item?.sold ?? 0) >= 100
-        );
+        const fetchedCategoryTypes = Array.isArray(categoryResponse?.data)
+          ? categoryResponse.data
+          : [];
 
-        const groupedData = filteredData.reduce((acc, item) => {
-          const type = item?.item?.type || "Other";
+        const allItems = Array.isArray(itemsResponse?.data)
+          ? itemsResponse.data
+          : [];
 
-          if (!acc[type]) {
-            acc[type] = [];
-          }
+        const groupedItems = groupBeautyItems(allItems);
 
-          if (acc[type].length < 10) {
-            acc[type].push(item);
-          }
+        setCache(CACHE_KEYS.BEAUTY_TYPES, fetchedCategoryTypes);
+        setCache(CACHE_KEYS.BEAUTY_ITEMS, groupedItems);
 
-          return acc;
-        }, {});
-
-        setTypes(groupedData);
-        setCache(CACHE_KEYS.BEAUTY_ITEMS, groupedData);
-
-        const productIds = Object.values(groupedData)
+        const productIds = Object.values(groupedItems)
           .flat()
-         .map((product) => product?.itemId)
+          .map((product) => product?.itemId)
           .filter(Boolean);
 
-        await Promise.all(productIds.map((id) => fetchReviews(id)));
+        const fetchedReviews = await fetchReviewsBatch(productIds, signal);
+
+        setState((prev) => ({
+          ...prev,
+          categoryTypes: fetchedCategoryTypes,
+          types: groupedItems,
+          reviews: fetchedReviews,
+          loading: false,
+          error: null,
+        }));
       } catch (error) {
-        console.error("Error fetching items:", error);
-        setTypes({});
-      } finally {
-        setLoading(false);
+        if (axios.isCancel?.(error) || error?.name === "CanceledError") return;
+
+        console.error("[PersonalCare] Failed loading beauty data", error);
+
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: "Unable to load beauty products right now.",
+        }));
       }
-    };
+    },
+    [fetchReviewsBatch]
+  );
 
-    fetchCategoryTypes();
-    fetchBeautyItems();
-  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
 
-  const renderStars = (rating) => {
-    const roundedRating = Math.round(Number(rating) || 0);
+    (async () => {
+      await hydrateFromCache(controller.signal);
+      await fetchFreshData(controller.signal);
+    })();
 
-    const stars = Array.from({ length: 5 }, (_, index) => (
-      <span
-        key={index}
-        className={`star ${index < roundedRating ? "filled" : "empty"}`}
-      >
-        ★
-      </span>
-    ));
+    return () => controller.abort();
+  }, [hydrateFromCache, fetchFreshData]);
 
-    return <div className="stars-container">{stars}</div>;
-  };
+  const beautyTypeNames = useMemo(() => Object.keys(types), [types]);
 
-  const getCryptoIcon = (cryptocurrency) => {
-    const cryptoIcons = {
-      USDT: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
-      USDC: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
-      BUSD: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
-    };
+  const handleItemClick = useCallback(
+    (id) => {
+      if (id) router.push(`/product/${id}`);
+    },
+    [router]
+  );
 
-    return cryptoIcons[cryptocurrency] || "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png";
-  };
+  const handleCategoryClick = useCallback(
+    (category) => {
+      if (!category) return;
+      router.push(`/itemOfItems/${category.toLowerCase()}`);
+    },
+    [router]
+  );
 
-  const handleItemClick = (id) => {
-    if (id) {
-      router.push(`/product/${id}`);
-    }
-  };
-
-  const handleCategoryClick = (category) => {
-    if (category) {
-      const formattedCategory = category.toLowerCase();
-      router.push(`/itemOfItems/${formattedCategory}`);
-    }
-  };
+  const handleTopTypeClick = useCallback(
+    (type) => {
+      if (!type) return;
+      router.push(`/beauty/top/${type.toLowerCase()}`);
+    },
+    [router]
+  );
 
   if (loading && !hasCachedContent) {
-    return (
-      <div className="personal-care-container">
-        <div style={{ padding: "20px" }}>
-          <div
-            style={{
-              width: "220px",
-              height: "34px",
-              borderRadius: "12px",
-              margin: "0 auto 24px auto",
-              background:
-                "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-              backgroundSize: "400% 100%",
-              animation: "shine 1.4s ease infinite",
-            }}
-          />
-
-          <div
-            style={{
-              display: "flex",
-              gap: "16px",
-              overflowX: "auto",
-              padding: "10px 0 20px 0",
-            }}
-          >
-            {[...Array(4)].map((_, index) => (
-              <div key={index} style={{ minWidth: "100px", textAlign: "center" }}>
-                <div
-                  style={{
-                    width: isDesktop || isTablet ? "140px" : "90px",
-                    height: isDesktop || isTablet ? "140px" : "90px",
-                    borderRadius: "50%",
-                    margin: "0 auto 10px auto",
-                    background:
-                      "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                    backgroundSize: "400% 100%",
-                    animation: "shine 1.4s ease infinite",
-                  }}
-                />
-                <div
-                  style={{
-                    width: "70px",
-                    height: "12px",
-                    borderRadius: "8px",
-                    margin: "0 auto",
-                    background:
-                      "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                    backgroundSize: "400% 100%",
-                    animation: "shine 1.4s ease infinite",
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-
-          {[...Array(2)].map((_, sectionIndex) => (
-            <div key={sectionIndex} style={{ marginBottom: "28px" }}>
-              <div
-                style={{
-                  width: "180px",
-                  height: "22px",
-                  borderRadius: "10px",
-                  marginBottom: "16px",
-                  background:
-                    "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shine 1.4s ease infinite",
-                }}
-              />
-
-              <div
-                style={{
-                  display: "grid",
-                  gap: "12px",
-                  gridTemplateColumns:
-                    isDesktop || isTablet ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
-                }}
-              >
-                {[...Array(6)].map((_, cardIndex) => (
-                  <div
-                    key={cardIndex}
-                    style={{
-                      borderRadius: "16px",
-                      overflow: "hidden",
-                      background: "#fff",
-                      boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                        background:
-                          "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                        backgroundSize: "400% 100%",
-                        animation: "shine 1.4s ease infinite",
-                      }}
-                    />
-                    <div style={{ padding: "12px" }}>
-                      <div
-                        style={{
-                          width: "80px",
-                          height: "16px",
-                          borderRadius: "8px",
-                          marginBottom: "10px",
-                          background:
-                            "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                          backgroundSize: "400% 100%",
-                          animation: "shine 1.4s ease infinite",
-                        }}
-                      />
-                      <div
-                        style={{
-                          width: "100%",
-                          height: "18px",
-                          borderRadius: "8px",
-                          marginBottom: "8px",
-                          background:
-                            "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                          backgroundSize: "400% 100%",
-                          animation: "shine 1.4s ease infinite",
-                        }}
-                      />
-                      <div
-                        style={{
-                          width: "75%",
-                          height: "18px",
-                          borderRadius: "8px",
-                          background:
-                            "linear-gradient(90deg, #f3f3f3 25%, #ececec 37%, #f3f3f3 63%)",
-                          backgroundSize: "400% 100%",
-                          animation: "shine 1.4s ease infinite",
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          <style jsx>{`
-            @keyframes shine {
-              0% {
-                background-position: 100% 0;
-              }
-              100% {
-                background-position: -100% 0;
-              }
-            }
-          `}</style>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton isDesktop={isDesktop} isTablet={isTablet} />;
   }
 
   return (
-    <div className="personal-care-container">
-      <h2 className="personal-care-title">Malidag Beauty</h2>
+    <section className="personal-care-container">
+      <header className="personal-care-header">
+        <h2 className="personal-care-title">
+          {t("Malidag Beauty", "Malidag Beauty")}
+        </h2>
+      </header>
 
-      <div
-        style={{
-          width: "100%",
-          alignItems: "center",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
+      {error && (
+        <div className="pc-alert" role="alert">
+          {error}
+        </div>
+      )}
+
+      <section className="pc-section">
         <div className="beauty-category">
-          {mtypes.length === 0 ? (
-            <div>No types found for Beauty category</div>
+          {categoryTypes.length === 0 ? (
+            <div className="pc-empty-state">
+              {t(
+                "No types found for Beauty category",
+                "No types found for Beauty category"
+              )}
+            </div>
           ) : (
-            mtypes.map((typeObj, index) => (
-              <div key={typeObj._id || index} style={{ margin: "10px" }}>
-                <div
-                  className="type-image-i"
-                  style={{
-                    width: isDesktop || isTablet ? "200px" : "100px",
-                    height: isDesktop || isTablet ? "200px" : "100px",
-                    borderRadius: isDesktop || isTablet ? "200px" : "100px",
-                    overflow: "hidden",
-                  }}
-                >
+            categoryTypes.map((typeObj, index) => (
+              <button
+                key={typeObj?._id || `${typeObj?.type}-${index}`}
+                type="button"
+                className="type-section"
+                onClick={() => handleCategoryClick(typeObj?.type)}
+                aria-label={`Browse ${typeObj?.type}`}
+              >
+                <div className="type-image-i">
                   <img
                     src={typeObj?.image}
-                    alt={typeObj?.type}
-                    onClick={() => handleCategoryClick(typeObj?.type)}
-                    style={{
-                      width: "100%",
-                      height: isDesktop || isTablet ? "200px" : "100px",
-                      objectFit: "cover",
-                      cursor: "pointer",
-                    }}
+                    alt={typeObj?.type || "Beauty category"}
+                    className="pc-category-image"
+                    loading="lazy"
                   />
                 </div>
-                <h3
-                  className="type-title"
-                  style={{
-                    color: "green",
-                    fontSize: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {typeObj?.type}
-                </h3>
-              </div>
+                <h3 className="type-title">{typeObj?.type}</h3>
+              </button>
             ))
           )}
         </div>
-      </div>
+      </section>
 
-      <div
-        style={{
-          display: "flex",
-          overflowX: "auto",
-          gap: "12px",
-          padding: "10px 15px",
-          marginBottom: "20px",
-          scrollbarWidth: "none",
-        }}
-      >
-        {Object.keys(types).map((type, idx) => (
-          <div
-            key={idx}
-            onClick={() => router.push(`/beauty/top/${type.toLowerCase()}`)}
-            style={{
-              flex: "0 0 auto",
-              background: "#f0f0f0",
-              padding: "10px 20px",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: "bold",
-              color: "#333",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Top {type}
-          </div>
-        ))}
-      </div>
+      <CategoryPills types={beautyTypeNames} onClick={handleTopTypeClick} />
 
-      {Object.entries(types).map(([type, items]) => (
-        <div key={type} style={{ margin: "10px" }}>
-          <h3 style={{ marginBottom: "10px", fontWeight: "bold" }}>
-            {type} Top Items
-          </h3>
-
-          <div
-            style={{
-              display: "grid",
-              gap: "5px",
-              padding: "0px 0",
-              gridTemplateColumns:
-                isDesktop || isTablet ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
-            }}
-          >
-           {items.slice(0, 5).map(({ id, item, itemId }, index) => {
-            const ratingObj = reviews[itemId];
-              const averageRating = ratingObj?.averageRating;
-
-              return (
-                <div
-                  key={id || index}
-                  style={{ background: "#fff", overflow: "hidden" }}
-                >
-                  <div
-                    style={{
-                      filter: "brightness(0.880000000) contrast(1.2)",
-                      backgroundColor: "white",
-                    }}
-                  >
-                    <img
-                      src={item?.images?.[0] || "/placeholder.png"}
-                      alt={item?.name || "Product"}
-                      onClick={() => handleItemClick(id)}
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                        objectFit: "contain",
-                        cursor: "pointer",
-                      }}
-                    />
-                  </div>
-
-                  <div
-                    onClick={() => handleItemClick(id)}
-                    style={{
-                      padding: "10px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      color: "#333",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "5px",
-                      }}
-                    >
-                      <div style={{ fontWeight: "bold" }}>
-                        ${item?.usdPrice || "0"}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        {item?.cryptocurrency || "USDT"}
-
-                        <img
-                          src={getCryptoIcon(item?.cryptocurrency)}
-                          alt={item?.cryptocurrency || "crypto"}
-                          className="crypto-icon"
-                          style={{ width: "16px", height: "16px" }}
-                        />
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        marginBottom: "5px",
-                        fontSize: "28px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {item?.name
-                        ? item.name.length > 150
-                          ? `${item.name.substring(0, 150)}...`
-                          : item.name
-                        : "Unnamed product"}
-                    </div>
-
-                    <div className="item-rating">
-                      {averageRating ? renderStars(averageRating) : renderStars(0)}
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        color: "#666",
-                        marginTop: "4px",
-                      }}
-                    >
-                      {averageRating
-                        ? `${averageRating}/5`
-                        : "No reviews yet"}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {beautyTypeNames.length === 0 && !loading ? (
+        <div className="pc-empty-state">
+          {t(
+            "No beauty products available right now.",
+            "No beauty products available right now."
+          )}
         </div>
-      ))}
+      ) : (
+        beautyTypeNames.map((type) => (
+          <section key={type} className="pc-product-section">
+            <div className="pc-section-header">
+              <h3 className="pc-section-title">{type} Top Items</h3>
+              <button
+                type="button"
+                className="pc-link-button"
+                onClick={() => handleTopTypeClick(type)}
+              >
+                View all
+              </button>
+            </div>
+
+            <div
+              className="pc-product-grid"
+              style={{
+                gridTemplateColumns:
+                  isDesktop || isTablet ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
+              }}
+            >
+              {types[type]
+                ?.slice(0, MAX_RENDERED_ITEMS_PER_TYPE)
+                .map((product, index) => (
+                  <ProductCard
+                    key={product?.id || product?.itemId || `${type}-${index}`}
+                    product={product}
+                    review={reviews[product?.itemId]}
+                    onClick={() => handleItemClick(product?.id)}
+                  />
+                ))}
+            </div>
+          </section>
+        ))
+      )}
 
       <RecommendedItem />
-    </div>
+    </section>
   );
 }
 

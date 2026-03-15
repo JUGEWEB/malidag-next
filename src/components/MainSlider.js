@@ -54,24 +54,6 @@ const MainSlider = ({ user }) => {
       buttonText: "Buy now"
     },
     {
-      id: "3",
-      url: "https://cdn.malidag.com/public/header/1/headerImage1.webp",
-      type: "#689c85",
-      content: "image",
-      textPosition: "left",
-      headline: "Earn Crypto",
-      sub: "Start saving today"
-    },
-    {
-      id: "4",
-      url: "https://cdn.malidag.com/public/header/2/malidagheader2.webp",
-      type: "#e87909",
-      content: "image",
-      textPosition: "right",
-      headline: "Buy BNB",
-      sub: "Fast & secure"
-    },
-    {
       id: "5",
       url: "https://cdn.malidag.com/public/header/3/malidag-all-header.webp",
       type: "#024163",
@@ -200,12 +182,6 @@ const MainSlider = ({ user }) => {
         break;
       case "2":
         router.push("/product/9e0da5b9-f4b3-42d0-8024-211ea47d0abd");
-        break;
-      case "3":
-        router.push("/payBNBBTCETH");
-        break;
-      case "4":
-        router.push("/buyBNB");
         break;
       case "5":
         router.push("/save-big");

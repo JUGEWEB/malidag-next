@@ -13,9 +13,10 @@ export async function generateMetadata({ params }) {
   const i18n = await initI18n(lang, ["translation", "keywords"]);
   const t = i18n.t.bind(i18n);
 
-  const { searchTerm } = params;
+  const { searchTerm } = await params;
 
-  const parts = decodeURIComponent(searchTerm).split(/[-+\s]+/);
+  const decodedSearchTerm = decodeURIComponent(searchTerm || "");
+  const parts = decodedSearchTerm.split(/[-+\s]+/).filter(Boolean);
 
   const translatedParts = parts.map((p) =>
     t(p.toLowerCase(), { ns: ["keywords", "translation"], defaultValue: p })
@@ -70,7 +71,7 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default function Page({ params }) {
-  const { searchTerm } = params;
+export default async function Page({ params }) {
+  const { searchTerm } = await params;
   return <ItemPage searchTerm={searchTerm} />;
 }

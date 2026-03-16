@@ -5,11 +5,9 @@ import initI18n from "@/components/i18nServer";
 import KidToy from "@/components/kidsToy";
 
 const BASE_URL = "https://api.malidag.com";
-const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
 
 export const dynamic = "force-dynamic";
 
-// ✅ SEO Metadata
 export async function generateMetadata() {
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
@@ -33,7 +31,10 @@ export async function generateMetadata() {
       defaultValue:
         "kids toys, baby toys, learning toys, dolls, lego, puzzles, outdoor toys, Malidag crypto shopping",
     }) || "";
-  const keywords = keywordsCsv.split(",").map((k) => k.trim()).filter(Boolean);
+
+  const keywords = keywordsCsv
+    ? keywordsCsv.split(",").map((k) => k.trim()).filter(Boolean)
+    : [];
 
   return {
     title,
@@ -66,44 +67,47 @@ export async function generateMetadata() {
 }
 
 async function getData() {
-  let mtypes = {};
-  let itemsRes = { items: [] };
-  let cryptoRes = {};
+  let itemsRes = [];
 
   try {
-    const [mtypesRes, itemsRaw, cryptoRaw] = await Promise.allSettled([
-      fetch(`${BASE_URL}/categories/Toys`).then((r) => r.json()),
-      fetch(`${BASE_URL}/items`).then((r) => r.json()),
-      fetch(CRYPTO_URL).then((r) => r.json()),
-    ]);
+    const response = await fetch(`${BASE_URL}/items`, { cache: "no-store" });
+    const data = await response.json();
 
-    if (mtypesRes.status === "fulfilled") mtypes = mtypesRes.value;
-    if (itemsRaw.status === "fulfilled") itemsRes = itemsRaw.value;
-    if (cryptoRaw.status === "fulfilled") cryptoRes = cryptoRaw.value;
+    if (Array.isArray(data)) {
+      itemsRes = data;
+    }
   } catch (e) {
     console.error("Error fetching kid-toy data:", e.message);
   }
 
-  const filteredData = (itemsRes.items || []).filter((item) => {
-    const cat = (item.category || "").toLowerCase();
+  const filteredData = itemsRes.filter((item) => {
+    const cat = String(
+      item?.category || item?.details?.category || item?.item?.department || ""
+    )
+      .trim()
+      .toLowerCase();
+
     return ["toy", "toys", "kids toy", "kid toys", "children toys"].some((k) =>
       cat.includes(k)
     );
   });
 
   const groupedData = filteredData.reduce((acc, item) => {
-    const type = item.item?.type?.toLowerCase() || "other";
+    const type = String(item?.item?.type || item?.details?.type || "other")
+      .trim()
+      .toLowerCase();
+
     if (!acc[type]) acc[type] = { type, items: [] };
     acc[type].items.push(item);
+
     return acc;
   }, {});
 
-  return { mtypes, groupedData, cryptoPrices: cryptoRes };
+  return { groupedData };
 }
 
-// ✅ Page
 export default async function KidToyPage() {
-  const { mtypes, groupedData, cryptoPrices } = await getData();
+  const { groupedData } = await getData();
 
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/kid-toy`;
@@ -129,7 +133,7 @@ export default async function KidToyPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <KidToy mtypes={mtypes} types={groupedData} cryptoPrices={cryptoPrices} />
+      <KidToy types={groupedData} />
     </>
   );
 }

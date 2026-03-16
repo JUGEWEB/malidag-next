@@ -9,15 +9,7 @@ const PRODUCT_FALLBACK_IMAGE =
   "https://via.placeholder.com/600x700?text=Kids+Toy";
 
 const MAX_PRODUCTS_PER_GROUP = 5;
-const MAX_PRODUCT_NAME_LENGTH = 90;
-
-function normalizeType(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[-_]/g, " ")
-    .replace(/\s+/g, " ");
-}
+const MAX_PRODUCT_NAME_LENGTH = 70;
 
 function slugifyType(value) {
   return String(value || "")
@@ -38,7 +30,6 @@ function clampRating(rating) {
 
 function formatPrice(price) {
   const numericPrice = Number(price);
-
   if (Number.isNaN(numericPrice)) return "$0.00";
 
   return new Intl.NumberFormat("en-US", {
@@ -63,26 +54,22 @@ function StarRating({ rating }) {
       className="stars-container"
       aria-label={`Rated ${safeRating} out of 5 stars`}
     >
-      {Array.from({ length: 5 }, (_, index) => {
-        const isFilled = index < safeRating;
-
-        return (
-          <span
-            key={index}
-            className={`star ${isFilled ? "filled" : "empty"}`}
-            aria-hidden="true"
-          >
-            ★
-          </span>
-        );
-      })}
+      {Array.from({ length: 5 }, (_, index) => (
+        <span
+          key={index}
+          className={`star ${index < safeRating ? "filled" : "empty"}`}
+          aria-hidden="true"
+        >
+          ★
+        </span>
+      ))}
     </div>
   );
 }
 
-function SectionHeader({ eyebrow, title, subtitle }) {
+function SectionHeader({ eyebrow, title, subtitle, compact = false }) {
   return (
-    <div className="section-header">
+    <div className={`section-header ${compact ? "compact" : ""}`}>
       {eyebrow ? <span className="section-eyebrow">{eyebrow}</span> : null}
       <h3 className="main-section-title">{title}</h3>
       {subtitle ? <p className="section-subtitle">{subtitle}</p> : null}
@@ -98,17 +85,22 @@ function EmptyState({ message }) {
   );
 }
 
-function PillSection({ title, subtitle, pills = [], onPillClick, className = "" }) {
+function PillSection({
+  title,
+  pills = [],
+  onPillClick,
+  className = "",
+  scrollable = false,
+}) {
   return (
     <div className={`pill-section ${className}`.trim()}>
-      {(title || subtitle) && (
+      {title ? (
         <div className="pill-section-copy">
-          {title ? <h4 className="pill-section-title">{title}</h4> : null}
-          {subtitle ? <p className="pill-section-subtitle">{subtitle}</p> : null}
+          <h4 className="pill-section-title">{title}</h4>
         </div>
-      )}
+      ) : null}
 
-      <div className="pill-list">
+      <div className={`pill-list ${scrollable ? "pill-list-scroll" : ""}`}>
         {pills.map((pill, index) => (
           <button
             key={`${pill.label}-${index}`}
@@ -126,14 +118,18 @@ function PillSection({ title, subtitle, pills = [], onPillClick, className = "" 
 
 function ProductCard({ product, groupType, onClick, t }) {
   const productId = product?.id;
+  const item = product?.item || {};
+
   const productName =
-    product?.item?.name || t("unnamed_product") || "Unnamed product";
+    item?.name || t("unnamed_product", { defaultValue: "Unnamed product" });
+
   const productImage = getSafeImage(
-    product?.item?.images?.[0],
+    item?.images?.[0],
     PRODUCT_FALLBACK_IMAGE
   );
-  const productPrice = formatPrice(product?.item?.usdPrice);
-  const productRating = product?.item?.rating || 0;
+
+  const productPrice = formatPrice(item?.usdPrice);
+  const productRating = item?.rating || 0;
 
   return (
     <article className="product-card" aria-label={productName}>
@@ -141,7 +137,7 @@ function ProductCard({ product, groupType, onClick, t }) {
         type="button"
         className="product-card-media"
         onClick={() => onClick(productId)}
-        aria-label={`${t("view_product") || "View product"}: ${productName}`}
+        aria-label={`${t("view_product", { defaultValue: "View product" })}: ${productName}`}
       >
         <img
           src={productImage}
@@ -197,19 +193,21 @@ function KidToy({ types = {} }) {
   const preparedData = useMemo(() => {
     const groupedEntries = Object.entries(types || {});
 
-    const allGroups = groupedEntries.map(([key, group]) => {
-      const typeName = group?.type || key || "";
-      const safeItems = Array.isArray(group?.items)
-        ? group.items.slice(0, MAX_PRODUCTS_PER_GROUP)
-        : [];
+    const allGroups = groupedEntries
+      .map(([key, group]) => {
+        const typeName = String(group?.type || key || "").trim();
+        const safeItems = Array.isArray(group?.items)
+          ? group.items.slice(0, MAX_PRODUCTS_PER_GROUP)
+          : [];
 
-      return {
-        key: typeName,
-        type: typeName,
-        genre: group?.genre || "",
-        items: safeItems,
-      };
-    });
+        return {
+          key: key || typeName,
+          type: typeName || "other",
+          genre: group?.genre || "",
+          items: safeItems,
+        };
+      })
+      .filter((group) => group.items.length > 0);
 
     const mixedProducts = allGroups.flatMap((group) =>
       group.items.map((entry) => ({
@@ -233,88 +231,59 @@ function KidToy({ types = {} }) {
   return (
     <div className="kid-toy-page">
       <section className="kid-toy-hero" aria-labelledby="kid-toy-heading">
-        <div className="kid-toy-hero-badge">
-          {t("new_collection") || "New Collection"}
+        <div className="kid-toy-hero-top">
+          <div className="kid-toy-hero-badge">
+            {t("new_collection", { defaultValue: "New" })}
+          </div>
+
+          <div className="kid-toy-stats" aria-label="Collection overview">
+            <div className="kid-toy-stat">
+              <strong>{preparedData.totalTypes}</strong>
+              <span>{t("categories", { defaultValue: "Categories" })}</span>
+            </div>
+            <div className="kid-toy-stat">
+              <strong>{preparedData.totalProducts}</strong>
+              <span>{t("featured_items", { defaultValue: "Items" })}</span>
+            </div>
+          </div>
         </div>
 
         <h2 id="kid-toy-heading" className="kid-toy-title">
-          {t("kid_toy") || "Kid Toy"}
+          {t("kid_toy", { defaultValue: "Kid Toy" })}
         </h2>
 
         <p className="kid-toy-subtitle">
-          Fun, playful, and engaging toy collections designed to spark imagination
-          and joyful everyday moments.
+          {t("kid_toy_subtitle", {
+            defaultValue: "Playful picks for kids.",
+          })}
         </p>
-
-        <div className="kid-toy-stats" aria-label="Collection overview">
-          <div className="kid-toy-stat">
-            <strong>{preparedData.totalTypes}</strong>
-            <span>{t("categories") || "Categories"}</span>
-          </div>
-          <div className="kid-toy-stat">
-            <strong>{preparedData.totalProducts}</strong>
-            <span>{t("featured_items") || "Featured Items"}</span>
-          </div>
-        </div>
       </section>
 
-      <section className="types-main-section" aria-labelledby="toy-types-section-title">
+      <section
+        className="types-main-section"
+        aria-labelledby="toy-types-section-title"
+      >
         <SectionHeader
-          eyebrow={t("discover") || "Discover"}
-          title={t("types") || "Types"}
-          subtitle={
-            t("toy_types_section_subtitle") ||
-            "Browse toy categories built for fun, creativity, and playful exploration."
-          }
+          compact
+          eyebrow={t("discover", { defaultValue: "Discover" })}
+          title={t("types", { defaultValue: "Types" })}
         />
 
         {!hasTypes ? (
           <EmptyState
-            message={t("no_kid_toy_types") || "No kid toy types found."}
+            message={t("no_kid_toy_types", {
+              defaultValue: "No types found.",
+            })}
           />
         ) : (
           <PillSection
-            title={t("product_types") || "Product Types"}
-            subtitle={
-              t("product_types_subtitle") ||
-              "Explore the available toy categories in this collection."
-            }
+            title={t("product_types", { defaultValue: "Browse Types" })}
             pills={preparedData.allGroups.map((group) => ({
               label: group.type,
               variant: "type-pill",
             }))}
             onPillClick={handleTypeClick}
-          />
-        )}
-      </section>
-
-      <section className="top-topic-section" aria-labelledby="toy-top-topic-title">
-        <SectionHeader
-          eyebrow={t("featured") || "Featured"}
-          title={t("top_topic") || "Top Topic"}
-          subtitle={
-            t("toy_top_topic_subtitle") ||
-            "A quick view of the toy types shaping this collection right now."
-          }
-        />
-
-        {!hasTypes ? (
-          <EmptyState
-            message={t("no_kid_toy_products") || "No kid toy products found."}
-          />
-        ) : (
-          <PillSection
-            className="top-topic-pill-section"
-            title={t("top_topic_types") || "Top Topic Types"}
-            subtitle={
-              t("top_topic_types_subtitle") ||
-              "Tap a type to jump into the matching toy collection."
-            }
-            pills={preparedData.allGroups.map((group) => ({
-              label: group.type,
-              variant: "top-topic-pill",
-            }))}
-            onPillClick={handleTypeClick}
+            scrollable
           />
         )}
       </section>
@@ -324,17 +293,16 @@ function KidToy({ types = {} }) {
         aria-labelledby="toy-products-section-title"
       >
         <SectionHeader
-          eyebrow={t("shop_now") || "Shop Now"}
-          title={t("featured_products") || "Featured Products"}
-          subtitle={
-            t("featured_toy_products_subtitle") ||
-            "Selected toy pieces from across the collection with playful appeal and everyday fun."
-          }
+          compact
+          eyebrow={t("shop_now", { defaultValue: "Shop" })}
+          title={t("featured_products", { defaultValue: "Featured Products" })}
         />
 
         {!hasProducts ? (
           <EmptyState
-            message={t("no_kid_toy_products") || "No kid toy products found."}
+            message={t("no_kid_toy_products", {
+              defaultValue: "No products found.",
+            })}
           />
         ) : (
           <div

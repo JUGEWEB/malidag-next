@@ -272,9 +272,6 @@ function KidFashionTypePage({ typeSlug }) {
   return (
     <div className="kid-fashion-type-page">
       <section className="kid-type-hero">
-        <button type="button" className="back-button" onClick={handleBack}>
-          ← {t("back") || "Back"}
-        </button>
 
         <div className="kid-type-hero-content">
           <div className="kid-type-hero-text">

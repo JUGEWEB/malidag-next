@@ -22,7 +22,7 @@ function AppHeader(props) {
     isConnected, pendingConnector, allCountries, country, setCountry
   } = props;
     return(
-        <div style={{position: "relative", width: "100%", backgroundColor: "#ddd5"}}>   
+        <div style={{position: "relative", width: "100%", backgroundColor: "white"}}>   
                 {/* Header */}
                 <div style={{backgroundColor: "#333"}}>
                <div className="header-container" style={{ backgroundColor: isDesktop || isTablet ? "" : "#333" }} >

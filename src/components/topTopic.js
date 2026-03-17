@@ -13,7 +13,14 @@ const MAX_ITEMS = 100;
 const CACHED_ITEMS_COUNT = 10;
 const CACHE_KEY = "topTopic_first10";
 
-function TopTopic() {
+function TopTopic({
+  title = "Top items",
+  eyebrow = "Popular now",
+  viewMoreLabel = "Explore now",
+  sectionRoute = "/topitem",
+  showHeader = true,
+  showViewMore = true,
+}) {
   const router = useRouter();
   const scrollRef = useRef(null);
   const [topItems, setTopItems] = useState([]);
@@ -135,6 +142,11 @@ function TopTopic() {
     }
   };
 
+  const handleSectionNavigation = () => {
+    if (!sectionRoute) return;
+    router.push(sectionRoute);
+  };
+
   const scrollCarousel = (direction) => {
     if (!scrollRef.current) return;
 
@@ -149,6 +161,26 @@ function TopTopic() {
 
   return (
     <div className="top-topic-caou">
+      {showHeader && (
+        <div className="top-topic-header">
+          <div className="top-topic-heading-wrap">
+            <span className="top-topic-eyebrow">{eyebrow}</span>
+            <h2 className="top-topic-title">{title}</h2>
+          </div>
+
+          {showViewMore && sectionRoute && (
+            <button
+              type="button"
+              className="top-topic-view-more"
+              onClick={handleSectionNavigation}
+              aria-label={`View more from ${title}`}
+            >
+              {viewMoreLabel}
+            </button>
+          )}
+        </div>
+      )}
+
       <div ref={scrollRef} className="carousel-sli">
         {topItems.map((item, index) => {
           const ratingObj = reviews[item.itemId];

@@ -9,36 +9,40 @@ function SpanWarnings() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Return nothing if not on homepage
+  // Show only on homepage
   if (pathname !== "/") return null;
 
+  // Hide on tablet & desktop
+  if (isTablet || isDesktop) return null;
+
   return (
-    <div style={{ backgroundColor: "#ddd5", width: "100%", height: "100%" }}>
-      {!(isTablet || isDesktop) && (
-        <span
-          className="span-warningsmall"
-          style={{
-            backgroundColor: "#ddd5",
-            maxWidth: "100%",
-            maxHeight: "100%",
-            margin: "0px",
-          }}
-        >
-          We are displaying products that ship to your location. You can select a
-          different location in the menu above.
-          <span
-            onClick={() => router.push("/international-shipping")}
-            style={{
-              color: "blue",
-              marginLeft: "5px",
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
-          >
-            Learn about international shipping here
-          </span>
-        </span>
-      )}
+    <div
+      style={{
+        width: "100%",
+        backgroundColor: "#ddd5",
+        padding: "10px 12px",
+        textAlign: "center",
+        fontSize: "0.9rem",
+        lineHeight: "1.4",
+      }}
+    >
+      <span>
+        We are displaying products that ship to your location. You can select a
+        different location in the menu above.
+      </span>
+
+      <span
+        onClick={() => router.push("/international-shipping")}
+        style={{
+          color: "#0b5ed7",
+          marginLeft: "6px",
+          textDecoration: "underline",
+          cursor: "pointer",
+          fontWeight: "500",
+        }}
+      >
+        Learn about international shipping here
+      </span>
     </div>
   );
 }

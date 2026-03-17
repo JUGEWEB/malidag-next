@@ -70,3 +70,173 @@
   margin: 0 20px 10px;
   border-left: 4px solid orange;
 }
+
+.main-slider {
+  position: relative;
+}
+
+.main-slider__surface {
+  width: 100%;
+  background-color: white;
+}
+
+.main-slider__frame {
+  width: 100%;
+}
+
+.main-slider__frame--standard {
+  height: 650px;
+}
+
+.main-slider__frame--compact {
+  height: 440px;
+}
+
+.main-slider__slide {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+}
+
+.main-slider__top {
+  width: 100%;
+  position: relative;
+}
+
+.main-slider__top--standard {
+  height: 350px;
+}
+
+.main-slider__top--compact {
+  height: 210px;
+}
+
+.main-slider__bottom {
+  width: 100%;
+}
+
+.main-slider__bottom--standard {
+  height: 300px;
+}
+
+.main-slider__bottom--compact {
+  height: 230px;
+}
+
+.main-slider__image-wrap {
+  position: relative;
+}
+
+.main-slider__image {
+  width: 100%;
+  cursor: pointer;
+  object-fit: cover;
+  filter: contrast(1.2) brightness(1.1);
+  transition: opacity 0.4s ease-in-out;
+  opacity: 0.9;
+}
+
+.main-slider__image--standard {
+  height: 300px;
+}
+
+.main-slider__image--compact {
+  height: 200px;
+}
+
+.main-slider__image--loaded {
+  opacity: 1;
+}
+
+.main-slider__fade {
+  width: 100%;
+  height: 50px;
+  position: absolute;
+}
+
+.main-slider__top--standard .main-slider__fade {
+  bottom: 50px;
+}
+
+.main-slider__top--compact .main-slider__fade {
+  bottom: 10px;
+}
+
+.main-slider__video-overlay {
+  pointer-events: auto;
+}
+
+.main-slider__video-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.main-slider__video-title--standard {
+  font-size: 2.2rem;
+}
+
+.main-slider__video-title--compact {
+  font-size: 1.5rem;
+}
+
+.main-slider__video-text {
+  opacity: 0.9;
+}
+
+.main-slider__video-text--standard {
+  font-size: 1.2rem;
+}
+
+.main-slider__video-text--compact {
+  font-size: 0.9rem;
+}
+
+.main-slider__cta {
+  margin-top: 15px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.main-slider__arrow {
+  display: block !important;
+  top: 10% !important;
+  z-index: 2;
+}
+
+.main-slider__arrow--next {
+  right: 20px !important;
+  margin-right: 20px;
+}
+
+.main-slider__arrow--prev {
+  left: 20px !important;
+  margin-left: 20px;
+}
+
+.main-slider__footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+.main-slider__categories {
+  width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+.main-slider__shipping-link {
+  color: blue;
+  margin-left: 5px;
+  text-decoration: underline;
+  cursor: pointer;
+}

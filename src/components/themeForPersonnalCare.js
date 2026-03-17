@@ -7,9 +7,10 @@ import { useRouter } from "next/navigation";
 
 const ThemeForPersonnalCare = () => {
   const router = useRouter();
-  const { isDesktop, isMobile, isSmallMobile, isTablet, isVerySmall } =
-    useScreenSize();
+  const { isSmallMobile, isVerySmall } = useScreenSize();
   const [loadedImages, setLoadedImages] = useState({});
+
+  const isSmall = isSmallMobile || isVerySmall;
 
   useEffect(() => {
     personalCareThemes.forEach((theme) => {
@@ -25,33 +26,34 @@ const ThemeForPersonnalCare = () => {
     <div
       style={{
         position: "relative",
-        width: isSmallMobile || isVerySmall ? "100%" : "270px",
-        height: isSmallMobile || isVerySmall ? "100%" : "400px",
+        width: isSmall ? "100%" : "270px",
+        height: isSmall ? "100%" : "400px",
         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
         backgroundColor: "#fff",
+        padding: "10px",
       }}
     >
+      {/* Title */}
       <div
         style={{
           fontSize: "25px",
           fontWeight: "bold",
           color: "#333",
-          marginBottom: "10px",
+          marginBottom: "14px",
           textAlign: "center",
         }}
       >
         Personal care for you
       </div>
 
+      {/* Grid */}
       <div
         style={{
           display: "grid",
           width: "100%",
-          gap: "1px",
-          justifyContent: "space-between",
+          gap: "12px",
           gridTemplateColumns: "repeat(2, 1fr)",
-          alignItems: "center",
-          height: "auto",
+          justifyItems: "center",
         }}
       >
         {personalCareThemes.map((theme) => (
@@ -62,9 +64,10 @@ const ThemeForPersonnalCare = () => {
             }
             style={{
               width: "100%",
-              height: "auto",
-              textAlign: "center",
-              minHeight: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
               cursor: "pointer",
             }}
           >
@@ -73,23 +76,25 @@ const ThemeForPersonnalCare = () => {
               alt={theme.type}
               loading="lazy"
               style={{
-                width: isSmallMobile || isVerySmall ? "100%" : "100px",
-                height: isSmallMobile || isVerySmall ? "185px" : "100px",
+                width: isSmall ? "100%" : "100px",
+                height: isSmall ? "185px" : "100px",
                 objectFit: "cover",
                 opacity: loadedImages[theme.id] ? 1 : 0,
                 transition: "opacity 0.3s ease",
                 filter: "contrast(1)",
                 boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                borderRadius: "5px",
+                borderRadius: "6px",
                 backgroundColor: "#fff",
               }}
             />
+
             <div
               style={{
                 fontSize: "0.9rem",
                 fontWeight: "500",
                 color: "#555",
                 marginTop: "6px",
+                textAlign: "center",
               }}
             >
               {theme.type}
@@ -98,19 +103,19 @@ const ThemeForPersonnalCare = () => {
         ))}
       </div>
 
+      {/* Discover */}
       <div
         onClick={() => router.push("/beauty")}
         style={{
-          fontSize: "0.8rem",
+          fontSize: "0.85rem",
           fontWeight: "bold",
-          color: "blue",
-          marginTop: "2rem",
-          textAlign: "start",
-          textDecoration: "underline",
+          color: "#15803d",
+          marginTop: "20px",
+          textAlign: "left",
           cursor: "pointer",
         }}
       >
-        Discover Now
+        Discover now
       </div>
     </div>
   );

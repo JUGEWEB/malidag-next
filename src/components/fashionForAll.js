@@ -2,9 +2,9 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
 import './fashionForAll.css';
 import useScreenSize from './useIsMobile';
+import Link from 'next/link';
 
 const BASE_URL = 'https://api.malidag.com';
 const MAX_ITEMS = 17;
@@ -30,8 +30,6 @@ function FashionForAll({
   const [hasError, setHasError] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const router = useRouter();
   const scrollRef = useRef(null);
   const { isMobile, isSmallMobile, isVerySmall, isTablet } = useScreenSize();
 
@@ -161,18 +159,6 @@ function FashionForAll({
     };
   }, [updateScrollState]);
 
-  const handleSectionNavigation = useCallback(() => {
-    if (!sectionRoute) return;
-    router.push(sectionRoute);
-  }, [router, sectionRoute]);
-
-  const handleItemClick = useCallback(
-    (id) => {
-      if (!id) return;
-      router.push(`${productRouteBase}/${id}`);
-    },
-    [router, productRouteBase]
-  );
 
   const scrollCarousel = useCallback((direction) => {
     const container = scrollRef.current;
@@ -200,27 +186,72 @@ function FashionForAll({
   }, []);
 
   const getItemData = useCallback(
-    (item) => {
-      const rawItem = item?.item || {};
-      const imageUrl = rawItem?.images?.[0] || '';
-      const itemName = rawItem?.name || 'Fashion Item';
-      const brand = rawItem?.brand || rawItem?.manufacturer || 'Fashion';
-      const itemCategory = rawItem?.category || 'Shoes';
-      const price =
-        formatPrice(rawItem?.price) ||
-        formatPrice(rawItem?.salePrice) ||
-        formatPrice(rawItem?.discountPrice);
+  (item) => {
+    const rawItem = item?.item || {};
+    const details = item?.details || {};
 
-      return {
-        imageUrl,
-        itemName,
-        brand,
-        category: itemCategory,
-        price,
-      };
-    },
-    [formatPrice]
-  );
+    const imageUrl =
+      rawItem?.images?.[0] ||
+      item?.image_url ||
+      '';
+
+    const itemName =
+      rawItem?.name ||
+      details?.itemName ||
+      item?.name ||
+      'Fashion Item';
+
+    const brand =
+      rawItem?.brand ||
+      details?.brand ||
+      rawItem?.manufacturer ||
+      'Fashion';
+
+    const itemCategory =
+      rawItem?.category ||
+      details?.category ||
+      item?.category ||
+      'Shoes';
+
+    const link =
+      rawItem?.link ||
+      details?.link ||
+      '';
+
+    const currentPriceValue = Number(
+      rawItem?.usdPrice ?? details?.usdText ?? rawItem?.price ?? 0
+    );
+
+    const originalPriceValue = Number(
+      rawItem?.originalPrice ?? details?.originalPrice ?? 0
+    );
+
+    const price = currentPriceValue > 0 ? formatPrice(currentPriceValue) : null;
+    const originalPrice =
+      originalPriceValue > 0 ? formatPrice(originalPriceValue) : null;
+
+    const discountPercentage =
+      originalPriceValue > 0 &&
+      currentPriceValue > 0 &&
+      currentPriceValue < originalPriceValue
+        ? Math.round(
+            ((originalPriceValue - currentPriceValue) / originalPriceValue) * 100
+          )
+        : 0;
+
+    return {
+      imageUrl,
+      itemName,
+      brand,
+      category: itemCategory,
+      link,
+      price,
+      originalPrice,
+      discountPercentage,
+    };
+  },
+  [formatPrice]
+);
 
   const renderState = (message, type = 'default') => (
     <div className={`fashion-carousel__state fashion-carousel__state--${type}`}>
@@ -288,60 +319,84 @@ function FashionForAll({
           aria-label={`${title} products`}
           role="region"
         >
-          {items.map((item, index) => {
-            const { imageUrl, itemName, brand, category: itemCategory, price } = getItemData(item);
+       {items.map((item, index) => {
+  const {
+    imageUrl,
+    itemName,
+    brand,
+    category: itemCategory,
+    price,
+    originalPrice,
+    discountPercentage,
+  } = getItemData(item);
 
-            return (
-              <div
-                key={item.id || `${itemName}-${index}`}
-                className={`carousel-item ${itemsPerRowClass}`}
-              >
-                <button
-                  type="button"
-                  className="carousel-card"
-                  onClick={() => handleItemClick(item.id)}
-                  aria-label={`Open ${itemName}`}
-                >
-                  <div className="carousel-card__media">
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={itemName}
-                        className="carousel-image"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = FALLBACK_IMAGE;
-                        }}
-                      />
-                    ) : (
-                      <div className="carousel-image carousel-image--placeholder">
-                        <span>No image available</span>
-                      </div>
-                    )}
-                  </div>
+  return (
+    <div
+      key={item.id || `${itemName}-${index}`}
+      className={`carousel-item ${itemsPerRowClass}`}
+    >
+      <Link
+        href={`${productRouteBase}/${item.id}`}
+        className="carousel-card"
+        aria-label={`Open ${itemName}`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <div className="carousel-card__media">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={itemName}
+              className="carousel-image"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = FALLBACK_IMAGE;
+              }}
+            />
+          ) : (
+            <div className="carousel-image carousel-image--placeholder">
+              <span>No image available</span>
+            </div>
+          )}
+        </div>
 
-                  <div className="carousel-card__content">
-                    <div className="carousel-card__meta">
-                      <span className="carousel-card__brand">{brand}</span>
-                      <span className="carousel-card__category">{itemCategory}</span>
-                    </div>
+        <div className="carousel-card__content">
+          <div className="carousel-card__meta">
+            <span className="carousel-card__brand">{brand}</span>
+            <span className="carousel-card__category">{itemCategory}</span>
+          </div>
 
-                    <h3 className="carousel-card__title" title={itemName}>
-                      {itemName}
-                    </h3>
+          <h3 className="carousel-card__title" title={itemName}>
+            {itemName}
+          </h3>
 
-                    <div className="carousel-card__footer">
-                      <span className="carousel-card__price">
-                        {price || 'View product'}
-                      </span>
-                      <span className="carousel-card__cta">Shop now</span>
-                    </div>
-                  </div>
-                </button>
-              </div>
-            );
-          })}
+          <div className="carousel-card__footer">
+            <div className="carousel-card__pricing">
+              <span className="carousel-card__price">
+                {price || 'View product'}
+              </span>
+
+              {originalPrice && (
+                <span className="carousel-card__original-price">
+                  {originalPrice}
+                </span>
+              )}
+
+              {discountPercentage > 0 && (
+                <span className="carousel-card__discount">
+                  -{discountPercentage}%
+                </span>
+              )}
+            </div>
+
+            <span className="carousel-card__cta">Shop now</span>
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+})}
         </div>
       </div>
     );
@@ -356,16 +411,17 @@ function FashionForAll({
             <h2 className="fashion-carousel__title">{title}</h2>
           </div>
 
-          {showViewMore && sectionRoute && (
-            <button
-              type="button"
-              className="fashion-carousel__view-more"
-              onClick={handleSectionNavigation}
-              aria-label={`View more from ${title}`}
-            >
-              {viewMoreLabel}
-            </button>
-          )}
+         {showViewMore && sectionRoute && (
+  <a
+    href={sectionRoute}
+    className="fashion-carousel__view-more"
+    aria-label={`View more from ${title}`}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    {viewMoreLabel}
+  </a>
+)}
         </div>
       )}
 

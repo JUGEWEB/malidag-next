@@ -1,47 +1,100 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from "react";
 import useScreenSize from "./useIsMobile";
 
-const ImageZoom1 = ({ selectedImage, onMouseEnter, onMouseLeave, isZoomVisible, zoomedPosition, onMouseMove, basketItems}) => {
+const LENS_HEIGHT = 379;
 
-  const {isDesktop} = useScreenSize()
+const ImageZoom1 = ({
+  selectedImage,
+  onMouseEnter,
+  onMouseLeave,
+  isZoomVisible,
+  onMouseMove,
+  basketItems,
+}) => {
+  const { isDesktop } = useScreenSize();
+  const imageRef = useRef(null);
+  const [localLens, setLocalLens] = useState({ y: 0 });
 
+  const containerWidth = isDesktop && basketItems?.length > 0 ? 240 : 780;
+  const containerHeight = 350;
+
+  const handleMove = (e) => {
+    if (!imageRef.current) return;
+
+    const rect = imageRef.current.getBoundingClientRect();
+
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+
+    const xPercent = x / rect.width;
+    const yPercent = y / rect.height;
+
+    const lensY = Math.max(
+      0,
+      Math.min(y - LENS_HEIGHT / 2, rect.height - LENS_HEIGHT)
+    );
+
+    setLocalLens({ y: lensY });
+    onMouseMove?.({ xPercent, yPercent });
+  };
 
   return (
     <div
-      className="image-container"
-      style={{ position: 'relative', width: isDesktop && basketItems?.length>0 ? "400px" : "500px", height: '100%', alignItems: "center", display: "flex", justifyContent: "center" }}
-      onMouseMove={onMouseMove} // Use parent function
+      style={{
+        position: "relative",
+        width: `${containerWidth}px`,
+        height: `${containerHeight}px`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: "0px",
+        overflow: "visible",
+      }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <img
-        src={selectedImage}
-        alt="Zoomable Product"
-        style={{ maxWidth: isDesktop && basketItems?.length>0 ? "400px" : "500px", height: 'auto', maxHeight: "550px", alignItems: "center", justifyContent: "center", display: "flex" }}
-      />
-
- {/* Zoom Highlight (Only visible when parent state allows it) */}
- {isZoomVisible && (
-        <div
-          className="zoom-highlight"
+      <div
+        ref={imageRef}
+        onMouseMove={handleMove}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+        }}
+      >
+        <img
+          src={selectedImage}
+          alt="Zoomable Product"
+          draggable={false}
           style={{
-            position: 'absolute',
-           width: '125px', // Adjusted to match zoom ratio
-            height: '100px', // Adjusted to match proportions
-            left: `calc(${zoomedPosition.x}% - 50px)`,
-            top: `calc(${zoomedPosition.y}% - 50px)`,
-           
-            background: ' #04447850',
-            pointerEvents: 'none',
-            boxShadow: '0 0 10px rgba(255, 255, 255, 0.5 )',
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            display: "block",
+            userSelect: "none",
+            pointerEvents: "none",
           }}
         />
-      )}
 
-      
-
+        {isZoomVisible && (
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: `${localLens.y}px`,
+              width: "100%",
+              height: `${LENS_HEIGHT}px`,
+              border: "1px solid rgba(255,255,255,0.85)",
+              background: "rgba(4, 68, 120, 0.18)",
+              borderRadius: "8px",
+              pointerEvents: "none",
+              boxSizing: "border-box",
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };

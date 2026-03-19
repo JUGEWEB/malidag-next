@@ -198,99 +198,137 @@ function ItemPage({ searchTerm }) {
 
         <div className="search-results-container">
           {items.map((itemData) => {
-            const { itemId, id, item } = itemData;
-            const { name, usdPrice, originalPrice, cryptocurrency, sold, videos } = item;
-            const crypto = String(cryptocurrency || "").toUpperCase();
+  const { itemId, id, item = {}, details = {} } = itemData;
 
-            const reviewsData = reviews[itemId] || {};
-            const finalRating = reviewsData?.averageRating || t("no_rating");
+  const name =
+    item.name ||
+    details.itemName ||
+    itemData.name ||
+    "Unnamed item";
 
-            const itemPriceInCrypto = usdPrice ? Number(usdPrice).toFixed(2) : "0.00";
+  const usdPrice = parseFloat(item.usdPrice || details.usdText || 0);
+  const originalPrice = parseFloat(
+    item.originalPrice || details.originalPrice || 0
+  );
 
-            const normalizedVideos = Array.isArray(videos) ? videos : [videos];
-            const firstVideoUrl = normalizedVideos.find(
-              (video) => typeof video === "string" && video.endsWith(".mp4")
-            );
+  const sold = item.sold || details.soldText || "0";
+  const cryptocurrency = item.cryptocurrency || details.currencyText || "";
+  const crypto = String(cryptocurrency || "").toUpperCase();
 
-            return (
-              <div key={id} className="item-card">
-                <div className="item-media-box">
-                  {activeVideoId === id && firstVideoUrl ? (
-                    <video
-                      src={firstVideoUrl}
-                      controls
-                      autoPlay
-                      onEnded={handleVideoStop}
-                      style={{ width: "100%", height: "230px", objectFit: "contain" }}
-                    />
-                  ) : (
-                    <>
-                      <img
-                        className="item-image"
-                        src={item.images[0]}
-                        onClick={() => handleItemClick(id)}
-                        alt={name}
-                        style={{ width: "100%", height: "230px", objectFit: "contain" }}
-                      />
-                      {firstVideoUrl && (
-                        <div className="play-button" onClick={() => handleVideoPlay(id)}>
-                          ▶️
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+  const reductionPercentage =
+    originalPrice > 0 && usdPrice >= 0 && usdPrice < originalPrice
+      ? Math.round(((originalPrice - usdPrice) / originalPrice) * 100)
+      : 0;
 
-                <div onClick={() => handleItemClick(id)} className="item-details">
-                  <div className="item-name" title={name}>
-                    {name.length > 20 ? `${name.substring(0, 20)}...` : name}
-                  </div>
+  const reviewsData = reviews[itemId] || {};
+  const finalRating = reviewsData?.averageRating || t("no_rating");
 
-                  <div className="item-prices">
-                    <div className="item-price-row">
-                      <span className="item-price">${usdPrice}</span>
-                      {originalPrice > 0 && (
-                        <span className="item-original-price">${originalPrice}</span>
-                      )}
-                      <span className="item-sold">
-                        {sold} <span className="sold-label">{t("sold")}</span>
-                      </span>
-                    </div>
+  const itemPriceInCrypto = usdPrice ? usdPrice.toFixed(2) : "0.00";
 
-                    <div className="item-crypto">
-                      <img
-                        src={coinImages[crypto] || "/path/to/placeholder.jpg"}
-                        alt={cryptocurrency}
-                        className="crypto-icon"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "/path/to/placeholder.jpg";
-                        }}
-                      />
-                      <span className="item-crypto-price">
-                        {`${itemPriceInCrypto} ${cryptocurrency}`}
-                      </span>
-                    </div>
-                  </div>
+  const normalizedVideos = Array.isArray(item.videos)
+    ? item.videos
+    : item.videos
+    ? [item.videos]
+    : [];
 
-                  <div
-                    className="item-type-stars"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setItemData(itemData);
-                      router.push("/reviewPage");
-                    }}
-                    title={t("view_reviews")}
-                  >
-                    {finalRating
-                      ? "★".repeat(Math.round(finalRating)) +
-                        "☆".repeat(5 - Math.round(finalRating))
-                      : t("no_rating")}
-                  </div>
-                </div>
+  const firstVideoUrl = normalizedVideos.find(
+    (video) => typeof video === "string" && video.endsWith(".mp4")
+  );
+
+  const firstImage =
+    item?.images?.[0] ||
+    itemData.image_url ||
+    "/placeholder.jpg";
+
+  return (
+    <div key={id} className="item-card">
+      <div className="item-media-box">
+        {activeVideoId === id && firstVideoUrl ? (
+          <video
+            src={firstVideoUrl}
+            controls
+            autoPlay
+            onEnded={handleVideoStop}
+            style={{ width: "100%", height: "230px", objectFit: "contain" }}
+          />
+        ) : (
+          <>
+            <img
+              className="item-image"
+              src={firstImage}
+              onClick={() => handleItemClick(id)}
+              alt={name}
+              style={{ width: "100%", height: "230px", objectFit: "contain" }}
+            />
+            {firstVideoUrl && (
+              <div className="play-button" onClick={() => handleVideoPlay(id)}>
+                ▶️
               </div>
-            );
-          })}
+            )}
+          </>
+        )}
+      </div>
+
+      <div onClick={() => handleItemClick(id)} className="item-details">
+        <div className="item-name" title={name}>
+          {name.length > 40 ? `${name.substring(0, 40)}...` : name}
+        </div>
+
+        <div className="item-prices">
+          <div className="item-price-row">
+            <span className="item-price">${itemPriceInCrypto}</span>
+
+            {originalPrice > 0 && (
+              <span className="item-original-price">
+                ${originalPrice.toFixed(2)}
+              </span>
+            )}
+
+            {reductionPercentage > 0 && (
+              <span className="item-reduction">
+                -{reductionPercentage}%
+              </span>
+            )}
+
+            <span className="item-sold">
+              {sold} <span className="sold-label">{t("sold")}</span>
+            </span>
+          </div>
+
+          <div className="item-crypto">
+            <img
+              src={coinImages[crypto] || "/path/to/placeholder.jpg"}
+              alt={cryptocurrency}
+              className="crypto-icon"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/path/to/placeholder.jpg";
+              }}
+            />
+            <span className="item-crypto-price">
+              {`${itemPriceInCrypto} ${cryptocurrency}`}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="item-type-stars"
+          onClick={(e) => {
+            e.stopPropagation();
+            setItemData(itemData);
+            router.push("/reviewPage");
+          }}
+          title={t("view_reviews")}
+        >
+          {finalRating
+            ? "★".repeat(Math.round(finalRating)) +
+              "☆".repeat(5 - Math.round(finalRating))
+            : t("no_rating")}
+        </div>
+      </div>
+    </div>
+  );
+})}
         </div>
       </main>
     </div>

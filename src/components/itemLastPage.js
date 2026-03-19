@@ -148,6 +148,7 @@ const { lang } = useLang(); // ✅ use global language
     }
 };
 
+
  useEffect(() => {
     checkDetailsSectionPosition(); // Initial check on load
   
@@ -485,18 +486,13 @@ const handleLikeItem = async (product) => {
 };
 
 
-const handleMouseMove = (e) => {
-  const image = e.target;
-  const { left, top, width, height } = image.getBoundingClientRect();
-  const x = e.clientX - left;
-  const y = e.clientY - top;
-
-  // Convert to percentage relative to image size
-  const xPercent = (x / width) * 100;
-  const yPercent = (y / height) * 100;
-
-  setZoomedPosition({ x: xPercent, y: yPercent });
+const handleMouseMove = ({ xPercent, yPercent }) => {
+  setZoomedPosition({
+    x: xPercent,
+    y: yPercent,
+  });
 };
+
 const handleMouseEnterImage = () => {
   if (isDesktop) {
     setIsZoomVisible(true);
@@ -514,57 +510,72 @@ const closeModal = () => {
 }
 
 const renderImageZoom = () => {
+  if (!selectedImage) return null;
 
-   if (isTablet) {
-    // On tablets, show a static image only
+  if (isTablet) {
     return (
-      <Image
-        src={selectedImage}
-        alt="Selected product"
-        width={300}    // required for Next
-      height={400}   // required for Next
+      <div
         style={{
-          objectFit: "contain",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
-      />
+      >
+        <img
+          src={encodeURI(selectedImage)}
+          alt="Selected product"
+          priority
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+      </div>
     );
   }
 
   if (zoomType === "nozoom") {
-  let width = 0;
-  let height = 500; // default for non-tablet
-
-  if (isTablet) {
-    width = 300;
-    height = 400;
-  } else if (isDesktop) {
-    width = basketItems.length > 0 ? 300 : 400;
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <img
+          src={encodeURI(selectedImage)}
+          alt="Selected product"
+          priority
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+          }}
+        />
+      </div>
+    );
   }
 
-  return (
-    <Image
-      src={selectedImage}
-      alt="Selected product"
-      width={width}
-      height={height}
-      style={{ objectFit: "contain" }}
-    />
-  );
-}
-
-
   if (zoomType === "zoom") {
-    console.log(selectedImage);
     return (
-
       <ImageZoom
         selectedImage={selectedImage}
         basketItems={basketItems}
         alt="Selected product"
         style={{
-          height: "auto",
-          maxWidth: "500px",
-          maxHeight: "550px",
+          width: "100%",
+          height: "100%",
+          maxWidth: "100%",
+          maxHeight: "100%",
+          objectFit: "cover",
           cursor: "zoom-in",
         }}
       />
@@ -572,19 +583,20 @@ const renderImageZoom = () => {
   }
 
   if (zoomType === "zoom1") {
-    return (
-      <ImageZoom1
-        isZoomVisible={isZoomVisible}
-        selectedImage={selectedImage}
-        onMouseMove={handleMouseMove}
-        zoomedPosition={zoomedPosition}
-        style={{ height: "auto", maxWidth:  "500px", maxHeight: "550px" }}
-        onMouseEnter={handleMouseEnterImage}
-        onMouseLeave={handleMouseLeaveImage}
-        basketItems={basketItems}
-      />
-    );
-  }
+  return (
+    <ImageZoom1
+      isZoomVisible={isZoomVisible}
+      selectedImage={selectedImage}
+      onMouseMove={handleMouseMove}
+      zoomedPosition={zoomedPosition}
+      onMouseEnter={handleMouseEnterImage}
+      onMouseLeave={handleMouseLeaveImage}
+      basketItems={basketItems}
+    />
+  );
+}
+
+  return null;
 };
 
 
@@ -636,9 +648,7 @@ const getNetworkName = (chainId) => {
     <div style={{ color: "green", display: "flex", alignItems: "center" }}>
        {t("connected_to_network", { network: networkName })}
       {networkLogos[chainId] && (
-        <Image
-	   width={20}
-        height={20}
+        <img
           src={networkLogos[chainId]}
           alt={networkName}
           style={{ width: "20px", height: "20px", marginLeft: "8px" }}
@@ -717,7 +727,7 @@ const handleVisitBrand = async () => {
 	
 	 {contextHolder}
 
-      <div className="product-layout"  style={{
+      <div className={`product-layout ${isDesktop || isTablet ? "layout-grid" : "layout-stack"}`}  style={{
     marginRight: isBasketVisible && isDesktop && basketItems?.length > 0 ? "0px" : "0px",
     display: isDesktop || isTablet ? "grid" : "block",
     gridTemplateColumns: isDesktop || isTablet ? "1fr 1fr 2fr" : undefined,
@@ -728,11 +738,11 @@ const handleVisitBrand = async () => {
 {/* Mobile: image slider */}
 {!isDesktop && !isTablet && (
   <>
-    <div className="mobile-slider-wrapper" style={{ width: "100%", padding: "10px" }}>
+    <div className="mobile-slider-wrapper product-card" style={{ width: "100%", padding: "10px" }}>
       <Slider dots={true} infinite={false} speed={500} slidesToShow={1} slidesToScroll={1}>
         {product?.imagesVariants[selectedColor].map((image, index) => (
           <div key={index}>
-            <Image
+            <img
               src={encodeURI(image)}
               alt={`Slide ${index}`}
               style={{
@@ -759,7 +769,7 @@ const handleVisitBrand = async () => {
     }}
   >
     {Object.keys(product?.imagesVariants).map((color) => (
-      <Image
+      <img
         key={color}
         src={encodeURI(product?.imagesVariants[color][0])}
         alt={`${color} option`}
@@ -779,16 +789,16 @@ const handleVisitBrand = async () => {
 )}
 
 {(!(isDesktop || isTablet)) && (
-  <div style={{maxHeight: "auto", maxWidth: "100%", position: "relative"}}>
-     <h1 style={{color: "black"}}> {translation?.name || product?.name}</h1>
+  <div className="mobile-product-info product-card" style={{maxHeight: "auto", maxWidth: "100%", position: "relative"}}>
+     <h1 className="product-title" style={{color: "black"}}> {translation?.name || product?.name}</h1>
 
       {product?.brand && product?.brand.trim() !== "" && (
-        <button onClick={handleVisitBrand} className="mt-4 px-6 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
+        <button onClick={handleVisitBrand} className="brand-visit-button">
           {t("visit_brand_button", { brand: product?.brand })}
         </button>
       )}
 
-       <div style={{color: "black"}}> <div className="rating-dropdown" style={{ display: "flex", alignItems: "center" }}>
+       <div style={{color: "black"}}> <div className="rating-dropdown rating-pill" style={{ display: "flex", alignItems: "center" }}>
         <span style={{marginRight: "10px", fontWeight: "bold", fontStyle: "italic"}} className="text-lg font-semibold">{finalRating || 0}</span>
                   {[...Array(5)].map((_, index) => {
             const starValue = index + 1;
@@ -816,7 +826,7 @@ const handleVisitBrand = async () => {
            <div style={{position: "relative"}}> 
        {openModalSmall && itemsd && (
   <div
-    className="modal-content"
+   className="modal-content premium-modal"
     style={{
       position: "absolute",
       top: `-20px`,
@@ -845,7 +855,7 @@ const handleVisitBrand = async () => {
   </div>
 )}
 
-<div style={{ display: "flex", alignItems: "center" }}>
+<div className="network-row" style={{ display: "flex", alignItems: "center" }}>
   <span role="img" aria-label="network">🌐</span> {/* Keep the globe emoji for better UX */}
   <span style={{ marginLeft: "5px", fontWeight: "bold", color: "black" }}>
     {getNetworkName(chainId)}
@@ -876,7 +886,7 @@ const handleVisitBrand = async () => {
           </div>
         )}
 
-            <div style={{display: "flex", justifyContent: "start", alignItems: "center"}}>
+            <div className="price-row" style={{ display: "flex", justifyContent: "start", alignItems: "center" }}>
             
           <h2 style={{color: "black", fontStyle: "italic"}}>${product?.usdPrice * quantity}</h2>
 
@@ -902,12 +912,12 @@ const handleVisitBrand = async () => {
       )}
       </div>
        {/* Quantity Selector */}
-       <div style={{display: "flex", alignItems: "center", maxWidth: "200px", top: "0", marginBottom: "10px"}}>
+       <div className="quantity-row" style={{ display: "flex", alignItems: "center", maxWidth: "200px", top: "0", marginBottom: "10px" }}>
         <span style={{marginBottom: "5px", fontStyle: "italic"}}>{t("quantity")}</span>
-    <div style={{ display: "flex", alignItems: "center", border: "1px solid gray", borderRadius: "100px", marginLeft: "20px" }}>
+    <div className="quantity-control" style={{ display: "flex", alignItems: "center", border: "1px solid gray", borderRadius: "100px", marginLeft: "20px" }}>
      
       <div
-        onClick={() => handleQuantityChange(-1)}
+       className="qty-btn" onClick={() => handleQuantityChange(-1)} 
         style={{ padding: "5px 10px", marginRight: "5px", cursor: "pointer" }}
       >
         -
@@ -916,14 +926,14 @@ const handleVisitBrand = async () => {
         {quantity}
       </span>
       <div
-        onClick={() => handleQuantityChange(1)}
+        className="qty-btn" onClick={() => handleQuantityChange(1)}
         style={{ padding: "5px 10px", marginLeft: "5px", cursor: "pointer" }}
       >
         +
       </div>
       </div>
     </div>
-        <div style={{display: "flex", alignItems: "center", justifyContent: "start", padding: "5px"}}>
+        <div className="action-row" style={{ display: "flex", alignItems: "center", justifyContent: "start", padding: "5px" }}>
         
         <button className="buy-now-button" onClick={() => handleBuyNowClick(id)}>
           {t("buy_now")}
@@ -932,13 +942,15 @@ const handleVisitBrand = async () => {
         <button className="add-to-basket" onClick={() => handleAddToBasket(product)}>{t("add_to_basket")}</button>
         <button className="like-botton" onClick={() => handleLikeItem(product)}>{t("like")}</button>
         </div>
-        <p style={{color: "red", fontSize: "15px"}}>{t("items_already_sold", { count: product?.sold })}</p>
+        <p className="sold-badge" style={{ color: "red", fontSize: "15px" }}>
+  {t("items_already_sold", { count: product?.sold })}
+</p>
         </div>
 
          {/* Video Slider */}
          <div>
 {validVideos?.length > 0 && (
-  <div className="product-videos" >
+ <div className="product-videos product-card">
     <h2 style={{ color: "black" }}>{t("product_videos")}</h2>
 
     {validVideos?.length === 1 ? (
@@ -968,8 +980,15 @@ const handleVisitBrand = async () => {
 
 
   <div>
-     <p style={{color: "black",  display: "flex"}}> <strong style={{marginRight: "20px"}}>{t("product_detail")}</strong>{translation?.text || product?.text}</p>
-        <p style={{color: "black",  display: "flex"}}> <strong style={{marginRight: "20px"}}>{t("about_this_item")}</strong> {translation?.productDetail01 || product?.productDetail01}</p>
+     <p className="product-copy" style={{ color: "black", display: "flex" }}>
+  <strong style={{ marginRight: "20px" }}>{t("product_detail")}</strong>
+  {translation?.text || product?.text}
+</p>
+
+<p className="product-copy" style={{ color: "black", display: "flex" }}>
+  <strong style={{ marginRight: "20px" }}>{t("about_this_item")}</strong>
+  {translation?.productDetail01 || product?.productDetail01}
+</p>
          <h1 style={{color: "black", fontSize: "14px"}}>{t("product_id", { id: itemsd })}</h1>
   </div>
 
@@ -1013,131 +1032,137 @@ const handleVisitBrand = async () => {
   </div>
 )}
 
-
-<div>
-      {(isDesktop || isTablet) && (
-  <div>
-    <div
-     {...(isDesktop && {
-        onMouseEnter: handleMouseEnterThumbnails,
-        onMouseLeave: handleMouseLeaveThumbnails,
-      })}
-      className="left-thumbnails"
-      style={{
-        width: isBasketVisible && basketItems?.length > 0 ? "90%" : "100%",
-        height: (isTablet) ? "400px" : "600px"
-      }}
-    >
-      {product?.imagesVariants[selectedColor].map((image, index) => (
-        
-        <Image
-          key={index}
-          src={encodeURI(image)}
-          width={80}      // pick a sensible size for your thumbnails
-          height={80}
-          alt={`${selectedColor} variant`}
-          className={`thumbnail ${selectedImage === image ? "active" : ""}`}
-          onClick={() => handleImageChange(image, index)}
-        />
-        
-      ))}
-    </div>
-    </div>
-    )}
+{/* LEFT THUMBNAILS */}
+<div style={{ display: isDesktop? "flex" : "none", alignItems: "center", justifyContent: "flex-start" }}>
+    <div>
+      <div
+        {...(isDesktop && {
+          onMouseEnter: handleMouseEnterThumbnails,
+          onMouseLeave: handleMouseLeaveThumbnails,
+        })}
+        className="left-thumbnails"
+        style={{
+          width: isBasketVisible && basketItems?.length > 0 ? "100px" : "100px",
+          height: isTablet ? "300px" : "379px",
+        }}
+      >
+        {product?.imagesVariants?.[selectedColor]?.map((image, index) => (
+          <Image
+            key={index}
+            src={encodeURI(image)}
+            width={20}
+            height={20}
+            alt={`${selectedColor} variant ${index + 1}`}
+            className={`thumbnail ${selectedImage === image ? "active" : ""}`}
+            onClick={() => handleImageChange(image, index)}
+          />
+        ))}
+      </div>
     </div>
 
 <div>
      {(isDesktop || isTablet) && (
    
-    <div
-  
+ <div
   {...(isDesktop && {
-        onMouseEnter: handleMouseEnterThumbnails,
-        onMouseLeave: handleMouseLeaveThumbnails,
-      })}
-      style={{
-        width: isTablet ? "300px" : isDesktop && basketItems?.length>0 ? "400px" : "500px",
-        height: isTablet ? "400px" : "600px",
-        filter: "brightness(0.9)",
-        padding: "0px",
-        background: "white",
-        alignItems: "center",
-        display: "flex",
-        justifyContent: "center",
-        objectFit: "contain"
-      }}
-    >
-      {renderImageZoom()}
-    </div>
+    onMouseEnter: handleMouseEnterThumbnails,
+    onMouseLeave: handleMouseLeaveThumbnails,
+  })}
+  className="main-image-panel"
+  style={{
+    width: isTablet ? "300px" : isDesktop && basketItems?.length > 0 ? "200px" : "400px",
+    height: isTablet ? "400px" : "350px",
+    padding: "20px",
+    background: "white",
+    alignItems: "center",
+    display: "flex",
+    marginTop: "50px",
+    justifyContent: "start",
+    objectFit: "contain",
+    borderRadius: "12px",
+  }}
+>
+  {renderImageZoom}
+  </div>
      )}
      </div>
- 
+ </div>
 
-       <div>
+       <div >
         {(isDesktop || isTablet) && (
-
+<div className="details-section-container">
         <div
         
-       className={`details-section ${detailsSectionAtTop ? "at-top" : ""} ${detailsSectionAtBottom ? "at-bottom" : ""}`} style={{display: (isDesktop || isTablet) ? "block" : "none" , maxWidth: isBasketVisible && isDesktop && basketItems?.length > 0 ? "65%" : isBasketVisible && isTablet && basketItems?.length > 0 ? "100%" : "auto", padding: "20px", maxHeight: "600px", overflowY: "auto"}}  ref={detailsRef}
+       className={`details-section premium-panel ${detailsSectionAtTop ? "at-top" : ""} ${detailsSectionAtBottom ? "at-bottom" : ""}`} style={{display: (isDesktop || isTablet) ? "block" : "none" , maxWidth: isBasketVisible && isDesktop && basketItems?.length > 0 ? "65%" : isBasketVisible && isTablet && basketItems?.length > 0 ? "100%" : "auto", padding: "20px", maxHeight: "600px", overflowY: "auto"}}  ref={detailsRef}
          >
         <div>
            {/* Conditionally render Zoomed Portion only when the cursor is inside the image */}
-          {isZoomVisible && zoomType === "zoom1" && isDesktop && (
-  <div
-    className="zoomed-view"
-    style={{
-      position: "fixed",
-      bottom: 0,
-      right: 0,
-      width: 400,
-      height: 500,
-      overflow: "hidden",
-      border: "2px solid #ddd",
-      backgroundColor: "#fff",
-      boxShadow: "0 4px 8px rgba(0,0,0,.2)",
-      zIndex: 1200,
-    }}
-  >
-    {/* Keep container relative so the absolutely-positioned image is scoped */}
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <Image
-        src={encodeURI(selectedImage)}
+ {isZoomVisible && zoomType === "zoom1" && isDesktop && (() => {
+  const panelWidth = 720;
+  const panelHeight = 450; // should match your lens height
+  const zoomWidthScale = 1;
+  const zoomHeightScale = 1.6;
+
+  const zoomedImageWidth = panelWidth * zoomWidthScale;
+  const zoomedImageHeight = panelHeight * zoomHeightScale;
+
+  const maxOffsetX = Math.max(0, zoomedImageWidth - panelWidth);
+  const maxOffsetY = Math.max(0, zoomedImageHeight - panelHeight);
+
+  const offsetX = Math.max(
+    0,
+    Math.min(zoomedPosition.x * zoomedImageWidth - panelWidth / 2, maxOffsetX)
+  );
+
+  const offsetY = Math.max(
+    0,
+    Math.min(zoomedPosition.y * zoomedImageHeight - panelHeight / 2, maxOffsetY)
+  );
+
+  return (
+    <div
+      className="zoomed-view"
+      style={{
+        position: "fixed",
+        top: "90px",
+        right: "20px",
+        width: `${panelWidth}px`,
+        height: `${panelHeight}px`,
+        overflow: "hidden",
+        border: "1px solid #ddd",
+        backgroundColor: "#fff",
+        boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+        zIndex: 1200,
+      }}
+    >
+      <img
+        src={selectedImage}
         alt="Zoomed"
-        /* ✅ Give the real pixel size of the zoomed image */
-        width={1500}
-        height={1600}
-        /* We’ll position this larger image inside the 400x500 viewport */
+        draggable={false}
         style={{
           position: "absolute",
-          top: 0,
-          left: 0,
-          /* Translate based on cursor percentage inside original image */
-          transform: `translate(-${
-            (zoomedPosition.x / 100) * (1500 - 400)
-          }px, -${
-            (zoomedPosition.y / 100) * (1600 - 500)
-          }px)`,
-          transition: "transform 0.1s ease-out",
-          filter: "brightness(0.9)",
-          pointerEvents: "none", // avoids stealing mouse events if needed
+          left: `-${offsetX}px`,
+          top: `-${offsetY}px`,
+          width: `${zoomedImageWidth}px`,
+          height: `${zoomedImageHeight}px`,
+          objectFit: "contain",
+          pointerEvents: "none",
+          userSelect: "none",
         }}
-        sizes="(min-width: 1024px) 400px, 100vw" // hint for proper srcset
-        priority // optional: reduces pop-in for the zoomed image
-        draggable={false}
       />
     </div>
-  </div>
-)}
+  );
+})()}
 
         <h1 style={{color: "black"}}> {translation?.name || product?.name}</h1>
         {/* Check if the product brand exists and is not empty */}
        {product?.brand && product?.brand.trim() !== "" && (
-        <button onClick={handleVisitBrand}>
+        <button onClick={handleVisitBrand} className="brand-visit-button">
          {t("visit_brand_button", { brand: product?.brand })}
         </button>
       )}
         <div className="product-info">
-        <div style={{color: "black"}}> <div className="rating-dropdown" style={{ display: "flex", alignItems: "center" }}>
+        <div style={{color: "black"}}> <div className="rating-dropdown rating-pill" style={{ display: "flex", alignItems: "center" }}>
         <span style={{marginRight: "10px", fontWeight: "bold", fontStyle: "italic"}} className="text-lg font-semibold">{finalRating || 0}</span>
                   {[...Array(5)].map((_, index) => {
             const starValue = index + 1;
@@ -1164,7 +1189,7 @@ const handleVisitBrand = async () => {
           <div style={{position: "relative"}}> 
           {modalOpen && itemsd && (
         <div
-        className="modal-content"
+       className="modal-content premium-modal"
         ref={modalRef}
         style={{
           position: "absolute",
@@ -1192,7 +1217,7 @@ const handleVisitBrand = async () => {
   </span>
 </div>
 
-            <div style={{display: "flex", justifyContent: "start", alignItems: "center"}}>
+            <div className="price-row" style={{ display: "flex", justifyContent: "start", alignItems: "center" }}>
             
           <h2 style={{color: "black", fontStyle: "italic"}}>${product?.usdPrice * quantity}</h2>
 
@@ -1218,12 +1243,12 @@ const handleVisitBrand = async () => {
       )}
       </div>
        {/* Quantity Selector */}
-       <div style={{display: "flex", alignItems: "center", maxWidth: "200px", top: "0", marginBottom: "10px"}}>
+       <div className="quantity-row" style={{ display: "flex", alignItems: "center", maxWidth: "200px", top: "0", marginBottom: "10px" }}>
         <span style={{marginBottom: "5px", fontStyle: "italic"}}>{t("quantity")}</span>
-    <div style={{ display: "flex", alignItems: "center", border: "1px solid gray", borderRadius: "100px", marginLeft: "20px" }}>
+    <div className="quantity-control" style={{ display: "flex", alignItems: "center", border: "1px solid gray", borderRadius: "100px", marginLeft: "20px" }}>
      
       <div
-        onClick={() => handleQuantityChange(-1)}
+       className="qty-btn" onClick={() => handleQuantityChange(-1)}
         style={{ padding: "5px 10px", marginRight: "5px", cursor: "pointer" }}
       >
         -
@@ -1232,14 +1257,14 @@ const handleVisitBrand = async () => {
         {quantity}
       </span>
       <div
-        onClick={() => handleQuantityChange(1)}
+       className="qty-btn" onClick={() => handleQuantityChange(1)}
         style={{ padding: "5px 10px", marginLeft: "5px", cursor: "pointer" }}
       >
         +
       </div>
       </div>
     </div>
-        <div style={{display: "flex", alignItems: "center", justifyContent: "start", padding: "5px"}}>
+        <div className="action-row" style={{ display: "flex", alignItems: "center", justifyContent: "start", padding: "5px" }}>
         
         <button className="buy-now-button" onClick={() => handleBuyNowClick(id)}>
          {t("buy_now")}
@@ -1248,7 +1273,9 @@ const handleVisitBrand = async () => {
         <button className="add-to-basket" onClick={() => handleAddToBasket(product)}>{t("add_to_basket")}</button>
         <button className="like-botton" onClick={() => handleLikeItem(product)}>{t("like")}</button>
         </div>
-        <p style={{color: "red", fontSize: "15px"}}>{t("items_already_sold", { count: product?.sold })}</p>
+        <p className="sold-badge" style={{ color: "red", fontSize: "15px" }}>
+  {t("items_already_sold", { count: product?.sold })}
+</p>
         </div>
         <h1 style={{color: "black", fontSize: "14px"}}>  {t("color_name", { color: selectedColor })}</h1>
         </div>
@@ -1303,7 +1330,7 @@ const handleVisitBrand = async () => {
 
 
         </div>
-
+  </div>
          )}
 
          </div>
@@ -1317,7 +1344,7 @@ const handleVisitBrand = async () => {
       {(isDesktop || isTablet) && (
         <div>
 {validVideos?.length > 0 && (
-  <div className="product-videos" >
+ <div className="product-videos product-card">
     <h2 style={{ color: "black" }}>{t("product_videos")}</h2>
 
     {validVideos?.length === 1 ? (

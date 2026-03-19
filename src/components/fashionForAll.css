@@ -145,22 +145,11 @@
   cursor: pointer;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    transform var(--fashion-transition),
-    box-shadow var(--fashion-transition),
-    border-color var(--fashion-transition),
-    background-color var(--fashion-transition);
-}
-
-.carousel-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--fashion-shadow-lg);
-  border-color: var(--fashion-border-strong);
-  background: var(--fashion-surface-hover);
+  transition: border-color var(--fashion-transition);
 }
 
 .carousel-card:active {
-  transform: translateY(-2px) scale(0.995);
+  transform: none;
 }
 
 .carousel-card:focus-visible {
@@ -185,14 +174,39 @@
   object-fit: contain;
   background: white;
   filter: brightness(1) saturate(1) contrast(1);
-  transition:
-    transform 320ms ease,
-    filter 320ms ease;
 }
 
-.carousel-card:hover .carousel-image {
-  transform: scale(1.05);
-  filter: saturate(1.04) contrast(1.01);
+.carousel-card__pricing {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.carousel-card__price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--fashion-accent);
+}
+
+.carousel-card__original-price {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--fashion-text-soft);
+  text-decoration: line-through;
+}
+
+.carousel-card__discount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .carousel-image--placeholder {

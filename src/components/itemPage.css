@@ -308,3 +308,12 @@
     height: 180px;
   }
 }
+
+.item-reduction {
+  background: #e60023;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}

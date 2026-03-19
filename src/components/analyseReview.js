@@ -28,18 +28,6 @@ const AnalyseReview = ({ productId, onRatingClick, id  }) => {
 };
 
 
-  const chartData = {
-    labels: [1, 2, 3, 4, 5].map(star =>` ${star} ${t(star === 1 ? "stars_label_singular" : "stars_label")}`),
-    datasets: [
-      {
-        data: ratingPercentages,
-        backgroundColor: ["#f44336", "#ff9800", "#ffeb3b", "#4caf50", "#2196f3"],
-        hoverBackgroundColor: ["#d32f2f", "#f57c00", "#fbc02d", "#388e3c", "#1976d2"],
-      },
-    ],
-  };
-
-
   const renderStars = (rating) => {
     const fullStars = Math.floor(rating);
     const halfStar = rating % 1 !== 0;
@@ -65,10 +53,6 @@ const AnalyseReview = ({ productId, onRatingClick, id  }) => {
             {t("rating")}: {finalRating}/5{" "}
             <span style={{ color: "#FFD700", fontSize: "24px" }}>{renderStars(finalRating)}</span>
           </h3>
-
-          <div style={{display: ((isDesktop || isTablet)) ? "block" : "none", width: "300px", height: "250px", margin: "20px auto" }}>
-            <Doughnut data={chartData} />
-          </div>
 
           {[5, 4, 3, 2, 1].map((star) => (
             <div key={star} className="Stars" style={{ marginBottom: "5px", display: "flex", alignItems: "center", height:  ((isDesktop || isTablet)) ?  "30px" : "20px" }}  onClick={() => handleStarClick(star)}>

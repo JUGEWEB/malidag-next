@@ -17,8 +17,8 @@ const ImageZoom1 = ({
   const imageRef = useRef(null);
   const [localLens, setLocalLens] = useState({ y: 0 });
 
-  const containerWidth = isDesktop && basketItems?.length > 0 ? 240 : 780;
-  const containerHeight = 350;
+  const containerWidth = isDesktop && basketItems?.length > 0 ? 240 : 520;
+  const containerHeight = 560;
 
   const handleMove = (e) => {
     if (!imageRef.current) return;
@@ -86,11 +86,7 @@ const ImageZoom1 = ({
               top: `${localLens.y}px`,
               width: "100%",
               height: `${LENS_HEIGHT}px`,
-              border: "1px solid rgba(255,255,255,0.85)",
-              background: "rgba(4, 68, 120, 0.18)",
-              borderRadius: "8px",
               pointerEvents: "none",
-              boxSizing: "border-box",
             }}
           />
         )}

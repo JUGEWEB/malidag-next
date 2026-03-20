@@ -8,10 +8,10 @@
 .page-layout {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
+  gap: 0px;
   width: 100%;
   box-sizing: border-box;
-  padding: 10px;
+  padding: 0px;
 }
 
 .sidebar-filters {
@@ -87,7 +87,7 @@
 .search-results-container {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 5px;
   width: 100%;
 }
 
@@ -105,11 +105,12 @@
 }
 
 .item-media-box {
-  background:  #f8fafc;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.55), transparent 45%),
+    linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
   z-index: 1;
   width: 100%;
-  mix-blend-mode: multiply;
-  height: 230px;
+  height: 300px;
   margin-bottom: 10px;
   margin-top: 10px;
   position: relative;
@@ -124,6 +125,7 @@
   height: 100%;
   object-fit: contain;
    mix-blend-mode: multiply;
+    filter: contrast(1.08) saturate(1.08) brightness(1.02);
   display: block;
 }
 
@@ -136,7 +138,7 @@
 
 .play-button {
   position: absolute;
-  left: 20px;
+  left: 50px;
   bottom: 0px;
   z-index: 2;
   transform: translate(-50%, -50%);
@@ -149,6 +151,7 @@
 .item-details {
   padding: 10px;
   cursor: pointer;
+   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
 .item-name {
@@ -244,7 +247,7 @@
 @media screen and (max-width: 992px) {
   .page-layout {
     flex-direction: column;
-    gap: 12px;
+    gap: 5px;
   }
 
   .mobile-top-bar {
@@ -267,7 +270,7 @@
   }
 
   .search-results-container {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .item-page-container {
@@ -277,10 +280,10 @@
 }
 
 /* Very small phones */
-@media screen and (max-width: 380px) {
+@media screen and (max-width: 620px) {
   .search-results-container {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 5px;
   }
 
   .item-name {
@@ -306,7 +309,7 @@
   }
 
   .item-media-box {
-    height: 180px;
+    height: 280px;
   }
 }
 
@@ -317,4 +320,35 @@
   font-weight: 700;
   padding: 3px 8px;
   border-radius: 999px;
+}
+
+.item-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.item-badge-best {
+  background: #f59e0b;
+}
+
+.item-badge-top {
+  background: #111827;
+}
+
+@media (max-width: 768px) {
+  .item-badge {
+    top: 8px;
+    right: 8px;
+    padding: 6px 7px;
+    font-size: 10px;
+  }
 }

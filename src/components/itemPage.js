@@ -25,6 +25,7 @@ function ItemPage({ searchTerm }) {
   const { isMobile, isTablet, isVerySmall, isSmallMobile } = useScreenSize();
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
+  const [bestSellerId, setBestSellerId] = useState(null);
 
   const fetchReviews = async (productId) => {
     try {
@@ -60,9 +61,16 @@ function ItemPage({ searchTerm }) {
         const response = await axios.get(
           `https://api.malidag.com/items/${encodeURIComponent(searchTerm)}`
         );
-        const matchedItems = response.data.items || [];
-        setItems(matchedItems);
-        matchedItems.forEach((item) => fetchReviews(item.itemId));
+       const matchedItems = response.data.items || [];
+setItems(matchedItems);
+
+const bestSeller = [...matchedItems].sort(
+  (a, b) => Number(b?.item?.sold || b?.details?.soldText || 0) - Number(a?.item?.sold || a?.details?.soldText || 0)
+)[0];
+
+setBestSellerId(bestSeller?.id || null);
+
+matchedItems.forEach((item) => fetchReviews(item.itemId));
       } catch (error) {
         console.error("Error fetching items:", error);
       } finally {
@@ -212,6 +220,8 @@ function ItemPage({ searchTerm }) {
   );
 
   const sold = item.sold || details.soldText || "0";
+  const numericSold = Number(sold) || 0;
+const isBestSeller = id === bestSellerId;
   const cryptocurrency = item.cryptocurrency || details.currencyText || "";
   const crypto = String(cryptocurrency || "").toUpperCase();
 
@@ -243,6 +253,9 @@ function ItemPage({ searchTerm }) {
   return (
     <div key={id} className="item-card">
       <div className="item-media-box">
+        <div className={`item-badge ${isBestSeller ? "item-badge-best" : "item-badge-top"}`}>
+        {isBestSeller ? t("best_seller") : t("topIt")}
+      </div>
         {activeVideoId === id && firstVideoUrl ? (
           <video
             src={firstVideoUrl}

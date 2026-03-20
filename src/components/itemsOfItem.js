@@ -32,6 +32,8 @@ function Item() {
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
+  const [bestSellersByCategory, setBestSellersByCategory] = useState({});
+
   const stablecoinIcons = {
     usdt: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
     usdc: "https://api.malidag.com/learn/videos/1769909942070-0xaf88d065e77c8cc2239327c5edb3a432268e5831.png",
@@ -93,6 +95,24 @@ function Item() {
 
         const uniqueCategories = [...new Set(fetchedItems.map((item) => item.category))];
         setCategories(uniqueCategories);
+
+        const bestSellerMap = {};
+
+uniqueCategories.forEach((category) => {
+  const categoryItems = fetchedItems.filter((item) => item.category === category);
+
+  if (categoryItems.length > 0) {
+    const bestSeller = [...categoryItems].sort(
+      (a, b) => Number(b.item?.sold || 0) - Number(a.item?.sold || 0)
+    )[0];
+
+    if (bestSeller?.id) {
+      bestSellerMap[category] = bestSeller.id;
+    }
+  }
+});
+
+setBestSellersByCategory(bestSellerMap);
 
         fetchedItems.forEach((item) => {
           fetchReviews(item.itemId);
@@ -257,6 +277,7 @@ function Item() {
           <div className={gridClassName}>
             {items.map((itemData) => {
               const { itemId, id, item } = itemData;
+              const isBestSeller = id === bestSellersByCategory[itemData.category];
               const { name, usdPrice, originalPrice, cryptocurrency, sold, videos } = item;
 
               const crypto = String(cryptocurrency || "USDT").toUpperCase();
@@ -273,6 +294,9 @@ function Item() {
               return (
                 <div key={id} className="itm-card">
                   <div className="item-media-wrap">
+                    <div className={`item-badge ${isBestSeller ? "item-badge-best" : "item-badge-top"}`}>
+                      {isBestSeller ? t("best_seller") : t("topIt")}
+                    </div>
                     {activeVideoId === id && firstVideoUrl ? (
                       <video
                         src={firstVideoUrl}

@@ -26,6 +26,7 @@ function ItemPage({ searchTerm }) {
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
   const [bestSellerId, setBestSellerId] = useState(null);
+  const [selectedColorByItem, setSelectedColorByItem] = useState({});
 
   const fetchReviews = async (productId) => {
     try {
@@ -63,6 +64,17 @@ function ItemPage({ searchTerm }) {
         );
        const matchedItems = response.data.items || [];
 setItems(matchedItems);
+
+const initialColors = {};
+
+matchedItems.forEach((product) => {
+  const colorKeys = Object.keys(product?.item?.imagesVariants || {});
+  if (colorKeys.length > 0) {
+    initialColors[product.id] = colorKeys[0];
+  }
+});
+
+setSelectedColorByItem(initialColors);
 
 const bestSeller = [...matchedItems].sort(
   (a, b) => Number(b?.item?.sold || b?.details?.soldText || 0) - Number(a?.item?.sold || a?.details?.soldText || 0)
@@ -123,6 +135,63 @@ matchedItems.forEach((item) => fetchReviews(item.itemId));
       </div>
     );
   }
+
+  const handleColorSelect = (itemId, color, e) => {
+  e.stopPropagation();
+  setSelectedColorByItem((prev) => ({
+    ...prev,
+    [itemId]: color,
+  }));
+};
+
+const getColorOptions = (itemData) => {
+  return Object.keys(itemData?.item?.imagesVariants || {});
+};
+
+const getDisplayImage = (itemData) => {
+  const selectedColor = selectedColorByItem[itemData.id];
+  const variants = itemData?.item?.imagesVariants || {};
+
+  if (selectedColor && variants[selectedColor]?.[0]) {
+    return variants[selectedColor][0];
+  }
+
+  return itemData?.item?.images?.[0] || itemData.image_url || "/placeholder.jpg";
+};
+
+const getColorSwatch = (colorName = "") => {
+  const color = colorName.trim().toLowerCase();
+
+  const swatches = {
+    black: "#111111",
+    white: "#f8f8f8",
+    red: "#dc2626",
+    blue: "#2563eb",
+    green: "#16a34a",
+    yellow: "#eab308",
+    pink: "#ec4899",
+    purple: "#9333ea",
+    orange: "#f97316",
+    brown: "#92400e",
+    grey: "#9ca3af",
+    gray: "#9ca3af",
+    silver: "#c0c0c0",
+    gold: "#d4af37",
+    beige: "#d6c7a1",
+    cream: "#f5f0dc",
+    ivory: "#fffff0",
+    navy: "#1e3a8a",
+    skyblue: "#38bdf8",
+    "sky blue": "#38bdf8",
+    maroon: "#7f1d1d",
+    olive: "#556b2f",
+    khaki: "#c3b091",
+    transparent: "linear-gradient(135deg, #ddd 25%, #fff 25%, #fff 50%, #ddd 50%, #ddd 75%, #fff 75%, #fff 100%)",
+    multicolor: "linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #a855f7)",
+  };
+
+  return swatches[color] || "#d1d5db";
+};
 
   return (
     <div className="page-layout">
@@ -245,10 +314,9 @@ const isBestSeller = id === bestSellerId;
     (video) => typeof video === "string" && video.endsWith(".mp4")
   );
 
-  const firstImage =
-    item?.images?.[0] ||
-    itemData.image_url ||
-    "/placeholder.jpg";
+ const firstImage = getDisplayImage(itemData);
+const colorOptions = getColorOptions(itemData);
+const selectedColor = selectedColorByItem[id];
 
   return (
     <div key={id} className="item-card">
@@ -282,64 +350,101 @@ const isBestSeller = id === bestSellerId;
         )}
       </div>
 
-      <div onClick={() => handleItemClick(id)} className="item-details">
-        <div className="item-name" title={name}>
-          {name.length > 40 ? `${name.substring(0, 40)}...` : name}
-        </div>
+     <div onClick={() => handleItemClick(id)} className="item-details">
 
-        <div className="item-prices">
-          <div className="item-price-row">
-            <span className="item-price">${itemPriceInCrypto}</span>
-
-            {originalPrice > 0 && (
-              <span className="item-original-price">
-                ${originalPrice.toFixed(2)}
-              </span>
-            )}
-
-            {reductionPercentage > 0 && (
-              <span className="item-reduction">
-                -{reductionPercentage}%
-              </span>
-            )}
-
-            <span className="item-sold">
-              {sold} <span className="sold-label">{t("sold")}</span>
-            </span>
-          </div>
-
-          <div className="item-crypto">
-            <img
-              src={coinImages[crypto] || "/path/to/placeholder.jpg"}
-              alt={cryptocurrency}
-              className="crypto-icon"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/path/to/placeholder.jpg";
-              }}
-            />
-            <span className="item-crypto-price">
-              {`${itemPriceInCrypto} ${cryptocurrency}`}
-            </span>
-          </div>
-        </div>
-
-        <div
-          className="item-type-stars"
-          onClick={(e) => {
-            e.stopPropagation();
-            setItemData(itemData);
-            router.push("/reviewPage");
-          }}
-          title={t("view_reviews")}
-        >
-          {finalRating
-            ? "★".repeat(Math.round(finalRating)) +
-              "☆".repeat(5 - Math.round(finalRating))
-            : t("no_rating")}
-        </div>
-      </div>
+      {colorOptions.length > 0 && (
+  <div className="item-color-block">
+    <div className="item-color-label">
+      {t("color")}: <span>{selectedColor}</span>
     </div>
+
+    <div className="item-color-options">
+      {colorOptions.map((color) => (
+        <button
+          key={color}
+          type="button"
+          className={`item-color-circle ${
+            selectedColor === color ? "active" : ""
+          }`}
+          onClick={(e) => handleColorSelect(id, color, e)}
+          title={color}
+          aria-label={`Select ${color} color`}
+          style={{
+            background: getColorSwatch(color),
+          }}
+        />
+      ))}
+    </div>
+  </div>
+)}
+  <div className="item-name" title={name}>
+    {name.length > 40 ? `${name.substring(0, 40)}...` : name}
+  </div>
+
+  <div className="item-price-row">
+    <span className="item-price">${itemPriceInCrypto}</span>
+
+    {originalPrice > 0 && (
+      <span className="item-original-price">
+        ${originalPrice.toFixed(2)}
+      </span>
+    )}
+
+    {reductionPercentage > 0 && (
+      <span className="item-reduction">
+        -{reductionPercentage}%
+      </span>
+    )}
+  </div>
+
+  <div className="item-crypto">
+    <img
+      src={coinImages[crypto] || "/path/to/placeholder.jpg"}
+      alt={cryptocurrency}
+      className="crypto-icon"
+      onError={(e) => {
+        e.target.onerror = null;
+        e.target.src = "/path/to/placeholder.jpg";
+      }}
+    />
+    <span className="item-crypto-price">
+      {`${itemPriceInCrypto} ${cryptocurrency}`}
+    </span>
+  </div>
+
+  <div className="item-meta-row">
+    <span className="item-sold">
+      {sold} <span className="sold-label">{t("sold")}</span>
+    </span>
+  </div>
+
+  <div
+    className="item-type-stars"
+    onClick={(e) => {
+      e.stopPropagation();
+      setItemData(itemData);
+      router.push("/reviewPage");
+    }}
+    title={t("view_reviews")}
+  >
+    {finalRating
+      ? "★".repeat(Math.round(finalRating)) +
+        "☆".repeat(5 - Math.round(finalRating))
+      : t("no_rating")}
+  </div>
+
+  <button
+    type="button"
+    className="add-to-basket-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      setItemData(itemData);
+    }}
+  >
+    {t("add_to_basket")}
+  </button>
+</div>
+</div>
   );
 })}
         </div>

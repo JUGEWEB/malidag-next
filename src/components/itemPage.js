@@ -342,15 +342,23 @@ const selectedColor = selectedColorByItem[id];
               style={{ width: "100%", height: "230px", objectFit: "contain" }}
             />
             {firstVideoUrl && (
-              <div className="play-button" onClick={() => handleVideoPlay(id)}>
-                ▶️
-              </div>
+             <button
+              type="button"
+              className="play-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVideoPlay(id);
+              }}
+              aria-label="Play product video"
+            >
+              ▶
+            </button>
             )}
           </>
         )}
       </div>
 
-     <div onClick={() => handleItemClick(id)} className="item-details">
+    <div onClick={() => handleItemClick(id)} className="item-details">
 
       {colorOptions.length > 0 && (
   <div className="item-color-block">
@@ -381,35 +389,37 @@ const selectedColor = selectedColorByItem[id];
     {name.length > 40 ? `${name.substring(0, 40)}...` : name}
   </div>
 
-  <div className="item-price-row">
-    <span className="item-price">${itemPriceInCrypto}</span>
+  <div className="item-prices">
+    <div className="item-price-row">
+      <span className="item-price">${itemPriceInCrypto}</span>
 
-    {originalPrice > 0 && (
-      <span className="item-original-price">
-        ${originalPrice.toFixed(2)}
+      {originalPrice > 0 && (
+        <span className="item-original-price">
+          ${originalPrice.toFixed(2)}
+        </span>
+      )}
+
+      {reductionPercentage > 0 && (
+        <span className="item-reduction">
+          -{reductionPercentage}% off
+        </span>
+      )}
+    </div>
+
+    <div className="item-crypto">
+      <img
+        src={coinImages[crypto] || "/path/to/placeholder.jpg"}
+        alt={cryptocurrency}
+        className="crypto-icon"
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = "/path/to/placeholder.jpg";
+        }}
+      />
+      <span className="item-crypto-price">
+        {`${itemPriceInCrypto} ${cryptocurrency}`}
       </span>
-    )}
-
-    {reductionPercentage > 0 && (
-      <span className="item-reduction">
-        -{reductionPercentage}%
-      </span>
-    )}
-  </div>
-
-  <div className="item-crypto">
-    <img
-      src={coinImages[crypto] || "/path/to/placeholder.jpg"}
-      alt={cryptocurrency}
-      className="crypto-icon"
-      onError={(e) => {
-        e.target.onerror = null;
-        e.target.src = "/path/to/placeholder.jpg";
-      }}
-    />
-    <span className="item-crypto-price">
-      {`${itemPriceInCrypto} ${cryptocurrency}`}
-    </span>
+    </div>
   </div>
 
   <div className="item-meta-row">

@@ -1,158 +1,248 @@
 .bbe-container {
-    display: flex;
-    flex-direction: row;
-    padding: 15px;
-    background-color: white;
-  }
-  
-  /* ========== TYPE LIST (LEFT SIDE ON DESKTOP & TABLET) ========== */
-  .bbe-type-list {
-    display: flex;
-    flex-direction: column;
-    min-width: 200px;
-    max-width: 200px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    background-color: #fff;
-    border-right: 1px solid #ddd;
-    padding: 10px 0;
-  }
+  display: flex;
+  flex-direction: row;
+  background-color: #ffffff;
+ width: 100%;
+}
 
-  .bbe-type-item:hover {
-    background-color: #d5d5d5;
-  }
-  
-  .bbe-type-item {
-    flex: 0 0 auto;
-    padding: 6px 12px;
-    border-radius: 20px;
-    background-color: #ece5e5;
-    cursor: pointer;
-    color: #333;
-    font-size: 14px;
-    white-space: nowrap;
-    transition: background-color 0.2s ease-in-out;
-    margin: 4px 10px;
-  }
-  
-  .bbe-type-item.active {
-    background-color: #333;
-    color: white;
-  }
-  
-  /* ========== PRODUCT GRID ========== */
-  .bbe-item-grid {
-    flex: 1;
-    display: grid;
-    width: 100%;
-    gap: 5px;
-    padding: 5px 15px;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  }
-  
-  /* ========== CARD STYLE ========== */
-  .bbe-item-card {
-    background-color: white;
-    
-    overflow: hidden;
-   
-    cursor: pointer;
-   
-  }
-  
-  .bbe-item-image {
-    width: 100%;
-    height: 300px;
-    object-fit: contain;
-    margin-bottom: 10px;
-  }
-  
-  .bbe-item-info {
-    font-size: 14px;
-    color: #333;
-  }
-  
-  .bbe-item-price {
-    font-weight: bold;
-    color: #28a745;
-    margin-bottom: 4px;
-  }
-  
-  .crypto-price {
-    display: block;
-    font-size: 12px;
-    color: #555;
-    margin-top: 2px;
-  }
-  
-  .crypto-icon {
-    width: 14px;
-    height: 14px;
-    margin-left: 4px;
-    vertical-align: middle;
-  }
-  
-  .bbe-item-name {
-    margin: 5px 0;
-    font-size: 25px;
-    font-weight: bold;
-  }
-  
-  .bbe-item-rating .star {
-    font-size: 12px;
-    color: #f4c150;
-  }
-  
-  /* ========== RESPONSIVE ========== */
-  @media (max-width: 767px) {
-    .bbe-container {
-      flex-direction: column;
-      padding: 10px;
-    }
-  
-    .bbe-type-list {
-      flex-direction: row;
-      overflow-x: auto;
-      overflow-y: hidden;
-      white-space: nowrap;
-      height: auto;
-      max-width: 100%;
-      position: static;
-      background-color: #f9f9f9;
-      border-bottom: 1px solid #ccc;
-      border-right: none;
-      padding: 10px 0;
-    }
-  
-    .bbe-item-grid {
-      grid-template-columns: repeat(2, 1fr);
-      padding-left: 0;
-    }
-  
-    .bbe-type-item {
-      margin: 0 10px;
-    }
-  }
-  
-  @media (max-width: 600px) {
-    .bbe-item-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  
-  @media (max-width: 345px) {
-    .bbe-item-grid {
-      grid-template-columns: repeat(1, 1fr);
-    }
-  }
+.bbe-type-list {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  max-width: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  padding: 10px 0;
+}
 
-  @media (min-width: 1024px) {
-  .bbe-item-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.bbe-type-item {
+  flex: 0 0 auto;
+   padding: 8px 12px;
+  background-color: #f3f4f6;
+  cursor: pointer;
+  color: #333333;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: background-color 0.2s ease-in-out;
+  margin: 4px 10px;
+}
+
+.bbe-type-item:hover {
+  background-color: #dcdfe4;
+}
+
+.bbe-type-item.active {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.bbe-item-grid {
+  flex: 1;
+  display: grid;
+  width: 100%;
+  gap: 5px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: #ffffff;
+}
+
+.bbe-item-card {
+  background-color: #ffffff;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bbe-item-media {
+  background: white;
+  width: 100%;
+  height: 290px;
+  display: flex;
+  align-items: center;
+  filter: brightness(0.98);
+  justify-content: center;
+  overflow: hidden;
+}
+
+.bbe-item-image {
+  width: 100%;
+  height: 290px;
+  object-fit: contain;
+  display: block;
+  filter: contrast(1.08) saturate(1.06) brightness(1.02);
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.bbe-item-card:hover .bbe-item-image {
+  transform: scale(1.03);
+  filter: contrast(1.12) saturate(1.1) brightness(1.03);
+}
+
+.bbe-item-info {
+  padding: 14px 14px 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bbe-item-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.bbe-item-price {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.bbe-item-original-price {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.bbe-crypto-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.bbe-crypto-price {
+  font-size: 0.84rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.bbe-crypto-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.bbe-item-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #111827;
+  text-align: left;
+  width: 100%;
+  min-height: 42px;
+}
+
+.bbe-color-block {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bbe-color-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: left;
+}
+
+.bbe-color-label span {
+  color: #111827;
+  font-weight: 700;
+}
+
+.bbe-color-options {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.bbe-color-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  padding: 0;
+}
+
+.bbe-color-circle:hover {
+  transform: scale(1.08);
+}
+
+.bbe-color-circle.active {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.12);
+}
+
+.bbe-stars-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+
+.bbe-star {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.bbe-star.filled {
+  color: #f4c150;
+}
+
+.bbe-star.empty {
+  color: #d1d5db;
+}
+
+.bbe-item-rating {
+  width: 100%;
+}
+
+.bbe-add-basket-btn {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 2px;
+  border: none;
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+  text-align: center;
+}
+
+.bbe-add-basket-btn:hover {
+  background: #000000;
+}
+
+.bbe-add-basket-btn:active {
+  transform: scale(0.99);
 }
 
 .item-spinner-wrapper {
@@ -166,15 +256,168 @@
 .loader {
   width: 40px;
   height: 40px;
-  border: 5px solid #ddd;
+  border: 5px solid #dddddd;
   border-top: 5px solid #28a745;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-  
+@media (min-width: 1024px) {
+  .bbe-item-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .bbe-item-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .bbe-container {
+    flex-direction: column;
+    padding: 5px;
+    gap: 5px;
+  }
+
+  .bbe-type-list {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    height: auto;
+    max-width: 100%;
+    position: static;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #e5e7eb;
+    border-right: none;
+    padding: 10px 0;
+    min-width: 100%;
+  }
+
+  .bbe-item-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-left: 0;
+  }
+
+  .bbe-type-item {
+    margin: 0 10px;
+  }
+
+  .bbe-item-image,
+  .bbe-item-media {
+    height: 250px;
+  }
+
+  .bbe-item-info {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .bbe-item-name {
+    font-size: 0.86rem;
+    min-height: 38px;
+  }
+
+  .bbe-item-price {
+    font-size: 0.95rem;
+  }
+
+  .bbe-crypto-price {
+    font-size: 0.78rem;
+  }
+
+  .bbe-crypto-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .bbe-color-circle {
+    width: 20px;
+    height: 20px;
+  }
+
+  .bbe-color-options {
+    gap: 6px;
+  }
+
+  .bbe-add-basket-btn {
+    min-height: 38px;
+    font-size: 0.86rem;
+  }
+}
+
+@media (max-width: 345px) {
+  .bbe-item-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bbe-image-badge {
+  position: absolute;
+  top: 10px;
+  z-index: 6;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bbe-image-badge-best {
+  left: 10px;
+  background: #f59e0b;
+}
+
+.bbe-image-badge-discount {
+  right: 10px;
+  background: #dc2626;
+}
+
+.bbe-deals-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: #16a34a;
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 767px) {
+  .bbe-image-badge {
+    top: 8px;
+    padding: 5px 7px;
+    font-size: 9px;
+  }
+
+  .bbe-image-badge-best {
+    left: 8px;
+  }
+
+  .bbe-image-badge-discount {
+    right: 8px;
+  }
+
+  .bbe-deals-badge {
+    font-size: 0.68rem;
+    min-height: 20px;
+    padding: 3px 7px;
+  }
+}

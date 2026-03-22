@@ -227,12 +227,6 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                     </div>
                   )}
 
-                  {discountPercentage > 0 && (
-                    <div className="product-image-badge product-image-badge-discount">
-                      -{discountPercentage}% off
-                    </div>
-                  )}
-
                   <img
                     src={displayImage}
                     alt={item?.name}
@@ -245,82 +239,87 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                 </div>
 
                 <div className="product-info">
+  {colorOptions.length > 0 && (
+    <div
+      className="product-color-block"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {discountPercentage > 0 && (
+        <span className="product-discount-inline">
+          -{discountPercentage}% off
+        </span>
+      )}
 
-                   {colorOptions.length > 0 && (
-                    <div
-                      className="product-color-block"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="product-color-label">
-                        Color: <span>{selectedColor}</span>
-                      </div>
+      <div className="product-color-label">
+        Color: <span>{selectedColor}</span>
+      </div>
 
-                      <div className="product-color-options">
-                        {colorOptions.map((color) => (
-                          <button
-                            key={color}
-                            type="button"
-                            className={`product-color-circle ${
-                              selectedColor === color ? "active" : ""
-                            }`}
-                            title={color}
-                            aria-label={`Select ${color}`}
-                            style={{ background: getColorSwatch(color) }}
-                            onClick={(e) => handleColorSelect(id, color, e)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div className="product-price-row">
+      <div className="product-color-options">
+        {colorOptions.map((color) => (
+          <button
+            key={color}
+            type="button"
+            className={`product-color-circle ${
+              selectedColor === color ? "active" : ""
+            }`}
+            title={color}
+            aria-label={`Select ${color}`}
+            style={{ background: getColorSwatch(color) }}
+            onClick={(e) => handleColorSelect(id, color, e)}
+          />
+        ))}
+      </div>
+    </div>
+  )}
 
-                    <span className="product-price">${item?.usdPrice}</span>
+  <div className="product-price-row">
+    <span className="product-price">${item?.usdPrice}</span>
 
-                    {Number(item?.originalPrice || 0) > 0 && (
-                      <span className="product-old-price">
-                        ${Number(item.originalPrice).toFixed(2)}
-                      </span>
-                    )}
-                  </div>
+    {Number(item?.originalPrice || 0) > 0 && (
+      <span className="product-old-price">
+        ${Number(item.originalPrice).toFixed(2)}
+      </span>
+    )}
+  </div>
 
-                  <div className="product-crypto-row">
-                    <img
-                      src={getCryptoIcon(item?.cryptocurrency)}
-                      className="product-crypto-icon"
-                      alt={item?.cryptocurrency}
-                    />
+  <div className="product-crypto-row">
+    <img
+      src={getCryptoIcon(item?.cryptocurrency)}
+      className="product-crypto-icon"
+      alt={item?.cryptocurrency}
+    />
 
-                    <span className="product-crypto-price">
-                      {cryptoValue
-                        ? `${cryptoValue} ${item?.cryptocurrency}`
-                        : item?.cryptocurrency || "USDT"}
-                    </span>
-                  </div>
+    <span className="product-crypto-price">
+      {cryptoValue
+        ? `${cryptoValue} ${item?.cryptocurrency}`
+        : item?.cryptocurrency || "USDT"}
+    </span>
+  </div>
 
-                  <h3 className="product-title">
-                    {item?.name?.length > 60
-                      ? `${item.name.substring(0, 60)}...`
-                      : item?.name}
-                  </h3>
+  <h3 className="product-title">
+    {item?.name?.length > 60
+      ? `${item.name.substring(0, 60)}...`
+      : item?.name}
+  </h3>
 
-                  <div className="product-meta">
-                    <span>{item?.sold ? `${item.sold} sold` : "New"}</span>
-                  </div>
+  <div className="product-meta">
+    <span>{item?.sold ? `${item.sold} sold` : "New"}</span>
+  </div>
 
-                  <div className="product-rating">
-                    {renderStars(item?.rating || 0)}
-                  </div>
+  <div className="product-rating">
+    {renderStars(item?.rating || 0)}
+  </div>
 
-                  <button
-                    type="button"
-                    className="product-add-basket-btn"
-                    onClick={(e) =>
-                      handleAddToBasketPreview(product, selectedColor, displayImage, e)
-                    }
-                  >
-                    Add to Basket
-                  </button>
-                </div>
+  <button
+    type="button"
+    className="product-add-basket-btn"
+    onClick={(e) =>
+      handleAddToBasketPreview(product, selectedColor, displayImage, e)
+    }
+  >
+    Add to Basket
+  </button>
+</div>
               </article>
             );
           })}

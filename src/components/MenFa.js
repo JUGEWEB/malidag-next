@@ -325,7 +325,19 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                   )}
 
                   <div className="product-price-row">
-                    <span className="product-price">${item?.usdPrice}</span>
+                    <span className="product-price">
+                        {(() => {
+                          const price = Number(item?.usdPrice || 0).toFixed(2);
+                          const [whole, decimal] = price.split(".");
+
+                          return (
+                            <>
+                              ${whole}
+                              <sup className="product-price-decimal">{decimal}</sup>
+                            </>
+                          );
+                        })()}
+                      </span>
 
                     {Number(item?.originalPrice || 0) > 0 && (
                       <span className="product-old-price">

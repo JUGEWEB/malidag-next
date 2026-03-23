@@ -212,10 +212,9 @@
   padding: 1px 5px;
   background: #dc2626;
   color: #fff;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 800;
   line-height: 1;
-  border-radius: 4px;
 }
 
 /* COLOR BLOCK */
@@ -270,8 +269,8 @@
 
 .product-color-circle {
   flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 999px;
   border: 1.5px solid rgba(17, 24, 39, 0.16);
   cursor: pointer;
@@ -295,10 +294,17 @@
 }
 
 .product-price {
-  font-size: 20px;
+  font-size: 25px;
   font-weight: 600;
   color: #111827;
   line-height: 1.1;
+}
+
+
+.product-price-decimal {
+  font-size: 11px;
+  vertical-align: super;
+  margin-left: 1px;
 }
 
 .product-old-price {
@@ -321,7 +327,7 @@
   width: 16px;
   height: 16px;
   object-fit: contain;
-  flex-shrink: 0;
+  flex-shrink: 20;
 }
 
 .product-crypto-price {
@@ -334,7 +340,7 @@
 /* TITLE + META */
 .product-title {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.3;
   font-weight: bold;
   color: #374151;

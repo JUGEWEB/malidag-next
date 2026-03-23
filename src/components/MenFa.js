@@ -2,25 +2,68 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import "./menFashion.css";
-import { useRouter } from "next/navigation";
 import RecommendedItem from "./personalRecommend";
 import { useCheckoutStore } from "./checkoutStore";
+import useFinalRating from "./finalRating";
+
+function ProductRating({ itemId }) {
+  const { finalRating, loading, error } = useFinalRating(itemId || 0);
+
+  const safeRating = Math.round(Number(finalRating) || 0);
+
+  if (loading) {
+    return <div className="product-rating-text">Loading rating...</div>;
+  }
+
+  if (error) {
+    return <div className="product-rating-text">No rating</div>;
+  }
+
+  return (
+    <div className="product-rating-wrap">
+      <div className="product-stars-container">
+        {Array.from({ length: 5 }, (_, i) => (
+          <span
+            key={i}
+            className={i < safeRating ? "product-star filled" : "product-star empty"}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+
+      <span className="product-rating-value">
+        {finalRating ? Number(finalRating).toFixed(1) : "No Rating"}
+      </span>
+    </div>
+  );
+}
 
 function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
-  const router = useRouter();
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
-  const [bestSellerId, setBestSellerId] = useState(null);
+  const [bestSellerByBrand, setBestSellerByBrand] = useState({});
 
   const allItems = useMemo(
     () => Object.values(groupedTypes || {}).flat(),
     [groupedTypes]
   );
 
+  const getBrandKey = (product) => {
+    return String(
+      product?.item?.brand ||
+        product?.details?.brand ||
+        product?.brand ||
+        "unknown"
+    )
+      .trim()
+      .toLowerCase();
+  };
+
   useEffect(() => {
     const initialColors = {};
-    let bestSeller = null;
+    const bestByBrand = {};
 
     allItems.forEach((product) => {
       const colorKeys = Object.keys(product?.item?.imagesVariants || {});
@@ -28,21 +71,30 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
         initialColors[product.id] = colorKeys[0];
       }
 
-      if (
-        !bestSeller ||
-        Number(product?.item?.sold || 0) > Number(bestSeller?.item?.sold || 0)
-      ) {
-        bestSeller = product;
+      const brandKey = getBrandKey(product);
+
+      const currentSold = Number(
+        product?.item?.sold || product?.details?.soldText || 0
+      );
+
+      const existingSold = Number(
+        bestByBrand?.[brandKey]?.item?.sold ||
+          bestByBrand?.[brandKey]?.details?.soldText ||
+          0
+      );
+
+      if (!bestByBrand[brandKey] || currentSold > existingSold) {
+        bestByBrand[brandKey] = product;
       }
     });
 
-    setSelectedColorByItem(initialColors);
-    setBestSellerId(bestSeller?.id || null);
-  }, [allItems]);
+    const brandBestSellerIds = Object.fromEntries(
+      Object.entries(bestByBrand).map(([brand, product]) => [brand, product.id])
+    );
 
-  const handleItemClick = (id) => {
-    router.push(`/product/${id}`);
-  };
+    setSelectedColorByItem(initialColors);
+    setBestSellerByBrand(brandBestSellerIds);
+  }, [allItems]);
 
   const convertToCrypto = (usdPrice, cryptocurrency) => {
     const upperCrypto = String(cryptocurrency || "").toUpperCase();
@@ -68,24 +120,10 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
     );
   };
 
-  const renderStars = (rating) => {
-    const safeRating = Math.round(Number(rating) || 0);
-    return (
-      <div className="product-stars-container">
-        {Array.from({ length: 5 }, (_, i) => (
-          <span
-            key={i}
-            className={i < safeRating ? "product-star filled" : "product-star empty"}
-          >
-            ★
-          </span>
-        ))}
-      </div>
-    );
-  };
-
   const handleColorSelect = (itemId, color, e) => {
+    e.preventDefault();
     e.stopPropagation();
+
     setSelectedColorByItem((prev) => ({
       ...prev,
       [itemId]: color,
@@ -152,7 +190,9 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
   };
 
   const handleAddToBasketPreview = (product, selectedColor, selectedImage, e) => {
+    e.preventDefault();
     e.stopPropagation();
+
     setItemData({
       ...product,
       selectedColor,
@@ -184,13 +224,15 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
 
         <div className="men-types-row">
           {Object.keys(groupedTypes || {}).map((type, idx) => (
-            <button
+            <a
               key={idx}
+              href={`/item-of-men/${type.toLowerCase()}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="type-chip"
-              onClick={() => router.push(`/item-of-men/${type.toLowerCase()}`)}
             >
               {type}
-            </button>
+            </a>
           ))}
         </div>
       </section>
@@ -208,17 +250,21 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
             const colorOptions = getColorOptions(product);
             const displayImage = getDisplayImage(product);
             const cryptoValue = convertToCrypto(item?.usdPrice, item?.cryptocurrency);
-            const isBestSeller = id === bestSellerId;
             const discountPercentage = getDiscountPercentage(
               item?.usdPrice,
               item?.originalPrice
             );
 
+            const brandKey = getBrandKey(product);
+            const isBestSeller = bestSellerByBrand[brandKey] === id;
+
             return (
-              <article
+              <a
                 key={id}
+                href={`/product/${id}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="product-card"
-                onClick={() => handleItemClick(id)}
               >
                 <div className="product-image-wrap">
                   {isBestSeller && (
@@ -239,88 +285,93 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                 </div>
 
                 <div className="product-info">
-  {colorOptions.length > 0 && (
-    <div
-      className="product-color-block"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {discountPercentage > 0 && (
-        <span className="product-discount-inline">
-          -{discountPercentage}% off
-        </span>
-      )}
+                  {colorOptions.length > 0 && (
+                    <div
+                      className="product-color-block"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <div className="product-color-top">
+                        {discountPercentage > 0 && (
+                          <span className="product-discount-inline">
+                            -{discountPercentage}% off
+                          </span>
+                        )}
 
-      <div className="product-color-label">
-        Color: <span>{selectedColor}</span>
-      </div>
+                        <div className="product-color-label">
+                          Color: <span>{selectedColor}</span>
+                        </div>
+                      </div>
 
-      <div className="product-color-options">
-        {colorOptions.map((color) => (
-          <button
-            key={color}
-            type="button"
-            className={`product-color-circle ${
-              selectedColor === color ? "active" : ""
-            }`}
-            title={color}
-            aria-label={`Select ${color}`}
-            style={{ background: getColorSwatch(color) }}
-            onClick={(e) => handleColorSelect(id, color, e)}
-          />
-        ))}
-      </div>
-    </div>
-  )}
+                      <div className="product-color-options">
+                        {colorOptions.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            className={`product-color-circle ${
+                              selectedColor === color ? "active" : ""
+                            }`}
+                            title={color}
+                            aria-label={`Select ${color}`}
+                            style={{ background: getColorSwatch(color) }}
+                            onClick={(e) => handleColorSelect(id, color, e)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-  <div className="product-price-row">
-    <span className="product-price">${item?.usdPrice}</span>
+                  <div className="product-price-row">
+                    <span className="product-price">${item?.usdPrice}</span>
 
-    {Number(item?.originalPrice || 0) > 0 && (
-      <span className="product-old-price">
-        ${Number(item.originalPrice).toFixed(2)}
-      </span>
-    )}
-  </div>
+                    {Number(item?.originalPrice || 0) > 0 && (
+                      <span className="product-old-price">
+                        ${Number(item.originalPrice).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
 
-  <div className="product-crypto-row">
-    <img
-      src={getCryptoIcon(item?.cryptocurrency)}
-      className="product-crypto-icon"
-      alt={item?.cryptocurrency}
-    />
+                  <div className="product-crypto-row">
+                    <img
+                      src={getCryptoIcon(item?.cryptocurrency)}
+                      className="product-crypto-icon"
+                      alt={item?.cryptocurrency}
+                    />
 
-    <span className="product-crypto-price">
-      {cryptoValue
-        ? `${cryptoValue} ${item?.cryptocurrency}`
-        : item?.cryptocurrency || "USDT"}
-    </span>
-  </div>
+                    <span className="product-crypto-price">
+                      {cryptoValue
+                        ? `${cryptoValue} ${item?.cryptocurrency}`
+                        : item?.cryptocurrency || "USDT"}
+                    </span>
+                  </div>
 
-  <h3 className="product-title">
-    {item?.name?.length > 60
-      ? `${item.name.substring(0, 60)}...`
-      : item?.name}
-  </h3>
+                  <h3 className="product-title">
+                    {item?.name?.length > 60
+                      ? `${item.name.substring(0, 60)}...`
+                      : item?.name}
+                  </h3>
 
-  <div className="product-meta">
-    <span>{item?.sold ? `${item.sold} sold` : "New"}</span>
-  </div>
+                  <div className="product-meta">
+                    <span>{item?.sold ? `${item.sold} sold` : "New"}</span>
+                  </div>
 
-  <div className="product-rating">
-    {renderStars(item?.rating || 0)}
-  </div>
+                  <div className="product-rating">
+                    <ProductRating itemId={product?.itemId} />
+                  </div>
 
-  <button
-    type="button"
-    className="product-add-basket-btn"
-    onClick={(e) =>
-      handleAddToBasketPreview(product, selectedColor, displayImage, e)
-    }
-  >
-    Add to Basket
-  </button>
-</div>
-              </article>
+                  <button
+                    type="button"
+                    className="product-add-basket-btn"
+                    onClick={(e) =>
+                      handleAddToBasketPreview(product, selectedColor, displayImage, e)
+                    }
+                  >
+                    Add to Basket
+                  </button>
+                </div>
+              </a>
             );
           })}
         </div>

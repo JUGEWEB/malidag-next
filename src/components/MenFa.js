@@ -9,15 +9,14 @@ import useFinalRating from "./finalRating";
 function ProductRating({ itemId }) {
   const { finalRating, loading, error } = useFinalRating(itemId || 0);
 
-  const safeRating = Math.round(Number(finalRating) || 0);
+  if (loading) return null;
+  if (error) return null;
 
-  if (loading) {
-    return <div className="product-rating-text">Loading rating...</div>;
-  }
+  const numericRating = Number(finalRating);
 
-  if (error) {
-    return <div className="product-rating-text">No rating</div>;
-  }
+  if (!numericRating || numericRating <= 0) return null;
+
+  const safeRating = Math.round(numericRating);
 
   return (
     <div className="product-rating-wrap">
@@ -33,7 +32,7 @@ function ProductRating({ itemId }) {
       </div>
 
       <span className="product-rating-value">
-        {finalRating ? Number(finalRating).toFixed(1) : "No Rating"}
+        {numericRating.toFixed(1)}
       </span>
     </div>
   );
@@ -257,6 +256,8 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
 
             const brandKey = getBrandKey(product);
             const isBestSeller = bestSellerByBrand[brandKey] === id;
+            const soldCount = Number(item?.sold || 0);
+            const showSold = soldCount >= 1000;
 
             return (
               <a
@@ -285,7 +286,7 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                 </div>
 
                 <div className="product-info">
-                  {colorOptions.length > 0 && (
+                  {colorOptions.length > 1 && (
                     <div
                       className="product-color-block"
                       onClick={(e) => {
@@ -353,9 +354,11 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                       : item?.name}
                   </h3>
 
-                  <div className="product-meta">
-                    <span>{item?.sold ? `${item.sold} sold` : "New"}</span>
-                  </div>
+                  {showSold && (
+                    <div className="product-meta">
+                      <span>{`${soldCount} sold`}</span>
+                    </div>
+                  )}
 
                   <div className="product-rating">
                     <ProductRating itemId={product?.itemId} />

@@ -212,8 +212,8 @@
   padding: 1px 5px;
   background: #dc2626;
   color: #fff;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
   line-height: 1;
   border-radius: 4px;
 }
@@ -296,7 +296,7 @@
 
 .product-price {
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 600;
   color: #111827;
   line-height: 1.1;
 }
@@ -388,15 +388,15 @@
   border-radius: 8px;
   padding: 8px 10px;
   margin-top: 2px;
-  background: #111827;
-  color: #ffffff;
+  background: #fbc439;
+  color: black;
   font-size: 12px;
   font-weight: 700;
   transition: all 0.25s ease;
 }
 
 .product-add-basket-btn:hover {
-  background: #1f2937;
+  background: #f1bb33;
 }
 
 /* RECOMMENDED */

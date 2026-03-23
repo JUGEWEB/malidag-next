@@ -399,4 +399,4 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
   );
 }
 
-export default MenFashion;
+export default MenFashion; 

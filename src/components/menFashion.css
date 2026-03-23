@@ -138,22 +138,25 @@
 /* PRODUCTS GRID */
 .men-products-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 5px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
 .product-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   background: #ffffff;
-  border-radius: 0 0 14px 14px;
   overflow: hidden;
   cursor: pointer;
   border: none;
   transition: transform 0.28s ease, box-shadow 0.28s ease;
+  min-width: 0;
 }
 
 .product-image-wrap {
   position: relative;
   width: 100%;
+  min-width: 0;
   height: 290px;
   background: white;
   display: flex;
@@ -162,6 +165,7 @@
   padding: 0;
   filter: brightness(0.98);
   border-radius: 0;
+  overflow: hidden;
 }
 
 .product-image {
@@ -173,15 +177,19 @@
   transition: transform 0.35s ease;
 }
 
+.product-card:hover .product-image {
+  transform: scale(1.02);
+}
+
 .product-info {
   padding: 10px 10px 12px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 8px;
   border: 1px solid rgba(17, 24, 39, 0.08);
-  border-top: none;
-  border-radius: 0 0 14px 14px;
   background: #ffffff;
+  min-width: 0;
 }
 
 .product-image-badge {
@@ -209,7 +217,7 @@
 .product-discount-inline {
   display: inline-flex;
   align-items: center;
-  padding: 1px 5px;
+  padding: 5px 10px;
   background: #dc2626;
   color: #fff;
   font-size: 10px;
@@ -291,6 +299,7 @@
   gap: 6px;
   margin: 0;
   line-height: 1.2;
+  flex-wrap: wrap;
 }
 
 .product-price {
@@ -299,7 +308,6 @@
   color: #111827;
   line-height: 1.1;
 }
-
 
 .product-price-decimal {
   font-size: 11px;
@@ -321,13 +329,14 @@
   gap: 6px;
   margin: 0;
   line-height: 1.2;
+  flex-wrap: wrap;
 }
 
 .product-crypto-icon {
   width: 16px;
   height: 16px;
   object-fit: contain;
-  flex-shrink: 20;
+  flex-shrink: 0;
 }
 
 .product-crypto-price {
@@ -356,12 +365,19 @@
   color: #6b7280;
   margin: 0;
   line-height: 1.2;
+  flex-wrap: wrap;
 }
 
 /* RATING */
 .product-rating {
   margin: 0;
   line-height: 1;
+}
+
+.product-rating-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .product-stars-container {
@@ -385,6 +401,12 @@
   color: #d1d5db;
 }
 
+.product-rating-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
 /* BUTTON */
 .product-add-basket-btn {
   width: 100%;
@@ -394,7 +416,7 @@
   border-radius: 8px;
   padding: 8px 10px;
   margin-top: 2px;
-  background: #fbc439;
+  background: orange;
   color: black;
   font-size: 12px;
   font-weight: 700;
@@ -411,13 +433,6 @@
 }
 
 /* TABLET */
-@media (min-width: 1025px) {
-  .men-products-grid > .product-card:nth-child(4n + 1) {
-    grid-column: 2;
-  }
-}
-
-/* MOBILE */
 @media (max-width: 768px) {
   .men-hero {
     height: 250px;
@@ -432,13 +447,12 @@
     font-size: 14px;
   }
 
-  .men-products-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 5px;
+  .product-card {
+    grid-template-columns: 1fr 1fr;
   }
 
   .product-image-wrap {
-    height: 280px;
+    min-height: 280px;
   }
 
   .section-header h2 {
@@ -463,30 +477,67 @@
     font-size: 13px;
   }
 
+  .product-card {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .product-image-wrap {
-    height: 280px;
+    min-height: 220px;
     padding: 0;
   }
 
   .product-info {
     padding: 8px 8px 10px;
     gap: 7px;
-    border-radius: 0 0 14px 14px;
   }
 
   .product-price {
-    font-weight: 400;
-    line-height: 1.4;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  .product-title {
+    font-size: 13px;
+    line-height: 1.25;
   }
 
   .product-crypto-price,
   .product-meta,
-  .product-color-label {
-    font-size: 11px;
+  .product-color-label,
+  .product-rating-value {
+    font-size: 10px;
+  }
+
+  .product-color-circle {
+    width: 15px;
+    height: 15px;
   }
 
   .product-add-basket-btn {
     padding: 8px;
     font-size: 12px;
+  }
+
+  .product-image-badge {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .men-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .men-products-grid {
+    grid-template-columns: repeat(1, 1fr);
+    gap: 12px;
+  }
+
+  .product-card {
+    grid-template-columns: 1fr 1fr;
   }
 }

@@ -31,6 +31,7 @@ const ThemeForWomenFashion = () => {
         boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
         backgroundColor: "#fdfdfd",
         borderRadius: "0px",
+        padding: isSmallMobile || isVerySmall ? "5px" : "0",
         marginTop: isSmallMobile || isVerySmall ? "0rem" : "1rem",
         marginBottom: isSmallMobile || isVerySmall ? "0rem" : "1rem",
       }}
@@ -66,6 +67,8 @@ const ThemeForWomenFashion = () => {
               height: "auto",
               display: "block",
               objectFit: "cover",
+              filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
+              cursor: "pointer",
             }}
           />
         </Link>

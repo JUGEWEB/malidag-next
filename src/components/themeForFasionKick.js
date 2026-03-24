@@ -65,6 +65,7 @@ const ThemeForFashionKick = () => {
               height: isSmallMobile || isVerySmall ? "100%" : "300px",
               display: "block",
               opacity: loadedImages[theme.id] ? 1 : 1,
+              filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
               cursor: "pointer",
               objectFit: "cover",
               transition: "opacity 0.3s ease-in-out",

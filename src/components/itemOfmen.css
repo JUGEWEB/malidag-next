@@ -299,9 +299,10 @@ button {
   position: relative;
   width: 100%;
   min-width: 0;
-  min-height: 290px;
+  height: 290px;
   background: #ffffff;
   display: flex;
+   filter: brightness(0.96);
   align-items: center;
   justify-content: center;
   overflow: hidden;

@@ -195,7 +195,8 @@ button {
 
 .fashionkick-primary-btn:focus-visible,
 .fashionkick-secondary-btn:focus-visible,
-.fashionkick-topic-vertical-item:focus-visible {
+.fashionkick-topic-vertical-item:focus-visible,
+.fashionkick-product-btn:focus-visible {
   outline: 2px solid rgba(190, 24, 93, 0.35);
   outline-offset: 3px;
 }
@@ -597,118 +598,131 @@ button {
 
 .fashionkick-products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
 .fashionkick-product-card {
   background: #ffffff;
-  border: 1px solid rgba(17, 24, 39, 0.06);
-  border-radius: 22px;
   overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
-  transition:
-    transform 0.28s ease,
-    box-shadow 0.28s ease,
-    border-color 0.28s ease;
+  border: none;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+  min-width: 0;
 }
 
 .fashionkick-product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.11);
-  border-color: rgba(236, 72, 153, 0.18);
+  transform: translateY(-4px);
+}
+
+.fashionkick-product-card-vertical {
+  display: flex;
+  flex-direction: column;
 }
 
 .fashionkick-product-media {
   position: relative;
   width: 100%;
-  height: 240px;
-  background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.75) 0%, transparent 48%),
-    linear-gradient(180deg, #fffafb 0%, #f9f1f5 100%);
+  min-width: 0;
+  height: 290px;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px;
+  padding: 0;
+  filter: brightness(0.98);
+  border-radius: 0;
   overflow: hidden;
 }
 
-.fashionkick-product-media::after {
-  content: "";
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  width: 58%;
-  height: 18px;
-  transform: translateX(-50%);
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(17, 24, 39, 0.08) 0%, rgba(17, 24, 39, 0) 72%);
-  filter: blur(5px);
-}
-
-.fashionkick-product-floating-tag {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 2;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #111827;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.1);
+.fashionkick-product-media-vertical {
+  width: 100%;
 }
 
 .fashionkick-product-image {
-  position: relative;
-  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
+  filter: contrast(1.08) saturate(1.08) brightness(1.02);
   transition: transform 0.35s ease;
 }
 
 .fashionkick-product-card:hover .fashionkick-product-image {
-  transform: scale(1.06);
+  transform: scale(1.02);
 }
 
 .fashionkick-product-content {
-  padding: 14px 14px 16px;
+  padding: 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: #ffffff;
+  min-width: 0;
+}
+
+.fashionkick-product-content-vertical {
+  width: 100%;
+}
+
+.fashionkick-name {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 700;
+  color: #374151;
+  min-height: 40px;
 }
 
 .fashionkick-product-topline {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin: 0;
+  line-height: 1.2;
+  flex-wrap: wrap;
 }
 
 .fashionkick-price {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 25px;
+  font-weight: 600;
   color: #111827;
+  line-height: 1.1;
+}
+
+.fashionkick-price-decimal {
+  font-size: 11px;
+  vertical-align: super;
+  margin-left: 1px;
 }
 
 .fashionkick-old-price {
-  font-size: 13px;
+  font-size: 12px;
   color: #9ca3af;
   text-decoration: line-through;
+  line-height: 1.1;
+}
+
+.fashionkick-rating-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .fashionkick-stars {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 6px;
+  gap: 1px;
+  margin: 0;
 }
 
 .star {
-  font-size: 14px;
-  color: #d1d5db;
+  font-size: 13px;
   line-height: 1;
+  color: #d1d5db;
 }
 
 .star.filled {
@@ -716,36 +730,64 @@ button {
 }
 
 .fashionkick-review-text {
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 8px;
-}
-
-.fashionkick-name {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #374151;
+  font-size: 12px;
   font-weight: 600;
-  min-height: 42px;
+  color: #4b5563;
+  margin: 0;
 }
 
 .fashionkick-product-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-top: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .fashionkick-product-genre {
-  font-size: 13px;
+  font-size: 11px;
   color: #6b7280;
+  line-height: 1.2;
 }
 
-.fashionkick-product-cta {
-  font-size: 13px;
+.fashionkick-product-btn {
+  width: 100%;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: orange;
+  color: black;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--fk-accent-dark);
+  transition: all 0.25s ease;
+}
+
+.fashionkick-product-btn:hover {
+  background: #f1bb33;
+}
+
+.fashionkick-product-badge {
+  position: absolute;
+  z-index: 2;
+  left: 10px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.fashionkick-product-badge-discount {
+  top: 10px;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.fashionkick-product-badge-type {
+  top: 42px;
+  background: orange;
+  color: #111827;
 }
 
 /* =========================
@@ -886,7 +928,7 @@ button {
   }
 
   .fashionkick-products-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -930,8 +972,8 @@ button {
   }
 
   .fashionkick-products-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .fashionkick-types-row {
@@ -948,7 +990,15 @@ button {
   }
 
   .fashionkick-product-media {
-    height: 190px;
+    height: 240px;
+  }
+
+  .fashionkick-price {
+    font-size: 21px;
+  }
+
+  .fashionkick-name {
+    font-size: 14px;
   }
 
   .fashionkick-topic-banner {
@@ -988,13 +1038,13 @@ button {
 
   .fashionkick-product-footer {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
   }
 }
 
 @media (max-width: 480px) {
   .fashionkick-page-inner {
-    width: calc(100% - 16px);
+    width: calc(100% - 5px);
   }
 
   .fashionkick-hero-heading {
@@ -1011,29 +1061,45 @@ button {
   }
 
   .fashionkick-products-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .fashionkick-product-card {
-    border-radius: 18px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
   }
 
   .fashionkick-product-media {
-    height: 160px;
-    padding: 10px;
+    height: 220px;
   }
 
   .fashionkick-product-content {
-    padding: 12px;
+    padding: 8px 8px 10px;
+    gap: 7px;
   }
 
   .fashionkick-price {
-    font-size: 16px;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 1.2;
   }
 
   .fashionkick-name {
     font-size: 13px;
-    min-height: 38px;
+    line-height: 1.25;
+    min-height: auto;
+  }
+
+  .fashionkick-old-price,
+  .fashionkick-review-text,
+  .fashionkick-product-genre {
+    font-size: 10px;
+  }
+
+  .fashionkick-product-btn {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .fashionkick-product-badge {
+    padding: 5px 8px;
+    font-size: 10px;
   }
 
   .fashionkick-hero-visual-card,

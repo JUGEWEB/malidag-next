@@ -30,6 +30,7 @@ function FashionForAll({
   const [hasError, setHasError] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+
   const scrollRef = useRef(null);
   const { isMobile, isSmallMobile, isVerySmall, isTablet } = useScreenSize();
 
@@ -38,6 +39,8 @@ function FashionForAll({
     if (isTablet || isMobile) return 'items-3';
     return 'items-5';
   }, [isMobile, isSmallMobile, isTablet, isVerySmall]);
+
+  const showDesktopArrows = !isMobile && !isSmallMobile && !isVerySmall;
 
   const updateScrollState = useCallback(() => {
     const container = scrollRef.current;
@@ -159,7 +162,6 @@ function FashionForAll({
     };
   }, [updateScrollState]);
 
-
   const scrollCarousel = useCallback((direction) => {
     const container = scrollRef.current;
     if (!container) return;
@@ -172,51 +174,17 @@ function FashionForAll({
     });
   }, []);
 
-  const formatPrice = useCallback((value) => {
-    if (value === null || value === undefined || value === '') return null;
-
-    const numericValue = Number(value);
-    if (Number.isNaN(numericValue)) return null;
-
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(numericValue);
-  }, []);
-
-  const getItemData = useCallback(
-  (item) => {
+  const getItemData = useCallback((item) => {
     const rawItem = item?.item || {};
     const details = item?.details || {};
 
-    const imageUrl =
-      rawItem?.images?.[0] ||
-      item?.image_url ||
-      '';
+    const imageUrl = rawItem?.images?.[0] || item?.image_url || '';
 
     const itemName =
       rawItem?.name ||
       details?.itemName ||
       item?.name ||
       'Fashion Item';
-
-    const brand =
-      rawItem?.brand ||
-      details?.brand ||
-      rawItem?.manufacturer ||
-      'Fashion';
-
-    const itemCategory =
-      rawItem?.category ||
-      details?.category ||
-      item?.category ||
-      'Shoes';
-
-    const link =
-      rawItem?.link ||
-      details?.link ||
-      '';
 
     const currentPriceValue = Number(
       rawItem?.usdPrice ?? details?.usdText ?? rawItem?.price ?? 0
@@ -225,10 +193,6 @@ function FashionForAll({
     const originalPriceValue = Number(
       rawItem?.originalPrice ?? details?.originalPrice ?? 0
     );
-
-    const price = currentPriceValue > 0 ? formatPrice(currentPriceValue) : null;
-    const originalPrice =
-      originalPriceValue > 0 ? formatPrice(originalPriceValue) : null;
 
     const discountPercentage =
       originalPriceValue > 0 &&
@@ -242,16 +206,23 @@ function FashionForAll({
     return {
       imageUrl,
       itemName,
-      brand,
-      category: itemCategory,
-      link,
-      price,
-      originalPrice,
+      currentPriceValue,
+      originalPriceValue,
       discountPercentage,
     };
-  },
-  [formatPrice]
-);
+  }, []);
+
+  const renderPrice = (value) => {
+    const numericValue = Number(value || 0).toFixed(2);
+    const [whole, decimal] = numericValue.split('.');
+
+    return (
+      <>
+        ${whole}
+        <sup className="carousel-card__price-decimal">{decimal}</sup>
+      </>
+    );
+  };
 
   const renderState = (message, type = 'default') => (
     <div className={`fashion-carousel__state fashion-carousel__state--${type}`}>
@@ -286,7 +257,7 @@ function FashionForAll({
 
     return (
       <div className="fashion-carousel__viewport">
-        {items.length > 0 && (
+        {items.length > 0 && showDesktopArrows && (
           <>
             <div className="fashion-carousel__edge fashion-carousel__edge--left" />
             <div className="fashion-carousel__edge fashion-carousel__edge--right" />
@@ -319,84 +290,81 @@ function FashionForAll({
           aria-label={`${title} products`}
           role="region"
         >
-       {items.map((item, index) => {
-  const {
-    imageUrl,
-    itemName,
-    brand,
-    category: itemCategory,
-    price,
-    originalPrice,
-    discountPercentage,
-  } = getItemData(item);
+          {items.map((item, index) => {
+            const {
+              imageUrl,
+              itemName,
+              currentPriceValue,
+              originalPriceValue,
+              discountPercentage,
+            } = getItemData(item);
 
-  return (
-    <div
-      key={item.id || `${itemName}-${index}`}
-      className={`carousel-item ${itemsPerRowClass}`}
-    >
-      <Link
-        href={`${productRouteBase}/${item.id}`}
-        className="carousel-card"
-        aria-label={`Open ${itemName}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <div className="carousel-card__media">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={itemName}
-              className="carousel-image"
-              loading="lazy"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = FALLBACK_IMAGE;
-              }}
-            />
-          ) : (
-            <div className="carousel-image carousel-image--placeholder">
-              <span>No image available</span>
-            </div>
-          )}
-        </div>
+            return (
+              <div
+                key={item.id || `${itemName}-${index}`}
+                className={`carousel-item ${itemsPerRowClass}`}
+              >
+                <Link
+                  href={`${productRouteBase}/${item.id}`}
+                  className="carousel-card"
+                  aria-label={`Open ${itemName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div className="carousel-card__media">
+                    {discountPercentage > 0 && (
+                      <div className="carousel-card__badge">
+                        -{discountPercentage}% OFF
+                      </div>
+                    )}
 
-        <div className="carousel-card__content">
-          <div className="carousel-card__meta">
-            <span className="carousel-card__brand">{brand}</span>
-            <span className="carousel-card__category">{itemCategory}</span>
-          </div>
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={itemName}
+                        className="carousel-image"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = FALLBACK_IMAGE;
+                        }}
+                      />
+                    ) : (
+                      <div className="carousel-image carousel-image--placeholder">
+                        <span>No image available</span>
+                      </div>
+                    )}
+                  </div>
 
-          <h3 className="carousel-card__title" title={itemName}>
-            {itemName}
-          </h3>
+                  <div className="carousel-card__content">
+                    <h3 className="carousel-card__title" title={itemName}>
+                      {itemName?.length > 10
+                        ? `${itemName.substring(0, 10)}...`
+                        : itemName}
+                    </h3>
 
-          <div className="carousel-card__footer">
-            <div className="carousel-card__pricing">
-              <span className="carousel-card__price">
-                {price || 'View product'}
-              </span>
+                    <div className="carousel-card__footer">
+                      <div className="carousel-card__pricing">
+                        <span className="carousel-card__price">
+                          {currentPriceValue > 0
+                            ? renderPrice(currentPriceValue)
+                            : 'View product'}
+                        </span>
 
-              {originalPrice && (
-                <span className="carousel-card__original-price">
-                  {originalPrice}
-                </span>
-              )}
+                        {originalPriceValue > 0 && (
+                          <span className="carousel-card__original-price">
+                            ${originalPriceValue.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
 
-              {discountPercentage > 0 && (
-                <span className="carousel-card__discount">
-                  -{discountPercentage}%
-                </span>
-              )}
-            </div>
-
-            <span className="carousel-card__cta">Shop now</span>
-          </div>
-        </div>
-      </Link>
-    </div>
-  );
-})}
+                      <span className="carousel-card__cta">View Product</span>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -411,17 +379,17 @@ function FashionForAll({
             <h2 className="fashion-carousel__title">{title}</h2>
           </div>
 
-         {showViewMore && sectionRoute && (
-  <a
-    href={sectionRoute}
-    className="fashion-carousel__view-more"
-    aria-label={`View more from ${title}`}
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    {viewMoreLabel}
-  </a>
-)}
+          {showViewMore && sectionRoute && (
+            <a
+              href={sectionRoute}
+              className="fashion-carousel__view-more"
+              aria-label={`View more from ${title}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {viewMoreLabel}
+            </a>
+          )}
         </div>
       )}
 

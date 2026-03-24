@@ -63,6 +63,7 @@ const ThemeForMenFashion = () => {
           width: '100%',
           height: (isSmallMobile || isVerySmall) ? "100%" : 'auto',
           display: 'block',
+          filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
           opacity: loadedImages[theme.id] ? 1 : 1,
           objectFit: 'cover',
           cursor: "pointer"

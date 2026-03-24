@@ -67,6 +67,7 @@ const ThemeForMenFashion2 = () => {
           height: 'auto',
           display: 'block',
           objectFit: 'cover',
+          filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
         }}
       />
 

@@ -38,6 +38,7 @@ const ThemeForHomeAndKitchen = () => {
         backgroundColor: "#fdfdfd",
         marginTop: isSmallMobile || isVerySmall ? "0rem" : "1rem",
         marginBottom: isSmallMobile || isVerySmall ? "0rem" : "1rem",
+         padding: isSmallMobile || isVerySmall ? "5px" : "0",
       }}
     >
       <div
@@ -70,6 +71,7 @@ const ThemeForHomeAndKitchen = () => {
                 : "auto",
             display: "block",
             objectFit: "cover",
+            filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
             cursor: "pointer",
           }}
         />

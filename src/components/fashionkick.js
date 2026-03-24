@@ -584,90 +584,127 @@ return (
       </div>
     </section>
 
-    <section id="fashionkick-products" className="fashionkick-catalog-section">
-      <div className="fashionkick-page-inner">
-        <div className="fashionkick-section-header">
-          <h2>Trending Products</h2>
-          <span>{allItems.length} items</span>
-        </div>
+ <div className="fashionkick-page-inner">
+  <div className="fashionkick-section-header">
+    <h2>Trending Products</h2>
+    <span>{allItems.length} items</span>
+  </div>
 
-        {allItems.length === 0 ? (
-          <div className="fashionkick-empty">
-            {t("no_products_found") || "No products found right now."}
-          </div>
-        ) : (
-          <section className="fashionkick-products-grid">
-            {allItems.map(({ id, item, itemId }) => {
-              const reviewData = reviews[itemId];
-              const averageRating = reviewData?.averageRating;
-              const reviewCount = reviewData?.count || 0;
-              const translatedName = getTranslatedName(item, itemId);
+  {allItems.length === 0 ? (
+    <div className="fashionkick-empty">
+      {t("no_products_found") || "No products found right now."}
+    </div>
+  ) : (
+    <section className="fashionkick-products-grid">
+      {allItems.map(({ id, item, itemId }) => {
+        const reviewData = reviews[itemId];
+        const averageRating = reviewData?.averageRating;
+        const reviewCount = reviewData?.count || 0;
+        const translatedName = getTranslatedName(item, itemId);
 
-              return (
-                <article
-                  key={id}
-                  className="fashionkick-product-card"
-                  onClick={() => handleItemClick(id)}
+        const currentPrice = Number(item?.usdPrice || 0);
+        const originalPrice = Number(item?.originalPrice || 0);
+        const hasDiscount = originalPrice > currentPrice && originalPrice > 0;
+        const discountPercentage = hasDiscount
+          ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+          : 0;
+
+        return (
+          <article
+            key={id}
+            className="fashionkick-product-card fashionkick-product-card-vertical"
+            onClick={() => handleItemClick(id)}
+          >
+            <div className="fashionkick-product-media fashionkick-product-media-vertical">
+              {discountPercentage > 0 && (
+                <div className="fashionkick-product-badge fashionkick-product-badge-discount">
+                  -{discountPercentage}% OFF
+                </div>
+              )}
+
+              {item?.type && (
+                <div className="fashionkick-product-badge fashionkick-product-badge-type">
+                  {item.type}
+                </div>
+              )}
+
+              <img
+                src={item?.images?.[0] || "/placeholder.png"}
+                alt={item?.name || "Product"}
+                className="fashionkick-product-image"
+                loading="lazy"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/placeholder.png";
+                }}
+              />
+            </div>
+
+            <div className="fashionkick-product-content fashionkick-product-content-vertical">
+              <h3 className="fashionkick-name">{translatedName}</h3>
+
+              <div className="fashionkick-product-topline">
+                <div className="fashionkick-price">
+                  {(() => {
+                    const price = currentPrice.toFixed(2);
+                    const [whole, decimal] = price.split(".");
+
+                    return (
+                      <>
+                        ${whole}
+                        <sup className="fashionkick-price-decimal">{decimal}</sup>
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {hasDiscount && (
+                  <div className="fashionkick-old-price">
+                    ${originalPrice.toFixed(2)}
+                  </div>
+                )}
+              </div>
+
+              <div className="fashionkick-rating-wrap">
+                <StarRating rating={averageRating || 0} />
+                <span className="fashionkick-review-text">
+                  {averageRating
+                    ? `${averageRating.toFixed(1)} (${reviewCount})`
+                    : t("no_reviews_yet") || "No reviews yet"}
+                </span>
+              </div>
+
+              <div className="fashionkick-product-footer">
+                <span className="fashionkick-product-genre">
+                  {item?.genre || "Fashion"}
+                </span>
+
+                <button
+                  type="button"
+                  className="fashionkick-product-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleItemClick(id);
+                  }}
                 >
-                  <div className="fashionkick-product-media">
-                    <img
-                      src={item?.images?.[0] || "/placeholder.png"}
-                      alt={item?.name || "Product"}
-                      className="fashionkick-product-image"
-                      loading="lazy"
-                    />
-
-                    <div className="fashionkick-product-floating-tag">
-                      {item?.type || "Premium"}
-                    </div>
-                  </div>
-
-                  <div className="fashionkick-product-content">
-                    <div className="fashionkick-product-topline">
-                      <div className="fashionkick-price">
-                        ${Number(item?.usdPrice || 0).toLocaleString()}
-                      </div>
-
-                      {item?.originalPrice && Number(item.originalPrice) > Number(item?.usdPrice) ? (
-                        <div className="fashionkick-old-price">
-                          ${Number(item.originalPrice).toLocaleString()}
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <StarRating rating={averageRating || 0} />
-
-                    <div className="fashionkick-review-text">
-                      {averageRating
-                        ? `${averageRating.toFixed(1)}/5 (${reviewCount} reviews)`
-                        : t("no_reviews_yet") || "No reviews yet"}
-                    </div>
-
-                    <div className="fashionkick-name">{translatedName}</div>
-
-                    <div className="fashionkick-product-footer">
-                      <span className="fashionkick-product-genre">
-                        {item?.genre || "Fashion"}
-                      </span>
-                      <span className="fashionkick-product-cta">View details</span>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </section>
-        )}
-
-        <div className="fashionkick-recommended-wrap">
-          <div className="fashionkick-section-header">
-            <h2>Recommended For You</h2>
-            <span>Picked from your style</span>
-          </div>
-
-          <ShoeRecommended />
-        </div>
-      </div>
+                  View Product
+                </button>
+              </div>
+            </div>
+          </article>
+        );
+      })}
     </section>
+  )}
+
+  <div className="fashionkick-recommended-wrap">
+    <div className="fashionkick-section-header">
+      <span>Picked from your style</span>
+    </div>
+
+    <ShoeRecommended />
+  </div>
+</div>
   </div>
 );
 }

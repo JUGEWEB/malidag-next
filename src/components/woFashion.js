@@ -214,58 +214,101 @@ function WoFashion() {
 </section>
 
       <section className="women-products-section">
-        <div className="section-header">
-          <h2>Trending Products</h2>
-          <span>{allItems.length} items</span>
+  <div className="section-header">
+    <h2>Trending Products</h2>
+    <span>{allItems.length} items</span>
+  </div>
+
+  {loadingTypes ? (
+    <div className="women-products-grid">
+      {[...Array(8)].map((_, i) => (
+        <div key={i} className="skeleton-card">
+          <div className="skeleton-image" />
+          <div className="skeleton-line short" />
+          <div className="skeleton-line" />
         </div>
+      ))}
+    </div>
+  ) : (
+    <div className="women-products-grid">
+      {allItems.map(({ id, item }) => {
+        const currentPrice = Number(item?.usdPrice || 0);
+        const originalPrice = Number(item?.originalPrice || 0);
+        const hasDiscount = originalPrice > currentPrice && originalPrice > 0;
+        const discountPercentage = hasDiscount
+          ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+          : 0;
 
-        {loadingTypes ? (
-          <div className="women-products-grid">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="skeleton-card">
-                <div className="skeleton-image" />
-                <div className="skeleton-line short" />
-                <div className="skeleton-line" />
+        return (
+          <div
+            key={id}
+            className="women-product-card women-product-card-vertical"
+            onClick={() => handleItemClick(id)}
+          >
+            <div className="women-product-image-wrap women-product-image-wrap-vertical">
+              {discountPercentage > 0 && (
+                <div className="product-image-badge product-image-badge-discount">
+                  -{discountPercentage}% OFF
+                </div>
+              )}
+
+              <img
+                src={item?.images?.[0] || "/fallback.png"}
+                alt={item?.name}
+                className="women-product-image"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/fallback.png";
+                }}
+              />
+            </div>
+
+            <div className="women-product-info women-product-info-vertical">
+              <h3 className="women-product-title">
+                {item?.name?.length > 60
+                  ? `${item.name.substring(0, 60)}...`
+                  : item?.name}
+              </h3>
+
+              <div className="women-product-price-row">
+                <span className="women-product-price">
+                  {(() => {
+                    const price = Number(item?.usdPrice || 0).toFixed(2);
+                    const [whole, decimal] = price.split(".");
+
+                    return (
+                      <>
+                        ${whole}
+                        <sup className="women-product-price-decimal">{decimal}</sup>
+                      </>
+                    );
+                  })()}
+                </span>
+
+                {originalPrice > 0 && (
+                  <span className="women-product-old-price">
+                    ${originalPrice.toFixed(2)}
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="women-products-grid">
-            {allItems.map(({ id, item }) => (
-              <div
-                key={id}
-                className="women-product-card"
-                onClick={() => handleItemClick(id)}
+
+              <button
+                type="button"
+                className="women-product-add-basket-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleItemClick(id);
+                }}
               >
-                <div className="women-product-image-wrap">
-                  <img
-                    src={item?.images?.[0]}
-                    alt={item?.name}
-                    className="women-product-image"
-                  />
-                </div>
-
-                <div className="women-product-info">
-                  <div className="women-product-price-row">
-                    <span className="women-product-price">${item?.usdPrice}</span>
-                    {item?.originalPrice && (
-                      <span className="women-product-old-price">
-                        ${item.originalPrice}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="women-product-title">
-                    {item?.name?.length > 50
-                      ? `${item.name.substring(0, 50)}...`
-                      : item?.name}
-                  </div>
-                </div>
-              </div>
-            ))}
+                View Product
+              </button>
+            </div>
           </div>
-        )}
-      </section>
+        );
+      })}
+    </div>
+  )}
+</section>
 
       <section className="women-recommended-section">
         <RecommendedItem />

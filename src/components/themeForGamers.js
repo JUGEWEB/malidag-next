@@ -68,6 +68,7 @@ const ThemeForGamers = () => {
             display: "block",
             opacity: loadedImages[theme.id] ? 1 : 1,
             objectFit: "cover",
+            filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
             cursor: "pointer",
           }}
         />

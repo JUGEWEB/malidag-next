@@ -286,43 +286,12 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                 </div>
 
                 <div className="product-info">
-                  {colorOptions.length > 1 && (
-                    <div
-                      className="product-color-block"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    >
-                      <div className="product-color-top">
-                        {discountPercentage > 0 && (
-                          <span className="product-discount-inline">
-                            -{discountPercentage}% off
-                          </span>
-                        )}
 
-                        <div className="product-color-label">
-                          Color: <span>{selectedColor}</span>
-                        </div>
-                      </div>
-
-                      <div className="product-color-options">
-                        {colorOptions.map((color) => (
-                          <button
-                            key={color}
-                            type="button"
-                            className={`product-color-circle ${
-                              selectedColor === color ? "active" : ""
-                            }`}
-                            title={color}
-                            aria-label={`Select ${color}`}
-                            style={{ background: getColorSwatch(color) }}
-                            onClick={(e) => handleColorSelect(id, color, e)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                   <h3 className="product-title">
+                    {item?.name?.length > 60
+                      ? `${item.name.substring(0, 60)}...`
+                      : item?.name}
+                  </h3>
 
                   <div className="product-price-row">
                     <span className="product-price">
@@ -360,12 +329,6 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                     </span>
                   </div>
 
-                  <h3 className="product-title">
-                    {item?.name?.length > 60
-                      ? `${item.name.substring(0, 60)}...`
-                      : item?.name}
-                  </h3>
-
                   {showSold && (
                     <div className="product-meta">
                       <span>{`${soldCount} sold`}</span>
@@ -375,6 +338,44 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                   <div className="product-rating">
                     <ProductRating itemId={product?.itemId} />
                   </div>
+
+                   {colorOptions.length > 1 && (
+                    <div
+                      className="product-color-block"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <div className="product-color-top">
+                        {discountPercentage > 0 && (
+                          <span className="product-discount-inline">
+                            -{discountPercentage}% off
+                          </span>
+                        )}
+
+                        <div className="product-color-label">
+                          Color: <span>{selectedColor}</span>
+                        </div>
+                      </div>
+
+                      <div className="product-color-options">
+                        {colorOptions.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            className={`product-color-circle ${
+                              selectedColor === color ? "active" : ""
+                            }`}
+                            title={color}
+                            aria-label={`Select ${color}`}
+                            style={{ background: getColorSwatch(color) }}
+                            onClick={(e) => handleColorSelect(id, color, e)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     type="button"

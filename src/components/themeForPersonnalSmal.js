@@ -76,6 +76,7 @@ const ThemeForPersonnalSmall = () => {
                 height: '70px',
                 borderRadius: '50%',
                 objectFit: 'cover',
+                filter: loadedImages[theme.id] ? "contrast(1.08) saturate(1.08) brightness(1.02)" : "contrast(1.08) saturate(1.08) brightness(1.02)", // ✅ Add filter for unloaded images
                 marginBottom: '0.5rem',
                 opacity: loadedImages[theme.id] ? 1 : 0.6, // ✅ Smooth fade
                 transition: 'opacity 0.5s ease-in-out',

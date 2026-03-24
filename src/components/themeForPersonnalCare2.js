@@ -90,7 +90,7 @@ const ThemeForPersonnalCare2 = () => {
                 objectFit: 'cover',
                 opacity: loadedImages[theme.id] ? 1 : 0,
                 transition: 'opacity 0.3s ease',
-                filter: "contrast(1)",
+                filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                 borderRadius: "5px",
                 backgroundColor: '#fff'

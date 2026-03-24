@@ -39,6 +39,7 @@ const ThemeForKidsFashion = () => {
       backgroundColor: '#fdfdfd',
       borderRadius: (isDesktop || isMobile || isTablet) ? "0px" : "0px",
       height:(isDesktop || isTablet || isMobile) ? '400px' : "auto",
+       padding: isSmallMobile || isVerySmall ? "5px" : "0",
     }}>
       <div style={{
         padding: '1rem',
@@ -59,13 +60,14 @@ const ThemeForKidsFashion = () => {
              loading="lazy"
             onClick={handleDiscoverClick}
             style={{
-                cursor: "pointer",
+              cursor: "pointer",
               width: '100%',
               height: (isSmallMobile || isVerySmall) ? "auto" : 'auto',
               display: 'block',
               opacity: loadedImages[theme.id] ? 1 : 0,
               objectFit: 'cover',
-              transition: 'opacity 0.3s ease-in-out'
+              transition: 'opacity 0.3s ease-in-out',
+              filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
             }}
           />
       </div>

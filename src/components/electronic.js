@@ -37,6 +37,8 @@ function Electronic({
     return 'items-5';
   }, [isMobile, isSmallMobile, isTablet, isVerySmall]);
 
+  const showDesktopArrows = !isMobile && !isSmallMobile && !isVerySmall;
+
   const updateScrollState = useCallback(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -164,6 +166,56 @@ function Electronic({
     });
   }, []);
 
+  const getItemData = useCallback((item) => {
+    const rawItem = item?.item || {};
+    const details = item?.details || {};
+
+    const imageUrl = rawItem?.images?.[0] || item?.image_url || FALLBACK_IMAGE;
+
+    const itemName =
+      rawItem?.name ||
+      details?.itemName ||
+      item?.name ||
+      'Electronic Item';
+
+    const currentPriceValue = Number(
+      rawItem?.usdPrice ?? details?.usdText ?? rawItem?.price ?? 0
+    );
+
+    const originalPriceValue = Number(
+      rawItem?.originalPrice ?? details?.originalPrice ?? 0
+    );
+
+    const discountPercentage =
+      originalPriceValue > 0 &&
+      currentPriceValue > 0 &&
+      currentPriceValue < originalPriceValue
+        ? Math.round(
+            ((originalPriceValue - currentPriceValue) / originalPriceValue) * 100
+          )
+        : 0;
+
+    return {
+      imageUrl,
+      itemName,
+      currentPriceValue,
+      originalPriceValue,
+      discountPercentage,
+    };
+  }, []);
+
+  const renderPrice = (value) => {
+    const numericValue = Number(value || 0).toFixed(2);
+    const [whole, decimal] = numericValue.split('.');
+
+    return (
+      <>
+        ${whole}
+        <sup className="electronic-carousel__price-decimal">{decimal}</sup>
+      </>
+    );
+  };
+
   return (
     <section className="electronic-carousel" aria-label={`${title} carousel`}>
       {showHeader && (
@@ -187,7 +239,7 @@ function Electronic({
       )}
 
       <div className="electronic-carousel__viewport">
-        {items.length > 0 && (
+        {items.length > 0 && showDesktopArrows && (
           <>
             <div className="electronic-carousel__edge electronic-carousel__edge--left" />
             <div className="electronic-carousel__edge electronic-carousel__edge--right" />
@@ -221,8 +273,13 @@ function Electronic({
           aria-label={`${title} products`}
         >
           {items.map((item, index) => {
-            const imageUrl = item?.item?.images?.[0] || FALLBACK_IMAGE;
-            const itemName = item?.item?.name || 'Electronic Item';
+            const {
+              imageUrl,
+              itemName,
+              currentPriceValue,
+              originalPriceValue,
+              discountPercentage,
+            } = getItemData(item);
 
             return (
               <div
@@ -235,16 +292,50 @@ function Electronic({
                   onClick={() => handleItemClick(item.id)}
                   aria-label={`Open ${itemName}`}
                 >
-                  <img
-                    src={imageUrl}
-                    alt={itemName}
-                    className="electronic-carousel__image"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = FALLBACK_IMAGE;
-                    }}
-                  />
+                  <div className="electronic-carousel__media">
+                    {discountPercentage > 0 && (
+                      <div className="electronic-carousel__badge">
+                        -{discountPercentage}% OFF
+                      </div>
+                    )}
+
+                    <img
+                      src={imageUrl}
+                      alt={itemName}
+                      className="electronic-carousel__image"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = FALLBACK_IMAGE;
+                      }}
+                    />
+                  </div>
+
+                  <div className="electronic-carousel__content">
+                    <h3 className="electronic-carousel__item-title" title={itemName}>
+                      {itemName?.length > 60
+                        ? `${itemName.substring(0, 60)}...`
+                        : itemName}
+                    </h3>
+
+                    <div className="electronic-carousel__footer">
+                      <div className="electronic-carousel__pricing">
+                        <span className="electronic-carousel__price">
+                          {currentPriceValue > 0
+                            ? renderPrice(currentPriceValue)
+                            : 'View product'}
+                        </span>
+
+                        {originalPriceValue > 0 && (
+                          <span className="electronic-carousel__original-price">
+                            ${originalPriceValue.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="electronic-carousel__cta">View Product</span>
+                    </div>
+                  </div>
                 </button>
               </div>
             );

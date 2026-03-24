@@ -37,6 +37,7 @@ const ThemeForKidToy = () => {
       boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
       backgroundColor: '#fdfdfd',
       borderRadius: (isDesktop || isMobile || isTablet) ? "0px" : "0px",
+       padding: isSmallMobile || isVerySmall ? "5px" : "0",
       height:(isDesktop || isTablet || isMobile) ? '400px' : "100%",
     }}>
       <div style={{
@@ -64,6 +65,8 @@ const ThemeForKidToy = () => {
               display: 'block',
               opacity: loadedImages[theme.id] ? 1 : 0,
               objectFit: 'cover',
+              filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
+              cursor: "pointer",
               transition: 'opacity 0.3s ease-in-out'
             }}
           />

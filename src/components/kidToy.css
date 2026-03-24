@@ -284,7 +284,7 @@
   display: block;
   width: 100%;
   aspect-ratio: 1 / 1.2;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .product-card-body {

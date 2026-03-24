@@ -7,18 +7,21 @@ import { useRouter } from "next/navigation";
 import useScreenSize from "../../useIsMobile";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
+import { useCheckoutStore } from "@/components/checkoutStore"; // adjust path if needed
 
 function Theme1Department({ brandName, department, brandType }) {
   const router = useRouter();
+  const { isDesktop } = useScreenSize();
+  const { t } = useTranslation();
+  const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [departments, setDepartments] = useState([]);
-  const { isDesktop, isMobile, isVerySmall, isSmallMobile, isTablet, isVeryVerySmall } = useScreenSize();
   const [expandedDeptIndex, setExpandedDeptIndex] = useState(null);
   const [translations, setTranslations] = useState({});
-  const { t } = useTranslation();
+  const [selectedColorByItem, setSelectedColorByItem] = useState({});
 
   const [brandDetails, setBrandDetails] = useState({
     logo: null,
@@ -90,7 +93,9 @@ function Theme1Department({ brandName, department, brandType }) {
 
     fetch(`https://api.malidag.com/api/brands/${brandName}`)
       .then((res) => res.json())
-      .then((data) => setDepartments(Array.isArray(data?.departments) ? data.departments : []))
+      .then((data) =>
+        setDepartments(Array.isArray(data?.departments) ? data.departments : [])
+      )
       .catch((err) => console.error("Department fetch error:", err));
   }, [brandName]);
 
@@ -121,6 +126,15 @@ function Theme1Department({ brandName, department, brandType }) {
           );
         });
 
+        const initialColors = {};
+        filtered.forEach((product) => {
+          const colorKeys = Object.keys(product?.item?.imagesVariants || {});
+          if (colorKeys.length > 0) {
+            initialColors[product.id] = colorKeys[0];
+          }
+        });
+
+        setSelectedColorByItem(initialColors);
         setItems(filtered);
         setLoading(false);
       })
@@ -132,273 +146,290 @@ function Theme1Department({ brandName, department, brandType }) {
 
   const getTranslatedName = (item, itemId) => {
     const lang = i18n.language || "en";
-    return translations?.[itemId]?.[lang]?.name || item?.item?.name || "Unnamed product";
+    return (
+      translations?.[itemId]?.[lang]?.name ||
+      item?.item?.name ||
+      "Unnamed product"
+    );
+  };
+
+  const handleRoute = (depName, brand) => {
+    router.push(
+      `/${brandDetails?.theme?.toLowerCase()}department/${encodeURIComponent(
+        depName || ""
+      )}/${encodeURIComponent(brand || "")}/${encodeURIComponent(
+        brandName || ""
+      )}`
+    );
+  };
+
+  const getColorOptions = (product) => {
+    return Object.keys(product?.item?.imagesVariants || {});
+  };
+
+  const handleColorSelect = (itemId, color, e) => {
+    e.stopPropagation();
+    setSelectedColorByItem((prev) => ({
+      ...prev,
+      [itemId]: color,
+    }));
+  };
+
+  const getDisplayImage = (product) => {
+    const selectedColor = selectedColorByItem[product.id];
+    const variants = product?.item?.imagesVariants || {};
+
+    if (selectedColor && variants[selectedColor]?.[0]) {
+      return variants[selectedColor][0];
+    }
+
+    return product?.item?.images?.[0] || "/fallback.png";
+  };
+
+  const getColorSwatch = (colorName = "") => {
+    const color = colorName.trim().toLowerCase();
+
+    const swatches = {
+      black: "#111111",
+      white: "#f8f8f8",
+      red: "#dc2626",
+      blue: "#2563eb",
+      green: "#16a34a",
+      yellow: "#eab308",
+      pink: "#ec4899",
+      purple: "#9333ea",
+      orange: "#f97316",
+      brown: "#92400e",
+      grey: "#9ca3af",
+      gray: "#9ca3af",
+      silver: "#c0c0c0",
+      gold: "#d4af37",
+      beige: "#d6c7a1",
+      cream: "#f5f0dc",
+      ivory: "#fffff0",
+      navy: "#1e3a8a",
+      "sky blue": "#38bdf8",
+      skyblue: "#38bdf8",
+      maroon: "#7f1d1d",
+      olive: "#556b2f",
+      khaki: "#c3b091",
+      multicolor:
+        "linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #a855f7)",
+      transparent:
+        "linear-gradient(135deg, #ddd 25%, #fff 25%, #fff 50%, #ddd 50%, #ddd 75%, #fff 75%, #fff 100%)",
+    };
+
+    return swatches[color] || "#d1d5db";
+  };
+
+  const renderStars = (rating) => {
+    const safeRating = Math.round(Number(rating) || 0);
+    return (
+      <div className="bd-stars-container">
+        {Array.from({ length: 5 }, (_, i) => (
+          <span
+            key={i}
+            className={i < safeRating ? "bd-star filled" : "bd-star empty"}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  const handleAddToBasketPreview = (product, selectedColor, selectedImage, e) => {
+    e.stopPropagation();
+    setItemData({
+      ...product,
+      selectedColor,
+      selectedImage,
+    });
+  };
+
+  const renderProductCard = (item) => {
+    const selectedColor = selectedColorByItem[item.id];
+    const colorOptions = getColorOptions(item);
+    const displayImage = getDisplayImage(item);
+
+    return (
+      <div key={item.id} className="bd-item-card">
+        <div
+          className="bd-item-media"
+          onClick={() => router.push(`/product/${item.id}`)}
+        >
+          <img
+            src={displayImage}
+            alt={item?.item?.name || "Product"}
+            className="bd-item-image"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/fallback.png";
+            }}
+          />
+        </div>
+
+        <div
+          className="bd-item-info"
+          onClick={() => router.push(`/product/${item.id}`)}
+        >
+          <div className="bd-item-price-row">
+            <span className="bd-item-price">${item?.item?.usdPrice || "0"}</span>
+          </div>
+
+          <div className="bd-item-name">
+            {getTranslatedName(item, item.itemId)?.length > 70
+              ? `${getTranslatedName(item, item.itemId).slice(0, 70)}...`
+              : getTranslatedName(item, item.itemId)}
+          </div>
+
+          {colorOptions.length > 0 && (
+            <div className="bd-color-block" onClick={(e) => e.stopPropagation()}>
+              <div className="bd-color-label">
+                Color: <span>{selectedColor}</span>
+              </div>
+
+              <div className="bd-color-options">
+                {colorOptions.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`bd-color-circle ${
+                      selectedColor === color ? "active" : ""
+                    }`}
+                    title={color}
+                    aria-label={`Select ${color}`}
+                    style={{ background: getColorSwatch(color) }}
+                    onClick={(e) => handleColorSelect(item.id, color, e)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="bd-item-rating">
+            {renderStars(item?.item?.rating || 0)}
+          </div>
+
+          <button
+            type="button"
+            className="bd-add-basket-btn"
+            onClick={(e) =>
+              handleAddToBasketPreview(item, selectedColor, displayImage, e)
+            }
+          >
+            Add to Basket
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div>
-      {isDesktop && (
-        <div className="brandDepartmentContainer">
-          <div className="blaDepartement" style={{ color: "black" }}>
-            <div className="bladeprt">
-              <div>
+    <div className="bd-wrapper">
+      <div className="bd-container">
+        {isDesktop ? (
+          <>
+            <aside className="bd-sidebar">
+              <div className="bd-sidebar-inner">
                 {brandDetails?.logo ? (
                   <img
                     src={brandDetails.logo}
                     alt={`${brandName} Logo`}
-                    className="logoImage"
+                    className="bd-logo"
                   />
                 ) : null}
 
-                <div className="departementTitle">{t("departments_label")}</div>
+                <div className="bd-sidebar-title">{t("departments_label")}</div>
 
-                <div className="departmentCategories">
-                  <ul>
-                    {departments.map((dep, index) => (
-                      <li key={index}>
-                        <strong>{t(dep?.name)}</strong>
-                        <ul>
-                          {(dep?.brandTypes || []).map((brand, bIndex) => (
-                            <li
-                              key={bIndex}
-                              className={`clickableBrandType ${
-                                brand === brandType && dep?.name === department
-                                  ? "selectedBrandType"
-                                  : ""
-                              }`}
-                              onClick={() =>
-                                router.push(
-                                  `/${brandDetails?.theme?.toLowerCase()}department/${encodeURIComponent(dep?.name || "")}/${encodeURIComponent(brand || "")}/${encodeURIComponent(brandName || "")}`
-                                )
-                              }
-                            >
-                              {t(brand)}
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rightColumn">
-            {loading && <p className="loadingMessage">{t("loading")}</p>}
-            {error && <p className="errorMessage">{t("error_label")}: {error}</p>}
-
-            <div
-              style={{
-                display: "grid",
-                gap: "5px",
-                padding: "5px",
-                gridTemplateColumns: "repeat(3, 1fr)",
-              }}
-            >
-              {items.map((item) => (
-                <div key={item.id}>
-                  <div
-                    style={{ filter: "brightness(0.9) contrast(1.2)", cursor: "pointer" }}
-                    onClick={() => router.push(`/product/${item.id}`)}
-                  >
-                    {item?.item?.images?.[0] ? (
-                      <img
-                        src={item.item.images[0]}
-                        alt={item?.item?.name || "Product"}
-                        style={{
-                          width: "100%",
-                          height: "250px",
-                          backgroundColor: "white",
-                          objectFit: "contain",
-                        }}
-                      />
-                    ) : null}
-                  </div>
-
-                  <div
-                    className="itemDetails"
-                    onClick={() => router.push(`/product/${item.id}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <h3 className="itemTitle" style={{ color: "black" }}>
-                      {getTranslatedName(item, item.itemId)}
-                    </h3>
-                    <p className="itemPrice">
-                      {t("price")}: ${item?.item?.usdPrice || "0"}
-                    </p>
-
-                    <div
-                      onClick={() => router.push(`/product/${item.id}`)}
-                      style={{
-                        color: "#007bff",
-                        textDecoration: "underline",
-                        cursor: "pointer",
-                        marginTop: "5px",
-                      }}
-                    >
-                      {t("view_label")}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!isDesktop && (
-        <div style={{ padding: "10px", maxWidth: "100%", overflow: "hidden" }}>
-          <div style={{ position: "relative" }}>
-            {brandDetails?.logo ? (
-              <img src={brandDetails.logo} alt={`${brandName} Logo`} style={{ width: "150px" }} />
-            ) : null}
-
-            <div style={{ position: "relative" }}>
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  width: "100%",
-                  zIndex: 1000,
-                  padding: "10px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    overflowX: "auto",
-                    gap: "16px",
-                    color: "black",
-                  }}
-                >
+                <div className="bd-type-list">
                   {departments.map((dep, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        minWidth: "140px",
-                        position: "relative",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div
-                        onClick={() =>
-                          setExpandedDeptIndex(expandedDeptIndex === index ? null : index)
-                        }
-                        style={{
-                          fontWeight: "bold",
-                          cursor: "pointer",
-                          textAlign: "center",
-                          border: "1px solid #222",
-                          borderRadius: "4px",
-                          padding: "8px",
-                        }}
-                      >
-                        {t(dep?.name)}
-                      </div>
+                    <div key={index} className="bd-department-block">
+                      <div className="bd-department-name">{t(dep?.name)}</div>
 
-                      {expandedDeptIndex === index && (
-                        <div
-                          style={{
-                            top: "100%",
-                            left: 0,
-                            width: "100%",
-                            background: "white",
-                            border: "1px solid #ccc",
-                            boxShadow: "0px 4px 8px rgba(0,0,0,0.1)",
-                            maxHeight: "300px",
-                            overflowY: "auto",
-                          }}
-                        >
-                          {(dep?.brandTypes || []).map((brand, bIndex) => (
+                      <div className="bd-brandtype-list">
+                        {(dep?.brandTypes || []).map((brand, bIndex) => {
+                          const isActive =
+                            brand === brandType && dep?.name === department;
+
+                          return (
                             <div
                               key={bIndex}
-                              onClick={() =>
-                                router.push(
-                                  `/${brandDetails?.theme?.toLowerCase()}department/${encodeURIComponent(dep?.name || "")}/${encodeURIComponent(brand || "")}/${encodeURIComponent(brandName || "")}`
-                                )
-                              }
-                              style={{
-                                padding: "8px",
-                                borderBottom: "1px solid #eee",
-                                textAlign: "center",
-                                cursor: "pointer",
-                              }}
+                              className={`bd-type-item ${isActive ? "active" : ""}`}
+                              onClick={() => handleRoute(dep?.name, brand)}
                             >
-                              {brand}
+                              {t(brand)}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          );
+                        })}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            </aside>
 
-            <div style={{ position: "relative", marginTop: "50px" }}>
-              {loading && <p>{t("loading")}</p>}
-              {error && <p>{t("error_label")}: {error}</p>}
+            <main className="bd-main">
+              {loading && <p className="bd-message">{t("loading")}</p>}
+              {error && (
+                <p className="bd-message bd-error">
+                  {t("error_label")}: {error}
+                </p>
+              )}
 
-              <div
-                style={{
-                  display: "grid",
-                  gap: "5px",
-                  padding: "5px",
-                  gridTemplateColumns:
-                    isVerySmall
-                      ? "repeat(2, 1fr)"
-                      : isVeryVerySmall
-                      ? "repeat(1, 1fr)"
-                      : isSmallMobile
-                      ? "repeat(2, 1fr)"
-                      : isMobile
-                      ? "repeat(3, 1fr)"
-                      : isTablet
-                      ? "repeat(4, 1fr)"
-                      : "repeat(5, 1fr)",
-                }}
-              >
-                {items.map((item) => (
-                  <div key={item.id} style={{ padding: "10px" }}>
-                    <div
-                      style={{
-                        cursor: "pointer",
-                        filter: "brightness(0.88) contrast(1.2)",
-                        width: "100%",
-                        height: isVerySmall ? "230px" : "250px",
-                        backgroundColor: "white",
-                      }}
-                      onClick={() => router.push(`/product/${item.id}`)}
-                    >
-                      {item?.item?.images?.[0] ? (
-                        <img
-                          src={item.item.images[0]}
-                          alt={item?.item?.name || "Product"}
-                          style={{
-                            width: "100%",
-                            height: isVerySmall ? "230px" : "250px",
-                            objectFit: "contain",
-                          }}
-                        />
-                      ) : null}
-                    </div>
+              <div className="bd-item-grid">{items.map(renderProductCard)}</div>
+            </main>
+          </>
+        ) : (
+          <div className="bd-mobile">
+            {brandDetails?.logo ? (
+              <img
+                src={brandDetails.logo}
+                alt={`${brandName} Logo`}
+                className="bd-mobile-logo"
+              />
+            ) : null}
 
-                    <div
-                      style={{ marginTop: "10px", color: "black", cursor: "pointer" }}
-                      onClick={() => router.push(`/product/${item.id}`)}
-                    >
-                      <div>{getTranslatedName(item, item.itemId)}</div>
-                      <div style={{ fontWeight: "bold" }}>${item?.item?.usdPrice || "0"}</div>
-                      <div>{t("view_label")}</div>
-                    </div>
+            <div className="bd-mobile-type-list">
+              {departments.map((dep, index) => (
+                <div key={index} className="bd-mobile-department">
+                  <div
+                    className="bd-mobile-department-title"
+                    onClick={() =>
+                      setExpandedDeptIndex(expandedDeptIndex === index ? null : index)
+                    }
+                  >
+                    {t(dep?.name)}
                   </div>
-                ))}
-              </div>
+
+                  {expandedDeptIndex === index && (
+                    <div className="bd-mobile-dropdown">
+                      {(dep?.brandTypes || []).map((brand, bIndex) => (
+                        <div
+                          key={bIndex}
+                          className="bd-mobile-dropdown-item"
+                          onClick={() => handleRoute(dep?.name, brand)}
+                        >
+                          {t(brand)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
+
+            {loading && <p className="bd-message">{t("loading")}</p>}
+            {error && (
+              <p className="bd-message bd-error">
+                {t("error_label")}: {error}
+              </p>
+            )}
+
+            <div className="bd-item-grid mobile">{items.map(renderProductCard)}</div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

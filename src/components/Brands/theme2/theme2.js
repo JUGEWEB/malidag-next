@@ -20,7 +20,6 @@ function Theme2({ brandName }) {
   const [brandItems, setBrandItems] = useState([]);
   const [departmentItemsLoading, setDepartmentItemsLoading] = useState(false);
   const [departmentItemsError, setDepartmentItemsError] = useState(null);
-  const [hideBestSellerVideo, setHideBestSellerVideo] = useState(false);
 
   const [brandDetails, setBrandDetails] = useState({
     headerImage: null,
@@ -261,10 +260,6 @@ function Theme2({ brandName }) {
       });
   }, [selectedDepartment, selectedBrandType, brandName]);
 
-  useEffect(() => {
-    setHideBestSellerVideo(false);
-  }, [bestSeller?.id]);
-
   const handleBrandTypeClick = (department, brandType) => {
     setExpandedDeptIndex(null);
     setSelectedDepartment(department);
@@ -306,31 +301,6 @@ function Theme2({ brandName }) {
     return product?.images?.[0] || "/fallback.png";
   };
 
-  const getFirstValidVideo = (product) => {
-    if (!Array.isArray(product?.videos)) return null;
-
-    return (
-      product.videos.find((video) => {
-        if (typeof video !== "string") return false;
-
-        const cleanVideo = video.trim();
-        const lowerVideo = cleanVideo.toLowerCase();
-
-        if (!cleanVideo) return false;
-        if (lowerVideo === "null") return false;
-        if (lowerVideo === "undefined") return false;
-        if (lowerVideo === "false") return false;
-        if (lowerVideo === "n/a") return false;
-
-        return (
-          cleanVideo.startsWith("http://") ||
-          cleanVideo.startsWith("https://") ||
-          cleanVideo.startsWith("/")
-        );
-      }) || null
-    );
-  };
-
   const getColorSwatch = (colorName = "") => {
     const color = colorName.trim().toLowerCase();
 
@@ -369,6 +339,7 @@ function Theme2({ brandName }) {
 
   const renderStars = (rating) => {
     const safeRating = Math.round(Number(rating) || 0);
+
     return (
       <div className="th2-stars-container">
         {Array.from({ length: 5 }, (_, i) => (
@@ -409,238 +380,137 @@ function Theme2({ brandName }) {
     return aIds.some((id) => bIds.includes(id));
   };
 
-  const bestSellerVideo = useMemo(() => {
-    return bestSeller ? getFirstValidVideo(bestSeller) : null;
-  }, [bestSeller]);
+  const renderProductCard = (item, options = {}) => {
+    const { isBestSeller = false, badgeText = "" } = options;
 
-  const shouldShowLargeBestSeller = !!bestSellerVideo && !hideBestSellerVideo;
+    const selectedColor = selectedColorByItem[item.id];
+    const colorOptions = getColorOptions(item);
+    const displayImage = getDisplayImage(item);
+    const discountPercentage = getDiscountPercentage(
+      item?.usdPrice,
+      item?.originalPrice
+    );
 
- const renderProductCard = (item, options = {}) => {
-  const { isTop = false, badgeText = "" } = options;
+    const hasReduction = discountPercentage > 0;
+    const translatedName =
+      getTranslatedName(item, item.itemId) || "Unnamed product";
 
-  const selectedColor = selectedColorByItem[item.id];
-  const colorOptions = getColorOptions(item);
-  const displayImage = getDisplayImage(item);
-  const discountPercentage = getDiscountPercentage(
-    item?.usdPrice,
-    item?.originalPrice
-  );
+    const badges = [];
 
-  const hasReduction = discountPercentage > 0;
-  const translatedName =
-    getTranslatedName(item, item.itemId) || "Unnamed product";
+    if (badgeText) {
+      badges.push({
+        key: "custom-badge",
+        text: badgeText,
+        className: "th2-image-badge th2-image-badge-best",
+      });
+    } else if (isBestSeller) {
+      badges.push({
+        key: "best-seller",
+        text: "Best Seller",
+        className: "th2-image-badge th2-image-badge-best",
+      });
+    }
 
-  return (
-    <div key={item.id} className="th2-item-card">
-      {(badgeText || isTop || hasReduction) && (
-        <div className="th2-item-badge-row">
-          <div>
-            {badgeText ? (
-              <div className="th2-image-badge th2-image-badge-top">
-                {badgeText}
-              </div>
-            ) : isTop ? (
-              <div className="th2-image-badge th2-image-badge-top">Top</div>
-            ) : null}
-          </div>
-
-          <div>
-            {hasReduction && (
-              <div className="th2-image-badge th2-image-badge-discount">
-                -{discountPercentage}%
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div
-        className="th2-item-media"
-        onClick={() => router.push(`/product/${item.id}`)}
-      >
-        <img
-          src={displayImage}
-          alt={item?.name || "Product"}
-          className="th2-item-image"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "/fallback.png";
-          }}
-        />
-      </div>
-
-      <div className="th2-item-info">
-        <div
-          className="th2-item-name-row"
-          onClick={() => router.push(`/product/${item.id}`)}
-        >
-          {hasReduction && <span className="th2-name-deal-badge">Deal</span>}
-
-          <div className="th2-item-name">
-            {translatedName.length > 20
-              ? `${translatedName.slice(0, 20)}...`
-              : translatedName}
-          </div>
-        </div>
-
-        <div className="th2-item-price-row">
-          <span className="th2-item-price">
-            ${Number(item?.usdPrice || 0).toFixed(2)}
-          </span>
-
-          {Number(item?.originalPrice || 0) > 0 && hasReduction && (
-            <span className="th2-item-original-price">
-              ${Number(item.originalPrice).toFixed(2)}
-            </span>
-          )}
-        </div>
-
-        <div className="th2-item-rating">{renderStars(item?.rating || 0)}</div>
-
-        {colorOptions.length > 0 && (
-          <div className="th2-color-block">
-            <div className="th2-color-label">
-              Color: <span>{selectedColor}</span>
+    return (
+      <div key={item.id} className="th2-item-card">
+        {(badges.length > 0 || hasReduction) && (
+          <div className="th2-item-badge-row">
+            <div className="th2-item-badge-group">
+              {badges.map((badge) => (
+                <div key={badge.key} className={badge.className}>
+                  {badge.text}
+                </div>
+              ))}
             </div>
 
-            <div className="th2-color-options">
-              {colorOptions.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`th2-color-circle ${
-                    selectedColor === color ? "active" : ""
-                  }`}
-                  title={color}
-                  aria-label={`Select ${color}`}
-                  style={{ background: getColorSwatch(color) }}
-                  onClick={(e) => handleColorSelect(item.id, color, e)}
-                />
-              ))}
+            <div className="th2-item-badge-side">
+              {hasReduction && (
+                <div className="th2-image-badge th2-image-badge-discount">
+                  -{discountPercentage}%
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        <button
-          type="button"
-          className="th2-add-basket-btn"
-          onClick={(e) =>
-            handleAddToBasketPreview(item, selectedColor, displayImage, e)
-          }
+        <div
+          className="th2-item-media"
+          onClick={() => router.push(`/product/${item.id}`)}
         >
-          Add to Basket
-        </button>
-      </div>
-    </div>
-  );
-};
+          <img
+            src={displayImage}
+            alt={item?.name || "Product"}
+            className="th2-item-image"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/fallback.png";
+            }}
+          />
+        </div>
 
-  const renderBestSellerCard = () => {
-    if (!bestSeller || !shouldShowLargeBestSeller) return null;
+        <div className="th2-item-info">
+          <div
+            className="th2-item-name-row"
+            onClick={() => router.push(`/product/${item.id}`)}
+          >
+            {hasReduction && <span className="th2-name-deal-badge">Deal</span>}
 
-    const fallbackImage = getDisplayImage(bestSeller);
-
-    return (
-      <section className="th2-best-seller-section">
-        <div className="th2-best-content">
-          <div className="th2-best-label">Best Seller</div>
-          <h2 className="th2-best-title">
-            {getTranslatedName(bestSeller, bestSeller.itemId)}
-          </h2>
+            <div className="th2-item-name">
+              {translatedName.length > 20
+                ? `${translatedName.slice(0, 20)}...`
+                : translatedName}
+            </div>
+          </div>
 
           <div className="th2-item-price-row">
-            <span className="th2-item-price">${bestSeller?.usdPrice || "0"}</span>
+            <span className="th2-item-price">
+              ${Number(item?.usdPrice || 0).toFixed(2)}
+            </span>
 
-            {Number(bestSeller?.originalPrice || 0) > 0 && (
+            {Number(item?.originalPrice || 0) > 0 && hasReduction && (
               <span className="th2-item-original-price">
-                ${Number(bestSeller.originalPrice).toFixed(2)}
+                ${Number(item.originalPrice).toFixed(2)}
               </span>
             )}
           </div>
 
-          <div className="th2-item-rating">
-            {renderStars(bestSeller?.rating || 0)}
-          </div>
+          <div className="th2-item-rating">{renderStars(item?.rating || 0)}</div>
 
-          {getColorOptions(bestSeller).length > 0 && (
+          {colorOptions.length > 0 && (
             <div className="th2-color-block">
               <div className="th2-color-label">
-                Color: <span>{selectedColorByItem[bestSeller.id]}</span>
+                Color: <span>{selectedColor}</span>
               </div>
 
               <div className="th2-color-options">
-                {getColorOptions(bestSeller).map((color) => (
+                {colorOptions.map((color) => (
                   <button
                     key={color}
                     type="button"
                     className={`th2-color-circle ${
-                      selectedColorByItem[bestSeller.id] === color ? "active" : ""
+                      selectedColor === color ? "active" : ""
                     }`}
                     title={color}
                     aria-label={`Select ${color}`}
                     style={{ background: getColorSwatch(color) }}
-                    onClick={(e) => handleColorSelect(bestSeller.id, color, e)}
+                    onClick={(e) => handleColorSelect(item.id, color, e)}
                   />
                 ))}
               </div>
             </div>
           )}
 
-          <div className="th2-best-actions">
-            <button
-              type="button"
-              className="th2-add-basket-btn"
-              onClick={(e) =>
-                handleAddToBasketPreview(
-                  bestSeller,
-                  selectedColorByItem[bestSeller.id],
-                  fallbackImage,
-                  e
-                )
-              }
-            >
-              Add to Basket
-            </button>
-
-            <button
-              type="button"
-              className="th2-view-btn"
-              onClick={() => router.push(`/product/${bestSeller.id}`)}
-            >
-              View Product
-            </button>
-          </div>
-        </div>
-
-        <div
-          className="th2-best-media"
-          onClick={() => router.push(`/product/${bestSeller.id}`)}
-        >
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            controls
-            onError={() => setHideBestSellerVideo(true)}
+          <button
+            type="button"
+            className="th2-add-basket-btn"
+            onClick={(e) =>
+              handleAddToBasketPreview(item, selectedColor, displayImage, e)
+            }
           >
-            <source src={bestSellerVideo} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+            Add to Basket
+          </button>
         </div>
-      </section>
-    );
-  };
-
-  const renderBestSellerSmallCard = () => {
-    if (!bestSeller || shouldShowLargeBestSeller) return null;
-
-    return (
-      <section className="th2-section">
-        <div className="th2-item-grid">
-          {renderProductCard(bestSeller, { badgeText: "Best Seller" })}
-        </div>
-      </section>
+      </div>
     );
   };
 
@@ -691,14 +561,20 @@ function Theme2({ brandName }) {
   };
 
   const visibleTopItems = useMemo(() => {
-    const filtered = topItems.filter((item) => !isSameProduct(item, bestSeller));
-
-    const uniqueItems = filtered.filter((item, index, arr) => {
+    const uniqueItems = topItems.filter((item, index, arr) => {
       return index === arr.findIndex((x) => isSameProduct(x, item));
     });
 
-    return uniqueItems.slice(0, 8);
+    const withoutBestSeller = uniqueItems.filter(
+      (item) => !isSameProduct(item, bestSeller)
+    );
+
+    return withoutBestSeller;
   }, [topItems, bestSeller]);
+
+  const mixedHomeItems = useMemo(() => {
+    return [bestSeller, ...visibleTopItems].filter(Boolean);
+  }, [bestSeller, visibleTopItems]);
 
   return (
     <div className="th2-wrapper">
@@ -820,26 +696,15 @@ function Theme2({ brandName }) {
         {selectedDepartment && selectedBrandType ? (
           renderDepartmentItems()
         ) : (
-          <>
-            {renderBestSellerCard()}
-            {renderBestSellerSmallCard()}
-
-            {visibleTopItems.length > 0 && (
-              <section className="th2-section">
-                <div className="th2-section-header">
-                  <h2 className="th2-section-title">
-                    {t("top_picks") || "Top Picks"}
-                  </h2>
-                </div>
-
-                <div className="th2-item-grid">
-                  {visibleTopItems.map((item) =>
-                    renderProductCard(item, { isTop: true })
-                  )}
-                </div>
-              </section>
-            )}
-          </>
+          <section className="th2-section">
+            <div className="th2-item-grid">
+              {mixedHomeItems.map((item) =>
+                renderProductCard(item, {
+                  isBestSeller: isSameProduct(item, bestSeller),
+                })
+              )}
+            </div>
+          </section>
         )}
       </main>
     </div>

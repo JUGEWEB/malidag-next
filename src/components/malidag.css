@@ -64,6 +64,10 @@
   padding: 0;
 }
 
+.app-bright {
+  filter: brightness(1.15) contrast(1.05);
+}
+
 .malidag-block--flush {
   margin: 0 !important;
   padding: 0 !important;

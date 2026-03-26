@@ -20,6 +20,7 @@ function Theme1({ brandName }) {
   const [brandItems, setBrandItems] = useState([]);
   const [departmentItemsLoading, setDepartmentItemsLoading] = useState(false);
   const [departmentItemsError, setDepartmentItemsError] = useState(null);
+  const [hideBestSellerVideo, setHideBestSellerVideo] = useState(false);
 
   const [brandDetails, setBrandDetails] = useState({
     headerImage: null,
@@ -261,6 +262,10 @@ function Theme1({ brandName }) {
       });
   }, [selectedDepartment, selectedBrandType, brandName]);
 
+  useEffect(() => {
+    setHideBestSellerVideo(false);
+  }, [bestSeller?.id]);
+
   const handleBrandTypeClick = (department, brandType) => {
     setExpandedDeptIndex(null);
     setSelectedDepartment(department);
@@ -279,27 +284,14 @@ function Theme1({ brandName }) {
     return translations?.[itemId]?.[lang]?.name || item?.name || "Unnamed product";
   };
 
-  const shoeItems = useMemo(() => {
-    return topItems.filter((item) => {
-      const dept = item?.department?.trim()?.toLowerCase() || "";
-      return (
-        dept === "men-shoes" ||
-        dept === "women-shoes" ||
-        dept === "mwomen-shoes"
-      );
-    });
-  }, [topItems]);
+  const isSameProduct = (a, b) => {
+    if (!a || !b) return false;
 
-  const otherItems = useMemo(() => {
-    return topItems.filter((item) => {
-      const dept = item?.department?.trim()?.toLowerCase() || "";
-      return (
-        dept !== "men-shoes" &&
-        dept !== "women-shoes" &&
-        dept !== "mwomen-shoes"
-      );
-    });
-  }, [topItems]);
+    const aIds = [a?.id, a?.itemId].filter(Boolean).map(String);
+    const bIds = [b?.id, b?.itemId].filter(Boolean).map(String);
+
+    return aIds.some((id) => bIds.includes(id));
+  };
 
   const getColorOptions = (product) => {
     return Object.keys(product?.imagesVariants || {});
@@ -323,6 +315,69 @@ function Theme1({ brandName }) {
 
     return product?.images?.[0] || "/fallback.png";
   };
+
+  const getFirstValidVideo = (product) => {
+    if (!Array.isArray(product?.videos)) return null;
+
+    return (
+      product.videos.find((video) => {
+        if (typeof video !== "string") return false;
+
+        const cleanVideo = video.trim();
+        const lowerVideo = cleanVideo.toLowerCase();
+
+        if (!cleanVideo) return false;
+        if (lowerVideo === "null") return false;
+        if (lowerVideo === "undefined") return false;
+        if (lowerVideo === "false") return false;
+        if (lowerVideo === "n/a") return false;
+
+        return (
+          cleanVideo.startsWith("http://") ||
+          cleanVideo.startsWith("https://") ||
+          cleanVideo.startsWith("/")
+        );
+      }) || null
+    );
+  };
+
+  const bestSellerVideo = useMemo(() => {
+    return bestSeller ? getFirstValidVideo(bestSeller) : null;
+  }, [bestSeller]);
+
+  const shouldShowLargeBestSeller = !!bestSellerVideo && !hideBestSellerVideo;
+
+  const filteredTopItems = useMemo(() => {
+    const withoutBestSeller = topItems.filter(
+      (item) => !isSameProduct(item, bestSeller)
+    );
+
+    return withoutBestSeller.filter((item, index, arr) => {
+      return index === arr.findIndex((x) => isSameProduct(x, item));
+    });
+  }, [topItems, bestSeller]);
+
+  const shoeItems = useMemo(() => {
+    return filteredTopItems.filter((item) => {
+      const dept = item?.department?.trim()?.toLowerCase() || "";
+      return (
+        dept === "men-shoes" ||
+        dept === "women-shoes" ||
+        dept === "mwomen-shoes"
+      );
+    });
+  }, [filteredTopItems]);
+
+  const otherItems = useMemo(() => {
+    return filteredTopItems.filter((item) => {
+      const dept = item?.department?.trim()?.toLowerCase() || "";
+      return (
+        dept !== "men-shoes" &&
+        dept !== "women-shoes" &&
+        dept !== "mwomen-shoes"
+      );
+    });
+  }, [filteredTopItems]);
 
   const getColorSwatch = (colorName = "") => {
     const color = colorName.trim().toLowerCase();
@@ -393,7 +448,9 @@ function Theme1({ brandName }) {
     });
   };
 
-  const renderProductCard = (item, isTop = false) => {
+  const renderProductCard = (item, options = {}) => {
+    const { isTop = false, badgeText = "" } = options;
+
     const selectedColor = selectedColorByItem[item.id];
     const colorOptions = getColorOptions(item);
     const displayImage = getDisplayImage(item);
@@ -408,7 +465,11 @@ function Theme1({ brandName }) {
           className="th1-item-media"
           onClick={() => router.push(`/product/${item.id}`)}
         >
-          {isTop && <div className="th1-image-badge th1-image-badge-top">Top</div>}
+          {badgeText ? (
+            <div className="th1-image-badge th1-image-badge-best">{badgeText}</div>
+          ) : isTop ? (
+            <div className="th1-image-badge th1-image-badge-top">Top</div>
+          ) : null}
 
           {discountPercentage > 0 && (
             <div className="th1-image-badge th1-image-badge-discount">
@@ -488,24 +549,27 @@ function Theme1({ brandName }) {
   };
 
   const renderBestSellerCard = () => {
-    if (!bestSeller) return null;
+    if (!bestSeller || !shouldShowLargeBestSeller) return null;
 
     return (
       <div className="th1-best-seller-section">
         <div className="th1-best-video-card">
-          {bestSeller?.videos?.length > 0 ? (
-            <div
-              className="th1-video-container"
-              onClick={() => router.push(`/product/${bestSeller.id}`)}
+          <div
+            className="th1-video-container"
+            onClick={() => router.push(`/product/${bestSeller.id}`)}
+          >
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              onError={() => setHideBestSellerVideo(true)}
             >
-              <video autoPlay muted loop playsInline controls>
-                <source src={bestSeller.videos[0]} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          ) : (
-            <div className="th1-video-empty">No video available</div>
-          )}
+              <source src={bestSellerVideo} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
         </div>
 
         <div className="th1-best-image-card">
@@ -589,6 +653,16 @@ function Theme1({ brandName }) {
     );
   };
 
+  const renderBestSellerSmallCard = () => {
+    if (!bestSeller || shouldShowLargeBestSeller) return null;
+
+    return (
+      <div className={`th1-item-grid ${!isDesktop ? "mobile" : ""}`}>
+        {renderProductCard(bestSeller, { badgeText: "Best Seller" })}
+      </div>
+    );
+  };
+
   const renderDepartmentItems = () => {
     return (
       <div className="th1-department-view">
@@ -624,7 +698,7 @@ function Theme1({ brandName }) {
 
         {!departmentItemsLoading && !departmentItemsError && brandItems.length > 0 && (
           <div className={`th1-item-grid ${!isDesktop ? "mobile" : ""}`}>
-            {brandItems.map((item) => renderProductCard(item, false))}
+            {brandItems.map((item) => renderProductCard(item))}
           </div>
         )}
       </div>
@@ -697,15 +771,16 @@ function Theme1({ brandName }) {
               <>
                 {shoeItems.length > 0 && (
                   <div className="th1-item-grid">
-                    {shoeItems.map((item) => renderProductCard(item, true))}
+                    {shoeItems.map((item) => renderProductCard(item, { isTop: true }))}
                   </div>
                 )}
 
                 {renderBestSellerCard()}
+                {renderBestSellerSmallCard()}
 
                 {otherItems.length > 0 && (
                   <div className="th1-item-grid">
-                    {otherItems.map((item) => renderProductCard(item, true))}
+                    {otherItems.map((item) => renderProductCard(item, { isTop: true }))}
                   </div>
                 )}
               </>
@@ -811,16 +886,17 @@ function Theme1({ brandName }) {
           ) : (
             <>
               {renderBestSellerCard()}
+              {renderBestSellerSmallCard()}
 
               {shoeItems.length > 0 && (
                 <div className="th1-item-grid mobile">
-                  {shoeItems.map((item) => renderProductCard(item, true))}
+                  {shoeItems.map((item) => renderProductCard(item, { isTop: true }))}
                 </div>
               )}
 
               {otherItems.length > 0 && (
                 <div className="th1-item-grid mobile">
-                  {otherItems.map((item) => renderProductCard(item, true))}
+                  {otherItems.map((item) => renderProductCard(item, { isTop: true }))}
                 </div>
               )}
             </>

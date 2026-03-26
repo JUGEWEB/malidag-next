@@ -20,6 +20,7 @@ function Theme2({ brandName }) {
   const [brandItems, setBrandItems] = useState([]);
   const [departmentItemsLoading, setDepartmentItemsLoading] = useState(false);
   const [departmentItemsError, setDepartmentItemsError] = useState(null);
+  const [hideBestSellerVideo, setHideBestSellerVideo] = useState(false);
 
   const [brandDetails, setBrandDetails] = useState({
     headerImage: null,
@@ -260,6 +261,10 @@ function Theme2({ brandName }) {
       });
   }, [selectedDepartment, selectedBrandType, brandName]);
 
+  useEffect(() => {
+    setHideBestSellerVideo(false);
+  }, [bestSeller?.id]);
+
   const handleBrandTypeClick = (department, brandType) => {
     setExpandedDeptIndex(null);
     setSelectedDepartment(department);
@@ -299,6 +304,31 @@ function Theme2({ brandName }) {
     }
 
     return product?.images?.[0] || "/fallback.png";
+  };
+
+  const getFirstValidVideo = (product) => {
+    if (!Array.isArray(product?.videos)) return null;
+
+    return (
+      product.videos.find((video) => {
+        if (typeof video !== "string") return false;
+
+        const cleanVideo = video.trim();
+        const lowerVideo = cleanVideo.toLowerCase();
+
+        if (!cleanVideo) return false;
+        if (lowerVideo === "null") return false;
+        if (lowerVideo === "undefined") return false;
+        if (lowerVideo === "false") return false;
+        if (lowerVideo === "n/a") return false;
+
+        return (
+          cleanVideo.startsWith("http://") ||
+          cleanVideo.startsWith("https://") ||
+          cleanVideo.startsWith("/")
+        );
+      }) || null
+    );
   };
 
   const getColorSwatch = (colorName = "") => {
@@ -370,102 +400,145 @@ function Theme2({ brandName }) {
     });
   };
 
-  const renderProductCard = (item, isTop = false) => {
-    const selectedColor = selectedColorByItem[item.id];
-    const colorOptions = getColorOptions(item);
-    const displayImage = getDisplayImage(item);
-    const discountPercentage = getDiscountPercentage(
-      item?.usdPrice,
-      item?.originalPrice
-    );
+  const isSameProduct = (a, b) => {
+    if (!a || !b) return false;
 
-    return (
-      <div key={item.id} className="th2-item-card">
-        <div
-          className="th2-item-media"
-          onClick={() => router.push(`/product/${item.id}`)}
-        >
-          {isTop && <div className="th2-image-badge th2-image-badge-top">Top</div>}
+    const aIds = [a?.id, a?.itemId].filter(Boolean).map(String);
+    const bIds = [b?.id, b?.itemId].filter(Boolean).map(String);
 
-          {discountPercentage > 0 && (
-            <div className="th2-image-badge th2-image-badge-discount">
-              -{discountPercentage}%
-            </div>
-          )}
-
-          <img
-            src={displayImage}
-            alt={item?.name || "Product"}
-            className="th2-item-image"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "/fallback.png";
-            }}
-          />
-        </div>
-
-        <div className="th2-item-info">
-          <div
-            className="th2-item-name"
-            onClick={() => router.push(`/product/${item.id}`)}
-          >
-            {getTranslatedName(item, item.itemId)?.length > 70
-              ? `${getTranslatedName(item, item.itemId).slice(0, 70)}...`
-              : getTranslatedName(item, item.itemId)}
-          </div>
-
-          <div className="th2-item-price-row">
-            <span className="th2-item-price">${item?.usdPrice || "0"}</span>
-
-            {Number(item?.originalPrice || 0) > 0 && (
-              <span className="th2-item-original-price">
-                ${Number(item.originalPrice).toFixed(2)}
-              </span>
-            )}
-          </div>
-
-          <div className="th2-item-rating">{renderStars(item?.rating || 0)}</div>
-
-          {colorOptions.length > 0 && (
-            <div className="th2-color-block">
-              <div className="th2-color-label">
-                Color: <span>{selectedColor}</span>
-              </div>
-
-              <div className="th2-color-options">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`th2-color-circle ${
-                      selectedColor === color ? "active" : ""
-                    }`}
-                    title={color}
-                    aria-label={`Select ${color}`}
-                    style={{ background: getColorSwatch(color) }}
-                    onClick={(e) => handleColorSelect(item.id, color, e)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <button
-            type="button"
-            className="th2-add-basket-btn"
-            onClick={(e) =>
-              handleAddToBasketPreview(item, selectedColor, displayImage, e)
-            }
-          >
-            Add to Basket
-          </button>
-        </div>
-      </div>
-    );
+    return aIds.some((id) => bIds.includes(id));
   };
 
+  const bestSellerVideo = useMemo(() => {
+    return bestSeller ? getFirstValidVideo(bestSeller) : null;
+  }, [bestSeller]);
+
+  const shouldShowLargeBestSeller = !!bestSellerVideo && !hideBestSellerVideo;
+
+ const renderProductCard = (item, options = {}) => {
+  const { isTop = false, badgeText = "" } = options;
+
+  const selectedColor = selectedColorByItem[item.id];
+  const colorOptions = getColorOptions(item);
+  const displayImage = getDisplayImage(item);
+  const discountPercentage = getDiscountPercentage(
+    item?.usdPrice,
+    item?.originalPrice
+  );
+
+  const hasReduction = discountPercentage > 0;
+  const translatedName =
+    getTranslatedName(item, item.itemId) || "Unnamed product";
+
+  return (
+    <div key={item.id} className="th2-item-card">
+      {(badgeText || isTop || hasReduction) && (
+        <div className="th2-item-badge-row">
+          <div>
+            {badgeText ? (
+              <div className="th2-image-badge th2-image-badge-top">
+                {badgeText}
+              </div>
+            ) : isTop ? (
+              <div className="th2-image-badge th2-image-badge-top">Top</div>
+            ) : null}
+          </div>
+
+          <div>
+            {hasReduction && (
+              <div className="th2-image-badge th2-image-badge-discount">
+                -{discountPercentage}%
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div
+        className="th2-item-media"
+        onClick={() => router.push(`/product/${item.id}`)}
+      >
+        <img
+          src={displayImage}
+          alt={item?.name || "Product"}
+          className="th2-item-image"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "/fallback.png";
+          }}
+        />
+      </div>
+
+      <div className="th2-item-info">
+        <div
+          className="th2-item-name-row"
+          onClick={() => router.push(`/product/${item.id}`)}
+        >
+          {hasReduction && <span className="th2-name-deal-badge">Deal</span>}
+
+          <div className="th2-item-name">
+            {translatedName.length > 20
+              ? `${translatedName.slice(0, 20)}...`
+              : translatedName}
+          </div>
+        </div>
+
+        <div className="th2-item-price-row">
+          <span className="th2-item-price">
+            ${Number(item?.usdPrice || 0).toFixed(2)}
+          </span>
+
+          {Number(item?.originalPrice || 0) > 0 && hasReduction && (
+            <span className="th2-item-original-price">
+              ${Number(item.originalPrice).toFixed(2)}
+            </span>
+          )}
+        </div>
+
+        <div className="th2-item-rating">{renderStars(item?.rating || 0)}</div>
+
+        {colorOptions.length > 0 && (
+          <div className="th2-color-block">
+            <div className="th2-color-label">
+              Color: <span>{selectedColor}</span>
+            </div>
+
+            <div className="th2-color-options">
+              {colorOptions.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`th2-color-circle ${
+                    selectedColor === color ? "active" : ""
+                  }`}
+                  title={color}
+                  aria-label={`Select ${color}`}
+                  style={{ background: getColorSwatch(color) }}
+                  onClick={(e) => handleColorSelect(item.id, color, e)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="th2-add-basket-btn"
+          onClick={(e) =>
+            handleAddToBasketPreview(item, selectedColor, displayImage, e)
+          }
+        >
+          Add to Basket
+        </button>
+      </div>
+    </div>
+  );
+};
+
   const renderBestSellerCard = () => {
-    if (!bestSeller) return null;
+    if (!bestSeller || !shouldShowLargeBestSeller) return null;
+
+    const fallbackImage = getDisplayImage(bestSeller);
 
     return (
       <section className="th2-best-seller-section">
@@ -521,7 +594,7 @@ function Theme2({ brandName }) {
                 handleAddToBasketPreview(
                   bestSeller,
                   selectedColorByItem[bestSeller.id],
-                  getDisplayImage(bestSeller),
+                  fallbackImage,
                   e
                 )
               }
@@ -543,22 +616,29 @@ function Theme2({ brandName }) {
           className="th2-best-media"
           onClick={() => router.push(`/product/${bestSeller.id}`)}
         >
-          {bestSeller?.videos?.length > 0 ? (
-            <video autoPlay muted loop playsInline controls>
-              <source src={bestSeller.videos[0]} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          ) : (
-            <img
-              src={getDisplayImage(bestSeller)}
-              alt={bestSeller.name}
-              className="th2-best-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/fallback.png";
-              }}
-            />
-          )}
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+            onError={() => setHideBestSellerVideo(true)}
+          >
+            <source src={bestSellerVideo} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </section>
+    );
+  };
+
+  const renderBestSellerSmallCard = () => {
+    if (!bestSeller || shouldShowLargeBestSeller) return null;
+
+    return (
+      <section className="th2-section">
+        <div className="th2-item-grid">
+          {renderProductCard(bestSeller, { badgeText: "Best Seller" })}
         </div>
       </section>
     );
@@ -593,22 +673,32 @@ function Theme2({ brandName }) {
           </p>
         )}
 
-        {!departmentItemsLoading && !departmentItemsError && brandItems.length === 0 && (
-          <p className="th2-message">{t("no_items_found") || "No items found"}</p>
-        )}
+        {!departmentItemsLoading &&
+          !departmentItemsError &&
+          brandItems.length === 0 && (
+            <p className="th2-message">{t("no_items_found") || "No items found"}</p>
+          )}
 
-        {!departmentItemsLoading && !departmentItemsError && brandItems.length > 0 && (
-          <div className="th2-item-grid">
-            {brandItems.map((item) => renderProductCard(item, false))}
-          </div>
-        )}
+        {!departmentItemsLoading &&
+          !departmentItemsError &&
+          brandItems.length > 0 && (
+            <div className="th2-item-grid">
+              {brandItems.map((item) => renderProductCard(item))}
+            </div>
+          )}
       </section>
     );
   };
 
   const visibleTopItems = useMemo(() => {
-    return topItems.slice(0, 8);
-  }, [topItems]);
+    const filtered = topItems.filter((item) => !isSameProduct(item, bestSeller));
+
+    const uniqueItems = filtered.filter((item, index, arr) => {
+      return index === arr.findIndex((x) => isSameProduct(x, item));
+    });
+
+    return uniqueItems.slice(0, 8);
+  }, [topItems, bestSeller]);
 
   return (
     <div className="th2-wrapper">
@@ -732,6 +822,7 @@ function Theme2({ brandName }) {
         ) : (
           <>
             {renderBestSellerCard()}
+            {renderBestSellerSmallCard()}
 
             {visibleTopItems.length > 0 && (
               <section className="th2-section">
@@ -742,7 +833,9 @@ function Theme2({ brandName }) {
                 </div>
 
                 <div className="th2-item-grid">
-                  {visibleTopItems.map((item) => renderProductCard(item, true))}
+                  {visibleTopItems.map((item) =>
+                    renderProductCard(item, { isTop: true })
+                  )}
                 </div>
               </section>
             )}

@@ -275,7 +275,9 @@ function Theme2({ brandName }) {
 
   const getTranslatedName = (item, itemId) => {
     const lang = i18n.language || "en";
-    return translations?.[itemId]?.[lang]?.name || item?.name || "Unnamed product";
+    return (
+      translations?.[itemId]?.[lang]?.name || item?.name || "Unnamed product"
+    );
   };
 
   const getColorOptions = (product) => {
@@ -381,7 +383,7 @@ function Theme2({ brandName }) {
   };
 
   const renderProductCard = (item, options = {}) => {
-    const { isBestSeller = false, badgeText = "" } = options;
+    const { isBestSeller = false } = options;
 
     const selectedColor = selectedColorByItem[item.id];
     const colorOptions = getColorOptions(item);
@@ -391,93 +393,88 @@ function Theme2({ brandName }) {
       item?.originalPrice
     );
 
-    const hasReduction = discountPercentage > 0;
+    const videoUrl = item?.videos?.find(
+  (v) =>
+    typeof v === "string" &&
+    /\.(mp4|webm|ogg)$/i.test(v)
+);
+
     const translatedName =
       getTranslatedName(item, item.itemId) || "Unnamed product";
 
-    const badges = [];
-
-    if (badgeText) {
-      badges.push({
-        key: "custom-badge",
-        text: badgeText,
-        className: "th2-image-badge th2-image-badge-best",
-      });
-    } else if (isBestSeller) {
-      badges.push({
-        key: "best-seller",
-        text: "Best Seller",
-        className: "th2-image-badge th2-image-badge-best",
-      });
-    }
-
     return (
       <div key={item.id} className="th2-item-card">
-        {(badges.length > 0 || hasReduction) && (
-          <div className="th2-item-badge-row">
-            <div className="th2-item-badge-group">
-              {badges.map((badge) => (
-                <div key={badge.key} className={badge.className}>
-                  {badge.text}
-                </div>
-              ))}
-            </div>
-
-            <div className="th2-item-badge-side">
-              {hasReduction && (
-                <div className="th2-image-badge th2-image-badge-discount">
-                  -{discountPercentage}%
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         <div
           className="th2-item-media"
           onClick={() => router.push(`/product/${item.id}`)}
         >
-          <img
-            src={displayImage}
-            alt={item?.name || "Product"}
-            className="th2-item-image"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "/fallback.png";
-            }}
-          />
+          {isBestSeller && (
+            <div className="th2-image-badge th2-image-badge-best">
+              Best Seller
+            </div>
+          )}
+
+          {discountPercentage > 0 && (
+            <div className="th2-image-badge th2-image-badge-discount">
+              -{discountPercentage}%
+            </div>
+          )}
+
+         {isBestSeller && videoUrl ? (
+  <video
+    src={videoUrl}
+    className="th2-item-image"
+    autoPlay
+    muted
+    loop
+    playsInline
+  />
+) : (
+  <img
+    src={displayImage}
+    alt={item?.name || "Product"}
+    className="th2-item-image"
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src = "/fallback.png";
+    }}
+  />
+)}
         </div>
 
-        <div className="th2-item-info">
-          <div
-            className="th2-item-name-row"
-            onClick={() => router.push(`/product/${item.id}`)}
-          >
-            {hasReduction && <span className="th2-name-deal-badge">Deal</span>}
-
-            <div className="th2-item-name">
-              {translatedName.length > 20
-                ? `${translatedName.slice(0, 20)}...`
-                : translatedName}
-            </div>
-          </div>
-
+        <div
+          className="th2-item-info"
+          onClick={() => router.push(`/product/${item.id}`)}
+        >
           <div className="th2-item-price-row">
             <span className="th2-item-price">
               ${Number(item?.usdPrice || 0).toFixed(2)}
             </span>
 
-            {Number(item?.originalPrice || 0) > 0 && hasReduction && (
+            {discountPercentage > 0 && (
+              <span className="th2-deals-badge">Deal</span>
+            )}
+
+            {Number(item?.originalPrice || 0) > 0 && (
               <span className="th2-item-original-price">
-                ${Number(item.originalPrice).toFixed(2)}
+                ${Number(item?.originalPrice || 0).toFixed(2)}
               </span>
             )}
+          </div>
+
+          <div className="th2-item-name">
+            {translatedName.length > 70
+              ? `${translatedName.slice(0, 70)}...`
+              : translatedName}
           </div>
 
           <div className="th2-item-rating">{renderStars(item?.rating || 0)}</div>
 
           {colorOptions.length > 0 && (
-            <div className="th2-color-block">
+            <div
+              className="th2-color-block"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="th2-color-label">
                 Color: <span>{selectedColor}</span>
               </div>
@@ -518,6 +515,7 @@ function Theme2({ brandName }) {
     return (
       <section className="th2-section">
         <div className="th2-section-toolbar">
+
           <button
             type="button"
             className="th2-back-btn"
@@ -546,7 +544,9 @@ function Theme2({ brandName }) {
         {!departmentItemsLoading &&
           !departmentItemsError &&
           brandItems.length === 0 && (
-            <p className="th2-message">{t("no_items_found") || "No items found"}</p>
+            <p className="th2-message">
+              {t("no_items_found") || "No items found"}
+            </p>
           )}
 
         {!departmentItemsLoading &&
@@ -600,99 +600,101 @@ function Theme2({ brandName }) {
         </div>
       </section>
 
-      <section className="th2-nav-section">
-        {isDesktop ? (
-          <div className="th2-department-row">
-            {departments.map((department, index) => (
-              <div key={index} className="th2-department-group">
-                <button
-                  type="button"
-                  className={`th2-department-chip ${
-                    selectedDepartment === department?.name ? "active" : ""
-                  }`}
-                  onClick={() =>
-                    setExpandedDeptIndex(
-                      expandedDeptIndex === index ? null : index
-                    )
-                  }
-                >
-                  {t(department?.name)}
-                </button>
-
-                {expandedDeptIndex === index && (
-                  <div className="th2-brandtype-dropdown">
-                    {(department?.brandTypes || []).map((brandType, bIndex) => {
-                      const isActive =
-                        selectedDepartment === department?.name &&
-                        selectedBrandType === brandType;
-
-                      return (
-                        <button
-                          key={bIndex}
-                          type="button"
-                          className={`th2-brandtype-item ${
-                            isActive ? "active" : ""
-                          }`}
-                          onClick={() =>
-                            handleBrandTypeClick(department?.name, brandType)
-                          }
-                        >
-                          {t(brandType)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="th2-mobile-nav">
-            {departments.map((department, index) => (
-              <div key={index} className="th2-mobile-department">
-                <button
-                  type="button"
-                  className={`th2-mobile-department-title ${
-                    expandedDeptIndex === index ? "active" : ""
-                  }`}
-                  onClick={() =>
-                    setExpandedDeptIndex(index === expandedDeptIndex ? null : index)
-                  }
-                >
-                  {t(department?.name)}
-                </button>
-
-                {expandedDeptIndex === index && (
-                  <div className="th2-mobile-dropdown">
-                    {(department?.brandTypes || []).map((brandType, bIndex) => {
-                      const isActive =
-                        selectedDepartment === department?.name &&
-                        selectedBrandType === brandType;
-
-                      return (
-                        <button
-                          key={bIndex}
-                          type="button"
-                          className={`th2-mobile-dropdown-item ${
-                            isActive ? "active" : ""
-                          }`}
-                          onClick={() =>
-                            handleBrandTypeClick(department?.name, brandType)
-                          }
-                        >
-                          {t(brandType)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
       <main className="th2-main">
+        <section className="th2-nav-section">
+          {isDesktop ? (
+            <div className="th2-department-row">
+              {departments.map((department, index) => (
+                <div key={index} className="th2-department-group">
+                  <button
+                    type="button"
+                    className={`th2-department-chip ${
+                      selectedDepartment === department?.name ? "active" : ""
+                    }`}
+                    onClick={() =>
+                      setExpandedDeptIndex(
+                        expandedDeptIndex === index ? null : index
+                      )
+                    }
+                  >
+                    {t(department?.name)}
+                  </button>
+
+                  {expandedDeptIndex === index && (
+                    <div className="th2-brandtype-dropdown">
+                      {(department?.brandTypes || []).map((brandType, bIndex) => {
+                        const isActive =
+                          selectedDepartment === department?.name &&
+                          selectedBrandType === brandType;
+
+                        return (
+                          <button
+                            key={bIndex}
+                            type="button"
+                            className={`th2-brandtype-item ${
+                              isActive ? "active" : ""
+                            }`}
+                            onClick={() =>
+                              handleBrandTypeClick(department?.name, brandType)
+                            }
+                          >
+                            {t(brandType)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="th2-mobile-nav">
+              {departments.map((department, index) => (
+                <div key={index} className="th2-mobile-department">
+                  <button
+                    type="button"
+                    className={`th2-mobile-department-title ${
+                      expandedDeptIndex === index ? "active" : ""
+                    }`}
+                    onClick={() =>
+                      setExpandedDeptIndex(
+                        index === expandedDeptIndex ? null : index
+                      )
+                    }
+                  >
+                    {t(department?.name)}
+                  </button>
+
+                  {expandedDeptIndex === index && (
+                    <div className="th2-mobile-dropdown">
+                      {(department?.brandTypes || []).map((brandType, bIndex) => {
+                        const isActive =
+                          selectedDepartment === department?.name &&
+                          selectedBrandType === brandType;
+
+                        return (
+                          <button
+                            key={bIndex}
+                            type="button"
+                            className={`th2-mobile-dropdown-item ${
+                              isActive ? "active" : ""
+                            }`}
+                            onClick={() =>
+                              handleBrandTypeClick(department?.name, brandType)
+                            }
+                          >
+                            {t(brandType)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         {selectedDepartment && selectedBrandType ? (
           renderDepartmentItems()
         ) : (

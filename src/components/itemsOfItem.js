@@ -330,7 +330,7 @@ setBestSellersByCategory(bestSellerMap);
 
                   <div className="item-details" onClick={() => handleNavigate(id)}>
                     <div className="item-name" title={name}>
-                      {name.length > 20 ? `${name.substring(0, 20)}...` : name}
+                      {name.length > 70 ? `${name.substring(0, 70)}...` : name}
                     </div>
 
                     <div className="item-prices">

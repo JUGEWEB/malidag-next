@@ -21,6 +21,7 @@ function Theme1({ brandName }) {
   const [departmentItemsLoading, setDepartmentItemsLoading] = useState(false);
   const [departmentItemsError, setDepartmentItemsError] = useState(null);
   const [hideBestSellerVideo, setHideBestSellerVideo] = useState(false);
+  const [reviews, setReviews] = useState({});
 
   const [brandDetails, setBrandDetails] = useState({
     headerImage: null,
@@ -107,6 +108,43 @@ function Theme1({ brandName }) {
     }
   };
 
+  const fetchReviews = async (productId) => {
+    if (!productId || reviews[productId]) return;
+
+    try {
+      const response = await fetch(
+        `https://api.malidag.com/get-reviews/${productId}`
+      );
+      const data = await response.json();
+
+      const reviewList = Array.isArray(data?.reviews) ? data.reviews : [];
+      const total = reviewList.reduce(
+        (sum, review) => sum + Number(review?.rating || 0),
+        0
+      );
+      const finalRating = reviewList.length > 0 ? total / reviewList.length : 0;
+
+      setReviews((prev) => ({
+        ...prev,
+        [productId]: {
+          rating: finalRating,
+          count: reviewList.length,
+          reviews: reviewList,
+        },
+      }));
+    } catch (error) {
+      console.error(`Error fetching reviews for product ${productId}`, error);
+      setReviews((prev) => ({
+        ...prev,
+        [productId]: {
+          rating: 0,
+          count: 0,
+          reviews: [],
+        },
+      }));
+    }
+  };
+
   useEffect(() => {
     const lang = i18n.language || "en";
 
@@ -122,6 +160,24 @@ function Theme1({ brandName }) {
       if (item?.itemId) fetchTranslation(item.itemId, lang);
     });
   }, [topItems, bestSeller, brandItems]);
+
+  useEffect(() => {
+    topItems.forEach((item) => {
+      if (item?.itemId) fetchReviews(item.itemId);
+    });
+  }, [topItems]);
+
+  useEffect(() => {
+    brandItems.forEach((item) => {
+      if (item?.itemId) fetchReviews(item.itemId);
+    });
+  }, [brandItems]);
+
+  useEffect(() => {
+    if (bestSeller?.itemId) {
+      fetchReviews(bestSeller.itemId);
+    }
+  }, [bestSeller]);
 
   useEffect(() => {
     const fetchBrandDetails = async () => {
@@ -415,10 +471,19 @@ function Theme1({ brandName }) {
     return swatches[color] || "#d1d5db";
   };
 
-  const renderStars = (rating) => {
+  const renderStars = (rating, item) => {
     const safeRating = Math.round(Number(rating) || 0);
+
     return (
-      <div className="th1-stars-container">
+      <div
+        className="th1-stars-container"
+        onClick={(e) => {
+          e.stopPropagation();
+          setItemData(item);
+          router.push("/reviewPage");
+        }}
+        style={{ cursor: "pointer" }}
+      >
         {Array.from({ length: 5 }, (_, i) => (
           <span
             key={i}
@@ -458,6 +523,11 @@ function Theme1({ brandName }) {
       item?.usdPrice,
       item?.originalPrice
     );
+
+    const productReview = reviews[item?.itemId] || {
+      rating: item?.rating || 0,
+      count: 0,
+    };
 
     return (
       <div key={item.id} className="th1-item-card">
@@ -532,7 +602,12 @@ function Theme1({ brandName }) {
             </div>
           )}
 
-          <div className="th1-item-rating">{renderStars(item?.rating || 0)}</div>
+          <div className="th1-item-rating">
+            {renderStars(productReview.rating, item)}
+            {productReview.count > 0 && (
+              <span className="th1-review-count">({productReview.count})</span>
+            )}
+          </div>
 
           <button
             type="button"
@@ -550,6 +625,11 @@ function Theme1({ brandName }) {
 
   const renderBestSellerCard = () => {
     if (!bestSeller || !shouldShowLargeBestSeller) return null;
+
+    const bestSellerReview = reviews[bestSeller?.itemId] || {
+      rating: bestSeller?.rating || 0,
+      count: 0,
+    };
 
     return (
       <div className="th1-best-seller-section">
@@ -630,7 +710,10 @@ function Theme1({ brandName }) {
             )}
 
             <div className="th1-item-rating">
-              {renderStars(bestSeller?.rating || 0)}
+              {renderStars(bestSellerReview.rating, bestSeller)}
+              {bestSellerReview.count > 0 && (
+                <span className="th1-review-count">({bestSellerReview.count})</span>
+              )}
             </div>
 
             <button

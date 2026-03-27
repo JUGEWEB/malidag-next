@@ -13,6 +13,7 @@ import {
 import { message } from "antd";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import "./AuthForm.css"
 
 const AuthForm = ({ auth, user }) => {
   const { t } = useTranslation();

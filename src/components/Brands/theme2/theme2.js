@@ -20,6 +20,7 @@ function Theme2({ brandName }) {
   const [brandItems, setBrandItems] = useState([]);
   const [departmentItemsLoading, setDepartmentItemsLoading] = useState(false);
   const [departmentItemsError, setDepartmentItemsError] = useState(null);
+  const [reviews, setReviews] = useState({});
 
   const [brandDetails, setBrandDetails] = useState({
     headerImage: null,
@@ -105,6 +106,43 @@ function Theme2({ brandName }) {
     }
   };
 
+  const fetchReviews = async (productId) => {
+    if (!productId || reviews[productId]) return;
+
+    try {
+      const response = await fetch(
+        `https://api.malidag.com/get-reviews/${productId}`
+      );
+      const data = await response.json();
+
+      const reviewList = Array.isArray(data?.reviews) ? data.reviews : [];
+      const total = reviewList.reduce(
+        (sum, review) => sum + Number(review?.rating || 0),
+        0
+      );
+      const finalRating = reviewList.length > 0 ? total / reviewList.length : 0;
+
+      setReviews((prev) => ({
+        ...prev,
+        [productId]: {
+          rating: finalRating,
+          count: reviewList.length,
+          reviews: reviewList,
+        },
+      }));
+    } catch (error) {
+      console.error(`Error fetching reviews for product ${productId}`, error);
+      setReviews((prev) => ({
+        ...prev,
+        [productId]: {
+          rating: 0,
+          count: 0,
+          reviews: [],
+        },
+      }));
+    }
+  };
+
   useEffect(() => {
     const lang = i18n.language || "en";
 
@@ -120,6 +158,24 @@ function Theme2({ brandName }) {
       fetchTranslation(bestSeller.itemId, lang);
     }
   }, [topItems, brandItems, bestSeller]);
+
+  useEffect(() => {
+    topItems.forEach((item) => {
+      if (item?.itemId) fetchReviews(item.itemId);
+    });
+  }, [topItems]);
+
+  useEffect(() => {
+    brandItems.forEach((item) => {
+      if (item?.itemId) fetchReviews(item.itemId);
+    });
+  }, [brandItems]);
+
+  useEffect(() => {
+    if (bestSeller?.itemId) {
+      fetchReviews(bestSeller.itemId);
+    }
+  }, [bestSeller]);
 
   useEffect(() => {
     const fetchBrandDetails = async () => {
@@ -339,11 +395,19 @@ function Theme2({ brandName }) {
     return swatches[color] || "#d1d5db";
   };
 
-  const renderStars = (rating) => {
+  const renderStars = (rating, item) => {
     const safeRating = Math.round(Number(rating) || 0);
 
     return (
-      <div className="th2-stars-container">
+      <div
+        className="th2-stars-container"
+        onClick={(e) => {
+          e.stopPropagation();
+          setItemData(item);
+          router.push("/reviewPage");
+        }}
+        style={{ cursor: "pointer" }}
+      >
         {Array.from({ length: 5 }, (_, i) => (
           <span
             key={i}
@@ -394,13 +458,16 @@ function Theme2({ brandName }) {
     );
 
     const videoUrl = item?.videos?.find(
-  (v) =>
-    typeof v === "string" &&
-    /\.(mp4|webm|ogg)$/i.test(v)
-);
+      (v) => typeof v === "string" && /\.(mp4|webm|ogg)$/i.test(v)
+    );
 
     const translatedName =
       getTranslatedName(item, item.itemId) || "Unnamed product";
+
+    const productReview = reviews[item?.itemId] || {
+      rating: item?.rating || 0,
+      count: 0,
+    };
 
     return (
       <div key={item.id} className="th2-item-card">
@@ -420,26 +487,26 @@ function Theme2({ brandName }) {
             </div>
           )}
 
-         {isBestSeller && videoUrl ? (
-  <video
-    src={videoUrl}
-    className="th2-item-image"
-    autoPlay
-    muted
-    loop
-    playsInline
-  />
-) : (
-  <img
-    src={displayImage}
-    alt={item?.name || "Product"}
-    className="th2-item-image"
-    onError={(e) => {
-      e.target.onerror = null;
-      e.target.src = "/fallback.png";
-    }}
-  />
-)}
+          {isBestSeller && videoUrl ? (
+            <video
+              src={videoUrl}
+              className="th2-item-image"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              src={displayImage}
+              alt={item?.name || "Product"}
+              className="th2-item-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/fallback.png";
+              }}
+            />
+          )}
         </div>
 
         <div
@@ -468,7 +535,12 @@ function Theme2({ brandName }) {
               : translatedName}
           </div>
 
-          <div className="th2-item-rating">{renderStars(item?.rating || 0)}</div>
+          <div className="th2-item-rating">
+            {renderStars(productReview.rating, item)}
+            {productReview.count > 0 && (
+              <span className="th2-review-count">({productReview.count})</span>
+            )}
+          </div>
 
           {colorOptions.length > 0 && (
             <div
@@ -515,7 +587,6 @@ function Theme2({ brandName }) {
     return (
       <section className="th2-section">
         <div className="th2-section-toolbar">
-
           <button
             type="button"
             className="th2-back-btn"

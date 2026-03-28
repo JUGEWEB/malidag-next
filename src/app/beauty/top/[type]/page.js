@@ -1,4 +1,3 @@
-// app/beauty/top/[type]/page.js
 import BeautyTopTopic from "@/components/beautyTopTopic";
 import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
@@ -6,7 +5,7 @@ import { headers } from "next/headers";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const { type } = params;
+  const { type } = await params;
 
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
@@ -61,8 +60,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default function Page({ params }) {
-  const { type } = params;
+export default async function Page({ params }) {
+  const { type } = await params;
 
   const url = `https://web.malidag.com/beauty/top/${encodeURIComponent(type)}`;
   const jsonLd = {

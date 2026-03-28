@@ -13,7 +13,7 @@ const personalCareThemes = [
     },
     {
       id: 3,
-      type: "Make-up",
+      type: "Makeup",
       url: "https://cdn.malidag.com/themes/1760454544841-fd7ff68f-6779-4777-8d11-d698005ced30.webp",
     },
     {

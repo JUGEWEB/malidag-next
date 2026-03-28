@@ -164,7 +164,7 @@ function CoinPage() {
     const fallback = item.name;
     const nameToShow = translated || fallback;
 
-    return nameToShow.length > 20 ? nameToShow.slice(0, 20) + "..." : nameToShow;
+    return nameToShow.length > 70 ? nameToShow.slice(0, 70) + "..." : nameToShow;
   };
 
   const getHotTranslatedName = (item, itemId) => {

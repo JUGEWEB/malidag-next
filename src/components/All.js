@@ -1,49 +1,94 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
-import { Button, Modal, Spin } from "antd";
-import { DownOutlined, UpOutlined, MenuOutlined } from "@ant-design/icons"; // Dropdown Icons
+import React, { useState, useEffect, useMemo } from "react";
+import { Button, Spin } from "antd";
+import { DownOutlined, UpOutlined, MenuOutlined } from "@ant-design/icons";
 import axios from "axios";
 import useScreenSize from "./useIsMobile";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
+import Modal from "react-modal";
 
 import "./All.css";
 
-const BASE_URL = "https://api.malidag.com"; // Update with your API URL
+const BASE_URL = "https://api.malidag.com";
+
+if (typeof window !== "undefined") {
+  Modal.setAppElement("body");
+}
+
+const normalizeItems = (data) => {
+  const items =
+    Array.isArray(data)
+      ? data
+      : Array.isArray(data?.items)
+      ? data.items
+      : [];
+
+  return items.reduce((acc, item) => {
+    if (
+      !item ||
+      !item.category ||
+      !item.item ||
+      !item.item.type ||
+      !Array.isArray(item.item.images)
+    ) {
+      return acc;
+    }
+
+    const categoryKey = item.category.toLowerCase().trim();
+    const typeKey = item.item.type.toLowerCase().trim();
+
+    if (!acc[categoryKey]) acc[categoryKey] = {};
+    if (!acc[categoryKey][typeKey]) acc[categoryKey][typeKey] = [];
+
+    acc[categoryKey][typeKey].push(item);
+
+    return acc;
+  }, {});
+};
 
 const All = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [modalData, setModalData] = useState(null);
-  const [imageIndexes, setImageIndexes] = useState({}); // Track current image index per type
-  const [expandedCategories, setExpandedCategories] = useState({}); // Track expanded categories
- const router = useRouter();
-  const {isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall} = useScreenSize()
+  const [imageIndexes, setImageIndexes] = useState({});
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const router = useRouter();
+  const { isDesktop, isTablet } = useScreenSize();
   const { t } = useTranslation();
 
-  // ✅ Fetch and organize data by category and type
-  const fetchModalData = async () => {
-    setIsModalVisible(true);
+  const openModal = async () => {
+    setIsModalOpen(true);
+
+    if (modalData) return;
+
     setIsLoading(true);
+
     try {
-      const response = await axios.get(`${BASE_URL}/items`);
-      const groupedData = response.data.items.reduce((acc, item) => {
-        if (!item || !item.category || !item.item || !item.item.type || !item.item.images) {
-          console.warn("Skipping invalid item:", item);
-          return acc;
-        }
-
-        if (!acc[item.category]) acc[item.category] = {};
-        const typeKey = item.item.type.toLowerCase();
-        if (!acc[item.category][typeKey]) acc[item.category][typeKey] = [];
-        acc[item.category][typeKey].push(item);
-
-        return acc;
-      }, {});
+      const { data } = await axios.get(`${BASE_URL}/items`);
+      const groupedData = normalizeItems(data);
 
       setModalData(groupedData);
+
+      // ✅ Open all categories by default
+      const allExpanded = {};
+      Object.keys(groupedData).forEach((category) => {
+        allExpanded[category] = true;
+      });
+      setExpandedCategories(allExpanded);
+
+      // ✅ Initialize slideshow indexes
+      const initialIndexes = {};
+      Object.keys(groupedData).forEach((category) => {
+        Object.keys(groupedData[category]).forEach((type) => {
+          initialIndexes[type] = 0;
+        });
+      });
+
+      setImageIndexes(initialIndexes);
     } catch (error) {
       console.error("Error fetching modal data:", error);
     } finally {
@@ -51,153 +96,148 @@ const All = () => {
     }
   };
 
-  // ✅ Close Modal
-  const closeModal = () => setIsModalVisible(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setExpandedCategories({});
+  };
 
-   // ✅ Toggle Category Expansion
-   const toggleCategory = (category) => {
+  const toggleCategory = (category) => {
     setExpandedCategories((prev) => ({
       ...prev,
       [category]: !prev[category],
     }));
   };
 
-  // ✅ Image Slideshow Logic (Each Type)
   useEffect(() => {
     if (!modalData) return;
 
     const interval = setInterval(() => {
-      setImageIndexes((prevIndexes) => {
-        const newIndexes = { ...prevIndexes };
+      setImageIndexes((prev) => {
+        const updated = { ...prev };
 
-        Object.keys(modalData).forEach((category) => {
-          Object.keys(modalData[category]).forEach((type) => {
-            const totalItems = modalData[category][type]?.length || 0;
-            if (totalItems > 1) {
-              newIndexes[type] = (newIndexes[type] + 1) % totalItems || 0;
+        Object.entries(modalData).forEach(([, types]) => {
+          Object.entries(types).forEach(([type, items]) => {
+            const total = items.length;
+            if (total > 1) {
+              const current = updated[type] ?? 0;
+              updated[type] = (current + 1) % total;
             }
           });
         });
 
-        return newIndexes;
+        return updated;
       });
-    }, 5000); // Change every 3 seconds
+    }, 5000);
 
-    return () => clearInterval(interval); // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, [modalData]);
 
-  // ✅ Handle UI rerender or refetch when language changes
-useEffect(() => {
-  console.log("Language changed:", i18n.language);
-  // fetchModalData(); // only if backend supports translations
-}, [i18n.language]);
+  const categories = useMemo(() => {
+    return modalData ? Object.keys(modalData) : [];
+  }, [modalData]);
+
+  useEffect(() => {
+    console.log("Language changed:", i18n.language);
+  }, [i18n.language]);
 
   return (
-    <>
-     {(isDesktop || isTablet) ? (
-  // Show "All" for desktop & tablet
-  <div
-    onClick={fetchModalData}
-    style={{
-      cursor: "pointer",
-      fontWeight: "bold",
-      padding: "20px",
-      color: "white"
-    }}
-  >
-     {t("all_label")}
-  </div>
-) : (
-  // Show Hamburger icon for mobile and smaller
-  <Button
-    type="text"
-    icon={<MenuOutlined style={{ fontSize: "20px", color: "white" }} />}
-    onClick={fetchModalData}
-    style={{
-      padding: "0 5px",
-      background: "transparent",
-      border: "none",
-    }}
-  />
-)}
+    <div className="all-wrapper">
+      {(isDesktop || isTablet) ? (
+        <div onClick={openModal} className="all-trigger">
+          {t("all_label")}
+        </div>
+      ) : (
+        <Button
+          type="text"
+          icon={<MenuOutlined style={{ fontSize: "20px", color: "white" }} />}
+          onClick={openModal}
+          className="all-trigger-button"
+        />
+      )}
 
-      {/* ✅ Modal */}
-     {/* ✅ Modal */}
-     <Modal
-        title={<span style={{ fontSize: "24px", fontWeight: "bold" }}>{t("menu_title")}</span>}
-        style={{ position: "absolute", top: "0", height: "400px", borderRadius: "0", fontWeight: "bold" }}
-        open={isModalVisible}
-        onCancel={closeModal}
-        footer={null}
-        styles={{ body: { height: "85vh", overflowY: "auto" } }} // ✅ FIXED
-        className="custom-modal"
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        closeTimeoutMS={200}
+        shouldCloseOnOverlayClick={true}
+        shouldCloseOnEsc={true}
+        className="menu-modal"
+        overlayClassName="menu-modal-overlay"
       >
-        {isLoading ? (
-          <Spin size="large" />
-        ) : (
-          modalData && (
-            <div className="modal-content">
-              {Object.keys(modalData).map((category) => (
-                <div key={category} className="category-container">
-                  {/* Category Header with Dropdown Button */}
-                  <div
-                    className="category-header"
-                    onClick={() => toggleCategory(category)}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      cursor: "pointer",
-                      padding: "5px",
-                      background: "white",
-                      borderRadius: "5px",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    <span>{t(category.toLowerCase())}</span>
-                    {expandedCategories[category] ? <UpOutlined /> : <DownOutlined />}
-                  </div>
+        <div className="menu-modal-header">
+          <span className="menu-modal-title">{t("menu")}</span>
+          <button
+            className="menu-modal-close"
+            onClick={closeModal}
+            type="button"
+          >
+            ×
+          </button>
+        </div>
 
-                  {/* Types (Show Only if Expanded) */}
-                  {expandedCategories[category] && (
-                    <div className="category-content" style={{ paddingLeft: "15px" }}>
-                      {Object.keys(modalData[category]).map((type) => {
-                        const items = modalData[category][type] || [];
-                        const currentIndex = imageIndexes[type] || 0;
-                        const currentItem = items[currentIndex];
-
-                        return (
-                          <div key={type} className="type-container">
-                            {/* Type Header */}
-                            <div className="type-header" onClick={() => router.push(`/itemOfItems/${type.toLowerCase()}`)} style={{ fontWeight: "bold", marginBottom: "5px" }}>
-                              {t(type.toLowerCase())}
-                            </div>
-
-                            {/* Image Slideshow */}
-                            {currentItem && currentItem.item.images && currentItem.item.images.length > 0 ? (
-                              <div className="type-image">
-                                <img
-                                  src={currentItem.item.images[0]}
-                                  alt={type}
-                                  style={{ width: "100%", height: "auto", borderRadius: "8px" }}
-                                  onClick={() => router.push(`/itemOfItems/${type.toLowerCase()}`)}
-                                />
-                              </div>
-                            ) : (
-                              <p>{t("no_image")}</p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
+        <div className="menu-modal-body">
+          {isLoading ? (
+            <div className="panel-loader">
+              <Spin size="large" />
             </div>
-          )
-        )}
+          ) : (
+            modalData && (
+              <div className="modal-content">
+                {categories.map((category) => (
+                  <div key={category} className="category-container">
+                    <div
+                      className="category-header"
+                      onClick={() => toggleCategory(category)}
+                    >
+                      <span>{t(category)}</span>
+                      {expandedCategories[category] ? (
+                        <UpOutlined />
+                      ) : (
+                        <DownOutlined />
+                      )}
+                    </div>
+
+                    {expandedCategories[category] && (
+                      <div className="category-content">
+                        {Object.entries(modalData[category]).map(([type, items]) => {
+                          const currentIndex = imageIndexes[type] ?? 0;
+                          const currentItem = items[currentIndex];
+
+                          return (
+                            <div key={type} className="type-container">
+                              <div
+                                className="type-header"
+                                onClick={() => router.push(`/itemOfItems/${type}`)}
+                              >
+                                {t(type)}
+                              </div>
+
+                              {currentItem?.item?.images?.length > 0 ? (
+                                <div
+                                  className="type-image"
+                                  onClick={() => router.push(`/itemOfItems/${type}`)}
+                                >
+                                  <img
+                                    src={currentItem.item.images[0]}
+                                    alt={type}
+                                  />
+                                </div>
+                              ) : (
+                                <p className="no-image-text">{t("no_image")}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+        </div>
       </Modal>
-    </>
+    </div>
   );
 };
 

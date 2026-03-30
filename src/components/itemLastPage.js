@@ -81,6 +81,7 @@ function ProductDetails({ basketItems, country }) {
   const [selectedImageNumber, setSelectedImageNumber] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [item, setItem] = useState(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const {
     isMobile,
@@ -645,20 +646,29 @@ function ProductDetails({ basketItems, country }) {
     );
   };
 
-  const handleBuyNowClick = (itemId) => {
-    if (!chainId) {
-      messageApi.warning(t("wallet_not_connected_warning"));
-      return;
-    }
+  const handlePaymentOptionSelect = (method) => {
+  if (method === "crypto" && !chainId) {
+    messageApi.warning("Connect your wallet first");
+    return;
+  }
 
-    setCheckoutData({ isFromBasket: false });
+  setCheckoutData({
+    isFromBasket: false,
+    paymentMethod: method,
+  });
 
-    router.push(
-      `/checkout?itemId=${itemId}&quantity=${quantity}&selectedColor=${selectedColor}&selectedSize=${selectedSize}&tokenAmount=${
-        product.usdPrice * quantity
-      }&basket=false`
-    );
-  };
+  router.push(
+    `/checkout?itemId=${itemsd}&quantity=${quantity}&selectedColor=${selectedColor}&selectedSize=${selectedSize}&tokenAmount=${
+      product.usdPrice * quantity
+    }&basket=false&paymentMethod=${method}`
+  );
+
+  setPaymentModalOpen(false);
+};
+
+ const handleBuyNowClick = () => {
+  setPaymentModalOpen(true);
+};
 
   const handleQuantityChange = (amount) => {
     setQuantity((prev) => Math.max(1, prev + amount));
@@ -847,6 +857,55 @@ function ProductDetails({ basketItems, country }) {
             selectedImageForZoom={selectedImage}
           />
         )}
+
+        {paymentModalOpen && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 9999,
+    }}
+    onClick={() => setPaymentModalOpen(false)}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        background: "#fff",
+        padding: "24px",
+        borderRadius: "12px",
+        minWidth: "320px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+      }}
+    >
+      <h3 style={{ margin: 0 }}>Choose payment method</h3>
+
+      <button onClick={() => handlePaymentOptionSelect("card")}>
+        Pay with Card
+      </button>
+
+      <button onClick={() => handlePaymentOptionSelect("paypal")}>
+        PayPal
+      </button>
+
+      <button onClick={() => handlePaymentOptionSelect("crypto")}>
+        Crypto
+      </button>
+
+      <button onClick={() => setPaymentModalOpen(false)}>
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );

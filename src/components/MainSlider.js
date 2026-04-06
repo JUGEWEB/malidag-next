@@ -33,7 +33,7 @@ const MainSlider = ({ user }) => {
 
   const slides = useMemo(
     () => [
-      {
+      /*{
         id: '1',
         url: 'https://cdn.malidag.com/public/header/4/Untitled%20video%20-%20Made%20with%20Clipchamp%20(13).webm',
         type: '#000000ff',
@@ -54,9 +54,20 @@ const MainSlider = ({ user }) => {
         headerText: 'Snow Boots Winter Plush Warm Ankle...',
         paragText: 'Get it now',
         buttonText: 'Buy now',
+      },*/
+
+       {
+        id: '1',
+        url: 'https://cdn.malidag.com/themes/1775517425727-e79e4283-6b2a-4a70-a6ba-271053176df0.webp',
+        type: '#024163',
+        content: 'image',
+        textPosition: 'center',
+        headerText: 'Jack & Jones',
+        paragText: 'Elevate your style this season ✨',
+        buttonText: 'Explore Brand',
       },
       {
-        id: '5',
+        id: '2',
         url: 'https://cdn.malidag.com/public/header/3/malidag-all-header.webp',
         type: '#024163',
         content: 'image',
@@ -70,9 +81,9 @@ const MainSlider = ({ user }) => {
 
   const routeMap = useMemo(
     () => ({
-      '1': '/brand/theme1/finetoo',
-      '2': '/product/9e0da5b9-f4b3-42d0-8024-211ea47d0abd',
-      '5': '/save-big',
+      '1': '/brand/theme1/jack&jones',
+     // '2': '/product/9e0da5b9-f4b3-42d0-8024-211ea47d0abd',
+      '2': '/save-big',
     }),
     []
   );

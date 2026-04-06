@@ -75,6 +75,7 @@ const BuyNow = ({
   const [item, setItem] = useState(null);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [gasLoading, setGasLoading] = useState(false);
   const [trustInfoVisible, setTrustInfoVisible] = useState(true);
   const [quantity, setQuantity] = useState(urlQuantity);
   const [tokenAmount, setTokenAmount] = useState(urlTokenAmount);
@@ -88,7 +89,7 @@ const BuyNow = ({
   const [brand, setBrand] = useState(null);
   const [selectedDeliveryInfo, setSelectedDeliveryInfo] = useState(null);
   const [translations, setTranslations] = useState({});
-
+  const [nativeBalance, setNativeBalance] = useState(null);
   const checkoutData = useCheckoutStore((state) => state.checkoutData);
   const setCheckoutData = useCheckoutStore((state) => state.setCheckoutData);
 
@@ -122,6 +123,41 @@ const BuyNow = ({
       console.error(`Error fetching translation for ${productId}`, error);
     }
   };
+
+  const fetchNativeBalance = async (walletAddress, currentChainId) => {
+  try {
+    const response = await fetch(
+      `https://api.malidag.com/balance?address=${walletAddress}&chainId=${currentChainId}`
+    );
+    const data = await response.json();
+    return data.balance;
+  } catch (error) {
+    console.error("Error fetching native balance:", error);
+    return null;
+  }
+};
+
+useEffect(() => {
+  const loadNativeBalance = async () => {
+    if (!address || !chainId) return;
+
+    const balance = await fetchNativeBalance(address, chainId);
+    setNativeBalance(balance);
+  };
+
+  loadNativeBalance();
+}, [address, chainId]);
+
+const hasEnoughGasFee = () => {
+  if (!gasFee) return true;
+  if (nativeBalance === null || nativeBalance === undefined) return true;
+
+  const native = parseFloat(nativeBalance);
+  const needed = parseFloat(gasFee);
+  const buffer = 0.00001;
+
+  return native >= needed + buffer;
+};
 
   useEffect(() => {
     if (urlBasket === "false") {
@@ -279,36 +315,39 @@ const BuyNow = ({
   }, [product, quantity, checkoutData, urlBasket, urlItemId]);
 
   const estimateGas = async () => {
-    setError(null);
+  setError(null);
+  setGasLoading(true);
 
-    try {
-      if (!selectedCurrency || !tokenAmount || tokenAmount <= 0) {
-        setError(t("invalid_token_or_amount"));
-        return;
-      }
-
-      const txData = {
-        chainId: Number(chainId),
-        from: address,
-        to: "0xC702A2E4848466346c7cA61Ef5CC77C0cCBA2261",
-        value: tokenAmount,
-        currency: selectedCurrency,
-      };
-
-      const response = await axios.post("https://api.malidag.com/estimate-gas", txData);
-
-      if (response.data.estimatedGas) {
-        const gasLimitWithBuffer = Math.ceil(response.data.estimatedGas * 1.2);
-        setEstimatedGas(gasLimitWithBuffer);
-        setGasFee(response.data.gasFee);
-      } else {
-        throw new Error(t("gas_estimation_failed"));
-      }
-    } catch (err) {
-      console.error("Gas Estimation Error:", err);
-      setError(err.response?.data?.error || t("error_estimating_gas"));
+  try {
+    if (!selectedCurrency || !tokenAmount || tokenAmount <= 0) {
+      setError(t("invalid_token_or_amount"));
+      return;
     }
-  };
+
+    const txData = {
+      chainId: Number(chainId),
+      from: address,
+      to: "0xC702A2E4848466346c7cA61Ef5CC77C0cCBA2261",
+      value: tokenAmount,
+      currency: selectedCurrency,
+    };
+
+    const response = await axios.post("https://api.malidag.com/estimate-gas", txData);
+
+    if (response.data.estimatedGas) {
+      const gasLimitWithBuffer = Math.ceil(response.data.estimatedGas * 1.2);
+      setEstimatedGas(gasLimitWithBuffer);
+      setGasFee(response.data.gasFee);
+    } else {
+      throw new Error(t("gas_estimation_failed"));
+    }
+  } catch (err) {
+    console.error("Gas Estimation Error:", err);
+    setError(err.response?.data?.error || t("error_estimating_gas"));
+  } finally {
+    setGasLoading(false);
+  }
+};
 
   useEffect(() => {
     if (tokenAmount && selectedCurrency && address) {
@@ -319,10 +358,14 @@ const BuyNow = ({
   const isInsufficientBalance = (usdPrice, selectedCrypto) => {
     const userToken = tokenBalances.find((token) => token.symbol === selectedCrypto);
     const userBalance = userToken ? parseFloat(userToken.balance || "0") : 0;
-    const requiredAmount = parseFloat(Number(usdPrice || 0).toFixed(2));
+   const requiredAmount = parseFloat(Number(usdPrice || 0).toString());
 
     return userBalance < requiredAmount;
   };
+
+    const hasEnoughTokenBalance = !isInsufficientBalance(tokenAmount, selectedCurrency);
+    const hasEnoughNativeGas = hasEnoughGasFee();
+    const cannotBuy = !hasEnoughTokenBalance || !hasEnoughNativeGas;
 
   const handleBuyNow = async () => {
     if (!selectedDeliveryInfo || Object.keys(selectedDeliveryInfo).length === 0) {
@@ -341,7 +384,7 @@ const BuyNow = ({
     }
 
     const tokenSymbol = selectedCurrency;
-    const requiredCryptoAmount = Number(tokenAmount).toFixed(2);
+    const requiredCryptoAmount = Number(tokenAmount).toString();
 
     let items = [];
 
@@ -378,6 +421,11 @@ const BuyNow = ({
       message.error(t("insufficient_balance", { token: tokenSymbol }));
       return;
     }
+
+    if (!hasEnoughGasFee()) {
+  message.error(`Not enough ${chain?.nativeCurrency?.symbol || "native token"} for gas`);
+  return;
+}
 
     try {
       message.loading(t("processing_transaction"), 0);
@@ -573,11 +621,17 @@ const BuyNow = ({
                   }}
                 >
                   <p className="voyeur">
-                    {t("total_price_usd", { price: Number(tokenAmount || 0).toFixed(2) })}
+                    {t("total_price_usd", { price:Number(tokenAmount || 0).toLocaleString(undefined, {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 6,
+}) })}
                   </p>
                   {"\u2248"}
                   <p>
-                    {Number(tokenAmount || 0).toFixed(2)} {selectedCurrency}
+                   {Number(tokenAmount || 0).toLocaleString(undefined, {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 6,
+                    })} {selectedCurrency}
                   </p>
                 </div>
 
@@ -684,21 +738,21 @@ const BuyNow = ({
             )}
           </div>
 
-          <div>
-            <h3>{t("network_gas_fee_estimate")}</h3>
-            {loading ? (
-              <p>{t("estimating_gas")}</p>
-            ) : error ? (
-              <p style={{ color: "red" }}>{t("gas_fee_error", { error })}</p>
-            ) : estimatedGas && gasFee ? (
-              <>
-                <p>{t("estimated_gas_units", { units: estimatedGas })}</p>
-                <p>{t("gas_fee_amount", { fee: gasFee, symbol: chain?.nativeCurrency?.symbol || "" })}</p>
-              </>
-            ) : (
-              <p>{t("no_gas_fee_data")}</p>
-            )}
-          </div>
+         <div>
+          <h3>{t("network_gas_fee_estimate")}</h3>
+          {gasLoading ? (
+            <p>{t("estimating_gas")}</p>
+          ) : error ? (
+            <p style={{ color: "red" }}>{t("gas_fee_error", { error })}</p>
+          ) : estimatedGas && gasFee ? (
+            <>
+              <p>{t("estimated_gas_units", { units: estimatedGas })}</p>
+              <p>{t("gas_fee_amount", { fee: gasFee, symbol: chain?.nativeCurrency?.symbol || "" })}</p>
+            </>
+          ) : (
+            <p>{t("no_gas_fee_data")}</p>
+          )}
+        </div>
 
           {isInsufficientBalance(tokenAmount, selectedCurrency) ? (
             <p className="error-text">
@@ -710,7 +764,10 @@ const BuyNow = ({
               })}
               <br />
               {t("required_amount", {
-                requiredAmount: Number(tokenAmount || 0).toFixed(2),
+                requiredAmount:Number(tokenAmount || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 6,
+                  }),
                 currency: selectedCurrency,
               })}
             </p>
@@ -724,7 +781,10 @@ const BuyNow = ({
               })}
               <br />
               {t("item_price", {
-                requiredAmount: Number(tokenAmount || 0).toFixed(2),
+                requiredAmount:Number(tokenAmount || 0).toLocaleString(undefined, {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 6,
+                }),
                 currency: selectedCurrency,
               })}
               <br />
@@ -732,10 +792,30 @@ const BuyNow = ({
             </p>
           )}
 
+          {!hasEnoughGasFee() && (
+            <p className="error-text">
+              ⚠️ Not enough {chain?.nativeCurrency?.symbol || "native token"} for gas.
+              <br />
+              Your gas balance: {nativeBalance || "0"} {chain?.nativeCurrency?.symbol || ""}
+              <br />
+              Required gas fee: {gasFee || "0"} {chain?.nativeCurrency?.symbol || ""}
+            </p>
+          )}
+
+          {hasEnoughGasFee() && gasFee && nativeBalance !== null && (
+          <p className="success-text">
+            You have enough {chain?.nativeCurrency?.symbol || "native token"} for gas.
+            <br />
+            Your gas balance: {nativeBalance} {chain?.nativeCurrency?.symbol || ""}
+            <br />
+            Required gas fee: {gasFee} {chain?.nativeCurrency?.symbol || ""}
+          </p>
+        )}
+
           <Button
             className="buy-now-btn"
             onClick={handleBuyNow}
-            disabled={isInsufficientBalance(tokenAmount, selectedCurrency)}
+           disabled={cannotBuy}
           >
             {t("buy_now_button")}
           </Button>

@@ -58,12 +58,12 @@ const MainSlider = ({ user }) => {
 
        {
         id: '1',
-        url: 'https://cdn.malidag.com/themes/1775517425727-e79e4283-6b2a-4a70-a6ba-271053176df0.webp',
-        type: '#024163',
+        url: 'https://cdn.malidag.com/themes/1775519689314-b9c85daf-7c62-4ba1-8078-c775bb83dc1b.webp',
+        type: '#ff9a00',
         content: 'image',
-        textPosition: 'center',
-        headerText: 'Jack & Jones',
-        paragText: 'Elevate your style this season ✨',
+         textPosition: 'right',
+         headline: 'Jack & Jones',
+         sub: 'Elevate your style this season ✨',
         buttonText: 'Explore Brand',
       },
       {
@@ -81,7 +81,7 @@ const MainSlider = ({ user }) => {
 
   const routeMap = useMemo(
     () => ({
-      '1': '/brand/theme1/jack&jones',
+      '1': '/brand/theme1/jackjones',
      // '2': '/product/9e0da5b9-f4b3-42d0-8024-211ea47d0abd',
       '2': '/save-big',
     }),

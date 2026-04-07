@@ -20,7 +20,7 @@ function FashionForAll({
   viewMoreLabel = 'View more',
   sectionRoute = '/fashionPage',
   productRouteBase = '/product',
-  category = 'shoes',
+  category = 'clothes',
   showHeader = true,
   showViewMore = true,
 }) {
@@ -104,7 +104,7 @@ function FashionForAll({
       setIsFetchingFreshData(true);
       setHasError(false);
 
-      const response = await fetch(`${BASE_URL}/items/category/${category}`, {
+      const response = await fetch(`https://api.malidag.com/items/category/clothes`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -117,7 +117,10 @@ function FashionForAll({
       }
 
       const data = await response.json();
+console.log('raw data:', data);
+console.log('raw data.items:', data?.items);
       const fashionItems = (data?.items || data || []).slice(0, MAX_ITEMS);
+      console.log('Fetched fashion items:', fashionItems);
 
       if (!Array.isArray(fashionItems)) {
         throw new Error('Invalid items response format');

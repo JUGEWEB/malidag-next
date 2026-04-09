@@ -24,7 +24,7 @@ import { usePathname } from 'next/navigation';
 
 
 
-function MalidagHeader({ user, isConnected, connect, address, disconnect, pendingConnector, country, allCountries, basketItems  }) {
+function MalidagHeader({ user, isConnected, connect, address, disconnect, pendingConnector, country, allCountries, basketItems, setCountry  }) {
 
   const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
    const router = useRouter();
@@ -171,7 +171,7 @@ function MalidagHeader({ user, isConnected, connect, address, disconnect, pendin
       </div>
 
        {(isTablet || isDesktop) && (
-  <Location country={country} allCountries={allCountries} />
+  <Location country={country} allCountries={allCountries} setCountry={setCountry} />
 )}
 
       <div style={{width: "100%", marginRight: "5px"}}>

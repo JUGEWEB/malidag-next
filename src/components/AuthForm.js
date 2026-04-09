@@ -11,9 +11,9 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { message } from "antd";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import "./AuthForm.css"
+import "./AuthForm.css";
 
 const AuthForm = ({ auth, user }) => {
   const { t } = useTranslation();
@@ -21,6 +21,8 @@ const AuthForm = ({ auth, user }) => {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
   const { isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall } = useScreenSize();
   const [emailSent, setEmailSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +38,8 @@ const AuthForm = ({ auth, user }) => {
   }, []);
 
   useEffect(() => {
-    if (user) router.push("/");
-  }, [user]);
+    if (user) router.push(redirectTo);
+  }, [user, router, redirectTo]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -58,7 +60,7 @@ const AuthForm = ({ auth, user }) => {
         }
 
         messageApi.success(t("login_success"));
-        router.push("/");
+        router.push(redirectTo);
       }
     } catch (error) {
       console.error("Auth error:", error.message);
@@ -89,7 +91,7 @@ const AuthForm = ({ auth, user }) => {
         return;
       }
       messageApi.success(t("google_signin_success"));
-      router.push("/");
+      router.push(redirectTo);
     } catch (error) {
       console.error("Google sign-in error:", error.message);
       messageApi.error(error.message);
@@ -117,6 +119,8 @@ const AuthForm = ({ auth, user }) => {
 
   return (
     <div className="auth-form">
+      {contextHolder}
+
       {isSignUp && (
         <p style={{ color: "#222", marginTop: "10px" }}>
           {t("confirm_email_note")}

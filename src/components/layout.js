@@ -21,14 +21,52 @@ const REQUIRED_CACHE_KEYS = [
   "recommendedItems_first20",
 ];
 
+const SUPPORTED_COUNTRIES = [
+  {
+    name: "United States",
+    code: "us",
+    flag: "https://flagcdn.com/w320/us.png",
+  },
+  {
+    name: "United Kingdom",
+    code: "gb",
+    flag: "https://flagcdn.com/w320/gb.png",
+  },
+  {
+    name: "France",
+    code: "fr",
+    flag: "https://flagcdn.com/w320/fr.png",
+  },
+  {
+    name: "Germany",
+    code: "de",
+    flag: "https://flagcdn.com/w320/de.png",
+  },
+  {
+    name: "Ireland",
+    code: "ie",
+    flag: "https://flagcdn.com/w320/ie.png",
+  },
+  {
+    name: "Australia",
+    code: "au",
+    flag: "https://flagcdn.com/w320/au.png",
+  },
+  {
+  name: "Belgium",
+  code: "be",
+  flag: "https://flagcdn.com/w320/be.png",
+},
+];
+
 export default function MainLayout({ children, lang }) {
   const [user, setUser] = useState(null);
   const [basketItems, setBasketItems] = useState([]);
-  const [allCountries, setAllCountries] = useState([]);
+  const [allCountries] = useState(SUPPORTED_COUNTRIES);
   const [languageReady, setLanguageReady] = useState(false);
   const [appReady, setAppReady] = useState(false);
   const [bootProduct, setBootProduct] = useState(null);
-
+const [country, setCountry] = useState(null);
   const { address, isConnected, chain } = useAccount();
   const { connectors, connect, pendingConnector } = useConnect();
   const { disconnect } = useDisconnect();
@@ -50,22 +88,52 @@ export default function MainLayout({ children, lang }) {
     initLanguage();
   }, [lang]);
 
+
   useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        const res = await axios.get("https://restcountries.com/v3.1/all?fields=name,cca2,flags");
-        const countries = res.data.map((c) => ({
-          name: c.name.common,
-          code: c.cca2.toLowerCase(),
-          flag: c.flags?.png || c.flags?.svg || "",
-        }));
-        setAllCountries(countries.sort((a, b) => a.name.localeCompare(b.name)));
-      } catch (err) {
-        console.error("Countries list fetch failed", err);
+  const detectCountry = async () => {
+    try {
+      const savedCountry = localStorage.getItem("selectedCountry");
+      if (savedCountry) {
+        setCountry(JSON.parse(savedCountry));
+        return;
       }
-    };
-    fetchCountries();
-  }, []);
+
+      const res = await axios.get("https://ipapi.co/json/");
+      const detectedCode = res.data?.country_code?.toLowerCase();
+      const detectedName = res.data?.country_name;
+
+      if (detectedCode && detectedName) {
+        const detectedCountry = {
+          name: detectedName,
+          code: detectedCode,
+          flag: `https://flagcdn.com/w320/${detectedCode}.png`,
+        };
+
+        setCountry(detectedCountry);
+        localStorage.setItem("selectedCountry", JSON.stringify(detectedCountry));
+      }
+    } catch (err) {
+      console.error("Country detection failed", err);
+
+      const fallbackCountry = {
+        name: "United States",
+        code: "us",
+        flag: "https://flagcdn.com/w320/us.png",
+      };
+
+      setCountry(fallbackCountry);
+      localStorage.setItem("selectedCountry", JSON.stringify(fallbackCountry));
+    }
+  };
+
+  detectCountry();
+}, []);
+
+useEffect(() => {
+  if (country) {
+    localStorage.setItem("selectedCountry", JSON.stringify(country));
+  }
+}, [country]);
 
   useEffect(() => {
     const fetchBasketItems = async () => {
@@ -214,6 +282,8 @@ export default function MainLayout({ children, lang }) {
             chainId: chain?.id || null,
             pendingConnector,
             allCountries,
+            country,
+            setCountry,
             chain,
           }}
         >
@@ -228,6 +298,8 @@ export default function MainLayout({ children, lang }) {
               isConnected,
               pendingConnector,
               allCountries,
+              country,
+              setCountry,
             }}
           />
           <main>{children}</main>

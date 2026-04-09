@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef,  useContext } from "react";
+import { AppContext } from "./appContext";
 import dynamic from "next/dynamic";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import axios from "axios";
@@ -32,7 +33,6 @@ const Slider = dynamic(() => import("react-slick").then((m) => m.default), {
 
 const BASKET_API = "https://api.malidag.com/add-to-basket";
 const BASE_URL = "https://api.malidag.com";
-const PRICE_API = "https://api.malidag.com/crypto-prices";
 const LIKED_API = "https://api.malidag.com";
 
 const coinImages = {
@@ -44,8 +44,9 @@ const coinImages = {
   USDT: "https://assets.coingecko.com/coins/images/325/large/Tether-logo.png?1598003707",
 };
 
-function ProductDetails({ basketItems, country }) {
+function ProductDetails({ basketItems }) {
   const { address, isConnected, chain } = useAccount();
+  const { country } = useContext(AppContext);
   const chainId = chain?.id;
 
   const [reviewCount, setReviewCount] = useState(0);
@@ -55,10 +56,10 @@ function ProductDetails({ basketItems, country }) {
   const router = useRouter();
 
   const [product, setProduct] = useState(null);
+  const [details, setDetails] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [cryptoPrices, setCryptoPrices] = useState({});
   const [itemsd, setItemId] = useState(null);
   const [selectedRating, setSelectedRating] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -303,6 +304,7 @@ function ProductDetails({ basketItems, country }) {
         const initialColor = Object.keys(foundProduct.item.imagesVariants)[0];
         setItemId(foundProduct.itemId);
         setProduct(foundProduct.item);
+        setDetails(foundProduct.details);
 
         const userLang = i18n.language || "en";
         setSelectedColor(initialColor);
@@ -323,21 +325,6 @@ function ProductDetails({ basketItems, country }) {
     fetchAllProducts();
   }, [id]);
 
-  useEffect(() => {
-    const fetchCryptoPrices = async () => {
-      try {
-        const response = await axios.get(PRICE_API);
-        setCryptoPrices(response.data);
-      } catch (error) {
-        console.error("Error fetching crypto prices:", error);
-      }
-    };
-
-    fetchCryptoPrices();
-
-    const interval = setInterval(fetchCryptoPrices, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (navigateToReview && ratingToPass !== null) {
@@ -360,12 +347,16 @@ function ProductDetails({ basketItems, country }) {
     setRatingFilter,
   ]);
 
-  const convertToCrypto = (usdAmount, cryptoType) => {
-    if (cryptoPrices[cryptoType]) {
-      return (usdAmount / cryptoPrices[cryptoType]).toFixed(6);
-    }
-    return t("loading");
-  };
+ const convertToCrypto = (usdAmount, cryptoType) => {
+  // Stablecoins = 1:1
+  const stableCoins = ["USDT", "USDC", "BUSD"];
+
+  if (stableCoins.includes(cryptoType)) {
+    return usdAmount.toFixed(2);
+  }
+
+  return usdAmount.toFixed(2); // fallback (or remove non-stable support entirely)
+};
 
   const handleColorChange = (color) => {
     setSelectedColor(color);
@@ -743,7 +734,6 @@ function ProductDetails({ basketItems, country }) {
             validVideos={validVideos}
             Slider={Slider}
             videoSliderSettings={videoSliderSettings}
-            cryptoPrices={cryptoPrices}
             convertToCrypto={convertToCrypto}
             coinImages={coinImages}
             getNetworkName={getNetworkName}
@@ -755,6 +745,8 @@ function ProductDetails({ basketItems, country }) {
             handleBuyNowClick={handleBuyNowClick}
             handleAddToBasket={handleAddToBasket}
             handleLikeItem={handleLikeItem}
+            details={details}
+            country={country}
           />
         )}
 
@@ -785,7 +777,6 @@ function ProductDetails({ basketItems, country }) {
             validVideos={validVideos}
             Slider={Slider}
             videoSliderSettings={videoSliderSettings}
-            cryptoPrices={cryptoPrices}
             convertToCrypto={convertToCrypto}
             coinImages={coinImages}
             getNetworkName={getNetworkName}
@@ -803,6 +794,8 @@ function ProductDetails({ basketItems, country }) {
             setRatingFilter={setRatingFilter}
             router={router}
             t={t}
+            country={country}
+            details={details}
           />
         )}
 
@@ -833,7 +826,6 @@ function ProductDetails({ basketItems, country }) {
             validVideos={validVideos}
             Slider={Slider}
             videoSliderSettings={videoSliderSettings}
-            cryptoPrices={cryptoPrices}
             convertToCrypto={convertToCrypto}
             coinImages={coinImages}
             getNetworkName={getNetworkName}
@@ -855,6 +847,8 @@ function ProductDetails({ basketItems, country }) {
             zoomType={zoomType}
             zoomedPosition={zoomedPosition}
             selectedImageForZoom={selectedImage}
+            country={country}
+            details={details}
           />
         )}
 

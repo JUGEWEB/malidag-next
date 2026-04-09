@@ -34,7 +34,6 @@ export default function ProductDetailsDesktop({
   validVideos,
   Slider,
   videoSliderSettings,
-  cryptoPrices,
   convertToCrypto,
   coinImages,
   getNetworkName,
@@ -56,6 +55,8 @@ export default function ProductDetailsDesktop({
   zoomType,
   zoomedPosition,
   selectedImageForZoom,
+   country,
+   details,
 }) {
   const panelWidth = 420;
   const panelHeight = 450;
@@ -77,6 +78,18 @@ export default function ProductDetailsDesktop({
     0,
     Math.min(zoomedPosition.y * zoomedImageHeight - panelHeight / 2, maxOffsetY)
   );
+
+const rawShippingCountries = details?.country || "";
+
+const shippingCountries = rawShippingCountries
+  .split(",")
+  .map((c) => c.trim().toLowerCase())
+  .filter(Boolean);
+
+const selectedCountryCode = country?.code?.toLowerCase();
+
+const canShipToSelectedCountry =
+  !!selectedCountryCode && shippingCountries.includes(selectedCountryCode);
 
   return (
     <>
@@ -189,6 +202,27 @@ export default function ProductDetailsDesktop({
                     </div>
                   )}
 
+                  {country && (
+                      <div
+                        style={{
+                          marginBottom: "12px",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          backgroundColor: canShipToSelectedCountry ? "#f6ffed" : "#fff2f0",
+                          color: canShipToSelectedCountry ? "#237804" : "#cf1322",
+                          border: canShipToSelectedCountry
+                            ? "1px solid #b7eb8f"
+                            : "1px solid #ffb3b3",
+                        }}
+                      >
+                        {canShipToSelectedCountry
+                          ? `This item can be shipped to ${country.name}.`
+                          : `This item cannot be shipped to ${country.name}.`}
+                      </div>
+                    )}
+
                   <div className="pdp-desktop-network-row">
                     <span role="img" aria-label="network">
                       🌐
@@ -202,26 +236,17 @@ export default function ProductDetailsDesktop({
                     <h2 className="pdp-desktop-usd-price">${product?.usdPrice * quantity}</h2>
                     <h4 className="pdp-desktop-price-separator">≈</h4>
 
-                    {product?.usdPrice && cryptoPrices[product?.cryptocurrency] ? (
-                      <h3 className="pdp-desktop-crypto-price">
-                        {convertToCrypto(
-                          product?.usdPrice * quantity,
-                          product?.cryptocurrency
-                        )}
-                        {coinImages[product?.cryptocurrency] && (
-                          <img
-                            src={coinImages[product?.cryptocurrency]}
-                            alt={product?.cryptocurrency}
-                            className="pdp-desktop-coin-image"
-                          />
-                        )}
-                        {product?.cryptocurrency}
-                      </h3>
-                    ) : (
-                      <h3 className="pdp-desktop-crypto-loading">
-                        {t("fetching_crypto_price")}
-                      </h3>
+                   <h3 className="pdp-desktop-crypto-price">
+                    {convertToCrypto(product?.usdPrice * quantity, product?.cryptocurrency)}
+                    {coinImages[product?.cryptocurrency] && (
+                      <img
+                        src={coinImages[product?.cryptocurrency]}
+                        alt={product?.cryptocurrency}
+                        className="pdp-desktop-coin-image"
+                      />
                     )}
+                    {product?.cryptocurrency || "USDT"}
+                  </h3>
                   </div>
 
                   <div className="pdp-desktop-quantity-block">

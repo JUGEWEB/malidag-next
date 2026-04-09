@@ -33,7 +33,6 @@ export default function ProductDetailsPhone({
   validVideos,
   Slider,
   videoSliderSettings,
-  cryptoPrices,
   convertToCrypto,
   coinImages,
   getNetworkName,
@@ -212,28 +211,19 @@ export default function ProductDetailsPhone({
 
               <span className="pdp-phone-price-separator">≈</span>
 
-              {product?.usdPrice && cryptoPrices[product?.cryptocurrency] ? (
-                <h3 className="pdp-phone-crypto-price">
-                  {convertToCrypto(
-                    product?.usdPrice * quantity,
-                    product?.cryptocurrency
-                  )}
-                  {coinImages[product?.cryptocurrency] && (
-                    <Image
-                      src={encodeURI(coinImages[product?.cryptocurrency])}
-                      alt={product.cryptocurrency}
-                      width={22}
-                      height={22}
-                      className="pdp-phone-coin-image"
-                    />
-                  )}
-                  <span>{product?.cryptocurrency}</span>
-                </h3>
-              ) : (
-                <h3 className="pdp-phone-crypto-loading">
-                  {t("fetching_crypto_price")}
-                </h3>
+             <h3 className="pdp-phone-crypto-price">
+              {convertToCrypto(product?.usdPrice * quantity)}
+              {coinImages["USDT"] && (
+                <Image
+                  src={encodeURI(coinImages["USDT"])}
+                  alt="USDT"
+                  width={22}
+                  height={22}
+                  className="pdp-phone-coin-image"
+                />
               )}
+              <span>USDT</span>
+            </h3>
             </div>
           </div>
 

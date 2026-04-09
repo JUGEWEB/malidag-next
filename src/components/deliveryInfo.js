@@ -6,14 +6,22 @@ import { useTranslation } from "react-i18next";
 import axios from "axios";
 import "./deliveryInfo.css";
 import { auth } from "./firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import { useRouter, usePathname } from "next/navigation";
 
-const API_BASE_URL = "https://api.malidag.com"; // ✅ Your backend
+const API_BASE_URL = "https://api.malidag.com";
 
 const DeliveryInfo = () => {
   const [deliveryAddresses, setDeliveryAddresses] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [iduser, setIdUser] = useState(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   const { t } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { notification } = App.useApp();
+
   const [formData, setFormData] = useState({
     email: "",
     fullName: "",
@@ -22,49 +30,63 @@ const DeliveryInfo = () => {
     town: "",
     country: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const { notification } = App.useApp(); // ✅ like messageApi
 
-  // 📌 Fetch existing addresses
   useEffect(() => {
-    const useridi = auth?.currentUser;
-    if (!useridi) return;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setIdUser(null);
+        setCheckingAuth(false);
+        router.replace(`/auth?redirect=${encodeURIComponent(pathname)}`);
+        return;
+      }
 
-    setIdUser(useridi.uid);
+      setIdUser(user.uid);
 
-    const fetchAddresses = async () => {
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/user/delivery-get/${useridi.uid}`
+          `${API_BASE_URL}/user/delivery-get/${user.uid}`
         );
         setDeliveryAddresses(response.data.addresses || []);
-        setSelectedIndex(response.data.selectedIndex); // ✅ load selectedIndex from backend
+        setSelectedIndex(response.data.selectedIndex);
       } catch (err) {
         console.error("Error fetching delivery data:", err);
         setError("Could not load delivery information.");
+      } finally {
+        setCheckingAuth(false);
       }
-    };
+    });
 
-    fetchAddresses();
-  }, [auth]);
+    return () => unsubscribe();
+  }, [router, pathname]);
 
-  // 📌 Handle form input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 📌 Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!iduser) {
+      router.replace(`/auth?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
       const response = await axios.post(`${API_BASE_URL}/user/delivery-post`, {
         userId: iduser,
-        ...formData,
+        email: formData.email.trim(),
+        fullName: formData.fullName.trim(),
+        streetName: formData.streetName.trim(),
+        companyName: formData.companyName.trim(),
+        town: formData.town.trim(),
+        country: formData.country.trim(),
       });
 
       setDeliveryAddresses(response.data.data.addresses);
@@ -85,13 +107,13 @@ const DeliveryInfo = () => {
       });
     } catch (err) {
       console.error("Error adding delivery information:", err);
-      setError(t("save_failed"));
+      console.error("Backend error response:", err?.response?.data);
+      setError(err?.response?.data?.message || t("save_failed"));
     } finally {
       setLoading(false);
     }
   };
 
-  // 📌 Handle selecting an address (sync with backend)
   const handleSelectAddress = async (index) => {
     try {
       await axios.put(`${API_BASE_URL}/user/delivery-select/${iduser}`, {
@@ -109,7 +131,6 @@ const DeliveryInfo = () => {
     }
   };
 
-  // 📌 Handle deleting an address
   const handleDeleteAddress = async (index) => {
     try {
       const response = await axios.delete(
@@ -129,11 +150,14 @@ const DeliveryInfo = () => {
     }
   };
 
+  if (checkingAuth) {
+    return <div className="delivery-info-container">Loading...</div>;
+  }
+
   return (
     <div className="delivery-info-container">
       <h2>{t("title")}</h2>
 
-      {/* 📌 Existing addresses */}
       <div className="saved-addresses" style={{ color: "black", fontStyle: "italic" }}>
         {deliveryAddresses.length > 0 ? (
           <>
@@ -178,7 +202,6 @@ const DeliveryInfo = () => {
         )}
       </div>
 
-      {/* 📌 Add new address */}
       {deliveryAddresses.length === 0 || showForm ? (
         <form onSubmit={handleSubmit} className="space-y-3">
           <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder={t("email_placeholder")} required />
@@ -198,7 +221,6 @@ const DeliveryInfo = () => {
         </button>
       )}
 
-      {/* 📌 Selected Address */}
       {selectedIndex !== null && deliveryAddresses[selectedIndex] && (
         <div className="selected-address" style={{ color: "black" }}>
           <h3>{t("selected_address_title")}</h3>

@@ -27,7 +27,7 @@ function AppHeader(props) {
                 <div style={{backgroundColor: "#333"}}>
                <div className="header-container" style={{ backgroundColor: isDesktop || isTablet ? "" : "#333" }} >
                
-                <MalidagHeader  className="malidag-header"  basketItems={basketItems} user={user}  connectors={connectors} connect={connect} address={address} disconnect={disconnect} isConnected={isConnected}  pendingConnector={pendingConnector} allCountries={allCountries} country={country}  />
+                <MalidagHeader  className="malidag-header"  basketItems={basketItems} user={user}  connectors={connectors} connect={connect} address={address} disconnect={disconnect} isConnected={isConnected}  pendingConnector={pendingConnector} allCountries={allCountries} country={country} setCountry={setCountry}  />
                 
                  <BasketComponent basketItems={basketItems}/>
                 </div>

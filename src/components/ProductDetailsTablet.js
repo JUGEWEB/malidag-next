@@ -34,7 +34,6 @@ export default function ProductDetailsTablet({
   validVideos,
   Slider,
   videoSliderSettings,
-  cryptoPrices,
   convertToCrypto,
   coinImages,
   getNetworkName,
@@ -148,26 +147,17 @@ export default function ProductDetailsTablet({
                     <h2 className="pdp-tablet-usd-price">${product?.usdPrice * quantity}</h2>
                     <h4 className="pdp-tablet-price-separator">≈</h4>
 
-                    {product?.usdPrice && cryptoPrices[product?.cryptocurrency] ? (
-                      <h3 className="pdp-tablet-crypto-price">
-                        {convertToCrypto(
-                          product?.usdPrice * quantity,
-                          product?.cryptocurrency
-                        )}
-                        {coinImages[product?.cryptocurrency] && (
-                          <img
-                            src={coinImages[product?.cryptocurrency]}
-                            alt={product?.cryptocurrency}
-                            className="pdp-tablet-coin-image"
-                          />
-                        )}
-                        {product?.cryptocurrency}
-                      </h3>
-                    ) : (
-                      <h3 className="pdp-tablet-crypto-loading">
-                        {t("fetching_crypto_price")}
-                      </h3>
+                  <h3 className="pdp-tablet-crypto-price">
+                    {convertToCrypto(product?.usdPrice * quantity, product?.cryptocurrency)}
+                    {coinImages[product?.cryptocurrency] && (
+                      <img
+                        src={coinImages[product?.cryptocurrency]}
+                        alt={product?.cryptocurrency}
+                        className="pdp-tablet-coin-image"
+                      />
                     )}
+                    {product?.cryptocurrency}
+                  </h3>
                   </div>
 
                   <div className="pdp-tablet-quantity-block">

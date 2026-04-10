@@ -16,6 +16,7 @@ const DeliveryInfo = () => {
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [iduser, setIdUser] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [lockedCountry, setLockedCountry] = useState(null);
 
   const { t } = useTranslation();
   const router = useRouter();
@@ -34,6 +35,25 @@ const DeliveryInfo = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const savedCountry = localStorage.getItem("selectedCountry");
+      if (savedCountry) {
+        const parsedCountry = JSON.parse(savedCountry);
+        setLockedCountry(parsedCountry);
+
+        setFormData((prev) => ({
+          ...prev,
+          country: parsedCountry?.name || "",
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to read selected country from localStorage:", err);
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -62,6 +82,18 @@ const DeliveryInfo = () => {
 
     return () => unsubscribe();
   }, [router, pathname]);
+
+  const normalizedLockedCountry = lockedCountry?.name?.trim().toLowerCase() || "";
+
+  const matchingAddresses = deliveryAddresses
+    .map((address, index) => ({ address, index }))
+    .filter(
+      ({ address }) =>
+        address?.country?.trim().toLowerCase() === normalizedLockedCountry
+    );
+
+  const selectedMatchingEntry =
+    matchingAddresses.find(({ index }) => index === selectedIndex) || null;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -97,7 +129,7 @@ const DeliveryInfo = () => {
         streetName: "",
         companyName: "",
         town: "",
-        country: "",
+        country: lockedCountry?.name || "",
       });
       setShowForm(false);
 
@@ -159,12 +191,12 @@ const DeliveryInfo = () => {
       <h2>{t("title")}</h2>
 
       <div className="saved-addresses" style={{ color: "black", fontStyle: "italic" }}>
-        {deliveryAddresses.length > 0 ? (
+        {matchingAddresses.length > 0 ? (
           <>
             <h3>{t("saved_addresses")}</h3>
             {error && <p className="error-message">{error}</p>}
             <ul>
-              {deliveryAddresses.map((address, index) => (
+              {matchingAddresses.map(({ address, index }) => (
                 <li
                   key={index}
                   className={selectedIndex === index ? "selected" : ""}
@@ -202,14 +234,21 @@ const DeliveryInfo = () => {
         )}
       </div>
 
-      {deliveryAddresses.length === 0 || showForm ? (
+      {matchingAddresses.length === 0 || showForm ? (
         <form onSubmit={handleSubmit} className="space-y-3">
           <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder={t("email_placeholder")} required />
           <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} placeholder={t("full_name")} required />
           <input type="text" name="streetName" value={formData.streetName} onChange={handleChange} placeholder={t("street_placeholder")} required />
           <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder={t("company_placeholder")} />
           <input type="text" name="town" value={formData.town} onChange={handleChange} placeholder={t("town_placeholder")} required />
-          <input type="text" name="country" value={formData.country} onChange={handleChange} placeholder={t("country_placeholder")} required />
+          <input
+            type="text"
+            name="country"
+            value={formData.country}
+            placeholder={t("country_placeholder")}
+            required
+            disabled
+          />
 
           <button type="submit" disabled={loading}>
             {loading ? <div className="loader"></div> : t("save_address")}
@@ -221,15 +260,15 @@ const DeliveryInfo = () => {
         </button>
       )}
 
-      {selectedIndex !== null && deliveryAddresses[selectedIndex] && (
+      {selectedMatchingEntry && (
         <div className="selected-address" style={{ color: "black" }}>
           <h3>{t("selected_address_title")}</h3>
-          <p><strong>{t("name")}:</strong> {deliveryAddresses[selectedIndex].fullName}</p>
-          <p><strong>{t("email")}:</strong> {deliveryAddresses[selectedIndex].email}</p>
-          <p><strong>{t("street")}:</strong> {deliveryAddresses[selectedIndex].streetName}</p>
-          <p><strong>{t("company")}:</strong> {deliveryAddresses[selectedIndex].companyName || t("na")}</p>
-          <p><strong>{t("town")}:</strong> {deliveryAddresses[selectedIndex].town}</p>
-          <p><strong>{t("country")}:</strong> {deliveryAddresses[selectedIndex].country}</p>
+          <p><strong>{t("name")}:</strong> {selectedMatchingEntry.address.fullName}</p>
+          <p><strong>{t("email")}:</strong> {selectedMatchingEntry.address.email}</p>
+          <p><strong>{t("street")}:</strong> {selectedMatchingEntry.address.streetName}</p>
+          <p><strong>{t("company")}:</strong> {selectedMatchingEntry.address.companyName || t("na")}</p>
+          <p><strong>{t("town")}:</strong> {selectedMatchingEntry.address.town}</p>
+          <p><strong>{t("country")}:</strong> {selectedMatchingEntry.address.country}</p>
         </div>
       )}
     </div>

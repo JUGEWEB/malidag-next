@@ -44,7 +44,25 @@ export default function ProductDetailsPhone({
   handleBuyNowClick,
   handleAddToBasket,
   handleLikeItem,
+  details,
+  country,
+  selectedDeliveryInfo,
+  loadingDeliveryInfo,
 }) {
+  const rawShippingCountries = details?.country || "";
+
+  const shippingCountries = rawShippingCountries
+    .split(",")
+    .map((c) => c.trim().toLowerCase())
+    .filter(Boolean);
+
+  const selectedCountryCode = country?.code?.toLowerCase();
+
+  const canShipToSelectedCountry =
+    !!selectedCountryCode && shippingCountries.includes(selectedCountryCode);
+
+  const tokenSymbol = product?.cryptocurrency?.toUpperCase?.() || "USDT";
+
   return (
     <div className="pdp-phone-page">
       <div className="pdp-phone-slider-shell">
@@ -170,6 +188,77 @@ export default function ProductDetailsPhone({
             </div>
           )}
 
+          {country && (
+            <div
+              style={{
+                marginBottom: "12px",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                fontWeight: "500",
+                backgroundColor: canShipToSelectedCountry ? "#f6ffed" : "#fff2f0",
+                color: canShipToSelectedCountry ? "#237804" : "#cf1322",
+                border: canShipToSelectedCountry
+                  ? "1px solid #b7eb8f"
+                  : "1px solid #ffb3b3",
+              }}
+            >
+              {canShipToSelectedCountry
+                ? `This item can be shipped to ${country.name}.`
+                : `This item cannot be shipped to ${country.name}.`}
+            </div>
+          )}
+
+          {canShipToSelectedCountry && (
+            <>
+              {loadingDeliveryInfo && (
+                <div
+                  style={{
+                    marginBottom: "12px",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    backgroundColor: "#f8f9fa",
+                    border: "1px solid #d9d9d9",
+                    color: "#222",
+                  }}
+                >
+                  <p style={{ margin: 0 }}>Loading delivery information...</p>
+                </div>
+              )}
+
+              {!loadingDeliveryInfo && selectedDeliveryInfo && (
+                <div
+                  style={{
+                    marginBottom: "12px",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    backgroundColor: "#f8f9fa",
+                    border: "1px solid #d9d9d9",
+                    color: "#222",
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: "0 0 4px 0" }}>
+                      {selectedDeliveryInfo.fullName}
+                    </p>
+                    <p style={{ margin: "0 0 4px 0" }}>
+                      {selectedDeliveryInfo.email}
+                    </p>
+                    <p style={{ margin: "0 0 4px 0" }}>
+                      {selectedDeliveryInfo.streetName}
+                    </p>
+                    <p style={{ margin: "0 0 4px 0" }}>
+                      {selectedDeliveryInfo.town}
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      {selectedDeliveryInfo.country}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
           <div className="pdp-phone-network-row">
             <span className="pdp-phone-network-icon" role="img" aria-label="network">
               🌐
@@ -211,19 +300,19 @@ export default function ProductDetailsPhone({
 
               <span className="pdp-phone-price-separator">≈</span>
 
-             <h3 className="pdp-phone-crypto-price">
-              {convertToCrypto(product?.usdPrice * quantity)}
-              {coinImages["USDT"] && (
-                <Image
-                  src={encodeURI(coinImages["USDT"])}
-                  alt="USDT"
-                  width={22}
-                  height={22}
-                  className="pdp-phone-coin-image"
-                />
-              )}
-              <span>USDT</span>
-            </h3>
+              <h3 className="pdp-phone-crypto-price">
+                {convertToCrypto(product?.usdPrice * quantity, tokenSymbol)}
+                {coinImages[tokenSymbol] && (
+                  <Image
+                    src={encodeURI(coinImages[tokenSymbol])}
+                    alt={tokenSymbol}
+                    width={22}
+                    height={22}
+                    className="pdp-phone-coin-image"
+                  />
+                )}
+                <span>{tokenSymbol}</span>
+              </h3>
             </div>
           </div>
 
@@ -253,6 +342,11 @@ export default function ProductDetailsPhone({
             <button
               className="pdp-phone-btn pdp-phone-btn-primary"
               onClick={() => handleBuyNowClick(id)}
+              disabled={!canShipToSelectedCountry}
+              style={{
+                opacity: canShipToSelectedCountry ? 1 : 0.5,
+                cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
+              }}
             >
               {t("buy_now")}
             </button>
@@ -260,6 +354,11 @@ export default function ProductDetailsPhone({
             <button
               className="pdp-phone-btn pdp-phone-btn-secondary"
               onClick={() => handleAddToBasket(product)}
+              disabled={!canShipToSelectedCountry}
+              style={{
+                opacity: canShipToSelectedCountry ? 1 : 0.5,
+                cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
+              }}
             >
               {t("add_to_basket")}
             </button>

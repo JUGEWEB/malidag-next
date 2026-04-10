@@ -51,7 +51,25 @@ export default function ProductDetailsTablet({
   setRatingFilter,
   router,
   t,
+    country,
+      details,
+      selectedDeliveryInfo,
+loadingDeliveryInfo,
 }) {
+
+  const tokenSymbol = product?.cryptocurrency?.toUpperCase?.() || "USDT";
+  const rawShippingCountries = details?.country || "";
+
+  const shippingCountries = rawShippingCountries
+    .split(",")
+    .map((c) => c.trim().toLowerCase())
+    .filter(Boolean);
+
+    const selectedCountryCode = country?.code?.toLowerCase();
+
+const canShipToSelectedCountry =
+  !!selectedCountryCode && shippingCountries.includes(selectedCountryCode);
+
   return (
     <>
       <div className="pdp-tablet-layout">
@@ -134,6 +152,77 @@ export default function ProductDetailsTablet({
                     </div>
                   )}
 
+                  {country && (
+                    <div
+                      style={{
+                        marginBottom: "12px",
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        fontWeight: "500",
+                        backgroundColor: canShipToSelectedCountry ? "#f6ffed" : "#fff2f0",
+                        color: canShipToSelectedCountry ? "#237804" : "#cf1322",
+                        border: canShipToSelectedCountry
+                          ? "1px solid #b7eb8f"
+                          : "1px solid #ffb3b3",
+                      }}
+                    >
+                      {canShipToSelectedCountry
+                        ? `This item can be shipped to ${country.name}.`
+                        : `This item is not available in  ${country.name}. Please select another delivery location.`}
+                    </div>
+                  )}
+
+                 {canShipToSelectedCountry && (
+                       <>
+                        {loadingDeliveryInfo && (
+                          <div
+                            style={{
+                              marginBottom: "12px",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              backgroundColor: "#f8f9fa",
+                              border: "1px solid #d9d9d9",
+                              color: "#222",
+                            }}
+                          >
+                            <p style={{ margin: 0 }}>Loading delivery information...</p>
+                          </div>
+                        )}
+
+                        {!loadingDeliveryInfo && selectedDeliveryInfo && (
+                          <div
+                            style={{
+                              marginBottom: "12px",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              backgroundColor: "#f8f9fa",
+                              border: "1px solid #d9d9d9",
+                              color: "#222",
+                            }}
+                          >
+                            <div>
+                              <p style={{ margin: "0 0 4px 0" }}>
+                                {selectedDeliveryInfo.fullName}
+                              </p>
+                              <p style={{ margin: "0 0 4px 0" }}>
+                                {selectedDeliveryInfo.email}
+                              </p>
+                              <p style={{ margin: "0 0 4px 0" }}>
+                                {selectedDeliveryInfo.streetName}
+                              </p>
+                              <p style={{ margin: "0 0 4px 0" }}>
+                                {selectedDeliveryInfo.town}
+                              </p>
+                              <p style={{ margin: 0 }}>
+                                {selectedDeliveryInfo.country}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+
                   <div className="pdp-tablet-network-row">
                     <span role="img" aria-label="network">
                       🌐
@@ -147,17 +236,17 @@ export default function ProductDetailsTablet({
                     <h2 className="pdp-tablet-usd-price">${product?.usdPrice * quantity}</h2>
                     <h4 className="pdp-tablet-price-separator">≈</h4>
 
-                  <h3 className="pdp-tablet-crypto-price">
-                    {convertToCrypto(product?.usdPrice * quantity, product?.cryptocurrency)}
-                    {coinImages[product?.cryptocurrency] && (
-                      <img
-                        src={coinImages[product?.cryptocurrency]}
-                        alt={product?.cryptocurrency}
-                        className="pdp-tablet-coin-image"
-                      />
-                    )}
-                    {product?.cryptocurrency}
-                  </h3>
+                 <h3 className="pdp-tablet-crypto-price">
+                  {convertToCrypto(product?.usdPrice * quantity, tokenSymbol)}
+                  {coinImages[tokenSymbol] && (
+                    <img
+                      src={coinImages[tokenSymbol]}
+                      alt={tokenSymbol}
+                      className="pdp-tablet-coin-image"
+                    />
+                  )}
+                  {tokenSymbol}
+                </h3>
                   </div>
 
                   <div className="pdp-tablet-quantity-block">
@@ -182,22 +271,38 @@ export default function ProductDetailsTablet({
                     </div>
                   </div>
 
-                  <div className="pdp-tablet-action-row">
-                    <button className="buy-now-button" onClick={() => handleBuyNowClick(id)}>
-                      {t("buy_now")}
-                    </button>
+                 <div className="pdp-tablet-action-row">
+                  <button
+                    className="buy-now-button"
+                    onClick={() => handleBuyNowClick(id)}
+                    disabled={!canShipToSelectedCountry}
+                    style={{
+                      opacity: canShipToSelectedCountry ? 1 : 0.5,
+                      cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    {t("buy_now")}
+                  </button>
 
-                    <button
-                      className="add-to-basket"
-                      onClick={() => handleAddToBasket(product)}
-                    >
-                      {t("add_to_basket")}
-                    </button>
+                  <button
+                    className="add-to-basket"
+                    onClick={() => handleAddToBasket(product)}
+                    disabled={!canShipToSelectedCountry}
+                    style={{
+                      opacity: canShipToSelectedCountry ? 1 : 0.5,
+                      cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    {t("add_to_basket")}
+                  </button>
 
-                    <button className="like-botton" onClick={() => handleLikeItem(product)}>
-                      {t("like")}
-                    </button>
-                  </div>
+                  <button
+                    className="like-botton"
+                    onClick={() => handleLikeItem(product)}
+                  >
+                    {t("like")}
+                  </button>
+                </div>
 
                   <p className="pdp-tablet-sold-text">
                     {t("items_already_sold", { count: product?.sold })}

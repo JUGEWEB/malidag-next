@@ -112,6 +112,11 @@ function ProductDetails({ basketItems }) {
 
   const [messageApi, contextHolder] = message.useMessage();
   const setCheckoutData = useCheckoutStore.getState().setCheckoutData;
+  const [deliveryAddresses, setDeliveryAddresses] = useState([]);
+const [selectedDeliveryInfo, setSelectedDeliveryInfo] = useState(null);
+const [loadingDeliveryInfo, setLoadingDeliveryInfo] = useState(false);
+const [currentUser, setCurrentUser] = useState(null);
+const [authReady, setAuthReady] = useState(false);
   const { lang } = useLang();
 
   const validVideos = Array.isArray(product?.videos)
@@ -275,6 +280,78 @@ function ProductDetails({ basketItems }) {
       setReviewCount(count);
     }
   }, []);
+
+  useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged((user) => {
+    setCurrentUser(user || null);
+    setAuthReady(true);
+  });
+
+  return () => unsubscribe();
+}, []);
+
+  useEffect(() => {
+  const fetchDeliveryInfo = async () => {
+    if (!authReady) return;
+
+    if (!currentUser || !country?.name) {
+      setDeliveryAddresses([]);
+      setSelectedDeliveryInfo(null);
+      setLoadingDeliveryInfo(false);
+      return;
+    }
+
+    try {
+      setLoadingDeliveryInfo(true);
+
+      const response = await axios.get(
+        `https://api.malidag.com/user/delivery-get/${currentUser.uid}`
+      );
+
+      const addresses = response.data.addresses || [];
+      const backendSelectedIndex = response.data.selectedIndex;
+
+      setDeliveryAddresses(addresses);
+
+      const normalizedSelectedCountry =
+        country?.name?.trim().toLowerCase() || "";
+
+      const matchingEntry = addresses
+        .map((address, index) => ({ address, index }))
+        .find(
+          ({ address }) =>
+            address?.country?.trim().toLowerCase() === normalizedSelectedCountry
+        );
+
+      if (matchingEntry) {
+        setSelectedDeliveryInfo(matchingEntry.address);
+
+        if (matchingEntry.index !== backendSelectedIndex) {
+          try {
+            await axios.put(
+              `https://api.malidag.com/user/delivery-select/${currentUser.uid}`,
+              {
+                selectedIndex: matchingEntry.index,
+              }
+            );
+          } catch (err) {
+            console.error("Failed to auto-select matching delivery address:", err);
+          }
+        }
+      } else {
+        setSelectedDeliveryInfo(null);
+      }
+    } catch (error) {
+      console.error("Error fetching delivery info:", error);
+      setDeliveryAddresses([]);
+      setSelectedDeliveryInfo(null);
+    } finally {
+      setLoadingDeliveryInfo(false);
+    }
+  };
+
+  fetchDeliveryInfo();
+}, [country, currentUser, authReady]);
 
   const fetchTranslation = async (productId, lang) => {
     try {
@@ -658,6 +735,15 @@ function ProductDetails({ basketItems }) {
 };
 
  const handleBuyNowClick = () => {
+  if (country) {
+    localStorage.setItem("selectedCountry", JSON.stringify(country));
+  }
+
+  if (!selectedDeliveryInfo) {
+    router.push("/deliveryInformation");
+    return;
+  }
+
   setPaymentModalOpen(true);
 };
 
@@ -747,6 +833,8 @@ function ProductDetails({ basketItems }) {
             handleLikeItem={handleLikeItem}
             details={details}
             country={country}
+            selectedDeliveryInfo={selectedDeliveryInfo}
+            loadingDeliveryInfo={loadingDeliveryInfo}
           />
         )}
 
@@ -796,6 +884,8 @@ function ProductDetails({ basketItems }) {
             t={t}
             country={country}
             details={details}
+             selectedDeliveryInfo={selectedDeliveryInfo}
+            loadingDeliveryInfo={loadingDeliveryInfo}
           />
         )}
 
@@ -849,6 +939,8 @@ function ProductDetails({ basketItems }) {
             selectedImageForZoom={selectedImage}
             country={country}
             details={details}
+             selectedDeliveryInfo={selectedDeliveryInfo}
+            loadingDeliveryInfo={loadingDeliveryInfo}
           />
         )}
 

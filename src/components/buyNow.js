@@ -13,6 +13,7 @@ import { Trans } from "react-i18next";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { useCheckoutStore } from "./checkoutStore";
+import { onAuthStateChanged } from "firebase/auth";
 
 const walletLogos = {
   metamask: "https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg",
@@ -47,6 +48,24 @@ const logoUrls = {
   USDC: "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png?1547042389",
   BUSD: "https://assets.coingecko.com/coins/images/9576/large/BUSD.png?1568947766",
   USDT: "https://assets.coingecko.com/coins/images/325/large/Tether-logo.png?1598003707",
+};
+
+const countryCodeMap = {
+  "france": "fr",
+  "germany": "de",
+  "spain": "es",
+  "italy": "it",
+  "belgium": "be",
+  "netherlands": "nl",
+  "portugal": "pt",
+  "austria": "at",
+  "switzerland": "ch",
+  "ireland": "ie",
+  "united kingdom": "gb",
+  "uk": "gb",
+  "england": "gb",
+  "united states": "us",
+  "usa": "us",
 };
 
 const BuyNow = ({
@@ -92,9 +111,11 @@ const BuyNow = ({
   const [nativeBalance, setNativeBalance] = useState(null);
   const checkoutData = useCheckoutStore((state) => state.checkoutData);
   const setCheckoutData = useCheckoutStore((state) => state.setCheckoutData);
-
+  const [firebaseUser, setFirebaseUser] = useState(null);
+const [authReady, setAuthReady] = useState(false);
   const { isDesktop, isTablet } = useScreenSize();
   const { address, isConnected, chain } = useAccount();
+  const [lockedCountry, setLockedCountry] = useState(null);
   const { connectors } = useConnect();
   useDisconnect();
   const { t } = useTranslation();
@@ -102,6 +123,32 @@ const BuyNow = ({
 
   const chainId = chain?.id || null;
   const isCheckoutPage = pathname === "/checkout";
+
+    const rawShippingCountries =
+    item?.details?.country ||
+    product?.details?.country ||
+    item?.country ||
+    product?.country ||
+    "";
+
+  const shippingCountries = rawShippingCountries
+    .split(",")
+    .map((c) => c.trim().toLowerCase())
+    .filter(Boolean);
+
+  const lockedCountryCode =
+    lockedCountry?.code?.trim?.().toLowerCase?.() || "";
+
+  const lockedCountryName =
+    lockedCountry?.name?.trim?.().toLowerCase?.() || "";
+
+  const canShipToLockedCountry =
+    !lockedCountry
+      ? true
+      : shippingCountries.length === 0
+      ? false
+      : (!!lockedCountryCode && shippingCountries.includes(lockedCountryCode)) ||
+        (!!lockedCountryName && shippingCountries.includes(lockedCountryName));
 
   const imageSrc = item?.images?.[0] || "/placeholder.png";
 
@@ -136,6 +183,48 @@ const BuyNow = ({
     return null;
   }
 };
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    setFirebaseUser(currentUser);
+    setAuthReady(true);
+  });
+
+  return () => unsubscribe();
+}, []);
+
+useEffect(() => {
+  const syncCountry = () => {
+    try {
+      const savedCountry = localStorage.getItem("selectedCountry");
+      if (savedCountry) {
+        setLockedCountry(JSON.parse(savedCountry));
+      }
+    } catch (err) {
+      console.error("Failed to sync country:", err);
+    }
+  };
+
+  window.addEventListener("countryChanged", syncCountry);
+
+  return () => {
+    window.removeEventListener("countryChanged", syncCountry);
+  };
+}, []);
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  try {
+    const savedCountry = localStorage.getItem("selectedCountry");
+    if (savedCountry) {
+      const parsedCountry = JSON.parse(savedCountry);
+      setLockedCountry(parsedCountry);
+    }
+  } catch (err) {
+    console.error("Failed to read selected country:", err);
+  }
+}, []);
 
 useEffect(() => {
   const loadNativeBalance = async () => {
@@ -205,12 +294,17 @@ const hasEnoughGasFee = () => {
           return;
         }
 
-        const productData = foundItem.item || foundItem;
+       const productData = foundItem.item || foundItem;
 
-        setItem(productData);
-        setProduct(productData);
-        setPayItem(foundItem.itemId || foundItem.id);
-        setBrand(productData?.brand || foundItem?.details?.brand || "");
+const mergedProductData = {
+  ...productData,
+  details: foundItem.details || productData.details || {},
+};
+
+setItem(mergedProductData);
+setProduct(mergedProductData);
+setPayItem(foundItem.itemId || foundItem.id);
+setBrand(mergedProductData?.brand || foundItem?.details?.brand || "");
 
         const lang = i18n.language || "en";
         if (foundItem.itemId || foundItem.id) {
@@ -266,39 +360,80 @@ const hasEnoughGasFee = () => {
     fetchAllTokenBalances();
   }, [address, chainId]);
 
-  useEffect(() => {
-    const fetchDeliveryInfo = async () => {
-      try {
-        const currentUser = auth?.currentUser;
-        if (!currentUser) return;
+ useEffect(() => {
+  const fetchDeliveryInfo = async () => {
+    try {
+      if (!authReady || !firebaseUser) return;
 
-        const response = await axios.get(
-          `https://api.malidag.com/user/delivery-get/${currentUser.uid}`
-        );
+      const response = await axios.get(
+        `https://api.malidag.com/user/delivery-get/${firebaseUser.uid}`
+      );
 
-        const { addresses, selectedIndex } = response.data;
+      const addresses = response.data.addresses || [];
+      const backendSelectedIndex = response.data.selectedIndex;
 
-        if (addresses && addresses.length > 0) {
-          setDeliveryInformation(addresses);
+      setDeliveryInformation(addresses);
 
-          if (selectedIndex !== null && selectedIndex >= 0) {
-            setSelectedDeliveryInfo(addresses[selectedIndex]);
-          } else {
-            setSelectedDeliveryInfo(null);
-          }
+      const normalizedLockedCountry =
+        lockedCountry?.name?.trim().toLowerCase() || "";
+
+      if (!normalizedLockedCountry) {
+        if (
+          backendSelectedIndex !== null &&
+          backendSelectedIndex >= 0 &&
+          addresses[backendSelectedIndex]
+        ) {
+          setSelectedDeliveryInfo(addresses[backendSelectedIndex]);
+        } else if (addresses.length > 0) {
+          setSelectedDeliveryInfo(addresses[0]);
         } else {
-          setDeliveryInformation([]);
           setSelectedDeliveryInfo(null);
         }
-      } catch (error) {
-        console.error("Error fetching delivery info:", error);
-        setDeliveryInformation([]);
+        return;
+      }
+
+      const matchingEntry = addresses
+        .map((address, index) => ({ address, index }))
+        .find(
+          ({ address }) =>
+            address?.country?.trim().toLowerCase() === normalizedLockedCountry
+        );
+
+   if (matchingEntry) {
+  setSelectedDeliveryInfo(matchingEntry.address);
+
+  if (matchingEntry.index !== backendSelectedIndex) {
+    try {
+      await axios.put(
+        `https://api.malidag.com/user/delivery-select/${firebaseUser.uid}`,
+        {
+          selectedIndex: matchingEntry.index,
+        }
+      );
+    } catch (err) {
+      console.error("Failed to auto-select matching delivery address:", err);
+    }
+  }
+} else if (
+        backendSelectedIndex !== null &&
+        backendSelectedIndex >= 0 &&
+        addresses[backendSelectedIndex]
+      ) {
+        setSelectedDeliveryInfo(addresses[backendSelectedIndex]);
+      } else if (addresses.length > 0) {
+        setSelectedDeliveryInfo(addresses[0]);
+      } else {
         setSelectedDeliveryInfo(null);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching delivery info:", error);
+      setDeliveryInformation([]);
+      setSelectedDeliveryInfo(null);
+    }
+  };
 
-    fetchDeliveryInfo();
-  }, [user]);
+  fetchDeliveryInfo();
+}, [authReady, firebaseUser, lockedCountry]);
 
   useEffect(() => {
     if (urlBasket === "true") {
@@ -363,9 +498,12 @@ const hasEnoughGasFee = () => {
     return userBalance < requiredAmount;
   };
 
-    const hasEnoughTokenBalance = !isInsufficientBalance(tokenAmount, selectedCurrency);
+       const hasEnoughTokenBalance = !isInsufficientBalance(tokenAmount, selectedCurrency);
     const hasEnoughNativeGas = hasEnoughGasFee();
-    const cannotBuy = !hasEnoughTokenBalance || !hasEnoughNativeGas;
+    const cannotBuy =
+      !hasEnoughTokenBalance ||
+      !hasEnoughNativeGas ||
+      !canShipToLockedCountry;
 
   const handleBuyNow = async () => {
     if (!selectedDeliveryInfo || Object.keys(selectedDeliveryInfo).length === 0) {
@@ -380,6 +518,15 @@ const hasEnoughGasFee = () => {
 
     if (!payItem && urlBasket !== "true") {
       message.error(t("invalid_product_details"));
+      return;
+    }
+
+        if (!canShipToLockedCountry) {
+      message.error(
+        lockedCountry?.name
+          ? `This item cannot be shipped to ${lockedCountry.name}.`
+          : "This item cannot be shipped to the selected delivery country."
+      );
       return;
     }
 
@@ -574,6 +721,14 @@ const hasEnoughGasFee = () => {
                 <Link href="/deliveryInformation">{t("add_delivery_info")}</Link>
               </div>
             )}
+
+                       {!canShipToLockedCountry && (
+            <p className="error-text">
+              ⚠️ {lockedCountry?.name
+                ? `This item cannot be shipped to ${lockedCountry.name}.`
+                : "This item cannot be shipped to the selected country."}
+            </p>
+          )}
           </div>
 
           <div className="buy-now-item-information">

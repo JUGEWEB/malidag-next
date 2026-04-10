@@ -130,8 +130,9 @@ const [country, setCountry] = useState(null);
 }, []);
 
 useEffect(() => {
-  if (country) {
+  if (country && typeof window !== "undefined") {
     localStorage.setItem("selectedCountry", JSON.stringify(country));
+    window.dispatchEvent(new Event("countryChanged"));
   }
 }, [country]);
 

@@ -57,6 +57,8 @@ export default function ProductDetailsDesktop({
   selectedImageForZoom,
    country,
    details,
+   selectedDeliveryInfo,
+  loadingDeliveryInfo,
 }) {
   const panelWidth = 420;
   const panelHeight = 450;
@@ -203,25 +205,75 @@ const canShipToSelectedCountry =
                   )}
 
                   {country && (
-                      <div
-                        style={{
-                          marginBottom: "12px",
-                          padding: "10px 12px",
-                          borderRadius: "8px",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          backgroundColor: canShipToSelectedCountry ? "#f6ffed" : "#fff2f0",
-                          color: canShipToSelectedCountry ? "#237804" : "#cf1322",
-                          border: canShipToSelectedCountry
-                            ? "1px solid #b7eb8f"
-                            : "1px solid #ffb3b3",
-                        }}
-                      >
-                        {canShipToSelectedCountry
-                          ? `This item can be shipped to ${country.name}.`
-                          : `This item cannot be shipped to ${country.name}.`}
-                      </div>
-                    )}
+                    <div
+                      style={{
+                        marginBottom: "12px",
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        fontWeight: "500",
+                        backgroundColor: canShipToSelectedCountry ? "#f6ffed" : "#fff2f0",
+                        color: canShipToSelectedCountry ? "#237804" : "#cf1322",
+                        border: canShipToSelectedCountry
+                          ? "1px solid #b7eb8f"
+                          : "1px solid #ffb3b3",
+                      }}
+                    >
+                      {canShipToSelectedCountry
+                        ? `This item can be shipped to ${country.name}.`
+                        : `This item is not available in ${country.name}. Please select another delivery location.`}
+                    </div>
+                  )}
+
+                  {canShipToSelectedCountry && (
+                    <>
+                      {loadingDeliveryInfo && (
+                        <div
+                          style={{
+                            marginBottom: "12px",
+                            padding: "12px",
+                            borderRadius: "8px",
+                            backgroundColor: "#f8f9fa",
+                            border: "1px solid #d9d9d9",
+                            color: "#222",
+                          }}
+                        >
+                          <p style={{ margin: 0 }}>Loading delivery information...</p>
+                        </div>
+                      )}
+
+                      {!loadingDeliveryInfo && selectedDeliveryInfo && (
+                        <div
+                          style={{
+                            marginBottom: "12px",
+                            padding: "12px",
+                            borderRadius: "8px",
+                            backgroundColor: "#f8f9fa",
+                            border: "1px solid #d9d9d9",
+                            color: "#222",
+                          }}
+                        >
+                          <div>
+                            <p style={{ margin: "0 0 4px 0" }}>
+                              {selectedDeliveryInfo.fullName}
+                            </p>
+                            <p style={{ margin: "0 0 4px 0" }}>
+                              {selectedDeliveryInfo.email}
+                            </p>
+                            <p style={{ margin: "0 0 4px 0" }}>
+                              {selectedDeliveryInfo.streetName}
+                            </p>
+                            <p style={{ margin: "0 0 4px 0" }}>
+                              {selectedDeliveryInfo.town}
+                            </p>
+                            <p style={{ margin: 0 }}>
+                              {selectedDeliveryInfo.country}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
 
                   <div className="pdp-desktop-network-row">
                     <span role="img" aria-label="network">
@@ -272,21 +324,34 @@ const canShipToSelectedCountry =
                   </div>
 
                   <div className="pdp-desktop-action-row">
-                    <button className="buy-now-button" onClick={() => handleBuyNowClick(id)}>
-                      {t("buy_now")}
-                    </button>
+                  <button
+                    className="buy-now-button"
+                    onClick={() => handleBuyNowClick(id)}
+                    disabled={!canShipToSelectedCountry}
+                    style={{
+                      opacity: canShipToSelectedCountry ? 1 : 0.5,
+                      cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    {t("buy_now")}
+                  </button>
 
-                    <button
-                      className="add-to-basket"
-                      onClick={() => handleAddToBasket(product)}
-                    >
-                      {t("add_to_basket")}
-                    </button>
+                  <button
+                    className="add-to-basket"
+                    onClick={() => handleAddToBasket(product)}
+                    disabled={!canShipToSelectedCountry}
+                    style={{
+                      opacity: canShipToSelectedCountry ? 1 : 0.5,
+                      cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    {t("add_to_basket")}
+                  </button>
 
-                    <button className="like-botton" onClick={() => handleLikeItem(product)}>
-                      {t("like")}
-                    </button>
-                  </div>
+                  <button className="like-botton" onClick={() => handleLikeItem(product)}>
+                    {t("like")}
+                  </button>
+                </div>
 
                   <p className="pdp-desktop-sold-text">
                     {t("items_already_sold", { count: product?.sold })}

@@ -14,6 +14,8 @@ import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { useCheckoutStore } from "./checkoutStore";
 import { onAuthStateChanged } from "firebase/auth";
+import { useWriteContract, usePublicClient } from "wagmi";
+import { parseUnits } from "viem";
 
 const walletLogos = {
   metamask: "https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg",
@@ -26,23 +28,82 @@ const walletLogos = {
 
 const tokenAddresses = {
   1: {
-    USDC: { address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", symbol: "USDC" },
-    USDT: { address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", symbol: "USDT" },
+    USDC: {
+      address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      symbol: "USDC",
+      decimals: 6,
+    },
+    USDT: {
+      address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      symbol: "USDT",
+      decimals: 6,
+    },
   },
+
   56: {
-    USDT: { address: "0x55d398326f99059fF775485246999027B3197955", symbol: "USDT" },
-    BUSD: { address: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56", symbol: "BUSD" },
-    USDC: { address: "0x8965349fb649A33a30cbFDa057D8eC2C48AbE2A2", symbol: "USDC" },
+    USDT: {
+      address: "0x55d398326f99059fF775485246999027B3197955",
+      symbol: "USDT",
+      decimals: 18,
+    },
+    BUSD: {
+      address: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
+      symbol: "BUSD",
+      decimals: 18,
+    },
+    USDC: {
+      address: "0x8965349fb649A33a30cbFDa057D8eC2C48AbE2A2",
+      symbol: "USDC",
+      decimals: 18,
+    },
   },
+
   97: {
-    USDC: { address: "0x64544969ed7EBf5f083679233325356EbE738930", symbol: "USDC" },
-    USDT: { address: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", symbol: "USDT" },
-    BUSD: { address: "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee", symbol: "BUSD" },
+    USDC: {
+      address: "0x64544969ed7EBf5f083679233325356EbE738930",
+      symbol: "USDC",
+      decimals: 18,
+    },
+    USDT: {
+      address: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
+      symbol: "USDT",
+      decimals: 18,
+    },
+    BUSD: {
+      address: "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee",
+      symbol: "BUSD",
+      decimals: 18,
+    },
   },
+
   137: {
-    USDT: { address: "0x3813e82e6f7098b9583FC0F33a962D02018B6803", symbol: "USDT" },
+    USDT: {
+      address: "0x3813e82e6f7098b9583FC0F33a962D02018B6803",
+      symbol: "USDT",
+      decimals: 6, // ⚠️ Polygon USDT is usually 6
+    },
   },
 };
+
+const erc20Abi = [
+  {
+    type: "function",
+    name: "transfer",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "value", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "decimals",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8" }],
+  },
+];
 
 const logoUrls = {
   USDC: "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png?1547042389",
@@ -120,7 +181,8 @@ const [authReady, setAuthReady] = useState(false);
   useDisconnect();
   const { t } = useTranslation();
   const { message } = App.useApp();
-
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
   const chainId = chain?.id || null;
   const isCheckoutPage = pathname === "/checkout";
 
@@ -575,35 +637,80 @@ setBrand(mergedProductData?.brand || foundItem?.details?.brand || "");
 }
 
     try {
-      message.loading(t("processing_transaction"), 0);
+  message.loading("Waiting for wallet confirmation...", 0);
 
-      const response = await axios.post("https://api.malidag.com/api/transaction", {
-        chainId,
-        recipient: "0x40c61A01639BA0d675509878d58864B9C9F65fbf",
-        amount: requiredCryptoAmount,
-        fullName: selectedDeliveryInfo.fullName,
-        email: selectedDeliveryInfo.email,
-        userAddress: address,
-        streetAddress: selectedDeliveryInfo.streetName,
-        companyName: selectedDeliveryInfo.companyName,
-        country: selectedDeliveryInfo.country,
-        town: selectedDeliveryInfo.town,
-        cryptoSymbol: tokenSymbol,
-        tokenAddress: tokenAddresses[chainId]?.[tokenSymbol]?.address || null,
-        items,
-      });
+  const tokenSymbol = selectedCurrency;
+  const tokenData = tokenAddresses[chainId]?.[tokenSymbol];
 
-      message.destroy();
+  if (!tokenData) {
+    message.destroy();
+    message.error("Unsupported token for this network.");
+    return;
+  }
 
-      if (response.data.success) {
-        message.success(t("payment_successful"));
-      } else {
-        message.error(t("transaction_failed"));
-      }
-    } catch (error) {
-      console.error("Transaction failed:", error);
-      message.error(t("transaction_failed"));
+  const recipient = "0x40c61A01639BA0d675509878d58864B9C9F65fbf";
+
+  // ⚠️ TEMP: assume 18 decimals (better: store per token)
+ const decimals = tokenData.decimals;
+  const amountInUnits = parseUnits(String(tokenAmount), decimals);
+
+  // 🔥 SEND TX FROM USER WALLET
+  const hash = await writeContractAsync({
+    address: tokenData.address,
+    abi: erc20Abi,
+    functionName: "transfer",
+    args: [recipient, amountInUnits],
+    chainId,
+  });
+
+  message.destroy();
+  message.loading("Transaction sent. Waiting confirmation...", 0);
+
+  // ⛓️ WAIT FOR CONFIRMATION
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+  message.destroy();
+
+  if (receipt.status !== "success") {
+    message.error("Transaction failed onchain.");
+    return;
+  }
+
+  message.loading("Verifying payment...", 0);
+
+  // 🔐 SEND ONLY HASH TO BACKEND
+  const verifyResponse = await axios.post(
+    "https://api.malidag.com/api/transaction",
+    {
+      txHash: hash,
+      chainId,
+      recipient,
+      expectedAmount: tokenAmount,
+      userAddress: address,
+      fullName: selectedDeliveryInfo.fullName,
+      email: selectedDeliveryInfo.email,
+      streetAddress: selectedDeliveryInfo.streetName,
+      companyName: selectedDeliveryInfo.companyName,
+      country: selectedDeliveryInfo.country,
+      town: selectedDeliveryInfo.town,
+      cryptoSymbol: tokenSymbol,
+      tokenAddress: tokenData.address,
+      items,
     }
+  );
+
+  message.destroy();
+
+  if (verifyResponse.data?.success) {
+    message.success(t("payment_successful"));
+  } else {
+    message.error("Payment sent, but verification failed.");
+  }
+} catch (error) {
+  message.destroy();
+  console.error("Transaction failed:", error);
+  message.error(error?.shortMessage || error?.message || t("transaction_failed"));
+} 
   };
 
   const getFirstName = () => {

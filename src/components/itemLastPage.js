@@ -316,28 +316,53 @@ const [authReady, setAuthReady] = useState(false);
       const normalizedSelectedCountry =
         country?.name?.trim().toLowerCase() || "";
 
-      const matchingEntry = addresses
+      const selectedAddress =
+        backendSelectedIndex !== null &&
+        backendSelectedIndex >= 0 &&
+        addresses[backendSelectedIndex]
+          ? addresses[backendSelectedIndex]
+          : null;
+
+      const selectedMatchesCountry =
+        selectedAddress &&
+        selectedAddress.country?.trim().toLowerCase() === normalizedSelectedCountry;
+
+      // No country selected -> use backend selected, otherwise first
+      if (!normalizedSelectedCountry) {
+        if (selectedAddress) {
+          setSelectedDeliveryInfo(selectedAddress);
+        } else if (addresses.length > 0) {
+          setSelectedDeliveryInfo(addresses[0]);
+        } else {
+          setSelectedDeliveryInfo(null);
+        }
+        return;
+      }
+
+      // If selected address already matches country, keep it
+      if (selectedMatchesCountry) {
+        setSelectedDeliveryInfo(selectedAddress);
+        return;
+      }
+
+      // Otherwise fallback to first address matching selected country
+      const firstMatchingEntry = addresses
         .map((address, index) => ({ address, index }))
         .find(
           ({ address }) =>
             address?.country?.trim().toLowerCase() === normalizedSelectedCountry
         );
 
-      if (matchingEntry) {
-        setSelectedDeliveryInfo(matchingEntry.address);
+      if (firstMatchingEntry) {
+        setSelectedDeliveryInfo(firstMatchingEntry.address);
+        return;
+      }
 
-        if (matchingEntry.index !== backendSelectedIndex) {
-          try {
-            await axios.put(
-              `https://api.malidag.com/user/delivery-select/${currentUser.uid}`,
-              {
-                selectedIndex: matchingEntry.index,
-              }
-            );
-          } catch (err) {
-            console.error("Failed to auto-select matching delivery address:", err);
-          }
-        }
+      // Final fallback
+      if (selectedAddress) {
+        setSelectedDeliveryInfo(selectedAddress);
+      } else if (addresses.length > 0) {
+        setSelectedDeliveryInfo(addresses[0]);
       } else {
         setSelectedDeliveryInfo(null);
       }
@@ -725,11 +750,17 @@ const [authReady, setAuthReady] = useState(false);
     paymentMethod: method,
   });
 
-  router.push(
-    `/checkout?itemId=${itemsd}&quantity=${quantity}&selectedColor=${selectedColor}&selectedSize=${selectedSize}&tokenAmount=${
-      product.usdPrice * quantity
-    }&basket=false&paymentMethod=${method}`
-  );
+  const query = `itemId=${itemsd}&quantity=${quantity}&selectedColor=${selectedColor}&selectedSize=${selectedSize}&tokenAmount=${
+    product.usdPrice * quantity
+  }&basket=false`;
+
+  if (method === "crypto") {
+    router.push(`/checkout?${query}`);
+  } else if (method === "paypal") {
+    router.push(`/paypalCheckout?${query}`);
+  } else if (method === "card") {
+    router.push(`/cardCheckout?${query}`);
+  }
 
   setPaymentModalOpen(false);
 };

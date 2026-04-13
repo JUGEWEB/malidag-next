@@ -30,6 +30,7 @@ const DeliveryInfo = () => {
     companyName: "",
     town: "",
     country: "",
+    postalCode: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -119,6 +120,7 @@ const DeliveryInfo = () => {
         companyName: formData.companyName.trim(),
         town: formData.town.trim(),
         country: formData.country.trim(),
+        postalCode: formData.postalCode.trim(),
       });
 
       setDeliveryAddresses(response.data.data.addresses);
@@ -130,6 +132,7 @@ const DeliveryInfo = () => {
         companyName: "",
         town: "",
         country: lockedCountry?.name || "",
+        postalCode: "",
       });
       setShowForm(false);
 
@@ -207,6 +210,7 @@ const DeliveryInfo = () => {
                   <p><strong>{t("street")}:</strong> {address.streetName}</p>
                   <p><strong>{t("company")}:</strong> {address.companyName || "N/A"}</p>
                   <p><strong>{t("town")}:</strong> {address.town}</p>
+                  <p><strong>{t("postal_code")}:</strong> {address.postalCode}</p>
                   <p><strong>{t("country")}:</strong> {address.country}</p>
 
                   <button
@@ -241,6 +245,14 @@ const DeliveryInfo = () => {
           <input type="text" name="streetName" value={formData.streetName} onChange={handleChange} placeholder={t("street_placeholder")} required />
           <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder={t("company_placeholder")} />
           <input type="text" name="town" value={formData.town} onChange={handleChange} placeholder={t("town_placeholder")} required />
+          <input
+            type="text"
+            name="postalCode"
+            value={formData.postalCode}
+            onChange={handleChange}
+            placeholder={t("postal_code_placeholder")}
+            required
+          />
           <input
             type="text"
             name="country"

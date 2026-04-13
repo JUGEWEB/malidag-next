@@ -422,7 +422,7 @@ setBrand(mergedProductData?.brand || foundItem?.details?.brand || "");
     fetchAllTokenBalances();
   }, [address, chainId]);
 
- useEffect(() => {
+useEffect(() => {
   const fetchDeliveryInfo = async () => {
     try {
       if (!authReady || !firebaseUser) return;
@@ -439,13 +439,21 @@ setBrand(mergedProductData?.brand || foundItem?.details?.brand || "");
       const normalizedLockedCountry =
         lockedCountry?.name?.trim().toLowerCase() || "";
 
+      const selectedAddress =
+        backendSelectedIndex !== null &&
+        backendSelectedIndex >= 0 &&
+        addresses[backendSelectedIndex]
+          ? addresses[backendSelectedIndex]
+          : null;
+
+      const selectedMatchesCountry =
+        selectedAddress &&
+        selectedAddress.country?.trim().toLowerCase() === normalizedLockedCountry;
+
+      // If no locked country, prefer selected address, otherwise first available
       if (!normalizedLockedCountry) {
-        if (
-          backendSelectedIndex !== null &&
-          backendSelectedIndex >= 0 &&
-          addresses[backendSelectedIndex]
-        ) {
-          setSelectedDeliveryInfo(addresses[backendSelectedIndex]);
+        if (selectedAddress) {
+          setSelectedDeliveryInfo(selectedAddress);
         } else if (addresses.length > 0) {
           setSelectedDeliveryInfo(addresses[0]);
         } else {
@@ -454,34 +462,28 @@ setBrand(mergedProductData?.brand || foundItem?.details?.brand || "");
         return;
       }
 
-      const matchingEntry = addresses
+      // If selected address already matches locked country, keep it
+      if (selectedMatchesCountry) {
+        setSelectedDeliveryInfo(selectedAddress);
+        return;
+      }
+
+      // Otherwise fallback to first address matching locked country
+      const firstMatchingEntry = addresses
         .map((address, index) => ({ address, index }))
         .find(
           ({ address }) =>
             address?.country?.trim().toLowerCase() === normalizedLockedCountry
         );
 
-   if (matchingEntry) {
-  setSelectedDeliveryInfo(matchingEntry.address);
+      if (firstMatchingEntry) {
+        setSelectedDeliveryInfo(firstMatchingEntry.address);
+        return;
+      }
 
-  if (matchingEntry.index !== backendSelectedIndex) {
-    try {
-      await axios.put(
-        `https://api.malidag.com/user/delivery-select/${firebaseUser.uid}`,
-        {
-          selectedIndex: matchingEntry.index,
-        }
-      );
-    } catch (err) {
-      console.error("Failed to auto-select matching delivery address:", err);
-    }
-  }
-} else if (
-        backendSelectedIndex !== null &&
-        backendSelectedIndex >= 0 &&
-        addresses[backendSelectedIndex]
-      ) {
-        setSelectedDeliveryInfo(addresses[backendSelectedIndex]);
+      // Final fallback
+      if (selectedAddress) {
+        setSelectedDeliveryInfo(selectedAddress);
       } else if (addresses.length > 0) {
         setSelectedDeliveryInfo(addresses[0]);
       } else {
@@ -693,6 +695,7 @@ setBrand(mergedProductData?.brand || foundItem?.details?.brand || "");
       companyName: selectedDeliveryInfo.companyName,
       country: selectedDeliveryInfo.country,
       town: selectedDeliveryInfo.town,
+      postalCode: selectedDeliveryInfo.postalCode || "",
       cryptoSymbol: tokenSymbol,
       tokenAddress: tokenData.address,
       items,
@@ -818,6 +821,7 @@ setBrand(mergedProductData?.brand || foundItem?.details?.brand || "");
                   <p>{selectedDeliveryInfo.companyName}</p>
                   <p>{selectedDeliveryInfo.email}</p>
                   <p>{selectedDeliveryInfo.town}</p>
+                  <p>{selectedDeliveryInfo.postalCode || ""}</p>
                   <p>{selectedDeliveryInfo.country}</p>
                 </div>
                 <Link href="/deliveryInformation">{t("modify_delivery_info")}</Link>

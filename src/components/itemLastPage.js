@@ -523,6 +523,18 @@ const [authReady, setAuthReady] = useState(false);
           brand: product.brand,
           brandPrice: product.brandPrice,
           quantity: 1,
+          // current header country
+          selectedCountry: country?.name || "",
+
+          // item shipping availability
+          shippingCountry: details?.country || item?.details?.country || "",
+
+          eurText: details?.eurText || item?.details?.eurText || "",
+        poundText: details?.poundText || item?.details?.poundText || "",
+        brlText: details?.brlText || item?.details?.brlText || "",
+        tryText: details?.tryText || item?.details?.tryText || "",
+        audText: details?.audText || item?.details?.audText || "",
+        sarText: details?.sarText || item?.details?.sarText || "",
         },
       };
 

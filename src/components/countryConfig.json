@@ -1,0 +1,88 @@
+{
+  "countries": {
+    "germany": {
+      "code": "de",
+      "currency": "EUR",
+      "symbol": "€",
+      "priceField": "eurText",
+      "paypalSupported": true
+    },
+    "ireland": {
+      "code": "ie",
+      "currency": "EUR",
+      "symbol": "€",
+      "priceField": "eurText",
+      "paypalSupported": true
+    },
+    "belgium": {
+      "code": "be",
+      "currency": "EUR",
+      "symbol": "€",
+      "priceField": "eurText",
+      "paypalSupported": true
+    },
+    "portugal": {
+      "code": "pt",
+      "currency": "EUR",
+      "symbol": "€",
+      "priceField": "eurText",
+      "paypalSupported": true
+    },
+    "france": {
+      "code": "fr",
+      "currency": "EUR",
+      "symbol": "€",
+      "priceField": "eurText",
+      "paypalSupported": true
+    },
+    "united kingdom": {
+      "code": "gb",
+      "currency": "GBP",
+      "symbol": "£",
+      "priceField": "poundText",
+      "paypalSupported": true
+    },
+    "brazil": {
+      "code": "br",
+      "currency": "BRL",
+      "symbol": "R$",
+      "priceField": "brlText",
+      "paypalSupported": true
+    },
+    "turkey": {
+      "code": "tr",
+      "currency": "TRY",
+      "symbol": "₺",
+      "priceField": "tryText",
+      "paypalSupported": false
+    },
+    "australia": {
+      "code": "au",
+      "currency": "AUD",
+      "symbol": "A$",
+      "priceField": "audText",
+      "paypalSupported": true
+    },
+    "saudi arabia": {
+      "code": "sa",
+      "currency": "SAR",
+      "symbol": "SAR ",
+      "priceField": "sarText",
+      "paypalSupported": true
+    }
+  },
+
+  "aliases": {
+    "uk": "united kingdom",
+    "usa": "united states",
+    "us": "united states"
+  },
+
+  "fallback": {
+    "code": "",
+    "currency": "USD",
+    "symbol": "$",
+    "priceField": "usdPrice",
+    "paypalSupported": false
+  }
+}

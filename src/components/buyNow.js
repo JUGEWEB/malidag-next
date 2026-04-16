@@ -111,24 +111,6 @@ const logoUrls = {
   USDT: "https://assets.coingecko.com/coins/images/325/large/Tether-logo.png?1598003707",
 };
 
-const countryCodeMap = {
-  "france": "fr",
-  "germany": "de",
-  "spain": "es",
-  "italy": "it",
-  "belgium": "be",
-  "netherlands": "nl",
-  "portugal": "pt",
-  "austria": "at",
-  "switzerland": "ch",
-  "ireland": "ie",
-  "united kingdom": "gb",
-  "uk": "gb",
-  "england": "gb",
-  "united states": "us",
-  "usa": "us",
-};
-
 const BuyNow = ({
   quantity: initialQuantity,
   selectedColor,
@@ -311,14 +293,6 @@ const hasEnoughGasFee = () => {
 };
 
   useEffect(() => {
-    if (urlBasket === "false") {
-      setCheckoutData({ isFromBasket: false });
-    } else if (urlBasket === "true") {
-      setCheckoutData({ isFromBasket: true });
-    }
-  }, [urlBasket, setCheckoutData]);
-
-  useEffect(() => {
     setQuantity(urlQuantity);
   }, [urlQuantity]);
 
@@ -481,14 +455,8 @@ useEffect(() => {
         return;
       }
 
-      // Final fallback
-      if (selectedAddress) {
-        setSelectedDeliveryInfo(selectedAddress);
-      } else if (addresses.length > 0) {
-        setSelectedDeliveryInfo(addresses[0]);
-      } else {
-        setSelectedDeliveryInfo(null);
-      }
+     // No matching address for header country
+      setSelectedDeliveryInfo(null);
     } catch (error) {
       console.error("Error fetching delivery info:", error);
       setDeliveryInformation([]);
@@ -790,22 +758,34 @@ useEffect(() => {
           style={{ display: isDesktop || isTablet ? "none" : "", padding: "10px" }}
           className="checkout-containerSmall"
         >
-          {loading ? (
-            <p>{t("loading_item_details")}</p>
-          ) : item ? (
-            <div
-              className="item-deils"
-              onClick={backToProduct}
-              style={{
-                marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
-              }}
-            >
-              <img src={imageSrc} alt={item?.name || "product image"} className="item-ige" />
-              <h3 className="item-ne">{getTranslatedName(item, payItem).slice(0, 25)}</h3>
-            </div>
-          ) : (
-            <p>{t("item_not_found")}</p>
-          )}
+         {urlBasket === "true" ? (
+  <div
+    className="item-deils"
+    style={{
+      marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
+    }}
+  >
+    <h3 className="item-ne">
+      Proceeding with {checkoutData?.items?.length || 0} item
+      {(checkoutData?.items?.length || 0) > 1 ? "s" : ""} in your basket
+    </h3>
+  </div>
+) : loading ? (
+  <p>{t("loading_item_details")}</p>
+) : item ? (
+  <div
+    className="item-deils"
+    onClick={backToProduct}
+    style={{
+      marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
+    }}
+  >
+    <img src={imageSrc} alt={item?.name || "product image"} className="item-ige" />
+    <h3 className="item-ne">{getTranslatedName(item, payItem).slice(0, 25)}</h3>
+  </div>
+) : (
+  <p>{t("item_not_found")}</p>
+)}
         </div>
 
         <div className="buy-now-container">
@@ -1095,27 +1075,39 @@ useEffect(() => {
           )}
         </div>
 
-        <div
-          style={{ display: isDesktop || isTablet ? "" : "none" }}
-          className="checkout-container"
-        >
-          {loading ? (
-            <p>{t("loading_item_details")}</p>
-          ) : item ? (
-            <div
-              className="item-deils"
-              onClick={backToProduct}
-              style={{
-                marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
-              }}
-            >
-              <img src={imageSrc} alt={item?.name || "product image"} className="item-ige" />
-              <h3 className="item-ne">{getTranslatedName(item, payItem).slice(0, 25)}</h3>
-            </div>
-          ) : (
-            <p>{t("item_not_found")}</p>
-          )}
-        </div>
+       <div
+  style={{ display: isDesktop || isTablet ? "" : "none" }}
+  className="checkout-container"
+>
+  {urlBasket === "true" ? (
+    <div
+      className="item-deils"
+      style={{
+        marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
+      }}
+    >
+      <h3 className="item-ne">
+        Proceeding with {checkoutData?.items?.length || 0} item
+        {(checkoutData?.items?.length || 0) > 1 ? "s" : ""} in your basket
+      </h3>
+    </div>
+  ) : loading ? (
+    <p>{t("loading_item_details")}</p>
+  ) : item ? (
+    <div
+      className="item-deils"
+      onClick={backToProduct}
+      style={{
+        marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
+      }}
+    >
+      <img src={imageSrc} alt={item?.name || "product image"} className="item-ige" />
+      <h3 className="item-ne">{getTranslatedName(item, payItem).slice(0, 25)}</h3>
+    </div>
+  ) : (
+    <p>{t("item_not_found")}</p>
+  )}
+</div>
       </div>
     </div>
   );

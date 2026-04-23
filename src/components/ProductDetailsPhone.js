@@ -63,6 +63,47 @@ export default function ProductDetailsPhone({
 
   const tokenSymbol = product?.cryptocurrency?.toUpperCase?.() || "USDT";
 
+  const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
+
+const getImageFilename = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") {
+    return imageEntry.split("/").pop() || "";
+  }
+  if (typeof imageEntry === "object") {
+    return imageEntry.filename || imageEntry.url?.split("/").pop() || "";
+  }
+  return "";
+};
+
+const sortVariantImages = (images = []) => {
+  return [...images].sort((a, b) => {
+    const posA =
+      typeof a === "object" && typeof a?.position === "number" ? a.position : 999999;
+    const posB =
+      typeof b === "object" && typeof b?.position === "number" ? b.position : 999999;
+
+    if (posA !== posB) return posA - posB;
+
+    const nameA = getImageFilename(a);
+    const nameB = getImageFilename(b);
+
+    return nameA.localeCompare(nameB, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+};
+
+const getFirstVariantImageUrl = (images = []) => {
+  return getImageUrl(sortVariantImages(images)[0]) || "/fallback.png";
+};
+
   return (
     <div className="pdp-phone-page">
       <div className="pdp-phone-slider-shell">
@@ -74,16 +115,20 @@ export default function ProductDetailsPhone({
             slidesToShow={1}
             slidesToScroll={1}
           >
-            {product?.imagesVariants?.[selectedColor]?.map((image, index) => (
-              <div key={index}>
-                <img
-                  src={encodeURI(image)}
-                  alt={`Slide ${index}`}
-                  className="pdp-phone-slider-image"
-                  onClick={() => handleImageChange(image, index)}
-                />
-              </div>
-            ))}
+           {sortVariantImages(product?.imagesVariants?.[selectedColor] || []).map((image, index) => {
+              const imageUrl = getImageUrl(image);
+
+              return (
+                <div key={index}>
+                  <img
+                    src={encodeURI(imageUrl)}
+                    alt={`Slide ${index}`}
+                    className="pdp-phone-slider-image"
+                    onClick={() => handleImageChange(image, index)}
+                  />
+                </div>
+              );
+            })}
           </Slider>
         </div>
 
@@ -101,7 +146,7 @@ export default function ProductDetailsPhone({
                   aria-label={`Select color ${color}`}
                 >
                   <img
-                    src={encodeURI(product.imagesVariants[color][0])}
+                    src={encodeURI(getFirstVariantImageUrl(product.imagesVariants[color] || []))}
                     alt={`${color} option`}
                     className="pdp-phone-color-thumbnail-image"
                   />

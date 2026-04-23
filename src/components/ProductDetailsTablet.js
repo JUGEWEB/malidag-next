@@ -70,22 +70,67 @@ loadingDeliveryInfo,
 const canShipToSelectedCountry =
   !!selectedCountryCode && shippingCountries.includes(selectedCountryCode);
 
+  const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
+
+const getImageFilename = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") {
+    return imageEntry.split("/").pop() || "";
+  }
+  if (typeof imageEntry === "object") {
+    return imageEntry.filename || imageEntry.url?.split("/").pop() || "";
+  }
+  return "";
+};
+
+const sortVariantImages = (images = []) => {
+  return [...images].sort((a, b) => {
+    const posA =
+      typeof a === "object" && typeof a?.position === "number" ? a.position : 999999;
+    const posB =
+      typeof b === "object" && typeof b?.position === "number" ? b.position : 999999;
+
+    if (posA !== posB) return posA - posB;
+
+    const nameA = getImageFilename(a);
+    const nameB = getImageFilename(b);
+
+    return nameA.localeCompare(nameB, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+};
+
+const getFirstVariantImageUrl = (images = []) => {
+  return getImageUrl(sortVariantImages(images)[0]) || "/fallback.png";
+};
+
   return (
     <>
       <div className="pdp-tablet-layout">
         <div className="pdp-tablet-left-column">
           <div className="left-thumbnails pdp-tablet-left-thumbnails">
-            {product?.imagesVariants?.[selectedColor]?.map((image, index) => (
+           {sortVariantImages(product?.imagesVariants?.[selectedColor] || []).map((image, index) => {
+            const imageUrl = getImageUrl(image);
+
+            return (
               <Image
                 key={index}
-                src={encodeURI(image)}
+                src={encodeURI(imageUrl)}
                 width={20}
                 height={20}
                 alt={`${selectedColor} variant ${index + 1}`}
-                className={`thumbnail ${selectedImage === image ? "active" : ""}`}
+                className={`thumbnail ${selectedImage === imageUrl ? "active" : ""}`}
                 onClick={() => handleImageChange(image, index)}
               />
-            ))}
+            );
+          })}
           </div>
         </div>
 
@@ -316,19 +361,23 @@ const canShipToSelectedCountry =
 
               {product?.imagesVariants && (
                 <div className="right-colors desktop-color-thumbnails pdp-tablet-color-list">
-                  {Object.keys(product.imagesVariants).map((color) => (
-                    <Image
-                      key={color}
-                      src={encodeURI(product.imagesVariants[color][0])}
-                      alt={`${color} option`}
-                      width={60}
-                      height={60}
-                      className={`color-thumbnail ${
-                        color === selectedColor ? "selected" : ""
-                      }`}
-                      onClick={() => handleColorChange(color)}
-                    />
-                  ))}
+                 {Object.keys(product.imagesVariants).map((color) => {
+                    const colorPreview = getFirstVariantImageUrl(product.imagesVariants[color] || []);
+
+                    return (
+                      <Image
+                        key={color}
+                        src={encodeURI(colorPreview)}
+                        alt={`${color} option`}
+                        width={60}
+                        height={60}
+                        className={`color-thumbnail ${
+                          color === selectedColor ? "selected" : ""
+                        }`}
+                        onClick={() => handleColorChange(color)}
+                      />
+                    );
+                  })}
                 </div>
               )}
 

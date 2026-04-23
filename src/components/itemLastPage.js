@@ -44,6 +44,48 @@ const coinImages = {
   USDT: "https://assets.coingecko.com/coins/images/325/large/Tether-logo.png?1598003707",
 };
 
+const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
+
+const getImageFilename = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") {
+    return imageEntry.split("/").pop() || "";
+  }
+  if (typeof imageEntry === "object") {
+    return imageEntry.filename || imageEntry.url?.split("/").pop() || "";
+  }
+  return "";
+};
+
+const sortVariantImages = (images = []) => {
+  return [...images].sort((a, b) => {
+    const posA =
+      typeof a === "object" && typeof a?.position === "number" ? a.position : 999999;
+    const posB =
+      typeof b === "object" && typeof b?.position === "number" ? b.position : 999999;
+
+    if (posA !== posB) return posA - posB;
+
+    const nameA = getImageFilename(a);
+    const nameB = getImageFilename(b);
+
+    return nameA.localeCompare(nameB, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+};
+
+const getFirstVariantImageUrl = (images = []) => {
+  const sorted = sortVariantImages(images);
+  return getImageUrl(sorted[0]) || "";
+};
+
 function ProductDetails({ basketItems }) {
   const { address, isConnected, chain } = useAccount();
   const { country } = useContext(AppContext);
@@ -403,15 +445,23 @@ const [authReady, setAuthReady] = useState(false);
       setItem(foundProduct);
 
       if (foundProduct?.item) {
-        const initialColor = Object.keys(foundProduct.item.imagesVariants)[0];
-        setItemId(foundProduct.itemId);
-        setProduct(foundProduct.item);
-        setDetails(foundProduct.details);
+       const variantMap = foundProduct.item.imagesVariants || {};
+                const initialColor = Object.keys(variantMap)[0] || null;
 
-        const userLang = i18n.language || "en";
-        setSelectedColor(initialColor);
-        setSelectedImage(foundProduct.item.imagesVariants[initialColor][0]);
-        fetchTranslation(foundProduct.itemId, userLang);
+                setItemId(foundProduct.itemId);
+                setProduct(foundProduct.item);
+                setDetails(foundProduct.details);
+
+                const userLang = i18n.language || "en";
+                setSelectedColor(initialColor);
+
+                if (initialColor) {
+                  setSelectedImage(getFirstVariantImageUrl(variantMap[initialColor]));
+                } else {
+                  setSelectedImage(getImageUrl(foundProduct.item.images?.[0]) || null);
+                }
+
+                fetchTranslation(foundProduct.itemId, userLang);
 
         const sizesString = foundProduct.item.size?.[initialColor]?.[0] || "";
         const sizesArray = sizesString.split(", ").map((size) => size.trim());
@@ -460,19 +510,22 @@ const [authReady, setAuthReady] = useState(false);
   return usdAmount.toFixed(2); // fallback (or remove non-stable support entirely)
 };
 
-  const handleColorChange = (color) => {
-    setSelectedColor(color);
-    setSelectedImage(product.imagesVariants[color][0]);
+ const handleColorChange = (color) => {
+  setSelectedColor(color);
 
-    const sizesString = product.size?.[color]?.[0] || "";
-    const sizesArray = sizesString.split(", ").map((size) => size.trim());
-    setSelectedSize(sizesArray[0] || t("no_size_available"));
-  };
+  const variantImages = product?.imagesVariants?.[color] || [];
+  setSelectedImage(getFirstVariantImageUrl(variantImages) || "/fallback.png");
+  setSelectedImageNumber(0);
 
-  const handleImageChange = (image, index) => {
-    setSelectedImage(image);
-    setSelectedImageNumber(index);
-  };
+  const sizesString = product?.size?.[color]?.[0] || "";
+  const sizesArray = sizesString.split(", ").map((size) => size.trim());
+  setSelectedSize(sizesArray[0] || t("no_size_available"));
+};
+
+ const handleImageChange = (image, index) => {
+  setSelectedImage(getImageUrl(image) || "/fallback.png");
+  setSelectedImageNumber(index);
+};
 
   const handleSizeChange = (size) => {
     setSelectedSize(size);

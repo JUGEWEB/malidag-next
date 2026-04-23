@@ -169,16 +169,42 @@ setBestSellerId(bestSeller?.id || null);
     return Object.keys(product?.item?.imagesVariants || {});
   };
 
+  const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
+
   const getDisplayImage = (product) => {
-    const selectedColor = selectedColorByItem[product.id];
-    const variants = product?.item?.imagesVariants || {};
+  const selectedColor = selectedColorByItem[product.id];
+  const variants = product?.item?.imagesVariants || {};
 
-    if (selectedColor && variants[selectedColor]?.[0]) {
-      return variants[selectedColor][0];
-    }
+  if (selectedColor && variants[selectedColor]?.length > 0) {
+    const sortedImages = [...variants[selectedColor]].sort((a, b) => {
+      const posA =
+        typeof a === "object" && typeof a?.position === "number" ? a.position : 999999;
+      const posB =
+        typeof b === "object" && typeof b?.position === "number" ? b.position : 999999;
 
-    return product?.item?.images?.[0] || "/fallback.png";
-  };
+      if (posA !== posB) return posA - posB;
+
+      const nameA =
+        typeof a === "object" ? a?.filename || "" : String(a || "").split("/").pop() || "";
+      const nameB =
+        typeof b === "object" ? b?.filename || "" : String(b || "").split("/").pop() || "";
+
+      return nameA.localeCompare(nameB, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+
+    return getImageUrl(sortedImages[0]) || "/fallback.png";
+  }
+
+  return getImageUrl(product?.item?.images?.[0]) || "/fallback.png";
+};
 
   const getColorSwatch = (colorName = "") => {
     const color = colorName.trim().toLowerCase();

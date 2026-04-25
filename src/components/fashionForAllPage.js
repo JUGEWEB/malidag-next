@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import "./itemPage.css";
+import "./fashionForAllPage.css";
 import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
@@ -13,7 +13,6 @@ function ItemFashionPage() {
   const [brandGroups, setBrandGroups] = useState([]);
   const [topItemsPerBrand, setTopItemsPerBrand] = useState({});
   const [bestSellersByBrand, setBestSellersByBrand] = useState({});
-  const [cryptoPrices, setCryptoPrices] = useState({});
   const [loading, setLoading] = useState(true);
   const { isMobile, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall } = useScreenSize();
    const [reviews, setReviews] = useState({}); // Store reviews data
@@ -157,7 +156,6 @@ itemsMap[brandName.trim().toLowerCase()]?.forEach((item) => {
 
       setTopItemsPerBrand(itemsMap);
       setBestSellersByBrand(bestSellerMap);
-      fetchCryptoPrices([...allSymbols]);
       setLoading(false);
     };
 
@@ -181,21 +179,6 @@ const getTranslatedName = (item, itemId) => {
   return nameToShow.length > 20 ? nameToShow.substring(0, 20) + "..." : nameToShow;
 };
 
-
-  const fetchCryptoPrices = async (symbols) => {
-    try {
-      const response = await axios.get("https://api.malidag.com/crypto-prices");
-      const prices = symbols.reduce((acc, symbol) => {
-        if (response.data[symbol]) {
-          acc[symbol] = parseFloat(response.data[symbol]);
-        }
-        return acc;
-      }, {});
-      setCryptoPrices(prices);
-    } catch (error) {
-      console.error("Error fetching crypto prices:", error);
-    }
-  };
 
   const handleItemClick = (id) => {
     if (id) push(`/product/${id}`);
@@ -230,9 +213,8 @@ const getTranslatedName = (item, itemId) => {
 
       <div style={{maxWidth: "100%", maxWidth: "100%", overflow: "hidden"}}>
       {Object.entries(topItemsPerBrand).map(([brand, items]) => (
-        <div style={{maxWidth: "100%", maxWidth: "100%", overflow: "hidden"}}>
+        <div  key={brand} style={{maxWidth: "100%", maxWidth: "100%", overflow: "hidden"}}>
         <div
-          key={brand}
           style={{
             display: "grid",
             width: "100%",
@@ -270,13 +252,11 @@ const getTranslatedName = (item, itemId) => {
 
   const { id, itemId, item } = itemData;
   const { name, images, usdPrice, cryptocurrency, sold } = item;
-
   const crypto = cryptocurrency || "";
-  const cryptoPrice = cryptoPrices[crypto] || 0;
-  const priceInCrypto = cryptoPrice > 0 ? (usdPrice / cryptoPrice).toFixed(6) : "N/A";
   const reviewsData = reviews[itemId] || {};
   const finalRating = reviewsData?.averageRating || null;
   const isBestSeller = id === bestSellersByBrand[brand];
+ const priceInCrypto = Number(usdPrice || 0).toFixed(2);
 
   return (
     <div key={id} onClick={() => handleItemClick(id)} style={{ maxWidth: "100%", overflow: "hidden" }}>
@@ -291,6 +271,7 @@ const getTranslatedName = (item, itemId) => {
           marginBottom: "10px",
           marginTop: "10px",
           position: "relative",
+          overflow: "hidden", // add this
         }}
       >
         <img
@@ -300,6 +281,7 @@ const getTranslatedName = (item, itemId) => {
             width: "100%",
             height: isVerySmall ? "230px" : "300px",
             objectFit: "contain",
+            display: "block", // add this
           }}
         />
         <div
@@ -329,21 +311,23 @@ const getTranslatedName = (item, itemId) => {
           onError={(e) => (e.target.src = "https://cryptologos.cc/logos/binance-usd-busd-logo.png")}
         />
         <span className="item-crypto-price">
-          {priceInCrypto !== "N/A" ? `${priceInCrypto} ${crypto}` : "Price unavailable"}
-        </span>
+        {priceInCrypto} {crypto}
+      </span>
       </div>
       <div className="item-sold">{sold} {t("sold")}</div>
       <div
         className="item-type-stars"
-       onClick={() => {
-  setItemData(itemData); // Store the selected item
-  push("/reviewPage");   // Navigate to the review page
-}}
+        onClick={() => {
+    if (finalRating) {
+      setItemData(itemData);
+      push("/reviewPage");
+    }
+  }}
         title={t("view_reviews")}
       >
-        {finalRating
-          ? "★".repeat(Math.round(finalRating)) + "☆".repeat(5 - Math.round(finalRating))
-          : t("no_rating")}
+       {finalRating &&
+        "★".repeat(Math.round(finalRating)) +
+          "☆".repeat(5 - Math.round(finalRating))}
       </div>
     </div>
   );

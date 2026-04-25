@@ -35,20 +35,19 @@ const ThemeWithText = () => {
 
       <div style={{ width: "100%", height: "190px" }}>
   <img
-    src="https://cdn.malidag.com/themes/1760455026024-650422e1-19ca-4421-88d4-92baa31c4cb0.webp"
-    alt="our top brands"
-    loading="lazy"
-    onLoad={() => setImageLoaded(true)}
-    onError={() => console.log("Image failed to load")}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      transition: "opacity 0.3s ease",
-      marginTop: "30px",
-      display: "block",
-    }}
-  />
+  src="https://cdn.malidag.com/themes/1760455026024-650422e1-19ca-4421-88d4-92baa31c4cb0.webp"
+  alt="our top brands"
+  loading="lazy"
+  onError={() => console.log("Image failed to load")}
+  style={{
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    transition: "opacity 0.3s ease",
+    marginTop: "30px",
+    display: "block",
+  }}
+/>
 </div>
     </div>
   );

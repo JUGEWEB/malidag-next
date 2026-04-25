@@ -28,28 +28,35 @@ const NavMenu = ({basketItems}) => {
     }
   }, [pathname]); // Dependency array to re-run the effect on location change
   
-    useEffect(() => {
-      const fetchBeautyTypes = async () => {
-        try {
-          const response = await axios.get(`${BASE_URL}/items`);
-          const items = response.data.items;
-  
-          const typesSet = new Set();
-          items.forEach((item) => {
-            if (item.category === "Beauty" && item.item?.type) {
-              typesSet.add(item.item.type.toLowerCase()); // ✅ Convert to lowercase
-            }
-          });
-          console.log("Beauty Types:", typesSet); // Debugging log
-  
-          setBeautyTypes(typesSet); // ✅ Update state correctly
-        } catch (error) {
-          console.error("Error fetching items:", error);
+   useEffect(() => {
+  const fetchBeautyTypes = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/items`);
+
+      const items = Array.isArray(response.data)
+        ? response.data
+        : response.data.items || [];
+
+      const typesSet = new Set();
+
+      items.forEach((item) => {
+        if (
+          item.category?.toLowerCase() === "beauty" &&
+          item.item?.type
+        ) {
+          typesSet.add(item.item.type.toLowerCase());
         }
-      };
-  
-      fetchBeautyTypes();
-    }, []);
+      });
+
+      setBeautyTypes(typesSet);
+    } catch (error) {
+      console.error("Error fetching items:", error);
+    }
+  };
+
+  fetchBeautyTypes();
+}, []);
+
     console.log("Current Path:", pathname);
   const isCheckoutPage = pathname === "/checkout"; // ✅ Check if we are on the checkout page
   const isItemsOfWomenPage = pathname.includes("itemsOfWomen"); // ✅ Check if we are on 'itemsOfWomen' page

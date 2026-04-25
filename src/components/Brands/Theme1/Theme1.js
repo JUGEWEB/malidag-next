@@ -361,16 +361,52 @@ function Theme1({ brandName }) {
     }));
   };
 
-  const getDisplayImage = (product) => {
-    const selectedColor = selectedColorByItem[product.id];
-    const variants = product?.imagesVariants || {};
+ const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
 
-    if (selectedColor && variants[selectedColor]?.[0]) {
-      return variants[selectedColor][0];
-    }
+const getDisplayImage = (product) => {
+  const selectedColor = selectedColorByItem[product.id];
+  const variants = product?.imagesVariants || {};
 
-    return product?.images?.[0] || "/fallback.png";
-  };
+  if (selectedColor && variants[selectedColor]?.length > 0) {
+    const sortedImages = [...variants[selectedColor]].sort((a, b) => {
+      const posA =
+        typeof a === "object" && typeof a?.position === "number"
+          ? a.position
+          : 999999;
+
+      const posB =
+        typeof b === "object" && typeof b?.position === "number"
+          ? b.position
+          : 999999;
+
+      if (posA !== posB) return posA - posB;
+
+      const nameA =
+        typeof a === "object"
+          ? a?.filename || ""
+          : String(a || "").split("/").pop() || "";
+
+      const nameB =
+        typeof b === "object"
+          ? b?.filename || ""
+          : String(b || "").split("/").pop() || "";
+
+      return nameA.localeCompare(nameB, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+
+    return getImageUrl(sortedImages[0]) || "/fallback.png";
+  }
+
+  return getImageUrl(product?.images?.[0]) || "/fallback.png";
+};
 
   const getFirstValidVideo = (product) => {
     if (!Array.isArray(product?.videos)) return null;

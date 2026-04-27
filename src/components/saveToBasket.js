@@ -342,7 +342,7 @@ const cannotCheckout =
               <img src={imageUrl} alt={name} className="basket-item-image" />
 
               {/* Clickable Name */}
-              <p
+              <div
                 className="basket-item-name"
                 title={name}
                 onClick={() => router.push(`/product/${id}`)}
@@ -362,7 +362,7 @@ const cannotCheckout =
 >
   {countryCurrencyConfig.symbol}{itemTotalLocalized.toFixed(2)}
 </div>
-              </p>
+              </div>
               <div>
               <Popover content={t('basket_remove_item')} trigger="hover">
               <button className="remove-btn" onClick={() => removeFromBasket(itemId)}>🗑️</button>

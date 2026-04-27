@@ -86,6 +86,7 @@ const getFirstVariantImageUrl = (images = []) => {
   return getImageUrl(sorted[0]) || "";
 };
 
+
 function ProductDetails({ basketItems }) {
   const { address, isConnected, chain } = useAccount();
   const { country } = useContext(AppContext);
@@ -194,6 +195,21 @@ const [authReady, setAuthReady] = useState(false);
       console.error("Failed to fetch zoom setting:", error);
     }
   };
+
+  const getOptionLabel = () => {
+  const category = details?.category?.toLowerCase() || item?.category?.toLowerCase() || "";
+  const department = product?.department?.toLowerCase() || "";
+
+  if (category === "electronic" || department === "electronic") {
+    return "Storage";
+  }
+
+  if (category === "shoes" || department === "shoes") {
+    return "Shoe size";
+  }
+
+  return "Size";
+};
 
   useEffect(() => {
     fetchZoomSetting(itemsd, selectedColor, selectedImageNumber);
@@ -437,6 +453,42 @@ const [authReady, setAuthReady] = useState(false);
     fetchTranslation(id, i18n.language);
   }, [id, i18n.language]);
 
+  const getOptionsForColor = (color) => {
+  const options = product?.size?.[color] || [];
+
+  if (!Array.isArray(options)) return [];
+
+  // New format: [{ value: "256GB", price: 1199 }]
+  if (typeof options[0] === "object") {
+    return options;
+  }
+
+  // Old format: ["S, M, L"] or ["256GB, 512GB"]
+  if (typeof options[0] === "string") {
+    return options[0]
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((value) => ({
+        value,
+        price: null,
+      }));
+  }
+
+  return [];
+};
+
+const getSelectedOption = () => {
+  return getOptionsForColor(selectedColor).find(
+    (option) => option.value === selectedSize
+  );
+};
+
+const getCurrentPrice = () => {
+  const selectedOption = getSelectedOption();
+  return Number(selectedOption?.price || product?.usdPrice || 0);
+};
+
   const fetchAllProducts = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/item/${id}`);
@@ -463,9 +515,16 @@ const [authReady, setAuthReady] = useState(false);
 
                 fetchTranslation(foundProduct.itemId, userLang);
 
-        const sizesString = foundProduct.item.size?.[initialColor]?.[0] || "";
-        const sizesArray = sizesString.split(", ").map((size) => size.trim());
-        const initialSize = sizesArray[0] || null;
+       const options = foundProduct.item.size?.[initialColor] || [];
+
+        let initialSize = null;
+
+        if (Array.isArray(options) && typeof options[0] === "object") {
+          initialSize = options[0]?.value || null;
+        } else if (Array.isArray(options) && typeof options[0] === "string") {
+          initialSize = options[0].split(",")[0]?.trim() || null;
+        }
+
         setSelectedSize(initialSize);
       }
     } catch (error) {
@@ -517,9 +576,17 @@ const [authReady, setAuthReady] = useState(false);
   setSelectedImage(getFirstVariantImageUrl(variantImages) || "/fallback.png");
   setSelectedImageNumber(0);
 
-  const sizesString = product?.size?.[color]?.[0] || "";
-  const sizesArray = sizesString.split(", ").map((size) => size.trim());
-  setSelectedSize(sizesArray[0] || t("no_size_available"));
+ const options = product?.size?.[color] || [];
+
+let firstOption = null;
+
+if (Array.isArray(options) && typeof options[0] === "object") {
+  firstOption = options[0]?.value || null;
+} else if (Array.isArray(options) && typeof options[0] === "string") {
+  firstOption = options[0].split(",")[0]?.trim() || null;
+}
+
+setSelectedSize(firstOption || t("no_size_available"));
 };
 
  const handleImageChange = (image, index) => {
@@ -569,7 +636,7 @@ const [authReady, setAuthReady] = useState(false);
           id: id,
           itemId: itemsd,
           name: product.name,
-          price: product.usdPrice,
+         price: getCurrentPrice(),
           color: selectedColor,
           size: selectedSize,
           image: selectedImage,
@@ -816,7 +883,7 @@ const [authReady, setAuthReady] = useState(false);
   });
 
   const query = `itemId=${itemsd}&quantity=${quantity}&selectedColor=${selectedColor}&selectedSize=${selectedSize}&tokenAmount=${
-    product.usdPrice * quantity
+   getCurrentPrice() * quantity
   }&basket=false`;
 
   if (method === "crypto") {
@@ -931,6 +998,9 @@ const [authReady, setAuthReady] = useState(false);
             country={country}
             selectedDeliveryInfo={selectedDeliveryInfo}
             loadingDeliveryInfo={loadingDeliveryInfo}
+             optionLabel={getOptionLabel()}
+            currentPrice={getCurrentPrice()}
+            selectedOptions={getOptionsForColor(selectedColor)}
           />
         )}
 
@@ -982,6 +1052,9 @@ const [authReady, setAuthReady] = useState(false);
             details={details}
              selectedDeliveryInfo={selectedDeliveryInfo}
             loadingDeliveryInfo={loadingDeliveryInfo}
+             optionLabel={getOptionLabel()}
+            currentPrice={getCurrentPrice()}
+            selectedOptions={getOptionsForColor(selectedColor)}
           />
         )}
 
@@ -1037,6 +1110,9 @@ const [authReady, setAuthReady] = useState(false);
             details={details}
              selectedDeliveryInfo={selectedDeliveryInfo}
             loadingDeliveryInfo={loadingDeliveryInfo}
+            optionLabel={getOptionLabel()}
+            currentPrice={getCurrentPrice()}
+            selectedOptions={getOptionsForColor(selectedColor)}
           />
         )}
 

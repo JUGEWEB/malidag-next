@@ -48,6 +48,9 @@ export default function ProductDetailsPhone({
   country,
   selectedDeliveryInfo,
   loadingDeliveryInfo,
+  optionLabel,
+currentPrice,
+selectedOptions,
 }) {
   const rawShippingCountries = details?.country || "";
 
@@ -254,55 +257,35 @@ const getFirstVariantImageUrl = (images = []) => {
             </div>
           )}
 
-          {canShipToSelectedCountry && (
-            <>
-              {loadingDeliveryInfo && (
-                <div
-                  style={{
-                    marginBottom: "12px",
-                    padding: "12px",
-                    borderRadius: "8px",
-                    backgroundColor: "#f8f9fa",
-                    border: "1px solid #d9d9d9",
-                    color: "#222",
-                  }}
-                >
-                  <p style={{ margin: 0 }}>Loading delivery information...</p>
-                </div>
-              )}
+         {canShipToSelectedCountry && (
+  <>
+    {loadingDeliveryInfo && (
+      <div className="pdp-delivery-card">
+        <p className="pdp-delivery-text">
+          Loading delivery information...
+        </p>
+      </div>
+    )}
 
-              {!loadingDeliveryInfo && selectedDeliveryInfo && (
-                <div
-                  style={{
-                    marginBottom: "12px",
-                    padding: "12px",
-                    borderRadius: "8px",
-                    backgroundColor: "#f8f9fa",
-                    border: "1px solid #d9d9d9",
-                    color: "#222",
-                  }}
-                >
-                  <div>
-                    <p style={{ margin: "0 0 4px 0" }}>
-                      {selectedDeliveryInfo.fullName}
-                    </p>
-                    <p style={{ margin: "0 0 4px 0" }}>
-                      {selectedDeliveryInfo.email}
-                    </p>
-                    <p style={{ margin: "0 0 4px 0" }}>
-                      {selectedDeliveryInfo.streetName}
-                    </p>
-                    <p style={{ margin: "0 0 4px 0" }}>
-                      {selectedDeliveryInfo.town}
-                    </p>
-                    <p style={{ margin: 0 }}>
-                      {selectedDeliveryInfo.country}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+    {!loadingDeliveryInfo && selectedDeliveryInfo && (
+      <div className="pdp-delivery-card">
+        <p className="pdp-delivery-text">
+          Delivering to{" "}
+          <strong>{selectedDeliveryInfo.fullName}</strong>{" "}
+          at {selectedDeliveryInfo.streetName}, {selectedDeliveryInfo.town},{" "}
+          {selectedDeliveryInfo.postalCode && `${selectedDeliveryInfo.postalCode}, `}
+          {selectedDeliveryInfo.country}. Contact:{" "}
+          <a
+            href={`mailto:${selectedDeliveryInfo.email}`}
+            className="pdp-delivery-email"
+          >
+            {selectedDeliveryInfo.email}
+          </a>
+        </p>
+      </div>
+    )}
+  </>
+)}
 
           <div className="pdp-phone-network-row">
             <span className="pdp-phone-network-icon" role="img" aria-label="network">
@@ -312,15 +295,18 @@ const getFirstVariantImageUrl = (images = []) => {
           </div>
 
           <div className="pdp-phone-size-summary">
-            <span className="pdp-phone-size-summary-label">
-              {t("size_name", { size: selectedSize })}
-            </span>
-          </div>
+  <span className="pdp-phone-size-summary-label">
+    {optionLabel}
+  </span>
+  <span className="pdp-phone-size-summary-value">
+    {selectedSize}
+  </span>
+</div>
 
-          {product?.size?.[selectedColor] && (
+         {selectedOptions?.length > 0 && (
             <div className="pdp-phone-size-block">
               <label htmlFor="size-select" className="pdp-phone-label">
-                {t("select_size_label")}
+               Select {optionLabel}
               </label>
               <select
                 id="size-select"
@@ -328,25 +314,39 @@ const getFirstVariantImageUrl = (images = []) => {
                 onChange={(e) => handleSizeChange(e.target.value)}
                 className="pdp-phone-size-select"
               >
-                {product.size[selectedColor][0].split(", ").map((size, index) => (
-                  <option key={index} value={size.trim()}>
-                    {size.trim()}
+                {selectedOptions.map((option, index) => {
+                const priceText = option.price
+                  ? ` ($${Number(option.price).toFixed(2)})`
+                  : "";
+
+                return (
+                  <option key={`${option.value}-${index}`} value={option.value}>
+                    {option.value}{priceText}
                   </option>
-                ))}
+                );
+              })}
               </select>
             </div>
           )}
 
+          {selectedOptions.find(o => o.value === selectedSize)?.price && (
+          <div className="pdp-phone-option-hint">
+            ${Number(
+              selectedOptions.find(o => o.value === selectedSize).price
+            ).toFixed(2)} for this option
+          </div>
+        )}
+
           <div className="pdp-phone-price-card">
             <div className="pdp-phone-price-row">
               <h2 className="pdp-phone-usd-price">
-                ${product?.usdPrice * quantity}
+               ${(currentPrice * quantity).toFixed(2)}
               </h2>
 
               <span className="pdp-phone-price-separator">≈</span>
 
               <h3 className="pdp-phone-crypto-price">
-                {convertToCrypto(product?.usdPrice * quantity, tokenSymbol)}
+                {convertToCrypto(currentPrice * quantity, tokenSymbol)}
                 {coinImages[tokenSymbol] && (
                   <Image
                     src={encodeURI(coinImages[tokenSymbol])}

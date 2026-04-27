@@ -11,6 +11,34 @@
   grid-template-columns: 88px 320px minmax(0, 1fr);
 }
 
+.pdp-delivery-card {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.pdp-delivery-text {
+  margin: 0;
+  color: #111827;
+  font-size: 13.5px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.pdp-delivery-email {
+  color: #1677ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
+.pdp-delivery-email:hover {
+  color: #0958d9;
+}
+
 /* LEFT */
 
 .pdp-desktop-left-column {

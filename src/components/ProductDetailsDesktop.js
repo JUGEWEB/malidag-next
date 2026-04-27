@@ -59,6 +59,9 @@ export default function ProductDetailsDesktop({
    details,
    selectedDeliveryInfo,
   loadingDeliveryInfo,
+  optionLabel,
+  currentPrice,
+selectedOptions,
 }) {
   const panelWidth = 420;
   const panelHeight = 450;
@@ -270,55 +273,33 @@ const getFirstVariantImageUrl = (images = []) => {
                     </div>
                   )}
 
-                  {canShipToSelectedCountry && (
-                    <>
-                      {loadingDeliveryInfo && (
-                        <div
-                          style={{
-                            marginBottom: "12px",
-                            padding: "12px",
-                            borderRadius: "8px",
-                            backgroundColor: "#f8f9fa",
-                            border: "1px solid #d9d9d9",
-                            color: "#222",
-                          }}
-                        >
-                          <p style={{ margin: 0 }}>Loading delivery information...</p>
-                        </div>
-                      )}
+                 {canShipToSelectedCountry && (
+                      <>
+                        {loadingDeliveryInfo && (
+                          <div className="pdp-delivery-card">
+                            <p className="pdp-delivery-text">Loading delivery information...</p>
+                          </div>
+                        )}
 
-                      {!loadingDeliveryInfo && selectedDeliveryInfo && (
-                        <div
-                          style={{
-                            marginBottom: "12px",
-                            padding: "12px",
-                            borderRadius: "8px",
-                            backgroundColor: "#f8f9fa",
-                            border: "1px solid #d9d9d9",
-                            color: "#222",
-                          }}
-                        >
-                          <div>
-                            <p style={{ margin: "0 0 4px 0" }}>
-                              {selectedDeliveryInfo.fullName}
-                            </p>
-                            <p style={{ margin: "0 0 4px 0" }}>
-                              {selectedDeliveryInfo.email}
-                            </p>
-                            <p style={{ margin: "0 0 4px 0" }}>
-                              {selectedDeliveryInfo.streetName}
-                            </p>
-                            <p style={{ margin: "0 0 4px 0" }}>
-                              {selectedDeliveryInfo.town}
-                            </p>
-                            <p style={{ margin: 0 }}>
-                              {selectedDeliveryInfo.country}
+                        {!loadingDeliveryInfo && selectedDeliveryInfo && (
+                          <div className="pdp-delivery-card">
+                            <p className="pdp-delivery-text">
+                              Delivering to{" "}
+                              <strong>{selectedDeliveryInfo.fullName}</strong>{" "}
+                              at {selectedDeliveryInfo.streetName}, {selectedDeliveryInfo.town},{" "}
+                              {selectedDeliveryInfo.postalCode && `${selectedDeliveryInfo.postalCode}, `}
+                              {selectedDeliveryInfo.country}. Contact:{" "}
+                              <a
+                                href={`mailto:${selectedDeliveryInfo.email}`}
+                                className="pdp-delivery-email"
+                              >
+                                {selectedDeliveryInfo.email}
+                              </a>
                             </p>
                           </div>
-                        </div>
-                      )}
-                    </>
-                  )}
+                        )}
+                      </>
+                    )}
 
                   <div className="pdp-desktop-network-row">
                     <span role="img" aria-label="network">
@@ -330,11 +311,11 @@ const getFirstVariantImageUrl = (images = []) => {
                   </div>
 
                   <div className="pdp-desktop-price-row">
-                    <h2 className="pdp-desktop-usd-price">${product?.usdPrice * quantity}</h2>
+                    <h2 className="pdp-desktop-usd-price">${(currentPrice * quantity).toFixed(2)}</h2>
                     <h4 className="pdp-desktop-price-separator">≈</h4>
 
                    <h3 className="pdp-desktop-crypto-price">
-                    {convertToCrypto(product?.usdPrice * quantity, product?.cryptocurrency)}
+                   {convertToCrypto(currentPrice * quantity, product?.cryptocurrency)}
                     {coinImages[product?.cryptocurrency] && (
                       <img
                         src={coinImages[product?.cryptocurrency]}
@@ -431,13 +412,13 @@ const getFirstVariantImageUrl = (images = []) => {
               )}
 
               <h1 className="pdp-desktop-meta-title">
-                {t("size_name", { size: selectedSize })}
+               {optionLabel}: {selectedSize}
               </h1>
 
-              {product?.size?.[selectedColor] && (
+              {selectedOptions?.length > 0 && (
                 <div className="pdp-desktop-size-block">
                   <label htmlFor="size-select" className="pdp-desktop-label">
-                    {t("select_size_label")}
+                   Select {optionLabel}
                   </label>
                   <select
                     id="size-select"
@@ -445,9 +426,10 @@ const getFirstVariantImageUrl = (images = []) => {
                     onChange={(e) => handleSizeChange(e.target.value)}
                     className="pdp-desktop-size-select"
                   >
-                    {product?.size[selectedColor][0].split(", ").map((size, index) => (
-                      <option key={index} value={size.trim()}>
-                        {size.trim()}
+                   {selectedOptions.map((option, index) => (
+                      <option key={`${option.value}-${index}`} value={option.value}>
+                        {option.value}
+                        {option.price ? ` - $${Number(option.price).toFixed(2)}` : ""}
                       </option>
                     ))}
                   </select>

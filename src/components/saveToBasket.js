@@ -80,30 +80,31 @@ const countryCurrencyConfig = getCountryConfig(lockedCountry?.name || "");
 const paypalAvailable = isPaypalSupported(lockedCountry?.name || "");
 const selectedCountryCode = getCountryCode(lockedCountry?.name || "");
 const { address, isConnected } = useAccount();
-
-const getLocalizedBasketItemPrice = (basketItem) => {
-  const field = countryCurrencyConfig.priceField;
-
-  if (field === "usdPrice") {
-    return Number.parseFloat(basketItem.price || basketItem.usdPrice || 0) || 0;
-  }
-
-  return (
-    Number.parseFloat(
-      basketItem?.[field] ||
-      basketItem?.details?.[field] ||
-      basketItem?.price ||
-      basketItem?.usdPrice ||
-      0
-    ) || 0
-  );
-};
+const [rates, setRates] = useState(null);
 
 const getUsdBasketItemPrice = (basketItem) => {
   return Number.parseFloat(
     basketItem?.usdPrice || basketItem?.price || 0
   ) || 0;
 };
+
+const getLocalizedBasketItemPrice = (basketItem) => {
+  const usdPrice = getUsdBasketItemPrice(basketItem);
+  const currency = countryCurrencyConfig.currency;
+
+  if (!currency || currency === "USD") {
+    return usdPrice;
+  }
+
+  const rate = rates?.[currency];
+
+  if (!rate) {
+    return usdPrice;
+  }
+
+  return usdPrice * rate;
+};
+
 
 const totalPriceLocalized = basket.reduce((sum, item) => {
   const localizedPrice = getLocalizedBasketItemPrice(item);
@@ -144,6 +145,19 @@ const totalPriceUsd = basket.reduce((sum, item) => {
   return () => {
     window.removeEventListener("countryChanged", syncCountry);
   };
+}, []);
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(`${BASKET_API}/prices/rates`);
+      setRates(response.data.rates);
+    } catch (error) {
+      console.error("Error fetching exchange rates:", error);
+    }
+  };
+
+  fetchRates();
 }, []);
 
 const cryptoAvailable = isConnected;
@@ -255,28 +269,38 @@ const totalPriceCrypto = totalPriceUsd / selectedCryptoPrice;
     return;
   }
 
+  const buildCurrencyFieldsFromUsd = (usdPrice) => ({
+  eurText: rates?.EUR ? (usdPrice * rates.EUR).toFixed(2) : "",
+  poundText: rates?.GBP ? (usdPrice * rates.GBP).toFixed(2) : "",
+  brlText: rates?.BRL ? (usdPrice * rates.BRL).toFixed(2) : "",
+  tryText: rates?.TRY ? (usdPrice * rates.TRY).toFixed(2) : "",
+  audText: rates?.AUD ? (usdPrice * rates.AUD).toFixed(2) : "",
+  sarText: rates?.SAR ? (usdPrice * rates.SAR).toFixed(2) : "",
+});
+
   const checkoutData = {
     isFromBasket: true,
-    items: basket.map((item) => ({
-      id: item.id,
-      quantity: item.quantity,
-      itemId: item.itemId,
-      color: item.color,
-      size: item.size,
-      brand: item.brand,
-      brandPrice: item.brandPrice || "0",
-      price: item.price,
-      eurText: item?.eurText || "",
-      poundText: item?.poundText || "",
-      brlText: item?.brlText || "",
-      tryText: item?.tryText || "",
-      audText: item?.audText || "",
-      sarText: item?.sarText || "",
-      image: item.image || "/placeholder.png",
-      name: item.name || "Product",
-      shippingCountry: item?.shippingCountry || item?.shippableCountries || "",
-      selectedCountry: item?.selectedCountry || "",
-    })),
+   items: basket.map((item) => {
+  const usdPrice = getUsdBasketItemPrice(item);
+  const currencyFields = buildCurrencyFieldsFromUsd(usdPrice);
+
+  return {
+    id: item.id,
+    quantity: item.quantity,
+    itemId: item.itemId,
+    color: item.color,
+    size: item.size,
+    brand: item.brand,
+    brandPrice: item.brandPrice || "0",
+    price: usdPrice,
+    usdPrice,
+    ...currencyFields,
+    image: item.image || "/placeholder.png",
+    name: item.name || "Product",
+    shippingCountry: item?.shippingCountry || item?.shippableCountries || "",
+    selectedCountry: item?.selectedCountry || "",
+  };
+}),
     paymentMethod,
    currency:
   paymentMethod === "crypto"

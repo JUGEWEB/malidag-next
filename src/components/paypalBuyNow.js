@@ -96,12 +96,24 @@ const PayPalBuyNow = ({
   const [paypalReady, setPaypalReady] = useState(false);
   const [paypalRendered, setPaypalRendered] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [rates, setRates] = useState(null);
 
  const headerCountryName = lockedCountry?.name || "";
 
 const currencyConfig = useMemo(() => {
   return getCountryConfig(headerCountryName);
 }, [headerCountryName]);
+
+const convertUsdToCurrency = (usdAmount, currency) => {
+  const usd = Number(usdAmount || 0);
+
+  if (!currency || currency === "USD") return usd;
+
+  const rate = rates?.[currency];
+  if (!rate) return usd;
+
+  return usd * rate;
+};
 
 const selectedCountryCode = useMemo(() => {
   return getCountryCode(headerCountryName);
@@ -120,9 +132,20 @@ const isItemShippableToCountry = useMemo(() => {
   return shippableCountries.includes(selectedCountryCode);
 }, [item, selectedCountryCode]);
 
- const totalAmount = useMemo(() => {
+const totalAmount = useMemo(() => {
   if (urlBasket === "true") {
     return Number(parseFloat(checkoutData?.totalPrice || 0).toFixed(2));
+  }
+
+  const selectedVariantUsdTotal = Number(urlTokenAmount || 0);
+
+  if (selectedVariantUsdTotal > 0) {
+    return Number(
+      convertUsdToCurrency(
+        selectedVariantUsdTotal,
+        currencyConfig.currency
+      ).toFixed(2)
+    );
   }
 
   if (product) {
@@ -130,8 +153,16 @@ const isItemShippableToCountry = useMemo(() => {
     return Number((localizedUnitPrice * urlQuantity).toFixed(2));
   }
 
-  return Number(parseFloat(urlTokenAmount || 0).toFixed(2));
-}, [urlBasket, checkoutData?.totalPrice, product, urlQuantity, urlTokenAmount, currencyConfig]);
+  return 0;
+}, [
+  urlBasket,
+  checkoutData?.totalPrice,
+  product,
+  urlQuantity,
+  urlTokenAmount,
+  currencyConfig.currency,
+  rates,
+]);
 
   const orderItems = useMemo(() => {
     if (urlBasket === "true" && Array.isArray(checkoutData?.items)) {
@@ -160,7 +191,8 @@ const isItemShippableToCountry = useMemo(() => {
           urlSelectedSize && urlSelectedSize !== "null"
             ? urlSelectedSize
             : "nosize",
-       price: String(getLocalizedItemPrice(item, currencyConfig) || "0"),
+       price: String(Number(urlTokenAmount || 0) / Number(urlQuantity || 1)),
+      usdPrice: String(Number(urlTokenAmount || 0) / Number(urlQuantity || 1)),
        currency: currencyConfig.currency,
         brand: item?.brand || "Unknown",
         brandPrice: item?.brandPrice || "0",
@@ -236,6 +268,20 @@ const canShipToSelectedCountry = useMemo(() => {
 
   return isItemShippableToCountry;
 }, [urlBasket, isBasketShippableToCountry, isItemShippableToCountry]);
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/prices/rates`);
+      setRates(response.data.rates);
+    } catch (error) {
+      console.error("Error fetching rates:", error);
+    }
+  };
+
+  fetchRates();
+}, []);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {

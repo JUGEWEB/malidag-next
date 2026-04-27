@@ -467,19 +467,23 @@ useEffect(() => {
   fetchDeliveryInfo();
 }, [authReady, firebaseUser, lockedCountry]);
 
-  useEffect(() => {
-    if (urlBasket === "true") {
-      if (checkoutData?.items?.length > 0) {
-        const totalUsdPrice = parseFloat(checkoutData.totalPrice || 0).toFixed(2);
-        setSelectedCurrency(checkoutData.currency || "USDT");
-        setTokenAmount(Number(totalUsdPrice));
-      }
-    } else if (urlItemId && urlBasket === "false" && product) {
-      const tokenAmountRaw = (product.usdPrice || 0) * quantity;
-      setSelectedCurrency(product.cryptocurrency || "USDT");
-      setTokenAmount(tokenAmountRaw);
+ useEffect(() => {
+  if (urlBasket === "true") {
+    if (checkoutData?.items?.length > 0) {
+      const totalUsdPrice = parseFloat(checkoutData.totalPrice || 0).toFixed(2);
+      setSelectedCurrency(checkoutData.currency || "USDT");
+      setTokenAmount(Number(totalUsdPrice));
     }
-  }, [product, quantity, checkoutData, urlBasket, urlItemId]);
+  } else if (urlItemId && urlBasket === "false") {
+    setSelectedCurrency(product?.cryptocurrency || "USDT");
+
+    // use selected variant USD total from ProductDetails URL
+    setTokenAmount(Number(urlTokenAmount || 0));
+  }
+}, [product, checkoutData, urlBasket, urlItemId, urlTokenAmount]);
+
+const selectedUnitUsdPrice =
+  Number(urlTokenAmount || 0) / Number(urlQuantity || 1);
 
   const estimateGas = async () => {
   setError(null);
@@ -589,7 +593,7 @@ useEffect(() => {
           quantity: quantity || 1,
           size: newSize,
           color: newColor,
-          price: item?.usdPrice || "0",
+         price: Number(tokenAmount || 0) / Number(quantity || 1),
           brand: item?.brand || "Unknown",
           brandPrice: item?.brandPrice || "0",
         },
@@ -692,9 +696,13 @@ useEffect(() => {
 
   const firstName = getFirstName();
 
-  const handleQuantityChange = (amount) => {
-    setQuantity((prev) => Math.max(1, prev + amount));
-  };
+ const handleQuantityChange = (amount) => {
+  setQuantity((prev) => {
+    const nextQuantity = Math.max(1, prev + amount);
+    setTokenAmount(selectedUnitUsdPrice * nextQuantity);
+    return nextQuantity;
+  });
+};
 
   const getConnectedWallet = () => {
     if (connectors) {

@@ -1,277 +1,183 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import useScreenSize from "./useIsMobile";
-import "./ItemIdPage.css";
 import { Carousel } from "antd";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
+import "./ItemIdPageDesktop.css";
 
-const ItemIdPageDesktop = ({ id }) => {
+const API_BASE = "https://api.malidag.com";
+
+export default function ItemIdPageDesktop({ id }) {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [translation, setTranslation] = useState(null);
+  const [status, setStatus] = useState("loading");
   const { t } = useTranslation();
-  const { isDesktop, isTablet } = useScreenSize();
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const getTranslationById = (id) => {
-    return translation?.find((t) => t.id === id)?.translatedText || null;
-  };
 
   useEffect(() => {
-    if (!mounted) return; // ✅ don't fetch until mounted, but hooks order stays consistent
     let cancelled = false;
 
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-
+    async function fetchData() {
       try {
+        setStatus("loading");
+
         const { data: itemData } = await axios.get(
-          `https://api.malidag.com/api/items/items/${id}`
+          `${API_BASE}/api/items/items/${id}`
         );
 
         if (cancelled) return;
-        setData(itemData);
 
-        const lang = i18n.language;
-        const folderID = itemData.folderID;
+        setData(itemData);
 
         try {
           const { data: transData } = await axios.get(
-            `https://api.malidag.com/translate/brand-media/${folderID}/${lang}`
+            `${API_BASE}/translate/brand-media/${itemData.folderID}/${i18n.language}`
           );
-          if (!cancelled) setTranslation(transData.translation);
+
+          if (!cancelled) {
+            setTranslation(transData?.translation || null);
+          }
         } catch {
-          console.warn("⚠️ No translations found for current language.");
           if (!cancelled) setTranslation(null);
         }
-      } catch (err) {
-        if (!cancelled) {
-          console.error("❌ Axios error:", err.response?.status, err.message);
-          setError(err.response?.data?.message || "Item not found or API error");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
 
-    fetchData();
+        if (!cancelled) setStatus("success");
+      } catch (err) {
+        console.error("Item brand media error:", err);
+        if (!cancelled) setStatus("error");
+      }
+    }
+
+    if (id) fetchData();
+
     return () => {
       cancelled = true;
     };
-  }, [id, i18n.language, mounted]);
+  }, [id, i18n.language]);
 
-  // 🌀 UI STATES
-  if (!mounted) return <div className="text-center py-10 text-lg">Loading...</div>;
-  if (loading) return <div className="text-center py-10 text-lg">Loading...</div>;
-  if (error) return <div className="text-center text-red-500">{error}</div>;
-  if (!data) return <div className="text-center">No data found</div>;
+  const translationMap = useMemo(() => {
+    if (!Array.isArray(translation)) return {};
+    return translation.reduce((acc, item) => {
+      acc[item.id] = item.translatedText;
+      return acc;
+    }, {});
+  }, [translation]);
 
-  // 🧱 MAIN RENDER
+  const getText = (item) => {
+    const text = translationMap[item.id] || item.text;
+    return text?.trim() || "";
+  };
+
+  if (status === "loading") {
+    return (
+      <section className="brand-media-shell">
+        <div className="brand-media-state">Loading brand content...</div>
+      </section>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <section className="brand-media-shell">
+        <div className="brand-media-state brand-media-state-error">
+          Brand content is currently unavailable.
+        </div>
+      </section>
+    );
+  }
+
+  if (!data?.media?.length) return null;
+
   return (
-    <div style={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
-      <h1 className="text-centerSlide">From the brand</h1>
+    <section className="brand-media-shell">
+      <div className="brand-media-header">
+        <span className="brand-media-eyebrow">Brand story</span>
+        <h2>{t("from_the_brand") || "From the brand"}</h2>
+      </div>
 
-      {data.media.map((item, index) => {
-        const hasText = item.text && item.text.trim();
+      <div className="brand-media-list">
+        {data.media.map((item, index) => {
+          const text = getText(item);
 
-        return (
-          <div key={index} style={{ width: "100%", maxWidth: "100%" }}>
-            {/* image_with_text */}
-            {item.type === "image_with_text" && (
-              <div
-                className="flex-colSlide"
-                style={{
-                  display: "grid",
-                  alignItems: "center",
-                  justifyContent: "end",
-                  padding: "10px",
-                  gridTemplateColumns: "1fr 2fr",
-                }}
-              >
-                <img
-                  src={`${item.files}`}
-                  alt="With text"
-                  className="w-full-slide"
-                  style={{ maxWidth: "500px", height: "100%" }}
-                />
-                <p
-                  className="text-l-hgeslid"
-                  style={{ color: "black", padding: "5px" }}
-                >
-                  {hasText ? getTranslationById(item.id) || item.text : null}
-                </p>
-              </div>
-            )}
-
-            {/* image-Left_with_text */}
-            {item.type === "image-Left_with_text" && (
-              <div
-                className="f-grid-versionHsion"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "end",
-                  padding: "20px",
-                  width: "100%",
-                  maxWidth: "100%",
-                }}
-              >
-                <p
-                  className="text-lgGar"
-                  style={{ color: "black", padding: "20px" }}
-                >
-                  {hasText ? getTranslationById(item.id) || item.text : null}
-                </p>
-                <img
-                  src={`${item.files}`}
-                  alt="With text"
-                  className="w-fullAdsfer"
-                  style={{ maxWidth: "500px", height: "100%" }}
-                />
-              </div>
-            )}
-
-            {/* video_with_text */}
-            {item.type === "video_with_text" && (
-              <div
-                className="flexfgrts"
-                style={{
-                  display: "grid",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px",
-                  gridTemplateColumns: "1fr 2fr",
-                }}
-              >
-                <video
-                  src={`${item.files}`}
-                  controls
-                  className="w-fuldfreh"
-                  style={{ maxWidth: "500px", height: "100%" }}
-                />
-                <p
-                  className="text-lgrdsea"
-                  style={{ color: "black", padding: "20px" }}
-                >
-                  {getTranslationById(item.id) || item.text}
-                </p>
-              </div>
-            )}
-
-            {/* single_video */}
-            {item.type === "single_video" && (
-              <div
-                className="flexfgrts"
-                style={{
-                  display: "grid",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px",
-                  gridTemplateColumns: "1fr 1fr",
-                }}
-              >
-                <video
-                  src={`${item.files}`}
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="w-fuldfreh"
-                  style={{
-                    maxWidth: "100%",
-                    height: "auto",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-            )}
-
-            {/* slide_images */}
-            {item.type === "slide_images" && (
-              <div
-                className="fderslijd"
-                style={{
-                  alignItems: "start",
-                  justifyContent: "space-between",
-                  padding: "10px",
-                }}
-              >
-                <h2
-                  className="fgtbchwid"
-                  style={{
-                    color: "black",
-                    marginBottom: "10px",
-                    fontSize: "18px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {hasText ? getTranslationById(item.id) || item.text : null}
-                </h2>
-
-                <div style={{ width: "100%", maxWidth: "100%", margin: "0 auto" }}>
-                  <Carousel
-                    showThumbs={false}
-                    infiniteLoop
-                    autoPlay
-                    interval={3000}
-                    showStatus={false}
-                    showIndicators={true}
-                    dynamicHeight={false}
-                  >
-                    {Array.isArray(item.files) &&
-                      item.files.map((slide, i) => (
-                        <div key={i}>
-                          <img
-                            src={`${slide}`}
-                            alt={`Slide ${i + 1}`}
-                            className="rounded-gfrtse"
-                            style={{
-                              width: "100%",
-                              height: "400px",
-                              objectFit: "cover",
-                              borderRadius: "8px",
-                            }}
-                          />
-                        </div>
-                      ))}
-                  </Carousel>
+          if (item.type === "image_with_text") {
+            return (
+              <article className="brand-media-card brand-media-split" key={index}>
+                <div className="brand-media-visual">
+                  <img src={item.files} alt={text || "Brand visual"} />
                 </div>
-              </div>
-            )}
+                {text && <p className="brand-media-copy">{text}</p>}
+              </article>
+            );
+          }
 
-            {/* single_image */}
-            {item.type === "single_image" && (
-              <div
-                className="w-fullDersir"
-                style={{
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px",
-                  width: "100%",
-                  objectFit: "cover",
-                }}
+          if (item.type === "image-Left_with_text") {
+            return (
+              <article
+                className="brand-media-card brand-media-split brand-media-reverse"
+                key={index}
               >
-                <img
-                  src={`${item.files}`}
-                  alt="Full Image"
-                  className="w-fulGdertsion"
-                  style={{ maxWidth: "100%", height: "100%" }}
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+                {text && <p className="brand-media-copy">{text}</p>}
+                <div className="brand-media-visual">
+                  <img src={item.files} alt={text || "Brand visual"} />
+                </div>
+              </article>
+            );
+          }
 
-export default ItemIdPageDesktop;
+          if (item.type === "video_with_text") {
+            return (
+              <article className="brand-media-card brand-media-split" key={index}>
+                <div className="brand-media-visual">
+                  <video src={item.files} controls playsInline />
+                </div>
+                {text && <p className="brand-media-copy">{text}</p>}
+              </article>
+            );
+          }
+
+          if (item.type === "single_video") {
+            return (
+              <article className="brand-media-card" key={index}>
+                <div className="brand-media-hero">
+                  <video src={item.files} controls muted loop playsInline />
+                </div>
+              </article>
+            );
+          }
+
+          if (item.type === "single_image") {
+            return (
+              <article className="brand-media-card" key={index}>
+                <div className="brand-media-hero">
+                  <img src={item.files} alt="Brand visual" />
+                </div>
+              </article>
+            );
+          }
+
+          if (item.type === "slide_images") {
+            return (
+              <article className="brand-media-card" key={index}>
+                {text && <h3 className="brand-media-slide-title">{text}</h3>}
+
+                <Carousel autoplay dots>
+                  {Array.isArray(item.files) &&
+                    item.files.map((slide, i) => (
+                      <div key={i}>
+                        <div className="brand-media-slide">
+                          <img src={slide} alt={`Brand slide ${i + 1}`} />
+                        </div>
+                      </div>
+                    ))}
+                </Carousel>
+              </article>
+            );
+          }
+
+          return null;
+        })}
+      </div>
+    </section>
+  );
+}

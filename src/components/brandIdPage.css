@@ -1,0 +1,300 @@
+/* =========================
+   BASE
+========================= */
+
+.brand-media-shell-brand {
+  max-width: 1100px;
+  margin: 80px auto;
+  padding: 0 24px;
+}
+
+.brand-media-header-brand {
+  text-align: center;
+}
+
+.brand-media-header-brand h2 {
+  text-wrap: balance;
+}
+
+/* Eyebrow */
+.brand-media-eyebrow-brand {
+  display: inline-block;
+  margin-bottom: 12px;
+
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+
+  color: #64748b;
+  position: relative;
+}
+
+/* subtle lines (premium touch) */
+.brand-media-eyebrow-brand::before,
+.brand-media-eyebrow-brand::after {
+  content: "";
+  display: inline-block;
+  width: 32px;
+  height: 1px;
+  margin: 0 10px;
+  vertical-align: middle;
+  background: linear-gradient(90deg, transparent, #94a3b8);
+}
+
+.brand-media-eyebrow-brand::after {
+  background: linear-gradient(90deg, #94a3b8, transparent);
+}
+
+/* Title */
+.brand-media-header-brand h2 {
+  margin: 0;
+
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 850;
+  line-height: 1.05;
+
+  letter-spacing: -0.045em;
+  color: #0f172a;
+
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.brand-media-header-brand {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.brand-media-eyebrow-brand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.brand-media-header-brand h2 {
+  margin: 0;
+  font-size: 42px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.04em;
+}
+
+/* =========================
+   LIST
+========================= */
+
+.brand-media-list-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+/* =========================
+   SPLIT (TEXT + IMAGE)
+========================= */
+
+.brand-media-split-brand {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.brand-media-reverse-brand {
+  direction: rtl;
+}
+
+.brand-media-reverse-brand * {
+  direction: ltr;
+}
+
+/* =========================
+   IMAGE BLOCKS
+========================= */
+
+.brand-media-visual-image_with_text-brand,
+.brand-media-visual-image-left_with_text-brand,
+.brand-media-visual-video_with_text-brand {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.brand-media-visual-image_with_text-brand img,
+.brand-media-visual-image-left_with_text-brand img,
+.brand-media-visual-video_with_text-brand video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  /* subtle enhancement */
+  filter: contrast(1.04) brightness(1.02) saturate(1.05);
+}
+
+/* =========================
+   TEXT
+========================= */
+
+.brand-media-copy-brand {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.75;
+  color: #334155;
+  max-width: 60ch;
+}
+
+/* =========================
+   SINGLE IMAGE
+========================= */
+
+.brand-media-hero-single_image-brand {
+  width: 100%;
+  height: 480px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-media-hero-single_image-brand img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+
+  filter: contrast(1.05) brightness(1.03);
+}
+
+/* =========================
+   SINGLE VIDEO
+========================= */
+
+.brand-media-hero-single_video-brand {
+  width: 100%;
+  height: 480px;
+}
+
+.brand-media-hero-single_video-brand video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* =========================
+   SLIDES
+========================= */
+
+.brand-media-slide-title-brand {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #0f172a;
+}
+
+.brand-media-slide-slide_images-brand {
+  width: 100%;
+  height: 480px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-media-slide-slide_images-brand img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+
+  filter: contrast(1.05) brightness(1.03);
+}
+
+/* =========================
+   ARROWS (minimal)
+========================= */
+
+.brand-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255,255,255,0.85);
+  border-radius: 999px;
+
+  cursor: pointer;
+}
+
+.brand-carousel-prev {
+  left: 10px;
+}
+
+.brand-carousel-next {
+  right: 10px;
+}
+
+.brand-carousel-arrow svg {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+@media (max-width: 600px) {
+  .brand-media-shell-brand {
+    margin: 36px auto;
+    padding: 0 16px;
+  }
+
+  .brand-media-header-brand {
+    margin-bottom: 0px;
+  }
+
+  .brand-media-header-brand h2 {
+    font-size: 30px;
+  }
+
+  .brand-media-list-brand {
+    gap: 0px;
+  }
+
+  .brand-media-split-brand,
+  .brand-media-split-video_with_text-brand {
+    grid-template-columns: 1fr;
+    gap: 1px;
+  }
+
+  .brand-media-reverse-brand {
+    direction: ltr;
+  }
+
+  .brand-media-copy-brand {
+    font-size: 15.5px;
+    line-height: 1.65;
+  }
+
+  .brand-media-hero-single_image-brand,
+  .brand-media-hero-single_video-brand,
+  .brand-media-slide-slide_images-brand {
+    height: 200px;
+  }
+
+  .brand-media-slide-title-brand {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .brand-media-eyebrow-brand::before,
+  .brand-media-eyebrow-brand::after {
+    width: 18px;
+    margin: 0 8px;
+  }
+}

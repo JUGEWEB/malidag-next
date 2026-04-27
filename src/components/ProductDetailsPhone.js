@@ -7,6 +7,7 @@ import FetchReviews from "./fetchReview";
 import AnalyseReviewSmallWidth from "./analyseReviewSmallwidth";
 import ItemIdPage from "./itemIdPage";
 import "./productDetailsPhone.css";
+import BrandIdPage from "./brandIdPage";
 
 export default function ProductDetailsPhone({
   product,
@@ -479,6 +480,7 @@ const getFirstVariantImageUrl = (images = []) => {
 
         <div className="pdp-phone-itemid-wrapper pdp-phone-card">
           <ItemIdPage id={itemsd} />
+          <BrandIdPage brandName={product?.brand} />
         </div>
 
         <div className="pdp-phone-reviews-block">

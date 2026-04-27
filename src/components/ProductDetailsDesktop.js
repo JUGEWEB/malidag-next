@@ -7,6 +7,7 @@ import AnalyseReview from "./analyseReview";
 import FetchReviews from "./fetchReview";
 import ItemIdPageDesktop from "./itemIdPageDesktop";
 import "./productDetailsDesktop.css";
+import BrandIdPage from "./brandIdPage";
 
 export default function ProductDetailsDesktop({
   basketItems,
@@ -481,6 +482,7 @@ const getFirstVariantImageUrl = (images = []) => {
           }`}
         >
           <ItemIdPageDesktop id={itemsd} />
+          <BrandIdPage brandName={product?.brand} />
         </div>
 
         <FetchReviews productId={itemsd} selectedRating={selectedRating} />

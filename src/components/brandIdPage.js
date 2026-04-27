@@ -6,11 +6,11 @@ import { Carousel } from "antd";
 import { useTranslation } from "react-i18next";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import i18n from "i18next";
-import "./ItemIdPageDesktop.css";
+import "./brandIdPage.css";
 
 const API_BASE = "https://api.malidag.com";
 
-export default function ItemIdPageDesktop({ id }) {
+export default function BrandIdPage({ brandName }) {
   const [data, setData] = useState(null);
   const [translation, setTranslation] = useState(null);
   const [status, setStatus] = useState("loading");
@@ -42,7 +42,7 @@ const NextArrow = (props) => {
         setStatus("loading");
 
         const { data: itemData } = await axios.get(
-          `${API_BASE}/api/items/items/${id}`
+          `${API_BASE}/api/items/items/${brandName}`
         );
 
         if (cancelled) return;
@@ -68,12 +68,12 @@ const NextArrow = (props) => {
       }
     }
 
-    if (id) fetchData();
+    if (brandName) fetchData();
 
     return () => {
       cancelled = true;
     };
-  }, [id, i18n.language]);
+  }, [brandName, i18n.language]);
 
   const translationMap = useMemo(() => {
     if (!Array.isArray(translation)) return {};
@@ -90,7 +90,7 @@ const NextArrow = (props) => {
 
   if (status === "loading") {
     return (
-      <section className="brand-media-shell">
+      <section className="brand-media-shell-brand">
         <div className="brand-media-state">Loading brand content...</div>
       </section>
     );
@@ -98,8 +98,8 @@ const NextArrow = (props) => {
 
   if (status === "error") {
     return (
-      <section className="brand-media-shell">
-        <div className="brand-media-state brand-media-state-error">
+      <section className="brand-media-shell-brand">
+        <div className="brand-media-state-brand brand-media-state-error-brand">
           Brand content is currently unavailable.
         </div>
       </section>
@@ -109,23 +109,23 @@ const NextArrow = (props) => {
   if (!data?.media?.length) return null;
 
   return (
-    <section className="brand-media-shell">
-      <div className="brand-media-header">
-        <span className="brand-media-eyebrow">Brand story</span>
-        <h2>From the brand</h2>
+    <section className="brand-media-shell-brand">
+      <div className="brand-media-header-brand">
+        <span className="brand-media-eyebrow-brand">trusted brand</span>
+        <h2>We Elevate quality</h2>
       </div>
 
-      <div className="brand-media-list">
+      <div className="brand-media-list-brand">
         {data.media.map((item, index) => {
           const text = getText(item);
 
           if (item.type === "image_with_text") {
             return (
-              <article className="brand-media-card-image_with_text brand-media-split" key={index}>
-                <div className="brand-media-visual-image_with_text">
+              <article className="brand-media-card-image_with_text-brand brand-media-split-brand" key={index}>
+                <div className="brand-media-visual-image_with_text-brand">
                   <img src={item.files} alt={text || "Brand visual"} />
                 </div>
-                {text && <p className="brand-media-copy">{text}</p>}
+                {text && <p className="brand-media-copy-brand">{text}</p>}
               </article>
             );
           }
@@ -133,11 +133,11 @@ const NextArrow = (props) => {
           if (item.type === "image-Left_with_text") {
             return (
               <article
-                className="brand-media-card-image-Left_with_text brand-media-split brand-media-reverse"
+                className="brand-media-card-image-Left_with_text-brand brand-media-split-brand brand-media-reverse-brand"
                 key={index}
               >
-                {text && <p className="brand-media-copy">{text}</p>}
-                <div className="brand-media-visual-image-left_with_text">
+                {text && <p className="brand-media-copy-brand">{text}</p>}
+                <div className="brand-media-visual-image-left_with_text-brand">
                   <img src={item.files} alt={text || "Brand visual"} />
                 </div>
               </article>
@@ -146,19 +146,19 @@ const NextArrow = (props) => {
 
           if (item.type === "video_with_text") {
             return (
-              <article className="brand-media-card-video_with_text brand-media-split-video_with_text" key={index}>
-                <div className="brand-media-visual-video_with_text">
+              <article className="brand-media-card-video_with_text-brand brand-media-split-video_with_text-brand" key={index}>
+                <div className="brand-media-visual-video_with_text-brand">
                   <video src={item.files} controls playsInline />
                 </div>
-                {text && <p className="brand-media-copy">{text}</p>}
+                {text && <p className="brand-media-copy-brand">{text}</p>}
               </article>
             );
           }
 
           if (item.type === "single_video") {
             return (
-              <article className="brand-media-card-single_video" key={index}>
-                <div className="brand-media-hero-single_video">
+              <article className="brand-media-card-single_video-brand" key={index}>
+                <div className="brand-media-hero-single_video-brand">
                   <video src={item.files} controls muted loop playsInline />
                 </div>
               </article>
@@ -167,8 +167,8 @@ const NextArrow = (props) => {
 
           if (item.type === "single_image") {
             return (
-              <article className="brand-media-card-single_image" key={index}>
-                <div className="brand-media-hero-single_image">
+              <article className="brand-media-card-single_image-brand" key={index}>
+                <div className="brand-media-hero-single_image-brand">
                   <img src={item.files} alt="Brand visual" />
                 </div>
               </article>
@@ -177,8 +177,8 @@ const NextArrow = (props) => {
 
          if (item.type === "slide_images") {
   return (
-    <article className="brand-media-card-slide_images" key={index}>
-      {text && <h3 className="brand-media-slide-title">{text}</h3>}
+    <article className="brand-media-card-slide_images-brand" key={index}>
+      {text && <h3 className="brand-media-slide-title-brand">{text}</h3>}
 
       <Carousel
         autoplay
@@ -190,7 +190,7 @@ const NextArrow = (props) => {
         {Array.isArray(item.files) &&
           item.files.map((slide, i) => (
             <div key={i}>
-              <div className="brand-media-slide-slide_images">
+              <div className="brand-media-slide-slide_images-brand">
                 <img src={slide} alt={`Brand slide ${i + 1}`} />
               </div>
             </div>

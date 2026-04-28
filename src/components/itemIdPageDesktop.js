@@ -144,6 +144,93 @@ const NextArrow = (props) => {
             );
           }
 
+             if (item.type === "image_right_with_title_subtitle") {
+  return (
+    <article
+      className="brand-media-card-image_right_with_title_subtitle-brand brand-media-split-brand"
+      key={index}
+    >
+      <div className="brand-media-text-block-brand">
+        {item.title && (
+          <h1 className="brand-media-title-brand">
+            {getText({ ...item, text: item.title })}
+          </h1>
+        )}
+
+        {item.subtitle && (
+          <p className="brand-media-subtitle-brand">
+            {getText({ ...item, text: item.subtitle })}
+          </p>
+        )}
+      </div>
+
+      <div className="brand-media-visual-image_right-brand">
+        <img src={item.files} alt="Brand visual" />
+      </div>
+    </article>
+  );
+}
+
+if (item.type === "title_image_subtitle") {
+  return (
+    <article className="brand-media-card-title_image_subtitle-brand" key={index}>
+      {item.title && (
+        <h1 className="brand-media-title-brand brand-media-title-center">
+          {getText({ ...item, text: item.title })}
+        </h1>
+      )}
+
+      <div className="brand-media-visual-center-brand">
+        <img src={item.files} alt="Brand visual" />
+      </div>
+
+      {item.subtitle && (
+        <p className="brand-media-subtitle-brand brand-media-subtitle-center">
+          {getText({ ...item, text: item.subtitle })}
+        </p>
+      )}
+    </article>
+  );
+}
+
+if (item.type === "text_only") {
+  return (
+    <article className="brand-media-card-text_only" key={index}>
+      <div className="brand-media-text-only-inner">
+        {item.title && (
+          <h1 className="brand-media-title-brand brand-media-title-center">
+            {item.title}
+          </h1>
+        )}
+
+        {item.subtitle && (
+          <p className="brand-media-subtitle-brand brand-media-subtitle-center">
+            {item.subtitle}
+          </p>
+        )}
+      </div>
+    </article>
+  );
+}
+
+if (item.type === "multiple_images_title_subtitle") {
+  return (
+    <article key={index} className="brand-media-multi">
+      <div className="brand-media-multi-grid">
+        {Array.isArray(item.files) &&
+          item.files.map((img, i) => (
+            <div key={i} className="brand-media-multi-item">
+              <img src={img.url} alt="" />
+
+              {img.title && <h3>{img.title}</h3>}
+              {img.subtitle && <p>{img.subtitle}</p>}
+            </div>
+          ))}
+      </div>
+    </article>
+  );
+}
+
           if (item.type === "video_with_text") {
             return (
               <article className="brand-media-card-video_with_text brand-media-split-video_with_text" key={index}>

@@ -127,6 +127,60 @@ console.log("Translation array:", translation);
               </div>
             )}
 
+            {item.type === "text_only" && (
+  <div className="mobile-brand-text-only">
+    {item.title && <h2>{item.title}</h2>}
+    {item.subtitle && <p>{item.subtitle}</p>}
+  </div>
+)}
+
+{item.type === "image_right_with_title_subtitle" && (
+  <div className="mobile-brand-title-image">
+    <div className="mobile-brand-title-copy">
+      {item.title && <h2>{item.title}</h2>}
+      {item.subtitle && <p>{item.subtitle}</p>}
+    </div>
+
+    <img src={item.files} alt={item.title || "Brand visual"} />
+  </div>
+)}
+
+{item.type === "title_image_subtitle" && (
+  <div className="mobile-brand-title-image center">
+    {item.title && <h2>{item.title}</h2>}
+
+    <img src={item.files} alt={item.title || "Brand visual"} />
+
+    {item.subtitle && <p>{item.subtitle}</p>}
+  </div>
+)}
+
+{item.type === "multiple_images_title_subtitle" && (
+  <div className="mobile-brand-multi-grid">
+    {Array.isArray(item.files) &&
+      item.files.map((img, i) => (
+        <div className="mobile-brand-multi-item" key={i}>
+          <img src={img.url} alt={img.title || `Brand image ${i + 1}`} />
+          {img.title && <h3>{img.title}</h3>}
+          {img.subtitle && <p>{img.subtitle}</p>}
+        </div>
+      ))}
+  </div>
+)}
+
+{item.type === "multiple_icons_title_subtitle" && (
+  <div className="mobile-brand-icons-grid">
+    {Array.isArray(item.files) &&
+      item.files.map((img, i) => (
+        <div className="mobile-brand-icon-item" key={i}>
+          <img src={img.url} alt={img.title || `Brand icon ${i + 1}`} />
+          {img.title && <h3>{img.title}</h3>}
+          {img.subtitle && <p>{img.subtitle}</p>}
+        </div>
+      ))}
+  </div>
+)}
+
            {/* Slide Images */}
 {item.type === "slide_images" && (
   <div

@@ -252,6 +252,24 @@ if (item.type === "multiple_images_title_subtitle") {
             );
           }
 
+          if (item.type === "multiple_icons_title_subtitle") {
+  return (
+    <article key={index} className="brand-media-icons">
+      <div className="brand-media-icons-grid">
+        {Array.isArray(item.files) &&
+          item.files.map((img, i) => (
+            <div key={i} className="brand-media-icon-item">
+              <img src={img.url} alt="" />
+
+              {img.title && <h3>{img.title}</h3>}
+              {img.subtitle && <p>{img.subtitle}</p>}
+            </div>
+          ))}
+      </div>
+    </article>
+  );
+}
+
           if (item.type === "single_image") {
             return (
               <article className="brand-media-card-single_image-brand" key={index}>

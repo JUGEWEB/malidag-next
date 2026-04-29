@@ -417,7 +417,6 @@
 
 .brand-media-multi-item img {
   width: 100%;
-  max-width: 40px;
   height: auto;
   max-height: 260px;        /* 🔥 controls big images */
   object-fit: contain;      /* ✅ keeps icons clean */
@@ -445,5 +444,58 @@
 
   .brand-media-multi-item img {
     max-height: 180px; /* better mobile scale */
+  }
+}
+
+/* =========================
+   ICON GRID (NEW)
+========================= */
+
+.brand-media-icons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+/* Each item */
+.brand-media-icon-item {
+  text-align: center;
+}
+
+/* ICON IMAGE */
+.brand-media-icon-item img {
+  width: 100%;
+  max-width: 90px;      /* 🔥 key: prevents blur */
+  height: auto;
+  margin: 0 auto 12px;
+
+  object-fit: contain;
+  display: block;
+}
+
+/* Text */
+.brand-media-icon-item h3 {
+  margin: 6px 0 2px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.brand-media-icon-item p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* 📱 MOBILE */
+@media (max-width: 600px) {
+  .brand-media-icons-grid {
+    grid-template-columns: repeat(2, 1fr); /* 🔥 3 per row */
+    gap: 18px;
+  }
+
+  .brand-media-icon-item img {
+    max-width: 70px;
   }
 }

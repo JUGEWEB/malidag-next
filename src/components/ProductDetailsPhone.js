@@ -8,6 +8,8 @@ import AnalyseReviewSmallWidth from "./analyseReviewSmallwidth";
 import ItemIdPage from "./itemIdPage";
 import "./productDetailsPhone.css";
 import BrandIdPage from "./brandIdPage";
+import SimilarItemId from "./similarItemId";
+import BrandTypeItems from "./BrandTypeItems";
 
 export default function ProductDetailsPhone({
   product,
@@ -480,7 +482,9 @@ const getFirstVariantImageUrl = (images = []) => {
 
         <div className="pdp-phone-itemid-wrapper pdp-phone-card">
           <ItemIdPage id={itemsd} />
+          <SimilarItemId itemId={itemsd} />
           <BrandIdPage brandName={product?.brand} />
+           <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />
         </div>
 
         <div className="pdp-phone-reviews-block">

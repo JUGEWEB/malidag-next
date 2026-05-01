@@ -22,6 +22,146 @@
   margin-bottom: 40px;
 }
 
+/* =========================
+   IMAGE WITH TEXT ABOVE
+========================= */
+
+.brand-media-card-image_top_text_position {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.brand-media-card-image_top_text_position > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* text inside image */
+.brand-media-top-text-overlay {
+  position: absolute;
+  top: 48px;
+  z-index: 2;
+  max-width: 760px;
+  padding: 0 48px;
+}
+
+/* left / center / right positioning */
+.brand-media-text-left .brand-media-top-text-overlay {
+  left: 0;
+  text-align: left;
+}
+
+.brand-media-text-center .brand-media-top-text-overlay {
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.brand-media-text-right .brand-media-top-text-overlay {
+  right: 0;
+  text-align: right;
+}
+
+/* optional: make text readable on image */
+.brand-media-card-image_top_text_position .brand-media-title-brand {
+  color: #0f172a;
+  font-size: clamp(30px, 4vw, 56px);
+  font-weight: 850;
+}
+
+.brand-media-card-image_top_text_position .brand-media-subtitle-brand {
+  color: #475569;
+  font-size: clamp(16px, 2vw, 22px);
+}
+
+/* end */
+
+/* =========================
+   MULTIPLE IMAGE TOP TEXT - HORIZONTAL
+========================= */
+
+.brand-media-horizontal-top-text {
+  width: 100%;
+  overflow: hidden;
+}
+
+.brand-media-horizontal-scroll {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 12px;
+}
+
+.brand-media-horizontal-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.brand-media-horizontal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.22);
+  border-radius: 999px;
+}
+
+.brand-media-horizontal-card {
+  position: relative;
+  flex: 0 0 82%;
+  height: 520px;
+  overflow: hidden;
+  scroll-snap-align: start;
+  background: #f8fafc;
+}
+
+.brand-media-horizontal-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.brand-media-horizontal-text-overlay {
+  position: absolute;
+  top: 48px;
+  z-index: 2;
+  max-width: 720px;
+  padding: 0 48px;
+}
+
+.brand-media-horizontal-card.brand-media-text-left .brand-media-horizontal-text-overlay {
+  left: 0;
+  text-align: left;
+}
+
+.brand-media-horizontal-card.brand-media-text-center .brand-media-horizontal-text-overlay {
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.brand-media-horizontal-card.brand-media-text-right .brand-media-horizontal-text-overlay {
+  right: 0;
+  text-align: right;
+}
+
+.brand-media-horizontal-text-overlay h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 850;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.brand-media-horizontal-text-overlay p {
+  margin: 12px 0 0;
+  color: #475569;
+  font-size: clamp(16px, 2vw, 22px);
+  line-height: 1.5;
+}
+
 .brand-media-eyebrow {
   font-size: 12px;
   font-weight: 800;
@@ -59,22 +199,18 @@
 .brand-media-card-single_video,
 .brand-media-card-single_image,
 .brand-media-card-slide_images {
-  border: 1px solid var(--border);
-  border-radius: 28px;
   background: var(--bg);
-  box-shadow: var(--shadow);
   overflow: hidden;
   transition: 0.25s ease;
 }
+
 
 .brand-media-card-image_with_text:hover,
 .brand-media-card-image-Left_with_text:hover,
 .brand-media-card-video_with_text:hover,
 .brand-media-card-single_video:hover,
-.brand-media-card-single_image:hover,
 .brand-media-card-slide_images:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
 }
 
 /* =========================
@@ -146,17 +282,19 @@
 
 .brand-media-hero-single_image {
   height: 420px;
+  width: 100%;
+  object-fit: cover;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--soft);
-  padding: 24px;
+  padding: 0px;
 }
 
 .brand-media-hero-single_image img {
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 /* =========================

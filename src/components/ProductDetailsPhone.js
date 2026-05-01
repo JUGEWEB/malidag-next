@@ -10,6 +10,7 @@ import "./productDetailsPhone.css";
 import BrandIdPage from "./brandIdPage";
 import SimilarItemId from "./similarItemId";
 import BrandTypeItems from "./BrandTypeItems";
+import MultiRecommendedItem from "./multiRecommendedItem";
 
 export default function ProductDetailsPhone({
   product,
@@ -508,6 +509,11 @@ const getFirstVariantImageUrl = (images = []) => {
             </div>
           )}
         </div>
+
+        <MultiRecommendedItem
+                category={details?.category}
+                title={`Recommended ${details?.category}`}
+              />
       </div>
     </div>
   );

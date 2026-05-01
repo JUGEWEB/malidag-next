@@ -3,13 +3,12 @@
   margin: 5px 0;
   padding: 5px;
   border-radius: 28px;
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.1);
+  background: white;
+ 
 }
 
 .brand-items-title {
-  margin-bottom: 20px;
+  margin: 0 0 20px;
   font-size: clamp(22px, 3vw, 28px);
   font-weight: 900;
   color: #0f172a;
@@ -20,13 +19,11 @@
   gap: 5px;
 }
 
-/* 4+ items */
 .brand-items-grid.grid-mode {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-/* less than 4 items */
 .brand-items-grid.wide-mode {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -37,8 +34,6 @@
   overflow: hidden;
   border-radius: 24px;
   background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
 }
 
 .brand-item-card.grid-card {
@@ -54,7 +49,7 @@
 }
 
 .brand-item-image-wrap {
-  background: linear-gradient(180deg, #f8fafc, #eef2f7);
+  background: linear-gradient(180deg, white, white);
 }
 
 .grid-card .brand-item-image-wrap {
@@ -97,21 +92,21 @@
 .brand-item-brand {
   font-size: 18px;
   font-weight: 900;
-  margin-bottom: 5px;
+  margin: 0 0 5px;
   color: #0f172a;
 }
 
 .brand-item-name {
   font-size: 14px;
   color: #64748b;
-  margin-bottom: 10px;
+  margin: 0 0 10px;
   line-height: 1.4;
 }
 
 .brand-item-price {
   font-size: 18px;
   font-weight: 900;
-  margin-bottom: 12px;
+  margin: 0 0 12px;
   color: #020617;
 }
 
@@ -127,20 +122,24 @@
   cursor: pointer;
 }
 
-/* Tablet: 2 columns only for 4+ mode */
 @media (max-width: 1024px) {
   .brand-items-grid.grid-mode {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-/* Phone: ALWAYS 2x2 grid */
 @media (max-width: 720px) {
   .brand-items-section {
     padding: 0;
+    margin: 0;
     border: none;
     box-shadow: none;
     background: transparent;
+  }
+
+  .brand-items-title {
+    padding: 0 8px;
+    margin-bottom: 10px;
   }
 
   .brand-items-grid,
@@ -148,15 +147,15 @@
   .brand-items-grid.wide-mode {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 5px;
-    padding: 0 10px;
+    gap: 4px;
+    padding: 0 4px;
   }
 
   .brand-item-card,
   .brand-item-card.grid-card,
   .brand-item-card.wide-card {
     display: flex;
-    flex-direction: column;
+    flex-direction: column !important;
     min-height: auto;
   }
 
@@ -164,32 +163,40 @@
   .wide-card .brand-item-image-wrap,
   .grid-card .brand-item-info,
   .wide-card .brand-item-info {
-    width: 100%;
+    width: 100% !important;
   }
 
+  .brand-item-image,
   .wide-card .brand-item-image,
   .grid-card .brand-item-image {
-    height: auto;
+    height: auto !important;
     aspect-ratio: 1 / 1;
+    padding: 8px;
   }
 
-  .brand-item-info {
-    padding: 12px;
+  .brand-item-info,
+  .wide-card .brand-item-info,
+  .grid-card .brand-item-info {
+    padding: 8px;
   }
 
   .brand-item-brand {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .brand-item-name {
-    font-size: 13.5px;
+    font-size: 12.5px;
+    margin-bottom: 8px;
   }
 
   .brand-item-price {
-    font-size: 16px;
+    font-size: 15px;
+    margin-bottom: 8px;
   }
 
   .brand-item-btn {
     width: 100%;
+    padding: 8px;
+    font-size: 12.5px;
   }
 }

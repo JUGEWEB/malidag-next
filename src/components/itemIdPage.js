@@ -237,6 +237,46 @@ console.log("Translation array:", translation);
   </div>
 )}
 
+{item.type === "image_top_text_position" && (
+  <div
+    className={`mobile-brand-image-top-text mobile-brand-text-${
+      item.textPosition || "left"
+    }`}
+  >
+    <img src={item.files} alt={item.title || "Brand visual"} />
+
+    <div className="mobile-brand-top-text-overlay">
+      {item.title && <h2>{item.title}</h2>}
+      {item.subtitle && <p>{item.subtitle}</p>}
+    </div>
+  </div>
+)}
+
+{item.type === "multiple_image_top_text_position" && (
+  <div className="mobile-brand-horizontal-top-text">
+    <div className="mobile-brand-horizontal-scroll">
+      {Array.isArray(item.files) &&
+        item.files.map((img, i) => {
+          const position = img.textPosition || "left";
+
+          return (
+            <div
+              className={`mobile-brand-horizontal-card mobile-brand-text-${position}`}
+              key={i}
+            >
+              <img src={img.url} alt={img.title || `Brand image ${i + 1}`} />
+
+              <div className="mobile-brand-horizontal-text-overlay">
+                {img.title && <h2>{img.title}</h2>}
+                {img.subtitle && <p>{img.subtitle}</p>}
+              </div>
+            </div>
+          );
+        })}
+    </div>
+  </div>
+)}
+
 
             {/* Single Image (Full Width) */}
             {item.type === "single_image" && (

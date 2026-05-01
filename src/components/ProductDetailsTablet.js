@@ -10,6 +10,7 @@ import "./productDetailsTablet.css";
 import BrandIdPage from "./brandIdPage";
 import SimilarItemId from "./similarItemId";
 import BrandTypeItems from "./BrandTypeItems";
+import MultiRecommendedItem from "./multiRecommendedItem";
 
 export default function ProductDetailsTablet({
   basketItems,
@@ -466,6 +467,11 @@ const getFirstVariantImageUrl = (images = []) => {
             {t("see_all_reviews")}
           </div>
         )}
+
+       <MultiRecommendedItem
+                       category={details?.category}
+                       title={`Recommended ${details?.category}`}
+                     />
       </div>
     </>
   );

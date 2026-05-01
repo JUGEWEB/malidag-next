@@ -252,6 +252,60 @@ if (item.type === "multiple_images_title_subtitle") {
             );
           }
 
+          if (item.type === "image_top_text_position") {
+  const position = item.textPosition || "left";
+
+  return (
+    <article
+      className={`brand-media-card-image_top_text_position brand-media-text-${position}`}
+      key={index}
+    >
+      <img src={item.files} alt={item.title || "Brand visual"} />
+
+      <div className="brand-media-top-text-overlay">
+        {item.title && (
+          <h1 className="brand-media-title-brand">
+            {item.title}
+          </h1>
+        )}
+
+        {item.subtitle && (
+          <p className="brand-media-subtitle-brand">
+            {item.subtitle}
+          </p>
+        )}
+      </div>
+    </article>
+  );
+}
+
+if (item.type === "multiple_image_top_text_position") {
+  return (
+    <article className="brand-media-horizontal-top-text" key={index}>
+      <div className="brand-media-horizontal-scroll">
+        {Array.isArray(item.files) &&
+          item.files.map((img, i) => {
+            const position = img.textPosition || "left";
+
+            return (
+              <div
+                className={`brand-media-horizontal-card brand-media-text-${position}`}
+                key={i}
+              >
+                <img src={img.url} alt={img.title || `Brand image ${i + 1}`} />
+
+                <div className="brand-media-horizontal-text-overlay">
+                  {img.title && <h2>{img.title}</h2>}
+                  {img.subtitle && <p>{img.subtitle}</p>}
+                </div>
+              </div>
+            );
+          })}
+      </div>
+    </article>
+  );
+}
+
           if (item.type === "single_image") {
             return (
               <article className="brand-media-card-single_image" key={index}>

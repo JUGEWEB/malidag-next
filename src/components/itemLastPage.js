@@ -12,7 +12,6 @@ import "./ItemLastPage.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import ImageZoom from "./imageZoom";
-import ImageZoom1 from "./imageZoom1";
 import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
@@ -20,7 +19,7 @@ import { auth } from "@/components/firebaseConfig";
 import { useCheckoutStore } from "./checkoutStore";
 import Head from "next/head";
 import { useLang } from "./LanguageContext";
-
+import MobileImageZoom from "./MobileImageZoom";
 import ProductDetailsPhone from "./ProductDetailsPhone";
 import ProductDetailsTablet from "./ProductDetailsTablet";
 import ProductDetailsDesktop from "./ProductDetailsDesktop";
@@ -160,6 +159,7 @@ const [selectedDeliveryInfo, setSelectedDeliveryInfo] = useState(null);
 const [loadingDeliveryInfo, setLoadingDeliveryInfo] = useState(false);
 const [currentUser, setCurrentUser] = useState(null);
 const [authReady, setAuthReady] = useState(false);
+const [mobileZoomOpen, setMobileZoomOpen] = useState(false);
   const { lang } = useLang();
 
   const validVideos = Array.isArray(product?.videos)
@@ -775,7 +775,7 @@ setSelectedSize(firstOption || t("no_size_available"));
       );
     }
 
-    if (zoomType === "zoom") {
+    if (zoomType === "zoom1") {
       return (
         <ImageZoom
           selectedImage={selectedImage}
@@ -789,20 +789,6 @@ setSelectedSize(firstOption || t("no_size_available"));
             objectFit: "contain",
             cursor: "zoom-in",
           }}
-        />
-      );
-    }
-
-    if (zoomType === "zoom1") {
-      return (
-        <ImageZoom1
-          isZoomVisible={isZoomVisible}
-          selectedImage={selectedImage}
-          onMouseMove={handleMouseMove}
-          zoomedPosition={zoomedPosition}
-          onMouseEnter={handleMouseEnterImage}
-          onMouseLeave={handleMouseLeaveImage}
-          basketItems={basketItems}
         />
       );
     }
@@ -996,6 +982,8 @@ setSelectedSize(firstOption || t("no_size_available"));
             handleLikeItem={handleLikeItem}
             details={details}
             country={country}
+            mobileZoomOpen={mobileZoomOpen}
+            setMobileZoomOpen={setMobileZoomOpen}
             selectedDeliveryInfo={selectedDeliveryInfo}
             loadingDeliveryInfo={loadingDeliveryInfo}
              optionLabel={getOptionLabel()}
@@ -1055,6 +1043,7 @@ setSelectedSize(firstOption || t("no_size_available"));
              optionLabel={getOptionLabel()}
             currentPrice={getCurrentPrice()}
             selectedOptions={getOptionsForColor(selectedColor)}
+             setMobileZoomOpen={setMobileZoomOpen}
           />
         )}
 
@@ -1163,6 +1152,13 @@ setSelectedSize(firstOption || t("no_size_available"));
       </button>
     </div>
   </div>
+)}
+
+{mobileZoomOpen && (
+  <MobileImageZoom
+    selectedImage={selectedImage}
+    onClose={() => setMobileZoomOpen(false)}
+  />
 )}
       </div>
     </div>

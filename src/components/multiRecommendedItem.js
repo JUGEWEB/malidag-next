@@ -10,6 +10,7 @@ const MAX_CACHE_ITEMS = 20;
 
 function MultiRecommendedItem({
   category,
+   type,
   title = "Recommended Products",
   minPrice = 1,
   maxPrice = 300000,
@@ -20,8 +21,10 @@ function MultiRecommendedItem({
   const [reviews, setReviews] = useState({});
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
 
-  const normalizedCategory = category?.toLowerCase?.() || "";
-  const CACHE_KEY = `recommendedItems_${normalizedCategory}_first20`;
+ const normalizedCategory = category?.toLowerCase?.() || "";
+const normalizedType = type?.toLowerCase?.() || "";
+
+const CACHE_KEY = `recommendedItems_${normalizedCategory}_${normalizedType}_first20`;
 
   const getCryptoIcon = (cryptocurrency) => {
     const defaultIcon =
@@ -94,7 +97,7 @@ function MultiRecommendedItem({
   };
 
   useEffect(() => {
-    if (!normalizedCategory) return;
+   if (!normalizedCategory || !normalizedType) return;
 
     const loadCachedItems = () => {
       try {
@@ -134,11 +137,13 @@ function MultiRecommendedItem({
 
         const filteredItems = itemsArray.filter((item) => {
           const price = parseFloat(item?.item?.usdPrice ?? 0);
-          const itemCategory = item?.category || "";
+         const itemCategory = item?.category || "";
+         const itemType = item?.details?.type || "";
           const coin = item?.item?.cryptocurrency || "";
 
           return (
             itemCategory.toLowerCase() === normalizedCategory &&
+            itemType.toLowerCase() === normalizedType &&
             price >= minPrice &&
             price <= maxPrice &&
             allowedCoins.includes(coin)
@@ -148,7 +153,10 @@ function MultiRecommendedItem({
         const shuffledItems = [...filteredItems].sort(() => 0.5 - Math.random());
         const selectedItems = shuffledItems.slice(0, 30);
 
-        setRecommendedItems(selectedItems);
+        setRecommendedItems((prev) => {
+  if (prev.length > 0) return prev;
+  return selectedItems;
+});
 
         localStorage.setItem(
           CACHE_KEY,
@@ -169,10 +177,14 @@ function MultiRecommendedItem({
       }
     };
 
-    setLoadingRecommendations(true);
-    loadCachedItems();
-    fetchRecommendedItems();
-  }, [normalizedCategory, minPrice, maxPrice, CACHE_KEY]);
+   const hasCache = loadCachedItems();
+
+if (!hasCache) {
+  setLoadingRecommendations(true);
+}
+
+fetchRecommendedItems();
+ }, [normalizedCategory, normalizedType, minPrice, maxPrice, CACHE_KEY]);
 
   const handleItemClick = (id) => {
     if (id) {

@@ -11,6 +11,8 @@ import BrandIdPage from "./brandIdPage";
 import SimilarItemId from "./similarItemId";
 import BrandTypeItems from "./BrandTypeItems";
 import MultiRecommendedItem from "./multiRecommendedItem";
+import { FaShareAlt, FaSearchPlus } from "react-icons/fa";
+import SimilarItemAds from "./SimilarItemAds";
 
 export default function ProductDetailsTablet({
   basketItems,
@@ -62,6 +64,7 @@ loadingDeliveryInfo,
 optionLabel,
 currentPrice,
 selectedOptions,
+setMobileZoomOpen,
 }) {
 
   const tokenSymbol = product?.cryptocurrency?.toUpperCase?.() || "USDT";
@@ -118,8 +121,35 @@ const getFirstVariantImageUrl = (images = []) => {
   return getImageUrl(sortVariantImages(images)[0]) || "/fallback.png";
 };
 
+const handleShareProduct = async () => {
+  const shareUrl =
+    typeof window !== "undefined" ? window.location.href : "";
+
+  const shareData = {
+    title: translation?.name || product?.name || "Product",
+    text: translation?.name || product?.name || "Check this product",
+    url: shareUrl,
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        console.error("Share failed:", error);
+      }
+    }
+  }
+
+  await navigator.clipboard.writeText(shareUrl);
+  alert("Product link copied");
+};
+
   return (
     <>
+
+     <SimilarItemAds itemId={itemsd} />
       <div className="pdp-tablet-layout">
         <div className="pdp-tablet-left-column">
           <div className="left-thumbnails pdp-tablet-left-thumbnails">
@@ -142,7 +172,27 @@ const getFirstVariantImageUrl = (images = []) => {
         </div>
 
         <div className="pdp-tablet-center-column">
-          <div className="pdp-tablet-image-panel">{renderImageZoom()}</div>
+         <div className="pdp-tablet-image-panel">
+            <button
+              type="button"
+              onClick={handleShareProduct}
+              className="pdp-tablet-share-button"
+              aria-label="Share product"
+            >
+              <FaShareAlt />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileZoomOpen(true)}
+              className="pdp-tablet-view-zoom-button"
+            >
+              <FaSearchPlus />
+              <span>View zoom</span>
+            </button>
+
+            {renderImageZoom()}
+          </div>
         </div>
 
         <div className="pdp-tablet-right-column">
@@ -204,26 +254,22 @@ const getFirstVariantImageUrl = (images = []) => {
                     </div>
                   )}
 
-                  {country && (
-                    <div
-                      style={{
-                        marginBottom: "12px",
-                        padding: "10px 12px",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: "500",
-                        backgroundColor: canShipToSelectedCountry ? "#f6ffed" : "#fff2f0",
-                        color: canShipToSelectedCountry ? "#237804" : "#cf1322",
-                        border: canShipToSelectedCountry
-                          ? "1px solid #b7eb8f"
-                          : "1px solid #ffb3b3",
-                      }}
-                    >
-                      {canShipToSelectedCountry
-                        ? `This item can be shipped to ${country.name}.`
-                        : `This item is not available in  ${country.name}. Please select another delivery location.`}
-                    </div>
-                  )}
+                  {country && !canShipToSelectedCountry && (
+                      <div
+                        style={{
+                          marginBottom: "12px",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          backgroundColor: "#fff2f0",
+                          color: "#cf1322",
+                          border: "1px solid #ffb3b3",
+                        }}
+                      >
+                        {`This item is not available in ${country.name}. Please select another delivery location.`}
+                      </div>
+                    )}
 
                 {canShipToSelectedCountry && (
                     <>

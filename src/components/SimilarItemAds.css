@@ -1,0 +1,54 @@
+.similar-ads-section {
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* 🔥 VERY SMALL */
+.similar-ad-slide {
+  width: 100%;
+  height: 48px;
+  padding: 6px 10px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+
+  cursor: pointer;
+}
+
+/* tiny image */
+.similar-ad-slide-image {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* 🔥 ONE LINE TEXT */
+.similar-ad-slide-text {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* keep price visible */
+.similar-ad-slide-text strong {
+  font-weight: 700;
+  color: #000;
+  margin-left: 4px;
+}
+
+/* 🔥 hide dots (clean look) */
+.similar-ads-section .ant-carousel .slick-dots {
+  display: none !important;
+}

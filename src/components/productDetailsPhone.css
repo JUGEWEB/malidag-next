@@ -6,6 +6,76 @@
   padding-bottom: 40px;
 }
 
+/*start*/
+.pdp-phone-slider-shell {
+  position: relative;
+}
+
+.pdp-phone-image-overlay-top {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.pdp-phone-color-badge,
+.pdp-phone-share-button,
+.mobile-view-zoom-button {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.82);
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+}
+
+.pdp-phone-color-badge {
+  max-width: 62%;
+  padding: 9px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pdp-phone-share-button {
+  pointer-events: auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.mobile-view-zoom-button {
+  position: absolute;
+  left: 14px;
+  bottom: 18px;
+  z-index: 5;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  margin: 0;
+  padding: 10px 13px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+/* end */
+
 .pdp-delivery-card {
   margin-bottom: 12px;
   padding: 12px 14px;
@@ -75,7 +145,8 @@
   width: 100%;
   height: 380px;
   object-fit: contain;
-  background: #f8fafc;
+  filter: brightness(0.989);
+  background: white;
 }
 
 /* COLOR SELECTOR */
@@ -85,6 +156,7 @@
   gap: 10px;
   overflow-x: auto;
   padding: 14px 12px 6px;
+  margin-top: 10px;
 }
 
 .pdp-phone-color-thumbnail {

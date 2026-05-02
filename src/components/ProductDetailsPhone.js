@@ -11,6 +11,8 @@ import BrandIdPage from "./brandIdPage";
 import SimilarItemId from "./similarItemId";
 import BrandTypeItems from "./BrandTypeItems";
 import MultiRecommendedItem from "./multiRecommendedItem";
+import SimilarItemAds from "./SimilarItemAds";
+import { FaShareAlt, FaSearchPlus } from "react-icons/fa";
 
 export default function ProductDetailsPhone({
   product,
@@ -55,6 +57,7 @@ export default function ProductDetailsPhone({
   optionLabel,
 currentPrice,
 selectedOptions,
+setMobileZoomOpen,
 }) {
   const rawShippingCountries = details?.country || "";
 
@@ -111,57 +114,110 @@ const getFirstVariantImageUrl = (images = []) => {
   return getImageUrl(sortVariantImages(images)[0]) || "/fallback.png";
 };
 
+const handleShareProduct = async () => {
+  const shareUrl =
+    typeof window !== "undefined" ? window.location.href : "";
+
+  const shareData = {
+    title: translation?.name || product?.name || "Product",
+    text: translation?.name || product?.name || "Check this product",
+    url: shareUrl,
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        console.error("Share failed:", error);
+      }
+    }
+  }
+
+  await navigator.clipboard.writeText(shareUrl);
+  alert("Product link copied");
+};
+
   return (
     <div className="pdp-phone-page">
+       <SimilarItemAds itemId={itemsd} />
       <div className="pdp-phone-slider-shell">
-        <div className="pdp-phone-slider-wrapper">
-          <Slider
-            dots={true}
-            infinite={false}
-            speed={500}
-            slidesToShow={1}
-            slidesToScroll={1}
-          >
-           {sortVariantImages(product?.imagesVariants?.[selectedColor] || []).map((image, index) => {
-              const imageUrl = getImageUrl(image);
+  <div className="pdp-phone-image-overlay-top">
+    <div className="pdp-phone-color-badge">
+      {selectedColor}
+    </div>
 
-              return (
-                <div key={index}>
-                  <img
-                    src={encodeURI(imageUrl)}
-                    alt={`Slide ${index}`}
-                    className="pdp-phone-slider-image"
-                    onClick={() => handleImageChange(image, index)}
-                  />
-                </div>
-              );
-            })}
-          </Slider>
-        </div>
+    <button
+      type="button"
+      onClick={handleShareProduct}
+      className="pdp-phone-share-button"
+      aria-label="Share product"
+    >
+      <FaShareAlt />
+    </button>
+  </div>
 
-        {product?.imagesVariants &&
-          Object.keys(product.imagesVariants).length > 0 && (
-            <div className="pdp-phone-color-thumbnails">
-              {Object.keys(product.imagesVariants).map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`pdp-phone-color-thumbnail ${
-                    color === selectedColor ? "selected" : ""
-                  }`}
-                  onClick={() => handleColorChange(color)}
-                  aria-label={`Select color ${color}`}
-                >
-                  <img
-                    src={encodeURI(getFirstVariantImageUrl(product.imagesVariants[color] || []))}
-                    alt={`${color} option`}
-                    className="pdp-phone-color-thumbnail-image"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-      </div>
+  <button
+    type="button"
+    onClick={() => setMobileZoomOpen(true)}
+    className="mobile-view-zoom-button"
+  >
+    <FaSearchPlus />
+    <span>View zoom</span>
+  </button>
+
+  <div className="pdp-phone-slider-wrapper">
+    <Slider
+      dots={true}
+      infinite={false}
+      speed={500}
+      slidesToShow={1}
+      slidesToScroll={1}
+    >
+      {sortVariantImages(product?.imagesVariants?.[selectedColor] || []).map((image, index) => {
+        const imageUrl = getImageUrl(image);
+
+        return (
+          <div key={index}>
+            <img
+              src={encodeURI(imageUrl)}
+              alt={`Slide ${index}`}
+              className="pdp-phone-slider-image"
+              onClick={() => handleImageChange(image, index)}
+            />
+          </div>
+        );
+      })}
+    </Slider>
+  </div>
+
+  </div>
+
+  {product?.imagesVariants &&
+  Object.keys(product.imagesVariants).length > 0 && (
+    <div className="pdp-phone-color-thumbnails">
+      {Object.keys(product.imagesVariants).map((color) => (
+        <button
+          key={color}
+          type="button"
+          className={`pdp-phone-color-thumbnail ${
+            color === selectedColor ? "selected" : ""
+          }`}
+          onClick={() => handleColorChange(color)}
+          aria-label={`Select color ${color}`}
+        >
+          <img
+            src={encodeURI(
+              getFirstVariantImageUrl(product.imagesVariants[color] || [])
+            )}
+            alt={`${color} option`}
+            className="pdp-phone-color-thumbnail-image"
+          />
+        </button>
+      ))}
+    </div>
+  )}
 
       <div className="pdp-phone-content">
         <div className="pdp-phone-header-card">
@@ -240,26 +296,22 @@ const getFirstVariantImageUrl = (images = []) => {
             </div>
           )}
 
-          {country && (
-            <div
-              style={{
-                marginBottom: "12px",
-                padding: "10px 12px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                fontWeight: "500",
-                backgroundColor: canShipToSelectedCountry ? "#f6ffed" : "#fff2f0",
-                color: canShipToSelectedCountry ? "#237804" : "#cf1322",
-                border: canShipToSelectedCountry
-                  ? "1px solid #b7eb8f"
-                  : "1px solid #ffb3b3",
-              }}
-            >
-              {canShipToSelectedCountry
-                ? `This item can be shipped to ${country.name}.`
-                : `This item cannot be shipped to ${country.name}.`}
-            </div>
-          )}
+          {country && !canShipToSelectedCountry && (
+                      <div
+                        style={{
+                          marginBottom: "12px",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          backgroundColor: "#fff2f0",
+                          color: "#cf1322",
+                          border: "1px solid #ffb3b3",
+                        }}
+                      >
+                        {`This item is not available in ${country.name}. Please select another delivery location.`}
+                      </div>
+                    )}
 
          {canShipToSelectedCountry && (
   <>
@@ -512,7 +564,8 @@ const getFirstVariantImageUrl = (images = []) => {
 
         <MultiRecommendedItem
                 category={details?.category}
-                title={`Recommended ${details?.category}`}
+                type={details?.type}
+                title={`Recommended ${details?.type}`}
               />
       </div>
     </div>

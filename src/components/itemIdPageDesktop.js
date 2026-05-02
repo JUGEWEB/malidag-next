@@ -279,6 +279,32 @@ if (item.type === "multiple_images_title_subtitle") {
   );
 }
 
+if (item.type === "multiple_images_title_subtitle_horizantal_scroll") {
+  return (
+    <article className="brand-media-horizontal-bottom-text" key={index}>
+      <div className="brand-media-horizontal-scroll">
+        {Array.isArray(item.files) &&
+          item.files.map((img, i) => (
+            <div className="brand-media-horizontal-card-bottom" key={i}>
+              
+              {/* IMAGE */}
+              <div className="brand-media-horizontal-image-wrap">
+                <img src={img.url} alt={img.title || `Image ${i + 1}`} />
+              </div>
+
+              {/* TEXT BELOW */}
+              <div className="brand-media-horizontal-text-below">
+                {img.title && <h3>{img.title}</h3>}
+                {img.subtitle && <p>{img.subtitle}</p>}
+              </div>
+
+            </div>
+          ))}
+      </div>
+    </article>
+  );
+}
+
 if (item.type === "multiple_image_top_text_position") {
   return (
     <article className="brand-media-horizontal-top-text" key={index}>

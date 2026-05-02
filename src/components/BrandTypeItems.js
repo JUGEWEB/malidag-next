@@ -59,6 +59,7 @@ const BrandTypeItems = ({ brandType, brandName }) => {
           const brand = product.item?.brand;
           const price = product.item?.usdPrice;
           const productId = product.itemId;
+          const itemId = product.id;
 
           return (
            <article
@@ -83,7 +84,7 @@ const BrandTypeItems = ({ brandType, brandName }) => {
                 <button
                   className="brand-item-btn"
                   onClick={() => {
-                    window.location.href = `/item/${productId}`;
+                    window.location.href = `/product/${itemId}`;
                   }}
                 >
                   Buy now

@@ -82,6 +82,53 @@
 /* end */
 
 /* =========================
+   MULTIPLE IMAGES HORIZONTAL (TEXT BELOW)
+========================= */
+
+.brand-media-horizontal-bottom-text {
+  width: 100%;
+  overflow: hidden;
+}
+
+.brand-media-horizontal-card-bottom {
+  flex: 0 0 300px; /* card width */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-snap-align: start;
+}
+
+/* image */
+.brand-media-horizontal-image-wrap {
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.brand-media-horizontal-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* text */
+.brand-media-horizontal-text-below h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.brand-media-horizontal-text-below p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+/* =========================
    MULTIPLE IMAGE TOP TEXT - HORIZONTAL
 ========================= */
 

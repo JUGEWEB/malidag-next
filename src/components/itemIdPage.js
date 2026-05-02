@@ -277,6 +277,26 @@ console.log("Translation array:", translation);
   </div>
 )}
 
+{item.type === "multiple_images_title_subtitle_horizantal_scroll" && (
+  <div className="mobile-brand-horizontal-bottom-text">
+    <div className="mobile-brand-horizontal-scroll">
+      {Array.isArray(item.files) &&
+        item.files.map((img, i) => (
+          <div className="mobile-brand-horizontal-card-bottom" key={i}>
+            <div className="mobile-brand-horizontal-image-wrap">
+              <img src={img.url} alt={img.title || `Brand image ${i + 1}`} />
+            </div>
+
+            <div className="mobile-brand-horizontal-text-below">
+              {img.title && <h3>{img.title}</h3>}
+              {img.subtitle && <p>{img.subtitle}</p>}
+            </div>
+          </div>
+        ))}
+    </div>
+  </div>
+)}
+
 
             {/* Single Image (Full Width) */}
             {item.type === "single_image" && (

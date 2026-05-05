@@ -86,9 +86,9 @@ const getFirstVariantImageUrl = (images = []) => {
 };
 
 
-function ProductDetails({ basketItems }) {
+function ProductDetails() {
   const { address, isConnected, chain } = useAccount();
-  const { country } = useContext(AppContext);
+  const { country,  basketItems } = useContext(AppContext);
   const chainId = chain?.id;
 
   const [reviewCount, setReviewCount] = useState(0);
@@ -244,9 +244,9 @@ const [mobileZoomOpen, setMobileZoomOpen] = useState(false);
       const details = detailsRef.current;
       const delta = event.deltaY;
 
-      const atTop = details.scrollTop === 0;
+      const atTop = details.scrollTop <= 5;
       const atBottom =
-        details.scrollTop + details.clientHeight >= details.scrollHeight - 1;
+  details.scrollTop + details.clientHeight >= details.scrollHeight - 20;
 
       setDetailsSectionAtTop(atTop);
       setDetailsSectionAtBottom(atBottom);
@@ -1105,51 +1105,44 @@ setSelectedSize(firstOption || t("no_size_available"));
           />
         )}
 
-        {paymentModalOpen && (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "rgba(0,0,0,0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 9999,
-    }}
-    onClick={() => setPaymentModalOpen(false)}
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        background: "#fff",
-        padding: "24px",
-        borderRadius: "12px",
-        minWidth: "320px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-      }}
-    >
-      <h3 style={{ margin: 0 }}>Choose payment method</h3>
-
-      <button onClick={() => handlePaymentOptionSelect("card")}>
-        Pay with Card
+       {paymentModalOpen && (
+  <div className="payment-modal-overlay" onClick={() => setPaymentModalOpen(false)}>
+    <div className="payment-modal-card" onClick={(e) => e.stopPropagation()}>
+      <button className="payment-modal-close" onClick={() => setPaymentModalOpen(false)}>
+        ×
       </button>
 
-      <button onClick={() => handlePaymentOptionSelect("paypal")}>
-        PayPal
-      </button>
+      <div className="payment-modal-header">
+        <div className="payment-modal-badge">🔐</div>
+        <h3>Choose payment method</h3>
+        <p>Secure checkout for your order</p>
+      </div>
 
-      <button onClick={() => handlePaymentOptionSelect("crypto")}>
-        Crypto
-      </button>
+      <div className="payment-method-list">
+        <button className="payment-method-card" onClick={() => handlePaymentOptionSelect("card")}>
+          <span className="payment-method-icon">💳</span>
+          <span>
+            <strong>Pay with Card</strong>
+            <small>Visa, Mastercard, debit or credit card</small>
+          </span>
+        </button>
 
-      <button onClick={() => setPaymentModalOpen(false)}>
-        Cancel
-      </button>
+        <button className="payment-method-card" onClick={() => handlePaymentOptionSelect("paypal")}>
+          <span className="payment-method-icon">🅿️</span>
+          <span>
+            <strong>PayPal</strong>
+            <small>Fast checkout with your PayPal account</small>
+          </span>
+        </button>
+
+        <button className="payment-method-card" onClick={() => handlePaymentOptionSelect("crypto")}>
+          <span className="payment-method-icon">₿</span>
+          <span>
+            <strong>Crypto</strong>
+            <small>Pay with supported crypto wallet</small>
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 )}

@@ -156,6 +156,7 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
           display: "flex",
           alignItems: "center",
           width: "100%",
+          maxWidth: "500px",
           backgroundColor: "white",
           border: `2px solid ${isFocused ? "#0078ff" : "white"}`,
           borderRadius: "5px",

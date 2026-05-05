@@ -40,7 +40,7 @@ const BrandTypeItems = ({ brandType, brandName }) => {
     fetchItems();
   }, [brandType, brandName]);
 
-  if (loading) return <p className="brand-items-loading">Loading items...</p>;
+  if (loading) return null;
   if (!items.length) return null;
 
   const isGridMode = items.length >= 4;

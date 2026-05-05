@@ -4,6 +4,18 @@
   padding: 32px 16px;
 }
 
+.checkout-shell-paypal {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  transition: padding-right 0.25s ease;
+}
+
+.checkout-shell-paypal.with-basket {
+  padding-right: 150px;
+}
+
 .checkout-container-paypal {
   max-width: 1180px;
   margin: 0 auto;

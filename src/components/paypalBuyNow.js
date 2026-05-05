@@ -16,6 +16,9 @@ import {
   normalizeCountryName,
 } from "./countryUtils";
 import "./paypalBuyNow.css";
+import { useContext } from "react";
+import { AppContext } from "./appContext";
+import useScreenSize from "./useIsMobile";
 
 const API_BASE_URL = "https://api.malidag.com";
 const PAYPAL_CLIENT_ID =
@@ -97,6 +100,10 @@ const PayPalBuyNow = ({
   const [paypalRendered, setPaypalRendered] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [rates, setRates] = useState(null);
+  const { basketItems } = useContext(AppContext);
+const { isDesktop } = useScreenSize();
+
+const hasBasket = isDesktop && Array.isArray(basketItems) && basketItems.length > 0;
 
  const headerCountryName = lockedCountry?.name || "";
 
@@ -601,7 +608,7 @@ useEffect(() => {
   />
 ) : null}
 
-      <div className="checkout-shell-paypal">
+     <div className={`checkout-shell-paypal ${hasBasket ? "with-basket" : ""}`}>
         <div className="checkout-container-paypal">
           <div className="checkout-left-paypal">
             {selectedDeliveryInfo && (

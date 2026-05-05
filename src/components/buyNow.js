@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { App, Button } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -16,6 +16,7 @@ import { useCheckoutStore } from "./checkoutStore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useWriteContract, usePublicClient } from "wagmi";
 import { parseUnits } from "viem";
+import { AppContext } from "./appContext";
 
 const walletLogos = {
   metamask: "https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg",
@@ -117,7 +118,6 @@ const BuyNow = ({
   selectedSize,
   tokenAmount: initialTokenAmount,
   basket,
-  basketItems,
   user,
 }) => {
   const searchParams = useSearchParams();
@@ -167,6 +167,10 @@ const [authReady, setAuthReady] = useState(false);
   const publicClient = usePublicClient();
   const chainId = chain?.id || null;
   const isCheckoutPage = pathname === "/checkout";
+  const { basketItems } = useContext(AppContext);
+const hasLayoutBasket = Array.isArray(basketItems) && basketItems.length > 0;
+const checkoutBasketCount =
+  checkoutData?.items?.length || basketItems?.length || 0;
 
     const rawShippingCountries =
     item?.details?.country ||
@@ -770,12 +774,12 @@ const selectedUnitUsdPrice =
   <div
     className="item-deils"
     style={{
-      marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
+      marginRight: isCheckoutPage && hasLayoutBasket ? "150px" : "0px",
     }}
   >
     <h3 className="item-ne">
-      Proceeding with {checkoutData?.items?.length || 0} item
-      {(checkoutData?.items?.length || 0) > 1 ? "s" : ""} in your basket
+     Proceeding with {checkoutBasketCount} item
+{checkoutBasketCount > 1 ? "s" : ""} in your basket
     </h3>
   </div>
 ) : loading ? (
@@ -785,7 +789,7 @@ const selectedUnitUsdPrice =
     className="item-deils"
     onClick={backToProduct}
     style={{
-      marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
+      marginRight: isCheckoutPage && hasLayoutBasket ? "150px" : "0px",
     }}
   >
     <img src={imageSrc} alt={item?.name || "product image"} className="item-ige" />
@@ -1106,7 +1110,7 @@ const selectedUnitUsdPrice =
       className="item-deils"
       onClick={backToProduct}
       style={{
-        marginRight: isCheckoutPage && basketItems?.length > 0 ? "120px" : "0px",
+        marginRight: isCheckoutPage && hasLayoutBasket ? "150px" : "0px",
       }}
     >
       <img src={imageSrc} alt={item?.name || "product image"} className="item-ige" />

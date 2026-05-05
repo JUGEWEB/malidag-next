@@ -36,7 +36,10 @@ function MalidagHeader({ user, isConnected, connect, address, disconnect, pendin
   const [logoLoaded, setLogoLoaded] = useState(false); // ✨ Logo loading state
  
   // Determine if we are on the BuyNow (checkout) page
-  const isCheckoutPage = router.pathname === "/checkout";
+const isCheckoutPage =
+  pathname === "/checkout" ||
+  pathname === "/paypalCheckout" ||
+  pathname === "/cardCheckout";
 
 
 
@@ -53,7 +56,7 @@ function MalidagHeader({ user, isConnected, connect, address, disconnect, pendin
   };
 
    useEffect(() => {
-  if (pathname.includes('product/') || pathname === "/checkout") {
+  if (pathname.includes('product/') || pathname === "/checkout" || pathname === "/paypalCheckout" || pathname === "/cardCheckout") {
     setIsBasketVisible(true);
   } else {
     setIsBasketVisible(false);
@@ -107,7 +110,7 @@ function MalidagHeader({ user, isConnected, connect, address, disconnect, pendin
         marginTop: "0px",
         backgroundColor: (isTablet || isDesktop) ? "black" : "#333",
         width:"100%",
-        marginRight: isBasketVisible && isDesktop && basketItems.length > 0 ? "150px" : "0",
+        paddingRight: isBasketVisible && isDesktop && basketItems.length > 0 ? "150px" : "0",
       
       }}
     >

@@ -7,6 +7,58 @@
   padding: 0 20px;
 }
 
+.pdp-tablet-details-section {
+  position: relative;
+}
+
+.pdp-tablet-scroll-hint {
+  position: sticky;
+  bottom: 0;
+  margin-top: 16px;
+  padding: 14px 0 6px;
+  background: linear-gradient(to top, white 55%, rgba(255,255,255,0));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.pdp-tablet-scroll-arrow {
+  animation: pdpTabletBounce 1.1s infinite;
+}
+
+@keyframes pdpTabletBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+.pdp-tablet-details-section {
+  max-height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pdp-tablet-details-section::-webkit-scrollbar {
+  display: none;
+}
+
+.pdp-tablet-subname {
+  font-size: 15px;
+  color: #64748b;
+  margin: -4px 0 14px 0;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
 .pdp-tablet-image-panel {
   position: relative;
 }

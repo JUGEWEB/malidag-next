@@ -235,21 +235,23 @@ fetchRecommendedItems();
                     {item?.item?.name || "Unnamed product"}
                   </p>
 
-                  <div className="item-sta">
-                    {averageRating ? renderStars(averageRating) : "No rating"}
-                  </div>
+                 {reviewCount > 0 && (
+            <>
+              <div className="item-sta">
+                {renderStars(averageRating)}
+              </div>
 
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#666",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {averageRating
-                      ? `${averageRating}/5 (${reviewCount} reviews)`
-                      : "No reviews yet"}
-                  </div>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#666",
+                  marginBottom: "6px",
+                }}
+              >
+                {averageRating}/5 ({reviewCount} reviews)
+              </div>
+            </>
+          )}
 
                   <div className="recommended-price">
                     ${item?.item?.usdPrice || "0"}

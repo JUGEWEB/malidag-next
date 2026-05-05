@@ -109,11 +109,15 @@ const FetchReviews = ({ productId, selectedRating, onRatingClick, serverReviews 
   });
   const visibleReviews = sortedReviews.slice(0, visibleCount);
 
+  if (!productId) return null;
+if (loading) return null;
+if (error) return null;
+if (!reviews.length) return null;
+
   return (
     <div style={{ width: "100%", display: "flex", justifyContent: "start" }}>
       <div ref={reviewsRef} style={{ padding: "1rem", width: "100%" }}>
         <h2>{t("customer_reviews")}</h2>
-        {loading ? <p>{t("loading_reviews")}</p> : error ? <p>{error}</p> : reviews.length === 0 ? <p>{t("no_reviews_yet")}</p> : (
           <>
             {visibleReviews.map((r, index) => {
               const realIndex = reviews.findIndex(item => item === r);
@@ -205,7 +209,7 @@ const FetchReviews = ({ productId, selectedRating, onRatingClick, serverReviews 
               </div>
             )}
           </>
-        )}
+        
 
         {selectedReviewIndex !== null && (
           <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.09)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setSelectedReviewIndex(null)}>

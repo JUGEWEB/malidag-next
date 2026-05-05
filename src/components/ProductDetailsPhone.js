@@ -169,11 +169,21 @@ const handleShareProduct = async () => {
 
   <div className="pdp-phone-slider-wrapper">
     <Slider
-      dots={true}
-      infinite={false}
-      speed={500}
-      slidesToShow={1}
-      slidesToScroll={1}
+       key={selectedColor}
+        dots={true}
+        infinite={false}
+        speed={500}
+        slidesToShow={1}
+        slidesToScroll={1}
+        initialSlide={0}
+      afterChange={(index) => {
+        const images = sortVariantImages(product?.imagesVariants?.[selectedColor] || []);
+        const image = images[index];
+
+        if (image) {
+          handleImageChange(image, index);
+        }
+      }}
     >
       {sortVariantImages(product?.imagesVariants?.[selectedColor] || []).map((image, index) => {
         const imageUrl = getImageUrl(image);
@@ -226,6 +236,12 @@ const handleShareProduct = async () => {
               {translation?.name || product?.name}
             </h1>
 
+            {(translation?.itemSubName || details?.itemSubName || product?.itemSubName) && (
+              <p className="pdp-phone-subname">
+                {translation?.itemSubName || details?.itemSubName || product?.itemSubName}
+              </p>
+            )}
+
             {product?.brand && product?.brand.trim() !== "" && (
               <button
                 onClick={handleVisitBrand}
@@ -236,36 +252,38 @@ const handleShareProduct = async () => {
             )}
           </div>
 
-          <div className="pdp-phone-rating-block">
-            <div className="rating-dropdown pdp-phone-rating-dropdown">
-              <span ref={buttonRef} className="pdp-phone-rating-value">
-                {finalRating || 0}
-              </span>
+         {reviewCount > 0 && (
+                <div className="pdp-phone-rating-block">
+                  <div className="rating-dropdown pdp-phone-rating-dropdown">
+                    <span ref={buttonRef} className="pdp-phone-rating-value">
+                      {finalRating || 0}
+                    </span>
 
-              <div className="pdp-phone-stars">
-                {[...Array(5)].map((_, index) => {
-                  const starValue = index + 1;
-                  return (
-                    <FaStar
-                      key={index}
-                      color={
-                        starValue <= Math.floor(finalRating)
-                          ? "#f5b301"
-                          : starValue - 0.5 <= finalRating
-                          ? "#d4a017"
-                          : "#cbd5e1"
-                      }
+                    <div className="pdp-phone-stars">
+                      {[...Array(5)].map((_, index) => {
+                        const starValue = index + 1;
+                        return (
+                          <FaStar
+                            key={index}
+                            color={
+                              starValue <= Math.floor(finalRating)
+                                ? "#f5b301"
+                                : starValue - 0.5 <= finalRating
+                                ? "#d4a017"
+                                : "#cbd5e1"
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+
+                    <FaChevronDown
+                      onClick={() => setOpenModalSmall(true)}
+                      className="pdp-phone-chevron"
                     />
-                  );
-                })}
-              </div>
-
-              <FaChevronDown
-                onClick={() => setOpenModalSmall(true)}
-                className="pdp-phone-chevron"
-              />
-            </div>
-          </div>
+                  </div>
+                </div>
+              )}
         </div>
 
         <div className="pdp-phone-section pdp-phone-purchase-card">
@@ -508,7 +526,6 @@ const handleShareProduct = async () => {
         </div>
 
         <div className="pdp-phone-details-text pdp-phone-card">
-          <h2 className="pdp-phone-section-title">{t("product_detail")}</h2>
 
           <div className="pdp-phone-detail-group">
             <p className="pdp-phone-detail-row">
@@ -527,10 +544,6 @@ const handleShareProduct = async () => {
               </span>
             </p>
           </div>
-
-          <h3 className="pdp-phone-product-id">
-            {t("product_id", { id: itemsd })}
-          </h3>
         </div>
 
         <div className="pdp-phone-itemid-wrapper pdp-phone-card">
@@ -540,27 +553,29 @@ const handleShareProduct = async () => {
            <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />
         </div>
 
-        <div className="pdp-phone-reviews-block">
-          <FetchReviews productId={itemsd} selectedRating={selectedRating} />
+       {reviewCount > 0 && (
+  <div className="pdp-phone-reviews-block">
+    <FetchReviews productId={itemsd} selectedRating={selectedRating} />
 
-          {reviewCount > 11 && (
-            <div
-              onClick={() => {
-                setItemData({
-                  id,
-                  itemId: itemsd,
-                  item: product,
-                });
-                setAuthState(true);
-                setRatingFilter(selectedRating);
-                router.push("/reviewPage");
-              }}
-              className="pdp-phone-see-all-reviews"
-            >
-              {t("see_all_reviews")}
-            </div>
-          )}
-        </div>
+    {reviewCount > 11 && (
+      <div
+        onClick={() => {
+          setItemData({
+            id,
+            itemId: itemsd,
+            item: product,
+          });
+          setAuthState(true);
+          setRatingFilter(selectedRating);
+          router.push("/reviewPage");
+        }}
+        className="pdp-phone-see-all-reviews"
+      >
+        {t("see_all_reviews")}
+      </div>
+    )}
+  </div>
+)}
 
         <MultiRecommendedItem
                 category={details?.category}

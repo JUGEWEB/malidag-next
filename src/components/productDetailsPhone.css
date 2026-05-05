@@ -6,6 +6,13 @@
   padding-bottom: 40px;
 }
 
+.pdp-phone-subname {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 2px;
+  margin-bottom: 8px;
+}
+
 /*start*/
 .pdp-phone-slider-shell {
   position: relative;

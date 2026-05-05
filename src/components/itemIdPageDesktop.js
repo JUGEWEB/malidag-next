@@ -15,6 +15,7 @@ export default function ItemIdPageDesktop({ id }) {
   const [translation, setTranslation] = useState(null);
   const [status, setStatus] = useState("loading");
   const { t } = useTranslation();
+  if (!id) return null;
 
   const PrevArrow = (props) => {
   const { onClick } = props;
@@ -34,46 +35,53 @@ const NextArrow = (props) => {
   );
 };
 
-  useEffect(() => {
-    let cancelled = false;
+ useEffect(() => {
+  if (!id) {
+    setData(null);
+    setTranslation(null);
+    setStatus("idle");
+    return;
+  }
 
-    async function fetchData() {
+  let cancelled = false;
+
+  async function fetchData() {
+    try {
+      setStatus("loading");
+
+      const { data: itemData } = await axios.get(
+        `${API_BASE}/api/items/items/${id}`
+      );
+
+      if (cancelled) return;
+
+      setData(itemData);
+
       try {
-        setStatus("loading");
-
-        const { data: itemData } = await axios.get(
-          `${API_BASE}/api/items/items/${id}`
+        const { data: transData } = await axios.get(
+          `${API_BASE}/translate/brand-media/${itemData.folderID}/${i18n.language}`
         );
 
-        if (cancelled) return;
-
-        setData(itemData);
-
-        try {
-          const { data: transData } = await axios.get(
-            `${API_BASE}/translate/brand-media/${itemData.folderID}/${i18n.language}`
-          );
-
-          if (!cancelled) {
-            setTranslation(transData?.translation || null);
-          }
-        } catch {
-          if (!cancelled) setTranslation(null);
+        if (!cancelled) {
+          setTranslation(transData?.translation || null);
         }
-
-        if (!cancelled) setStatus("success");
-      } catch (err) {
-        console.error("Item brand media error:", err);
-        if (!cancelled) setStatus("error");
+      } catch {
+        if (!cancelled) setTranslation(null);
       }
+
+      if (!cancelled) setStatus("success");
+    } catch (err) {
+      console.error("Item brand media error:", err);
+      if (!cancelled) setStatus("error");
     }
+  }
 
-    if (id) fetchData();
+  fetchData();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [id, i18n.language]);
+  return () => {
+    cancelled = true;
+  };
+}, [id, i18n.language]);
 
   const translationMap = useMemo(() => {
     if (!Array.isArray(translation)) return {};
@@ -88,23 +96,9 @@ const NextArrow = (props) => {
     return text?.trim() || "";
   };
 
-  if (status === "loading") {
-    return (
-      <section className="brand-media-shell">
-        <div className="brand-media-state">Loading brand content...</div>
-      </section>
-    );
-  }
+ if (status === "loading") return null;
 
-  if (status === "error") {
-    return (
-      <section className="brand-media-shell">
-        <div className="brand-media-state brand-media-state-error">
-          Brand content is currently unavailable.
-        </div>
-      </section>
-    );
-  }
+ if (status === "error") return null;
 
   if (!data?.media?.length) return null;
 

@@ -22,7 +22,15 @@ const ItemIdPage = ({ id }) => {
 console.log("Translation array:", translation);
 
 
-  useEffect(() => {
+ useEffect(() => {
+  if (!id) {
+    setData(null);
+    setTranslation(null);
+    setError(null);
+    setLoading(false);
+    return;
+  }
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -34,21 +42,22 @@ console.log("Translation array:", translation);
       const itemData = await res.json();
       setData(itemData);
 
-      // ✅ Now fetch translations
       const lang = i18n.language;
       const folderID = itemData.folderID;
-      const transRes = await fetch(`https://api.malidag.com/translate/brand-media/${folderID}/${lang}`);
+      const transRes = await fetch(
+        `https://api.malidag.com/translate/brand-media/${folderID}/${lang}`
+      );
 
       if (transRes.ok) {
         const transData = await transRes.json();
         setTranslation(transData.translation);
       } else {
-        console.warn("No translations found for current language.");
         setTranslation(null);
       }
-
     } catch (error) {
+      console.error("Item brand media error:", error);
       setError(error.message);
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -58,9 +67,10 @@ console.log("Translation array:", translation);
 }, [id, i18n.language]);
 
 
-  if (loading) return <div className="text-center py-10 text-lg">Loading...</div>;
-  if (error) return <div className="text-center text-red-500">{error}</div>;
-  if (!data) return <div className="text-center">No data found</div>;
+ if (!id) return null;
+if (loading) return null;
+if (error) return null;
+if (!data?.media?.length) return null;
 
   return (
     <div style={{width: "100%", maxWidth: "100%", overflow: "hidden"}} >

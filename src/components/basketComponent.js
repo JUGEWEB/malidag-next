@@ -14,14 +14,15 @@ const BasketComponent = ({ basketItems }) => {
   const { t } = useTranslation();
 
   // Using useEffect to track location changes
-  useEffect(() => {
-    // Check if we're on the product or checkout page
-    if ((pathname.includes('/product/') || pathname === '/checkout')) {
-      setIsBasketVisible(true); // Show the basket if on product or checkout page
-    } else {
-      setIsBasketVisible(false); // Hide the basket otherwise
-    }
-  }, [pathname]); // Dependency array to re-run the effect on location change
+ useEffect(() => {
+  const shouldShowBasket =
+    pathname.includes("/product/") ||
+    pathname === "/checkout" ||
+    pathname === "/paypalCheckout" ||
+    pathname === "/cardCheckout";
+
+  setIsBasketVisible(shouldShowBasket);
+}, [pathname]);
   
 
   if (!isBasketVisible || basketItems.length === 0) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { FaStar, FaChevronDown } from "react-icons/fa";
 import AnalyseReview from "./analyseReview";
@@ -92,6 +92,50 @@ selectedOptions,
 
 const rawShippingCountries = details?.country || "";
 
+const [tapCount, setTapCount] = useState(0);
+const [showId, setShowId] = useState(false);
+const hasBasket = isBasketVisible && basketItems?.length > 0;
+
+const [hasMoreDetailsScroll, setHasMoreDetailsScroll] = useState(false);
+
+const updateDetailsScrollHint = () => {
+  const el = detailsRef?.current;
+  if (!el) return;
+
+  const isScrollable = el.scrollHeight > el.clientHeight;
+  const isNearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
+
+  setHasMoreDetailsScroll(isScrollable && !isNearBottom);
+};
+
+useEffect(() => {
+  updateDetailsScrollHint();
+
+  const el = detailsRef?.current;
+  if (!el) return;
+
+  el.addEventListener("scroll", updateDetailsScrollHint);
+  window.addEventListener("resize", updateDetailsScrollHint);
+
+  return () => {
+    el.removeEventListener("scroll", updateDetailsScrollHint);
+    window.removeEventListener("resize", updateDetailsScrollHint);
+  };
+}, [detailsRef, product, selectedColor, selectedSize]);
+
+const handleSecretTap = () => {
+  setTapCount((prev) => {
+    const next = prev + 1;
+
+    if (next >= 3) {
+      setShowId(true);
+      return 0;
+    }
+
+    return next;
+  });
+};
+
 const shippingCountries = rawShippingCountries
   .split(",")
   .map((c) => c.trim().toLowerCase())
@@ -168,15 +212,43 @@ const handleShareProduct = async () => {
   alert("Product link copied");
 };
 
+const handleTopSectionWheel = (e) => {
+  const detailsEl = detailsRef?.current;
+  if (!detailsEl) return;
+
+  const canDetailsScroll = detailsEl.scrollHeight > detailsEl.clientHeight;
+  if (!canDetailsScroll) return;
+
+  const scrollingDown = e.deltaY > 0;
+  const scrollingUp = e.deltaY < 0;
+
+  const isAtTop = detailsEl.scrollTop <= 0;
+  const isAtBottom =
+    Math.ceil(detailsEl.scrollTop + detailsEl.clientHeight) >= detailsEl.scrollHeight;
+
+  if (scrollingDown && !isAtBottom) {
+    e.preventDefault();
+    detailsEl.scrollTop += e.deltaY;
+    return;
+  }
+
+  if (scrollingUp && !isAtTop) {
+    e.preventDefault();
+    detailsEl.scrollTop += e.deltaY;
+    return;
+  }
+
+  // at top or bottom: allow normal page scroll
+};
+
   return (
-    <>
+   <div className={hasBasket ? "pdp-desktop-page with-basket" : "pdp-desktop-page"}>
 
     <SimilarItemAds itemId={itemsd} />
 
       <div
-        className={`pdp-desktop-layout ${
-          isBasketVisible && basketItems?.length > 0 ? "with-basket" : ""
-        }`}
+     onWheel={handleTopSectionWheel}
+        className={`pdp-desktop-layout`}
       >
         <div className="pdp-desktop-left-column">
           <div className="left-thumbnails pdp-desktop-left-thumbnails">
@@ -200,9 +272,7 @@ const handleShareProduct = async () => {
 
         <div className="pdp-desktop-center-column">
          <div
-          className={`pdp-desktop-image-panel ${
-            isBasketVisible && basketItems?.length > 0 ? "with-basket" : ""
-          }`}
+          className={`pdp-desktop-image-panel`}
         >
           <button
             type="button"
@@ -222,9 +292,7 @@ const handleShareProduct = async () => {
             <div
               className={`details-section pdp-desktop-details-section ${
                 detailsSectionAtTop ? "at-top" : ""
-              } ${detailsSectionAtBottom ? "at-bottom" : ""} ${
-                isBasketVisible && basketItems?.length > 0 ? "with-basket" : ""
-              }`}
+              } ${detailsSectionAtBottom ? "at-bottom" : ""} `}
               ref={detailsRef}
             >
               {isZoomVisible && zoomType === "zoom1" && (
@@ -244,7 +312,13 @@ const handleShareProduct = async () => {
                 </div>
               )}
 
-              <h1 className="pdp-desktop-title">{translation?.name || product?.name}</h1>
+              <h1  onClick={handleSecretTap} className="pdp-desktop-title">{translation?.name || product?.name}</h1>
+
+              {(translation?.itemSubName || details?.itemSubName || product?.itemSubName) && (
+                <p className="pdp-desktop-subname">
+                  {translation?.itemSubName || details?.itemSubName || product?.itemSubName}
+                </p>
+              )}
 
               {product?.brand && product?.brand.trim() !== "" && (
                 <button onClick={handleVisitBrand} className="pdp-desktop-brand-button">
@@ -253,34 +327,36 @@ const handleShareProduct = async () => {
               )}
 
               <div className="product-info">
-                <div className="pdp-desktop-rating-text">
-                  <div className="rating-dropdown pdp-desktop-rating-dropdown">
-                    <span ref={buttonRef} className="pdp-desktop-rating-value">
-                      {finalRating || 0}
-                    </span>
+               {reviewCount > 0 && (
+                  <div className="pdp-desktop-rating-text">
+                    <div className="rating-dropdown pdp-desktop-rating-dropdown">
+                      <span ref={buttonRef} className="pdp-desktop-rating-value">
+                        {finalRating || 0}
+                      </span>
 
-                    {[...Array(5)].map((_, index) => {
-                      const starValue = index + 1;
-                      return (
-                        <FaStar
-                          key={index}
-                          color={
-                            starValue <= Math.floor(finalRating)
-                              ? "gold"
-                              : starValue - 0.5 <= finalRating
-                              ? "goldenrod"
-                              : "gray"
-                          }
-                        />
-                      );
-                    })}
+                      {[...Array(5)].map((_, index) => {
+                        const starValue = index + 1;
+                        return (
+                          <FaStar
+                            key={index}
+                            color={
+                              starValue <= Math.floor(finalRating)
+                                ? "gold"
+                                : starValue - 0.5 <= finalRating
+                                ? "goldenrod"
+                                : "gray"
+                            }
+                          />
+                        );
+                      })}
 
-                    <FaChevronDown
-                      onClick={toggleModal}
-                      className="pdp-desktop-chevron"
-                    />
+                      <FaChevronDown
+                        onClick={toggleModal}
+                        className="pdp-desktop-chevron"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="pdp-desktop-info-section">
                   {modalOpen && itemsd && (
@@ -485,9 +561,18 @@ const handleShareProduct = async () => {
                 {translation?.productDetail01 || product?.productDetail01}
               </p>
 
+              {showId && (
               <h1 className="pdp-desktop-product-id">
                 {t("product_id", { id: itemsd })}
               </h1>
+              )}
+
+              {hasMoreDetailsScroll && (
+                <div className="pdp-desktop-scroll-hint">
+                  <span>Scroll for more</span>
+                  <span className="pdp-desktop-scroll-arrow">↓</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -515,9 +600,7 @@ const handleShareProduct = async () => {
 
       <div>
         <div
-          className={`pdp-desktop-itemid-wrapper ${
-            isBasketVisible && basketItems?.length > 0 ? "with-basket" : ""
-          }`}
+          className={`pdp-desktop-itemid-wrapper`}
         >
           <ItemIdPageDesktop id={itemsd} />
            <SimilarItemId itemId={itemsd} />
@@ -551,6 +634,6 @@ const handleShareProduct = async () => {
                          title={`Recommended ${details?.type}`}
                        />
       </div>
-    </>
+    </div>
   );
 }

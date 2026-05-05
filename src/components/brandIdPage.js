@@ -16,6 +16,8 @@ export default function BrandIdPage({ brandName }) {
   const [status, setStatus] = useState("loading");
   const { t } = useTranslation();
 
+  if (!brandName) return null;
+
   const PrevArrow = (props) => {
   const { onClick } = props;
   return (
@@ -88,23 +90,9 @@ const NextArrow = (props) => {
     return text?.trim() || "";
   };
 
-  if (status === "loading") {
-    return (
-      <section className="brand-media-shell-brand">
-        <div className="brand-media-state">Loading brand content...</div>
-      </section>
-    );
-  }
+ if (status === "loading") return null;
 
-  if (status === "error") {
-    return (
-      <section className="brand-media-shell-brand">
-        <div className="brand-media-state-brand brand-media-state-error-brand">
-          Brand content is currently unavailable.
-        </div>
-      </section>
-    );
-  }
+ if (status === "error") return null;
 
   if (!data?.media?.length) return null;
 

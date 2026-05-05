@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { FaStar, FaChevronDown } from "react-icons/fa";
 import AnalyseReview from "./analyseReview";
@@ -69,6 +69,48 @@ setMobileZoomOpen,
 
   const tokenSymbol = product?.cryptocurrency?.toUpperCase?.() || "USDT";
   const rawShippingCountries = details?.country || "";
+
+  const [tapCount, setTapCount] = useState(0);
+const [showId, setShowId] = useState(false);
+const [hasMoreDetailsScroll, setHasMoreDetailsScroll] = useState(false);
+
+const updateDetailsScrollHint = () => {
+  const el = detailsRef?.current;
+  if (!el) return;
+
+  const isScrollable = el.scrollHeight > el.clientHeight;
+  const isNearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
+
+  setHasMoreDetailsScroll(isScrollable && !isNearBottom);
+};
+
+useEffect(() => {
+  updateDetailsScrollHint();
+
+  const el = detailsRef?.current;
+  if (!el) return;
+
+  el.addEventListener("scroll", updateDetailsScrollHint);
+  window.addEventListener("resize", updateDetailsScrollHint);
+
+  return () => {
+    el.removeEventListener("scroll", updateDetailsScrollHint);
+    window.removeEventListener("resize", updateDetailsScrollHint);
+  };
+}, [detailsRef, product, selectedColor, selectedSize]);
+
+const handleSecretTap = () => {
+  setTapCount((prev) => {
+    const next = prev + 1;
+
+    if (next >= 3) {
+      setShowId(true);
+      return 0;
+    }
+
+    return next;
+  });
+};
 
   const shippingCountries = rawShippingCountries
     .split(",")
@@ -146,11 +188,37 @@ const handleShareProduct = async () => {
   alert("Product link copied");
 };
 
+const handleTopSectionWheel = (e) => {
+  const detailsEl = detailsRef?.current;
+  if (!detailsEl) return;
+
+  const canDetailsScroll = detailsEl.scrollHeight > detailsEl.clientHeight;
+  if (!canDetailsScroll) return;
+
+  const scrollingDown = e.deltaY > 0;
+  const scrollingUp = e.deltaY < 0;
+
+  const isAtTop = detailsEl.scrollTop <= 0;
+  const isAtBottom =
+    Math.ceil(detailsEl.scrollTop + detailsEl.clientHeight) >= detailsEl.scrollHeight;
+
+  if (scrollingDown && !isAtBottom) {
+    e.preventDefault();
+    detailsEl.scrollTop += e.deltaY;
+    return;
+  }
+
+  if (scrollingUp && !isAtTop) {
+    e.preventDefault();
+    detailsEl.scrollTop += e.deltaY;
+  }
+};
+
   return (
     <>
 
      <SimilarItemAds itemId={itemsd} />
-      <div className="pdp-tablet-layout">
+      <div className="pdp-tablet-layout" onWheel={handleTopSectionWheel}>
         <div className="pdp-tablet-left-column">
           <div className="left-thumbnails pdp-tablet-left-thumbnails">
            {sortVariantImages(product?.imagesVariants?.[selectedColor] || []).map((image, index) => {
@@ -203,7 +271,13 @@ const handleShareProduct = async () => {
               } ${detailsSectionAtBottom ? "at-bottom" : ""}`}
               ref={detailsRef}
             >
-              <h1 className="pdp-tablet-title">{translation?.name || product?.name}</h1>
+              <h1  onClick={handleSecretTap} className="pdp-tablet-title">{translation?.name || product?.name}</h1>
+
+              {(translation?.itemSubName || details?.itemSubName || product?.itemSubName) && (
+                  <p className="pdp-tablet-subname">
+                    {translation?.itemSubName || details?.itemSubName || product?.itemSubName}
+                  </p>
+                )}
 
               {product?.brand && product?.brand.trim() !== "" && (
                 <button onClick={handleVisitBrand} className="pdp-tablet-brand-button">
@@ -212,34 +286,36 @@ const handleShareProduct = async () => {
               )}
 
               <div className="product-info">
-                <div className="pdp-tablet-rating-text">
-                  <div className="rating-dropdown pdp-tablet-rating-dropdown">
-                    <span ref={buttonRef} className="pdp-tablet-rating-value">
-                      {finalRating || 0}
-                    </span>
+               {reviewCount > 0 && (
+                    <div className="pdp-tablet-rating-text">
+                      <div className="rating-dropdown pdp-tablet-rating-dropdown">
+                        <span ref={buttonRef} className="pdp-tablet-rating-value">
+                          {finalRating || 0}
+                        </span>
 
-                    {[...Array(5)].map((_, index) => {
-                      const starValue = index + 1;
-                      return (
-                        <FaStar
-                          key={index}
-                          color={
-                            starValue <= Math.floor(finalRating)
-                              ? "gold"
-                              : starValue - 0.5 <= finalRating
-                              ? "goldenrod"
-                              : "gray"
-                          }
+                        {[...Array(5)].map((_, index) => {
+                          const starValue = index + 1;
+                          return (
+                            <FaStar
+                              key={index}
+                              color={
+                                starValue <= Math.floor(finalRating)
+                                  ? "gold"
+                                  : starValue - 0.5 <= finalRating
+                                  ? "goldenrod"
+                                  : "gray"
+                              }
+                            />
+                          );
+                        })}
+
+                        <FaChevronDown
+                          onClick={toggleModal}
+                          className="pdp-tablet-chevron"
                         />
-                      );
-                    })}
-
-                    <FaChevronDown
-                      onClick={toggleModal}
-                      className="pdp-tablet-chevron"
-                    />
-                  </div>
-                </div>
+                      </div>
+                    </div>
+                  )}
 
                 <div className="pdp-tablet-info-section">
                   {modalOpen && itemsd && (
@@ -454,9 +530,18 @@ const handleShareProduct = async () => {
                 {translation?.productDetail01 || product?.productDetail01}
               </p>
 
+              {showId && (
               <h1 className="pdp-tablet-product-id">
                 {t("product_id", { id: itemsd })}
               </h1>
+            )}
+
+            {hasMoreDetailsScroll && (
+            <div className="pdp-tablet-scroll-hint">
+              <span>Scroll for more</span>
+              <span className="pdp-tablet-scroll-arrow">↓</span>
+            </div>
+          )}
             </div>
           </div>
         </div>
@@ -484,9 +569,7 @@ const handleShareProduct = async () => {
 
       <div>
         <div
-          className={`pdp-tablet-itemid-wrapper ${
-            isBasketVisible && basketItems?.length > 0 ? "with-basket" : ""
-          }`}
+          className={`pdp-tablet-itemid-wrapper`}
         >
           <ItemIdPageDesktop id={itemsd} />
            <SimilarItemId itemId={itemsd} />
@@ -494,30 +577,35 @@ const handleShareProduct = async () => {
            <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />
         </div>
 
-        <FetchReviews productId={itemsd} selectedRating={selectedRating} />
+       {reviewCount > 0 && (
+            <>
+              <FetchReviews productId={itemsd} selectedRating={selectedRating} />
 
-        {reviewCount > 11 && (
-          <div
-            onClick={() => {
-              setItemData({
-                id,
-                itemId: itemsd,
-                item: product,
-              });
-              setAuthState(true);
-              setRatingFilter(selectedRating);
-              router.push("/review");
-            }}
-            className="pdp-tablet-see-all-reviews"
-          >
-            {t("see_all_reviews")}
-          </div>
-        )}
+              {reviewCount > 11 && (
+                <div
+                  onClick={() => {
+                    setItemData({
+                      id,
+                      itemId: itemsd,
+                      item: product,
+                    });
+                    setAuthState(true);
+                    setRatingFilter(selectedRating);
+                    router.push("/review");
+                  }}
+                  className="pdp-tablet-see-all-reviews"
+                >
+                  {t("see_all_reviews")}
+                </div>
+              )}
+            </>
+          )}
 
        <MultiRecommendedItem
-                       category={details?.category}
-                       title={`Recommended ${details?.category}`}
-                     />
+                         category={details?.category}
+                         type={details?.type}
+                         title={`Recommended ${details?.type}`}
+                       />
       </div>
     </>
   );

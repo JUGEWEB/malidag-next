@@ -35,9 +35,9 @@ const Type = () => {
           </div>
           <div
           className="type-itemT"
-          onClick={() => router.push("/the-crypto-shop")}
+          onClick={() => router.push("/malidag-news")}
           >
-            The crypto shop
+            Madix News
           </div>
       </div>
     </div>

@@ -130,7 +130,7 @@ const isCheckoutPage =
         onClick={home}
         style={{ display: "flex", alignItems: "center", cursor: "pointer", width: "auto", fontWeight: "bold", color: "white" }}
       >
-       MALIGAG
+       MADIX
       </div>
         
       )}
@@ -152,8 +152,8 @@ const isCheckoutPage =
       )}
       <img
         onClick={home}
-        src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FGemini_Generated_Image_8tsm718tsm718tsm-removebg-preview.png?alt=media&token=265d1922-0c07-4658-9955-58660103c88e"
-        alt="Malidag Logo"
+        src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_07_42%20AM.png?alt=media&token=f7513811-116e-49bd-ae3d-594454fab30b"
+        alt="Madix Logo"
         style={{
           width: "30px",
           height: "30px",

@@ -18,7 +18,6 @@ import YouMayLike from "./youMayLike";
 import TopTopic from "./topTopic";
 import RecommendedItem from "./recomendeItem";
 import Electronic from "./electronic";
-import TradingView from "./tradingView";
 import MalidagCategories2 from "./malidagCatgories2";
 import SearchSuggestions from "./searchSuggestion";
 import ThemeForPersonnalCare from "./themeForPersonnalCare";
@@ -230,15 +229,6 @@ const Malidag = ({
 
       <Block className="malidag-block malidag-block--flush">
         <RecommendedItem />
-      </Block>
-
-      <Block className="malidag-block malidag-block--flush">
-        <div className="tradingview-container tradingview-container--flush">
-          <h2>
-            {t("live_chart_for")} {selectedSymbol}
-          </h2>
-          <TradingView symbol={selectedSymbol} />
-        </div>
       </Block>
     </div>
   );

@@ -7,7 +7,7 @@ import BasketComponent from "./basketComponent";
 import InputSearch from "./inputSearch";
 import Type from "./type";
 import Location from "./location";
-import Coin from "./coin";
+import Jewelry from "./jewelry";
 import NavMenu from "./navMenu";
 import MainSlider from "./MainSlider";
 import SpanWarnings from "./spanWarnings";
@@ -55,7 +55,7 @@ function AppHeader(props) {
                
                 {(isMobile || isSmallMobile || isVerySmall) && (
                 <div style={{backgroundColor: "white", borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc" }}>
-              <Coin  basketItems={basketItems}/>
+              <Jewelry  basketItems={basketItems}/>
               </div> 
                 )}
         

@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import axios from "axios";
 import All from "./All";
 import Type from "./type";
-import Coin from "./coin";
+import Jewelry from "./jewelry";
 import useScreenSize from "./useIsMobile";
 
 const BASE_URL = "https://api.malidag.com"; // Your API URL http://192.168.0.109:3010
@@ -73,7 +73,7 @@ if (isCheckoutPage || isItemsOfWomenPage || (isItemTypeRoute && beautyTypes.has(
     <div className="headtx" style={{  display: "flex", alignItems: "center", gap: "0px", background: "#333", marginTop: "-5px",  marginRight: isBasketVisible && isDesktop && basketItems.length > 0 ? "150px" : "0", }}>
       <All />
       <Type />
-      <Coin />
+      <Jewelry />
     </div>
   );
 };

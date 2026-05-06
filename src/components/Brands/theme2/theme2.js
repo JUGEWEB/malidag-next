@@ -337,8 +337,10 @@ function Theme2({ brandName }) {
   };
 
   const getColorOptions = (product) => {
-    return Object.keys(product?.imagesVariants || {});
-  };
+  return Object.keys(product?.imagesVariants || {}).filter(
+    (key) => key.toLowerCase() !== "variants"
+  );
+};
 
   const handleColorSelect = (itemId, color, e) => {
     e.stopPropagation();
@@ -348,16 +350,32 @@ function Theme2({ brandName }) {
     }));
   };
 
-  const getDisplayImage = (product) => {
-    const selectedColor = selectedColorByItem[product.id];
-    const variants = product?.imagesVariants || {};
+  const getVariantImageUrl = (variant) => {
+  if (typeof variant === "string") return variant;
+  if (variant?.url) return variant.url;
+  return null;
+};
 
-    if (selectedColor && variants[selectedColor]?.[0]) {
-      return variants[selectedColor][0];
-    }
+const getDisplayImage = (product) => {
+  const selectedColor = selectedColorByItem[product.id];
+  const variants = product?.imagesVariants || {};
 
-    return product?.images?.[0] || "/fallback.png";
-  };
+  const selectedList = selectedColor ? variants[selectedColor] : null;
+  const selectedImage = Array.isArray(selectedList)
+    ? getVariantImageUrl(selectedList[0])
+    : null;
+
+  if (selectedImage) return selectedImage;
+
+  const firstVariantList = Object.values(variants).find(Array.isArray);
+  const firstVariantImage = firstVariantList
+    ? getVariantImageUrl(firstVariantList[0])
+    : null;
+
+  if (firstVariantImage) return firstVariantImage;
+
+  return product?.images?.[0] || "/fallback.png";
+};
 
   const getColorSwatch = (colorName = "") => {
     const color = colorName.trim().toLowerCase();

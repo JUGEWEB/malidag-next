@@ -3,55 +3,63 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useRouter, usePathname } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
 import './coin.css';
 import useScreenSize from './useIsMobile';
 
 const BASE_URL = 'https://api.malidag.com';
 
-const coinImages = {
-  USDC: 'https://api.malidag.com/learn/videos/1769909942070-0xaf88d065e77c8cc2239327c5edb3a432268e5831.png',
-  BUSD: 'https://api.malidag.com/learn/videos/1773502639247-BUSD.png',
-  USDT: 'https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png',
-};
-
 function Coin() {
-  const [coins, setCoins] = useState([]);
+  const [watches, setWatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const { isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall } = useScreenSize();
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useTranslation();
 
   const isDesktopLike = isDesktop || isTablet;
   const isSmallScreen = isMobile || isSmallMobile || isVerySmall;
 
   useEffect(() => {
-    const fetchCoins = async () => {
+    const fetchWatches = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await axios.get(`${BASE_URL}/items/cryptos`);
-        const symbols = response.data?.cryptos || [];
+        const response = await axios.get(`${BASE_URL}/items`);
+        const items = Array.isArray(response.data) ? response.data : [];
 
-        const filteredCoins = symbols
-          .filter((symbol) => coinImages[symbol])
-          .map((symbol) => ({ symbol }));
+        const watchItems = items
+          .filter((itemData) => {
+            const item = itemData?.item || {};
+            const details = itemData?.details || {};
 
-        setCoins(filteredCoins);
+            const type = String(item.type || details.type || '').toLowerCase();
+            const brandType = String(item.brandType || details.brandType || '').toLowerCase();
+            const department = String(item.department || details.department || '').toLowerCase();
+            const category = String(itemData.category || details.category || '').toLowerCase();
+
+            return (
+              type === 'watches' ||
+              brandType === 'watches' ||
+              brandType === 'wathes' ||
+              (department === 'jewelry' && type.includes('watch')) ||
+              (category === 'jewelry' && type.includes('watch'))
+            );
+          })
+          .slice(0, 8);
+
+        setWatches(watchItems);
       } catch (err) {
-        console.error('Error fetching coin data:', err);
-        setError(t('coin_error_loading'));
+        console.error('Error fetching watches:', err);
+        setError('Unable to load watches');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCoins();
-  }, [t]);
+    fetchWatches();
+  }, []);
 
   const shouldHide = useMemo(() => {
     return isSmallScreen && pathname !== '/';
@@ -59,17 +67,42 @@ function Coin() {
 
   if (shouldHide) return null;
 
+  const handleWatchesClick = () => {
+    router.push('/coin/watches');
+  };
+
+  const getWatchImage = (itemData) => {
+    const item = itemData?.item || {};
+    const variants = item?.imagesVariants || {};
+
+    const firstVariantList = Object.values(variants).find(Array.isArray);
+    const firstVariant = firstVariantList?.[0];
+
+    if (typeof firstVariant === 'string') return firstVariant;
+    if (firstVariant?.url) return firstVariant.url;
+
+    return item?.images?.[0] || '/fallback.png';
+  };
+
+  const getBrandName = (itemData) => {
+    return itemData?.item?.brand || itemData?.details?.brand || 'Watch';
+  };
+
+  const getWatchName = (itemData) => {
+    return itemData?.item?.name || itemData?.details?.itemName || 'Luxury watch';
+  };
+
   if (loading) {
     return (
       <section
         className={`coin-strip ${isDesktopLike ? 'coin-strip--desktop' : 'coin-strip--mobile'} coin-strip--loading`}
-        aria-label="Loading supported cryptocurrencies"
+        aria-label="Loading watches"
       >
         <div className="coin-strip__shell">
           {!isDesktopLike && (
             <div className="coin-strip__header">
-              <div className="coin-strip__eyebrow">Secure checkout</div>
-              <h2 className="coin-strip__title">Pay with crypto</h2>
+              <div className="coin-strip__eyebrow">Jewelry store</div>
+              <h2 className="coin-strip__title">Get your watches</h2>
             </div>
           )}
 
@@ -87,57 +120,84 @@ function Coin() {
     return <div className="coin-strip__error">{error}</div>;
   }
 
-  const handleCoinClick = (symbol) => {
-    router.push(`/coin/${symbol}`);
-  };
-
-  return (
-    <section
-      className={`coin-strip ${isDesktopLike ? 'coin-strip--desktop' : 'coin-strip--mobile'}`}
-      aria-label="Supported cryptocurrencies"
-    >
-      <div className="coin-strip__shell">
-        {!isDesktopLike && (
+ return (
+  <section
+    className={`coin-strip ${
+      isDesktopLike ? 'coin-strip--desktop' : 'coin-strip--mobile'
+    }`}
+    aria-label="Watches shop"
+  >
+    <div className="coin-strip__shell">
+      {isDesktopLike ? (
+        <button
+          type="button"
+          className="coin-strip__desktop-title"
+          onClick={handleWatchesClick}
+        >
+          Watches store
+        </button>
+      ) : (
+        <>
           <div className="coin-strip__header">
-            <div className="coin-strip__eyebrow">Secure checkout</div>
+            <div className="coin-strip__eyebrow">
+              Jewelry store
+            </div>
+
             <div className="coin-strip__title-row">
-              <h2 className="coin-strip__title">Pay with crypto</h2>
-              <span className="coin-strip__live">
-                <span className="coin-strip__live-dot" />
-                Available now
-              </span>
+              <h2 className="coin-strip__title">
+                Get your watches
+              </h2>
+
+              <button
+                type="button"
+                className="coin-strip__live"
+                onClick={handleWatchesClick}
+                aria-label="View more watches"
+              >
+                View more
+              </button>
             </div>
           </div>
-        )}
 
-        <div className="coin-strip__scroll">
-          {coins.map((coin) => (
-            <button
-              key={coin.symbol}
-              type="button"
-              className={`coin-pill ${isDesktopLike ? 'coin-pill--desktop' : 'coin-pill--mobile'}`}
-              onClick={() => handleCoinClick(coin.symbol)}
-              aria-label={`Open ${coin.symbol}`}
-            >
-              <span className="coin-pill__image-wrap">
-                <img
-                  loading="lazy"
-                  src={coinImages[coin.symbol]}
-                  alt={coin.symbol}
-                  className="coin-pill__image"
-                />
-              </span>
+          <div className="coin-strip__scroll">
+            {watches.map((watch) => (
+              <button
+                key={watch.id}
+                type="button"
+                className="coin-pill coin-pill--mobile"
+                onClick={handleWatchesClick}
+                aria-label={`Open ${getWatchName(watch)}`}
+              >
+                <span className="coin-pill__image-wrap">
+                  <img
+                    loading="lazy"
+                    src={getWatchImage(watch)}
+                    alt={getWatchName(watch)}
+                    className="coin-pill__image"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/fallback.png';
+                    }}
+                  />
+                </span>
 
-              <span className="coin-pill__content">
-                <span className="coin-pill__symbol">{coin.symbol}</span>
-                <span className="coin-pill__label">Stablecoin</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+                <span className="coin-pill__content">
+                  <span className="coin-pill__symbol">
+                    {getBrandName(watch)}
+                  </span>
+
+                  <span className="coin-pill__label">
+                    {getWatchName(watch)}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  </section>
+);
 }
 
 export default Coin;

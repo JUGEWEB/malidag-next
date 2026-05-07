@@ -3,6 +3,7 @@ import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 import Theme1 from "@/components/Brands/Theme1/Theme1";
 import Theme2 from "@/components/Brands/theme2/theme2";
+import Theme3 from "@/components/Brands/theme3/theme3";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,9 @@ export default async function Page({ params }) {
 
     case "theme2":
       return <Theme2 brandName={brandName} />;
+
+    case "theme3":
+      return <Theme3 brandName={brandName} />;
 
     default:
       return <p className="p-6 text-red-600">Unknown theme: {themeRoute}</p>;

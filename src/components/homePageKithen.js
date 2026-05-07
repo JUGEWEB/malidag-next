@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import "./homePageKithen.css";
-import useScreenSize from "./useIsMobile";
 import languages from "@/i18nLanguages";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
@@ -13,19 +12,16 @@ import Head from "next/head";
 
 function ItemHomePage() {
   const [items, setItems] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeVideoId, setActiveVideoId] = useState(null);
   const [reviews, setReviews] = useState({});
   const [translations, setTranslations] = useState({});
 
-  const {
-    isMobile,
-    isTablet,
-    isSmallMobile,
-    isVerySmall,
-    isVeryVerySmall,
-  } = useScreenSize();
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedColor, setSelectedColor] = useState("all");
+  const [priceRange, setPriceRange] = useState([0, 10000]);
+
+  const [selectedColorByItem, setSelectedColorByItem] = useState({});
+  const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
 
   const router = useRouter();
   const { t } = useTranslation();
@@ -34,21 +30,6 @@ function ItemHomePage() {
   const baseUrl = "https://www.malidag.com";
   const currentPath =
     typeof window !== "undefined" ? window.location.pathname : "/";
-
-  const stableCoinMap = {
-    usdt: {
-      label: "USDT",
-      image: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
-    },
-    usdc: {
-      label: "USDC",
-      image: "https://api.malidag.com/learn/videos/1769909942070-0xaf88d065e77c8cc2239327c5edb3a432268e5831.png",
-    },
-    busd: {
-      label: "BUSD",
-      image: "https://cryptologos.cc/logos/binance-usd-busd-logo.png",
-    },
-  };
 
   const fetchTranslation = async (productId, lang) => {
     if (translations[productId]?.[lang]) return;
@@ -66,87 +47,63 @@ function ItemHomePage() {
         },
       }));
     } catch (error) {
-      console.error(`Translation fetch error for ${productId}:`, error.message);
+      console.log(error);
     }
   };
 
   const fetchReviews = async (productId) => {
-    if (!productId) return;
-
     try {
       const response = await axios.get(
         `https://api.malidag.com/get-reviews/${productId}`
       );
 
-      if (response.data?.success) {
-        const reviewsArray = Array.isArray(response.data.reviews)
-          ? response.data.reviews
-          : [];
+      const reviewsArray = response?.data?.reviews || [];
+      const total = reviewsArray.reduce(
+        (acc, item) => acc + Number(item.rating || 0),
+        0
+      );
 
-        const totalRating = reviewsArray.reduce((acc, review) => {
-          const rating = Number(review?.rating);
-          return acc + (Number.isNaN(rating) ? 0 : rating);
-        }, 0);
-
-        const averageRating = reviewsArray.length
-          ? totalRating / reviewsArray.length
-          : null;
-
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating,
-            count: reviewsArray.length,
-            reviewsArray,
-          },
-        }));
-      } else {
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating: null,
-            count: 0,
-            reviewsArray: [],
-          },
-        }));
-      }
-    } catch (error) {
       setReviews((prev) => ({
         ...prev,
         [productId]: {
-          averageRating: null,
-          count: 0,
-          reviewsArray: [],
+          averageRating: reviewsArray.length ? total / reviewsArray.length : 0,
+          count: reviewsArray.length,
         },
       }));
+    } catch (error) {
+      console.log(error);
     }
   };
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await axios.get(`https://api.malidag.com/items/`);
-        const fetchedItems = response.data || [];
+        const response = await axios.get("https://api.malidag.com/items/");
+        const fetched = response.data || [];
 
-        const filteredItems = fetchedItems.filter(
+        const filtered = fetched.filter(
           (item) => item?.category === "home_kitchen"
         );
 
-        setItems(filteredItems);
+        const initialColors = {};
+        const initialIndexes = {};
 
-        for (const product of filteredItems) {
-          const productId = product.itemId;
-          const lang = i18n.language || "en";
-          fetchTranslation(productId, lang);
-          fetchReviews(productId);
-        }
+        filtered.forEach((product) => {
+          const colorKeys = Object.keys(product?.item?.imagesVariants || {});
+          if (colorKeys.length > 0) {
+            initialColors[product.id] = colorKeys[0];
+            initialIndexes[product.id] = 0;
+          }
 
-        const uniqueCategories = [
-          ...new Set(filteredItems.map((item) => item.category)),
-        ];
-        setCategories(uniqueCategories);
+          fetchTranslation(product.itemId, i18n.language || "en");
+          fetchReviews(product.itemId);
+        });
+
+        setSelectedColorByItem(initialColors);
+        setSelectedImageIndexByItem(initialIndexes);
+        setItems(filtered);
       } catch (error) {
-        console.error("Error fetching items:", error);
+        console.log(error);
       } finally {
         setLoading(false);
       }
@@ -155,28 +112,192 @@ function ItemHomePage() {
     fetchItems();
   }, []);
 
-  useEffect(() => {
-    if (!items.length) return;
+  const brands = useMemo(() => {
+    return [...new Set(items.map((x) => x?.item?.brand).filter(Boolean))];
+  }, [items]);
 
-    const lang = i18n.language || "en";
+  const types = useMemo(() => {
+    return [...new Set(items.map((x) => x?.item?.type).filter(Boolean))];
+  }, [items]);
 
-    items.forEach((product) => {
-      fetchTranslation(product.itemId, lang);
+  const colors = useMemo(() => {
+    const allColors = [];
+
+    items.forEach((itemData) => {
+      Object.keys(itemData?.item?.imagesVariants || {}).forEach((color) => {
+        allColors.push(color);
+      });
     });
-  }, [i18n.language, items]);
 
-  const handleVideoPlay = (id) => {
-    setActiveVideoId(id);
+    return [...new Set(allColors)];
+  }, [items]);
+
+  const maxPrice = useMemo(() => {
+    const prices = items.map((itemData) => Number(itemData?.item?.usdPrice || 0));
+    return Math.ceil(Math.max(...prices, 100));
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    return items.filter((itemData) => {
+      const item = itemData.item;
+      const price = Number(item?.usdPrice || 0);
+
+      const matchesType = selectedType === "all" || item?.type === selectedType;
+      const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
+
+      let matchesColor = true;
+
+      if (selectedColor !== "all") {
+        matchesColor = Object.keys(item?.imagesVariants || {}).includes(
+          selectedColor
+        );
+      }
+
+      return matchesType && matchesPrice && matchesColor;
+    });
+  }, [items, selectedType, selectedColor, priceRange]);
+
+  const getImageUrl = (imageEntry) => {
+    if (!imageEntry) return "";
+    if (typeof imageEntry === "string") return imageEntry;
+    if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+    return "";
   };
 
-  const handleVideoStop = () => {
-    setActiveVideoId(null);
+  const sortImages = (images = []) => {
+    return [...images].sort((a, b) => {
+      const posA =
+        typeof a === "object" && typeof a?.position === "number"
+          ? a.position
+          : 999999;
+
+      const posB =
+        typeof b === "object" && typeof b?.position === "number"
+          ? b.position
+          : 999999;
+
+      if (posA !== posB) return posA - posB;
+
+      const nameA =
+        typeof a === "object"
+          ? a?.filename || ""
+          : String(a || "").split("/").pop() || "";
+
+      const nameB =
+        typeof b === "object"
+          ? b?.filename || ""
+          : String(b || "").split("/").pop() || "";
+
+      return nameA.localeCompare(nameB, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+  };
+
+  const getColorOptions = (product) => {
+    return Object.keys(product?.item?.imagesVariants || {});
+  };
+
+  const getCurrentImages = (product) => {
+    const variants = product?.item?.imagesVariants || {};
+    const selectedColor = selectedColorByItem[product.id];
+
+    if (selectedColor && Array.isArray(variants[selectedColor])) {
+      return sortImages(variants[selectedColor]);
+    }
+
+    const firstColor = Object.keys(variants)[0];
+
+    if (firstColor && Array.isArray(variants[firstColor])) {
+      return sortImages(variants[firstColor]);
+    }
+
+    return product?.item?.images || [];
+  };
+
+  const getDisplayImage = (product) => {
+    const images = getCurrentImages(product);
+    const index = selectedImageIndexByItem[product.id] || 0;
+    return getImageUrl(images[index]) || getImageUrl(product?.item?.images?.[0]) || "/fallback.png";
+  };
+
+  const handleColorSelect = (itemId, color, e) => {
+    e.stopPropagation();
+
+    setSelectedColorByItem((prev) => ({
+      ...prev,
+      [itemId]: color,
+    }));
+
+    setSelectedImageIndexByItem((prev) => ({
+      ...prev,
+      [itemId]: 0,
+    }));
+  };
+
+  const handleImageArrow = (product, direction, e) => {
+    e.stopPropagation();
+
+    const images = getCurrentImages(product);
+    if (images.length <= 1) return;
+
+    setSelectedImageIndexByItem((prev) => {
+      const current = prev[product.id] || 0;
+      const next =
+        direction === "next"
+          ? (current + 1) % images.length
+          : (current - 1 + images.length) % images.length;
+
+      return {
+        ...prev,
+        [product.id]: next,
+      };
+    });
+  };
+
+  const getColorSwatch = (colorName = "") => {
+    const color = colorName.trim().toLowerCase();
+
+    const swatches = {
+      black: "#111111",
+      white: "#f8f8f8",
+      red: "#dc2626",
+      blue: "#2563eb",
+      green: "#16a34a",
+      yellow: "#eab308",
+      pink: "#ec4899",
+      purple: "#9333ea",
+      orange: "#f97316",
+      brown: "#92400e",
+      grey: "#9ca3af",
+      gray: "#9ca3af",
+      silver: "#c0c0c0",
+      gold: "#d4af37",
+      beige: "#d6c7a1",
+      cream: "#f5f0dc",
+      ivory: "#fffff0",
+      navy: "#1e3a8a",
+      maroon: "#7f1d1d",
+      olive: "#556b2f",
+      khaki: "#c3b091",
+      "sky blue": "#38bdf8",
+      skyblue: "#38bdf8",
+      multicolor:
+        "linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #a855f7)",
+      transparent:
+        "linear-gradient(135deg, #ddd 25%, #fff 25%, #fff 50%, #ddd 50%, #ddd 75%, #fff 75%, #fff 100%)",
+    };
+
+    return swatches[color] || "#d1d5db";
   };
 
   const handleItemClick = (id) => {
-    if (id) {
-      router.push(`/product/${id}`);
-    }
+    router.push(`/product/${id}`);
+  };
+
+  const handleBrandClick = (brand) => {
+    router.push(`/brand/${encodeURIComponent(brand)}`);
   };
 
   const renderStars = (rating) => {
@@ -201,184 +322,286 @@ function ItemHomePage() {
             href={`${baseUrl}/${lang}${currentPath}`}
           />
         ))}
-
-        <link
-          rel="alternate"
-          hrefLang="x-default"
-          href={`${baseUrl}/en${currentPath}`}
-        />
-
-        <meta property="og:title" content="Home & Kitchen - Malidag" />
-        <meta
-          property="og:description"
-          content="Explore quality home & kitchen items at Malidag. Available in 107 languages."
-        />
-        <meta property="og:url" content={`${baseUrl}${currentPath}`} />
-        <meta property="og:type" content="website" />
-        <meta
-          property="og:image"
-          content="https://www.malidag.com/og-image.jpg"
-        />
       </Head>
 
       <div className="kitchen-hero">
         <img
           src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2Fsteptodown.com479163.jpg?alt=media&token=0abc0129-3e54-4b9c-ba3d-ed4d9e61e960"
-          alt="home and kitchen page"
+          alt="home and kitchen"
           className="kitchen-hero-image"
         />
+
         <div className="kitchen-hero-overlay">
           <h1>{t("home_and_kitchen") || "Home & Kitchen"}</h1>
-          <p>
-            {t("discover_amazing_products") ||
-              "Beautiful essentials for your home."}
-          </p>
+          <p>{t("discover_amazing_products") || "Beautiful essentials for your home."}</p>
         </div>
       </div>
 
-      <div
-        className="kitchen-items-grid"
-        style={{
-          gridTemplateColumns: isVeryVerySmall
-            ? "repeat(1, 1fr)"
-            : isVerySmall
-            ? "repeat(2, 1fr)"
-            : isSmallMobile
-            ? "repeat(2, 1fr)"
-            : isMobile
-            ? "repeat(2, 1fr)"
-            : isTablet
-            ? "repeat(3, 1fr)"
-            : "repeat(4, 1fr)",
-        }}
-      >
-        {items.map((itemData) => {
-          const { itemId, id, item } = itemData;
-          const { name, usdPrice, originalPrice, sold, videos, cryptocurrency } =
-            item;
+      <div className="mobile-filters-wrapper">
+        <div className="mobile-color-filters">
+          <button
+            type="button"
+            className={`mobile-color-circle all ${
+              selectedColor === "all" ? "active" : ""
+            }`}
+            onClick={() => setSelectedColor("all")}
+          >
+            All
+          </button>
 
-          const reviewsData = reviews[itemId] || {};
-          const finalRating = reviewsData?.averageRating || 0;
-          const reviewCount = reviewsData?.count || 0;
+          {colors.map((color) => (
+            <button
+              key={color}
+              type="button"
+              className={`mobile-color-circle ${
+                selectedColor === color ? "active" : ""
+              }`}
+              title={color}
+              aria-label={`Filter ${color}`}
+              style={{ background: getColorSwatch(color) }}
+              onClick={() => setSelectedColor(color)}
+            />
+          ))}
+        </div>
 
-          const normalizedVideos = Array.isArray(videos) ? videos : [videos];
-          const firstVideoUrl = normalizedVideos.find(
-            (video) => typeof video === "string" && video.endsWith(".mp4")
-          );
+        <div className="mobile-scroll-filters">
+          {brands.map((brand) => (
+            <button key={brand} onClick={() => handleBrandClick(brand)}>
+              {brand}
+            </button>
+          ))}
+        </div>
 
-          const translated = translations[itemId]?.[i18n.language];
-          const productName = translated?.name || name;
+        <div className="mobile-scroll-filters">
+          <button
+            className={selectedType === "all" ? "active-filter" : ""}
+            onClick={() => setSelectedType("all")}
+          >
+            All Types
+          </button>
 
-          const handleReviewClick = (data) => {
-            setItemData(data);
-            router.push("/reviewPage");
-          };
+          {types.map((type) => (
+            <button
+              key={type}
+              className={selectedType === type ? "active-filter" : ""}
+              onClick={() => setSelectedType(type)}
+            >
+              {type.replaceAll("_", " ")}
+            </button>
+          ))}
+        </div>
 
-          const normalizedCrypto = String(cryptocurrency || "").toLowerCase();
-          const stableCoin = stableCoinMap[normalizedCrypto];
+        <div className="price-filter-mobile">
+          <input
+            type="range"
+            min="0"
+            max={maxPrice}
+            value={Math.min(priceRange[1], maxPrice)}
+            onChange={(e) => setPriceRange([0, Number(e.target.value)])}
+          />
+          <span>Max: ${Math.min(priceRange[1], maxPrice)}</span>
+        </div>
+      </div>
 
-          return (
-            <div key={id} className="kitchen-card">
-              <div className="kitchen-card-media">
-                {activeVideoId === id && firstVideoUrl ? (
-                  <video
-                    src={firstVideoUrl}
-                    controls
-                    autoPlay
-                    onEnded={handleVideoStop}
-                    className="kitchen-card-image"
-                  />
-                ) : (
-                  <>
-                    <img
-                      className="kitchen-card-image"
-                      src={item?.images?.[0] || "/placeholder.png"}
-                      onClick={() => handleItemClick(id)}
-                      alt={name}
-                    />
-                    {firstVideoUrl && (
-                      <button
-                        className="video-play-btn"
-                        onClick={() => handleVideoPlay(id)}
-                        type="button"
-                      >
-                        ▶
-                      </button>
-                    )}
-                  </>
-                )}
+      <div className="kitchen-layout">
+        <div className="kitchen-sidebar">
+          <div className="sidebar-section">
+            <h3>Brands</h3>
 
-                {stableCoin && (
-                  <div className="coin-floating-badge">
-                    <img
-                      src={stableCoin.image}
-                      alt={stableCoin.label}
-                      className="coin-floating-icon"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                    <span>{stableCoin.label}</span>
-                  </div>
-                )}
-              </div>
-
-              <div
-                onClick={() => handleItemClick(id)}
-                className="kitchen-card-details"
+            {brands.map((brand) => (
+              <button
+                key={brand}
+                type="button"
+                className="sidebar-btn"
+                onClick={() => handleBrandClick(brand)}
               >
-                <div className="item-name" title={productName}>
-                  {productName.length > 42
-                    ? `${productName.substring(0, 42)}...`
-                    : productName}
-                </div>
+                {brand}
+              </button>
+            ))}
+          </div>
 
-                <div className="price-row">
-                  <span className="item-price">${usdPrice}</span>
-                  {originalPrice > 0 && (
-                    <span className="item-original-price">
-                      ${originalPrice}
-                    </span>
+          <div className="sidebar-section">
+            <h3>Types</h3>
+
+            <button
+              type="button"
+              className={`sidebar-btn ${selectedType === "all" ? "active" : ""}`}
+              onClick={() => setSelectedType("all")}
+            >
+              All
+            </button>
+
+            {types.map((type) => (
+              <button
+                key={type}
+                type="button"
+                className={`sidebar-btn ${selectedType === type ? "active" : ""}`}
+                onClick={() => setSelectedType(type)}
+              >
+                {type.replaceAll("_", " ")}
+              </button>
+            ))}
+          </div>
+
+          <div className="sidebar-section">
+            <h3>Colors</h3>
+
+            <div className="sidebar-color-options">
+              <button
+                type="button"
+                className={`sidebar-color-circle all ${
+                  selectedColor === "all" ? "active" : ""
+                }`}
+                onClick={() => setSelectedColor("all")}
+              >
+                All
+              </button>
+
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`sidebar-color-circle ${
+                    selectedColor === color ? "active" : ""
+                  }`}
+                  title={color}
+                  aria-label={`Filter ${color}`}
+                  style={{ background: getColorSwatch(color) }}
+                  onClick={() => setSelectedColor(color)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <h3>Price</h3>
+
+            <input
+              type="range"
+              min="0"
+              max={maxPrice}
+              value={Math.min(priceRange[1], maxPrice)}
+              onChange={(e) => setPriceRange([0, Number(e.target.value)])}
+            />
+
+            <span>Up to ${Math.min(priceRange[1], maxPrice)}</span>
+          </div>
+        </div>
+
+        <div className="kitchen-items-grid">
+          {filteredItems.map((itemData) => {
+            const { item, id, itemId } = itemData;
+
+            const translated = translations[itemId]?.[i18n.language];
+            const productName = translated?.name || item?.name;
+            const reviewsData = reviews[itemId] || {};
+
+            const colorOptions = getColorOptions(itemData);
+            const selectedColorForItem = selectedColorByItem[id];
+            const displayImage = getDisplayImage(itemData);
+            const currentImages = getCurrentImages(itemData);
+
+            return (
+              <div key={id} className="kitchen-card">
+                <div className="kitchen-card-media">
+                  {currentImages.length > 1 && (
+                    <button
+                      type="button"
+                      className="image-arrow image-arrow-left"
+                      aria-label="Previous image"
+                      onClick={(e) => handleImageArrow(itemData, "prev", e)}
+                    >
+                      ‹
+                    </button>
+                  )}
+
+                  <img
+                    className="kitchen-card-image"
+                    src={displayImage}
+                    alt={productName}
+                    onClick={() => handleItemClick(id)}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/fallback.png";
+                    }}
+                  />
+
+                  {currentImages.length > 1 && (
+                    <button
+                      type="button"
+                      className="image-arrow image-arrow-right"
+                      aria-label="Next image"
+                      onClick={(e) => handleImageArrow(itemData, "next", e)}
+                    >
+                      ›
+                    </button>
                   )}
                 </div>
 
-                <div className="sold-row">
-                  <span className="item-sold-count">{sold}</span>
-                  <span className="item-sold-label">{t("sold")}</span>
-                </div>
+                <div
+                  className="kitchen-card-details"
+                  onClick={() => handleItemClick(id)}
+                >
+                  <div className="item-name" title={productName}>
+                    {productName?.length > 60
+                      ? `${productName.slice(0, 60)}...`
+                      : productName}
+                  </div>
 
-                {stableCoin && (
-                  <div className="accepted-coin-single">
-                    <img
-                      src={stableCoin.image}
-                      alt={stableCoin.label}
-                      className="accepted-coin-icon"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                    <span className="accepted-coin-text">
-                      {stableCoin.label}
+                  <div className="price-row">
+                    <span className="item-price">${item?.usdPrice}</span>
+
+                    {Number(item?.originalPrice || 0) > 0 && (
+                      <span className="item-original-price">
+                        ${item?.originalPrice}
+                      </span>
+                    )}
+                  </div>
+
+                  {colorOptions.length > 0 && (
+                    <div
+                      className="kitchen-color-block"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="kitchen-color-options">
+                        {colorOptions.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            className={`kitchen-color-circle ${
+                              selectedColorForItem === color ? "active" : ""
+                            }`}
+                            title={color}
+                            aria-label={`Select ${color}`}
+                            style={{ background: getColorSwatch(color) }}
+                            onClick={(e) => handleColorSelect(id, color, e)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div
+                    className="reviews-row"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setItemData(itemData);
+                      router.push("/reviewPage");
+                    }}
+                  >
+                    <span className="item-type-stars">
+                      {renderStars(reviewsData.averageRating)}
+                    </span>
+
+                    <span className="review-count-text">
+                      ({reviewsData.count || 0})
                     </span>
                   </div>
-                )}
-
-                <div
-                  className="reviews-row"
-                  onClick={() => handleReviewClick(itemData)}
-                  title={t("view_reviews")}
-                >
-                  <span className="item-type-stars">
-                    {finalRating ? renderStars(finalRating) : "☆☆☆☆☆"}
-                  </span>
-                  <span className="review-count-text">
-                    {reviewCount > 0 ? `(${reviewCount})` : t("no_rating")}
-                  </span>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

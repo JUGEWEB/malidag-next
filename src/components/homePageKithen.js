@@ -129,7 +129,7 @@ function ItemHomePage() {
         const fetchedItems = response.data || [];
 
         const filteredItems = fetchedItems.filter(
-          (item) => item?.item?.genre === "home"
+          (item) => item?.category === "home_kitchen"
         );
 
         setItems(filteredItems);

@@ -25,9 +25,8 @@ function Home() {
         // Filter items with "fashion" in the category or theme
         const fashionItems = data.items.filter((item) => {
           const category = item.category?.toLowerCase() || "";
-          const theme = item.item?.theme?.toLowerCase() || "";
           const name = item.item?.name?.toLowerCase() || "";
-          return category.includes("bed") || theme.includes("bed") || name.includes("bed");
+          return category.includes("home_kitchen") ;
         });
 
         // Limit to max items and set state

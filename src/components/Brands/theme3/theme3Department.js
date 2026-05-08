@@ -12,24 +12,50 @@ function Theme3Department({ brandName, department }) {
   const [brandDetails, setBrandDetails] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [topItems, setTopItems] = useState([]);
 
   const normalizeKey = (value = "") =>
     String(value).trim().toLowerCase().replace(/\s+/g, "_");
 
   const themeConfig = brandDetails?.themeConfig || {};
 
+  const normalizeTopItem = (product) => {
+  const source = product?.item || product || {};
+
+  const firstVariantList = Object.values(source?.imagesVariants || {}).find(
+    Array.isArray
+  );
+
+  const firstVariantImage =
+    firstVariantList?.[0]?.url ||
+    firstVariantList?.[0] ||
+    null;
+
+  return {
+    id: product?.id || source?.id || "",
+    itemId: product?.itemId || source?.itemId || "",
+    name: source?.name || "",
+    department: source?.department || "",
+    brandType: source?.brandType || "",
+    image: source?.images?.[0] || firstVariantImage || "/fallback.png",
+    usdPrice: source?.usdPrice || source?.price || product?.usdPrice || 0,
+  };
+};
+
   useEffect(() => {
     const fetchDepartmentPage = async () => {
       try {
         setLoading(true);
 
-        const [themesRes, departmentsRes] = await Promise.all([
-          fetch("https://api.malidag.com/api/brands/themes"),
-          fetch(`https://api.malidag.com/api/brands/${brandName}`),
-        ]);
+        const [themesRes, departmentsRes, topItemsRes] = await Promise.all([
+  fetch("https://api.malidag.com/api/brands/themes"),
+  fetch(`https://api.malidag.com/api/brands/${brandName}`),
+  fetch(`https://api.malidag.com/api/brands/${brandName}/top-items`),
+]);
 
         const themesData = await themesRes.json();
         const departmentsData = await departmentsRes.json();
+        const topItemsData = topItemsRes.ok ? await topItemsRes.json() : [];
 
         const foundBrand = Array.isArray(themesData)
           ? themesData.find(
@@ -45,6 +71,12 @@ function Theme3Department({ brandName, department }) {
             ? departmentsData.departments
             : []
         );
+
+        setTopItems(
+  Array.isArray(topItemsData)
+    ? topItemsData.map(normalizeTopItem)
+    : []
+);
       } catch (error) {
         console.error("Theme3 department fetch error:", error);
         setBrandDetails(null);
@@ -56,6 +88,12 @@ function Theme3Department({ brandName, department }) {
 
     fetchDepartmentPage();
   }, [brandName]);
+
+  const departmentTopItems = useMemo(() => {
+  return topItems.filter(
+    (item) => normalizeKey(item.department) === normalizeKey(department)
+  );
+}, [topItems, department]);
 
   const selectedDepartmentData = useMemo(() => {
     return departments.find(
@@ -137,6 +175,31 @@ const departmentSubtitle =
   {departmentSubtitle && <p>{departmentSubtitle}</p>}
 </div>
     </section>
+
+    {departmentTopItems.length > 0 && (
+  <section className="th3-top-picks-section">
+    <h2>Top Picks</h2>
+
+    <div className="th3-top-picks-scroll">
+      {departmentTopItems.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className="th3-top-pick-card"
+          onClick={() => router.push(`/product/${item.id}`)}
+        >
+          <img src={item.image} alt={item.name} />
+
+          <div className="th3-top-pick-info">
+            <span>Top Pick</span>
+            <h3>{item.name}</h3>
+            <p>${Number(item.usdPrice || 0).toFixed(2)}</p>
+          </div>
+        </button>
+      ))}
+    </div>
+  </section>
+)}
 
     <main className="th3-main">
 

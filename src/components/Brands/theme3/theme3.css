@@ -346,3 +346,158 @@
     font-size: 13px;
   }
 }
+
+.th3-tile-kicker {
+  display: inline-block;
+  width: fit-content;
+  margin-bottom: 10px;
+  border: 1px solid #fff;
+  padding: 6px 10px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.th3-product-feature-tile img {
+  object-fit: contain;
+  background: #fff;
+}
+
+.th3-small-product-tile {
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  min-height: 0;
+}
+
+.th3-small-product-tile img {
+  width: 100%;
+  height: 260px;
+  object-fit: contain;
+  display: block;
+  background: #fff;
+}
+
+.th3-small-product-info {
+  padding: 12px;
+  color: #111;
+}
+
+.th3-small-product-info .th3-tile-kicker {
+  border-color: #111;
+  color: #111;
+  margin-bottom: 8px;
+}
+
+.th3-small-product-info h2 {
+  margin: 0 0 8px;
+  color: #111;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.th3-small-product-info p {
+  margin: 0;
+  color: #111;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+@media (max-width: 900px) {
+  .th3-small-product-tile img {
+    height: 190px;
+  }
+}
+
+@media (max-width: 520px) {
+  .th3-small-product-tile img {
+    height: 150px;
+  }
+}
+
+.th3-top-picks-section {
+  margin-top: 5px;
+  padding: 18px 0;
+}
+
+.th3-top-picks-section h2 {
+  margin: 0 0 14px;
+  font-size: 24px;
+  font-weight: 900;
+  color: #111;
+}
+
+.th3-top-picks-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.th3-top-pick-card {
+  flex: 0 0 230px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.th3-top-pick-card img {
+  width: 100%;
+  height: 210px;
+  object-fit: contain;
+  display: block;
+  background: #fff;
+}
+
+.th3-top-pick-info {
+  padding: 10px;
+}
+
+.th3-top-pick-info span {
+  display: block;
+  margin-bottom: 6px;
+  color: #777;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.th3-top-pick-info h3 {
+  margin: 0 0 8px;
+  color: #111;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.th3-top-pick-info p {
+  margin: 0;
+  color: #111;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+@media (max-width: 520px) {
+  .th3-top-pick-card {
+    flex-basis: 165px;
+  }
+
+  .th3-top-pick-card img {
+    height: 145px;
+  }
+}
+
+.th3-small-product-info h2,
+.th3-small-product-info p {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}

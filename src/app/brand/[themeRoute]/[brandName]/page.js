@@ -67,8 +67,8 @@ export default async function Page({ params }) {
     case "theme2":
       return <Theme2 brandName={brandName} />;
 
-    case "theme3":
-      return <Theme3 brandName={brandName} />;
+      case "theme3":
+    return <Theme3 brandName={brandName} />;
 
     default:
       return <p className="p-6 text-red-600">Unknown theme: {themeRoute}</p>;

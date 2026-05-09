@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import "./fashionForAllPage.css";
@@ -22,6 +22,13 @@ function ItemFashionPage() {
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
   const setSelectedBrandName = useCheckoutStore((state) => state.setSelectedBrandName);
+  const [selectedBrand, setSelectedBrand] = useState("all");
+const [selectedType, setSelectedType] = useState("all");
+const [selectedColor, setSelectedColor] = useState("all");
+const [priceRange, setPriceRange] = useState([0, 10000]);
+
+const [selectedColorByItem, setSelectedColorByItem] = useState({});
+const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
 
 const fetchTranslation = async (productId, lang) => {
   if (translations[productId]?.[lang]) return;
@@ -179,6 +186,201 @@ const getTranslatedName = (item, itemId) => {
   return nameToShow.length > 20 ? nameToShow.substring(0, 20) + "..." : nameToShow;
 };
 
+const normalizeBrand = (brand = "") => brand.trim().toLowerCase();
+
+const allFashionItems = useMemo(() => {
+  return Object.entries(topItemsPerBrand).flatMap(([brand, items]) =>
+    items.map((rawItem) => ({
+      id: rawItem.id,
+      itemId: rawItem.itemId,
+      brand,
+      item: {
+        name: rawItem.name,
+        brand,
+        type: rawItem.type,
+        images: rawItem.images || [],
+        imagesVariants: rawItem.imagesVariants || {},
+        usdPrice: rawItem.usdPrice,
+        cryptocurrency: rawItem.cryptocurrency,
+        sold: rawItem.sold,
+      },
+    }))
+  );
+}, [topItemsPerBrand]);
+
+const brands = useMemo(() => {
+  return [...new Set(allFashionItems.map((x) => x.brand).filter(Boolean))];
+}, [allFashionItems]);
+
+const types = useMemo(() => {
+  return [...new Set(allFashionItems.map((x) => x.item.type).filter(Boolean))];
+}, [allFashionItems]);
+
+const colors = useMemo(() => {
+  const allColors = [];
+
+  allFashionItems.forEach((itemData) => {
+    Object.keys(itemData?.item?.imagesVariants || {}).forEach((color) => {
+      allColors.push(color);
+    });
+  });
+
+  return [...new Set(allColors)];
+}, [allFashionItems]);
+
+const maxPrice = useMemo(() => {
+  const prices = allFashionItems.map((x) => Number(x?.item?.usdPrice || 0));
+  return Math.ceil(Math.max(...prices, 100));
+}, [allFashionItems]);
+
+const filteredItems = useMemo(() => {
+  return allFashionItems.filter((itemData) => {
+    const item = itemData.item;
+    const price = Number(item?.usdPrice || 0);
+
+    const matchesBrand =
+      selectedBrand === "all" || normalizeBrand(itemData.brand) === selectedBrand;
+
+    const matchesType =
+      selectedType === "all" || item?.type === selectedType;
+
+    const matchesPrice =
+      price >= priceRange[0] && price <= priceRange[1];
+
+    const matchesColor =
+      selectedColor === "all" ||
+      Object.keys(item?.imagesVariants || {}).includes(selectedColor);
+
+    return matchesBrand && matchesType && matchesPrice && matchesColor;
+  });
+}, [allFashionItems, selectedBrand, selectedType, selectedColor, priceRange]);
+
+const getColorSwatch = (colorName = "") => {
+  const color = colorName.trim().toLowerCase();
+
+  const swatches = {
+    black: "#111111",
+    white: "#f8f8f8",
+    red: "#dc2626",
+    blue: "#2563eb",
+    green: "#16a34a",
+    yellow: "#eab308",
+    pink: "#ec4899",
+    purple: "#9333ea",
+    orange: "#f97316",
+    brown: "#92400e",
+    grey: "#9ca3af",
+    gray: "#9ca3af",
+    silver: "#c0c0c0",
+    gold: "#d4af37",
+    beige: "#d6c7a1",
+    cream: "#f5f0dc",
+    navy: "#1e3a8a",
+  };
+
+  return swatches[color] || null;
+};
+
+const getColorFilterPreviewImage = (color) => {
+  for (const itemData of allFashionItems) {
+    const variantImages = sortImages(itemData?.item?.imagesVariants?.[color] || []);
+    const firstImage = getImageUrl(variantImages?.[0]);
+
+    if (firstImage) return firstImage;
+  }
+
+  return "";
+};
+
+const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
+
+const sortImages = (images = []) => {
+  return [...images].sort((a, b) => {
+    const posA =
+      typeof a === "object" && typeof a?.position === "number"
+        ? a.position
+        : 999999;
+
+    const posB =
+      typeof b === "object" && typeof b?.position === "number"
+        ? b.position
+        : 999999;
+
+    return posA - posB;
+  });
+};
+
+const getColorOptions = (product) => {
+  return Object.keys(product?.item?.imagesVariants || {});
+};
+
+const getCurrentImages = (product) => {
+  const variants = product?.item?.imagesVariants || {};
+  const selectedColor = selectedColorByItem[product.id];
+
+  if (selectedColor && Array.isArray(variants[selectedColor])) {
+    return sortImages(variants[selectedColor]);
+  }
+
+  const firstColor = Object.keys(variants)[0];
+
+  if (firstColor && Array.isArray(variants[firstColor])) {
+    return sortImages(variants[firstColor]);
+  }
+
+  return product?.item?.images || [];
+};
+
+const getDisplayImage = (product) => {
+  const images = getCurrentImages(product);
+  const index = selectedImageIndexByItem[product.id] || 0;
+
+  return (
+    getImageUrl(images[index]) ||
+    getImageUrl(product?.item?.images?.[0]) ||
+    "/fallback.png"
+  );
+};
+
+const handleColorSelect = (itemId, color, e) => {
+  e.stopPropagation();
+
+  setSelectedColorByItem((prev) => ({
+    ...prev,
+    [itemId]: color,
+  }));
+
+  setSelectedImageIndexByItem((prev) => ({
+    ...prev,
+    [itemId]: 0,
+  }));
+};
+
+const handleImageArrow = (product, direction, e) => {
+  e.stopPropagation();
+
+  const images = getCurrentImages(product);
+  if (images.length <= 1) return;
+
+  setSelectedImageIndexByItem((prev) => {
+    const current = prev[product.id] || 0;
+    const next =
+      direction === "next"
+        ? (current + 1) % images.length
+        : (current - 1 + images.length) % images.length;
+
+    return {
+      ...prev,
+      [product.id]: next,
+    };
+  });
+};
+
 
   const handleItemClick = (id) => {
     if (id) push(`/product/${id}`);
@@ -187,159 +389,363 @@ const getTranslatedName = (item, itemId) => {
   if (loading) return <div className="loading-message">{t("loading")}</div>;
 
   return (
-    <div style={{ width: "100%" }}>
-     <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", margin: "20px" }}>
-  {brandThemes
-    .filter((b) => Object.keys(topItemsPerBrand).includes(b.brandName))
-    .map((brand) => (
-      <img
-        key={brand.brandName}
-        src={brand?.logo}
-        alt={`${brand.brandName} logo`}
-        style={{
-          width: "150px",
-          height: "80px",
-          objectFit: "contain",
-          cursor: "pointer",
-        }}
-       onClick={() => {
-  setSelectedBrandName(brand.brandName);
-  push(`/${brand.theme.toLowerCase()}`);
-}}
-      />
-    ))}
-</div>
+  <div className="fashion-page-wrapper">
+    <div className="fashion-brand-top">
+      {brandThemes
+        .filter((b) =>
+          Object.keys(topItemsPerBrand).includes(normalizeBrand(b.brandName))
+        )
+        .map((brand) => (
+          <button
+            key={brand.brandName}
+            className="fashion-brand-logo-card"
+            onClick={() => {
+              setSelectedBrand(normalizeBrand(brand.brandName));
+              setSelectedBrandName(brand.brandName);
+            }}
+          >
+            <img src={brand.logo} alt={`${brand.brandName} logo`} />
+          </button>
+        ))}
+    </div>
 
-
-      <div style={{maxWidth: "100%", maxWidth: "100%", overflow: "hidden"}}>
-      {Object.entries(topItemsPerBrand).map(([brand, items]) => (
-        <div  key={brand} style={{maxWidth: "100%", maxWidth: "100%", overflow: "hidden"}}>
-        <div
-          style={{
-            display: "grid",
-            width: "100%",
-            gap: "5px",
-            padding: "5px",
-            gridTemplateColumns:
-              isVeryVerySmall
-                ? "repeat(1, 1fr)"
-                : isVerySmall
-                ? "repeat(2, 1fr)"
-                : isSmallMobile
-                ? "repeat(2, 1fr)"
-                : isMobile
-                ? "repeat(3, 1fr)"
-                : isTablet
-                ? "repeat(3, 1fr)"
-                : "repeat(4, 1fr)",
-          }}
+    <div className="mobile-filters-wrapper">
+      <div className="mobile-scroll-filters">
+        <button
+          className={selectedBrand === "all" ? "active-filter" : ""}
+          onClick={() => setSelectedBrand("all")}
         >
-        {items.map((rawItem) => {
-  // Wrap it into a standard format
-  const itemData = {
-    id: rawItem.id,
-    itemId: rawItem.itemId,
-    item: {
-      name: rawItem.name,
-      images: rawItem.images,
-      imagesVariants: rawItem.imagesVariants,
-      usdPrice: rawItem.usdPrice,
-      cryptocurrency: rawItem.cryptocurrency,
-      sold: rawItem.sold,
-      // Add any other properties you want here
-    }
-  };
+          All Brands
+        </button>
 
-  const { id, itemId, item } = itemData;
-  const { name, images, usdPrice, cryptocurrency, sold } = item;
-  const crypto = cryptocurrency || "";
-  const reviewsData = reviews[itemId] || {};
-  const finalRating = reviewsData?.averageRating || null;
-  const isBestSeller = id === bestSellersByBrand[brand];
- const priceInCrypto = Number(usdPrice || 0).toFixed(2);
+        {brands.map((brand) => (
+          <button
+            key={brand}
+            className={selectedBrand === normalizeBrand(brand) ? "active-filter" : ""}
+            onClick={() => setSelectedBrand(normalizeBrand(brand))}
+          >
+            {brand}
+          </button>
+        ))}
+      </div>
 
-  return (
-    <div key={id} onClick={() => handleItemClick(id)} style={{ maxWidth: "100%", overflow: "hidden" }}>
-      <div
-        style={{
-          background: "white",
-          zIndex: "1",
-          paddingTop: "20px",
-          filter: "brightness(0.88) contrast(1.2)",
-          width: "100%",
-          height: isVerySmall ? "230px" : "300px",
-          marginBottom: "10px",
-          marginTop: "10px",
-          position: "relative",
-          overflow: "hidden", // add this
-        }}
-      >
-        <img
-          src={images[0]}
-          alt={name}
-          style={{
-            width: "100%",
-            height: isVerySmall ? "230px" : "300px",
-            objectFit: "contain",
-            display: "block", // add this
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            backgroundColor: isBestSeller ? "orange" : "black",
-            color: "#fff",
-            padding: "8px 8px",
-            fontSize: "12px",
-            fontWeight: "bold",
-            borderRadius: "5px",
-            zIndex: 2,
-          }}
+      <div className="mobile-scroll-filters">
+        <button
+          className={selectedType === "all" ? "active-filter" : ""}
+          onClick={() => setSelectedType("all")}
         >
-          {isBestSeller ? t("best_seller") : t("topIt")}
-        </div>
+          All Types
+        </button>
+
+        {types.map((type) => (
+          <button
+            key={type}
+            className={selectedType === type ? "active-filter" : ""}
+            onClick={() => setSelectedType(type)}
+          >
+            {type.replaceAll("_", " ")}
+          </button>
+        ))}
       </div>
-      <div className="item-name">{getTranslatedName(item, itemId)}</div>
-      <div className="item-price">${usdPrice}</div>
-      <div className="item-crypto">
-        <img
-          src={`https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/svg/color/${crypto.toLowerCase()}.svg`}
-          alt={crypto}
-          className="crypto-icon"
-          onError={(e) => (e.target.src = "https://cryptologos.cc/logos/binance-usd-busd-logo.png")}
+
+      <div className="mobile-color-filters">
+        <button
+          className={`mobile-color-circle all ${selectedColor === "all" ? "active" : ""}`}
+          onClick={() => setSelectedColor("all")}
+        >
+          All
+        </button>
+
+       {colors.map((color) => {
+          const swatchColor = getColorSwatch(color);
+          const previewImage = getColorFilterPreviewImage(color);
+
+          return (
+            <button
+              key={color}
+              className={`mobile-color-circle ${
+                selectedColor === color ? "active" : ""
+              }`}
+              title={color}
+              aria-label={`Filter ${color}`}
+              style={
+              swatchColor
+                ? { background: swatchColor }
+                : {
+                    backgroundImage: `url("${previewImage}")`,
+                    backgroundSize: "300%",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                  }
+            }
+              onClick={() => setSelectedColor(color)}
+            />
+          );
+        })}
+      </div>
+
+      <div className="price-filter-mobile">
+        <input
+          type="range"
+          min="0"
+          max={maxPrice}
+          value={Math.min(priceRange[1], maxPrice)}
+          onChange={(e) => setPriceRange([0, Number(e.target.value)])}
         />
-        <span className="item-crypto-price">
-        {priceInCrypto} {crypto}
-      </span>
-      </div>
-      <div className="item-sold">{sold} {t("sold")}</div>
-      <div
-        className="item-type-stars"
-        onClick={() => {
-    if (finalRating) {
-      setItemData(itemData);
-      push("/reviewPage");
-    }
-  }}
-        title={t("view_reviews")}
-      >
-       {finalRating &&
-        "★".repeat(Math.round(finalRating)) +
-          "☆".repeat(5 - Math.round(finalRating))}
+        <span>Max: ${Math.min(priceRange[1], maxPrice)}</span>
       </div>
     </div>
-  );
-})}
 
+    <div className="fashion-layout">
+      <aside className="fashion-sidebar">
+        <div className="sidebar-section">
+          <h3>Brands</h3>
 
+          <button
+            className={`sidebar-btn ${selectedBrand === "all" ? "active" : ""}`}
+            onClick={() => setSelectedBrand("all")}
+          >
+            All
+          </button>
+
+          {brands.map((brand) => (
+            <button
+              key={brand}
+              className={`sidebar-btn ${
+                selectedBrand === normalizeBrand(brand) ? "active" : ""
+              }`}
+              onClick={() => setSelectedBrand(normalizeBrand(brand))}
+            >
+              {brand}
+            </button>
+          ))}
         </div>
+
+        <div className="sidebar-section">
+          <h3>Types</h3>
+
+          <button
+            className={`sidebar-btn ${selectedType === "all" ? "active" : ""}`}
+            onClick={() => setSelectedType("all")}
+          >
+            All
+          </button>
+
+          {types.map((type) => (
+            <button
+              key={type}
+              className={`sidebar-btn ${selectedType === type ? "active" : ""}`}
+              onClick={() => setSelectedType(type)}
+            >
+              {type.replaceAll("_", " ")}
+            </button>
+          ))}
         </div>
-      ))}
+
+        <div className="sidebar-section">
+          <h3>Colors</h3>
+
+          <div className="sidebar-color-options">
+            <button
+              className={`sidebar-color-circle all ${
+                selectedColor === "all" ? "active" : ""
+              }`}
+              onClick={() => setSelectedColor("all")}
+            >
+              All
+            </button>
+
+           {colors.map((color) => {
+            const swatchColor = getColorSwatch(color);
+            const previewImage = getColorFilterPreviewImage(color);
+
+            return (
+              <button
+                key={color}
+                className={`sidebar-color-circle ${
+                  selectedColor === color ? "active" : ""
+                }`}
+                title={color}
+                aria-label={`Filter ${color}`}
+                style={
+                  swatchColor
+                    ? { background: swatchColor }
+                    : {
+                        backgroundImage: `url("${previewImage}")`,
+                        backgroundSize: "300%",
+                        backgroundPosition: "center",
+                        backgroundRepeat: "no-repeat",
+                      }
+                }
+                onClick={() => setSelectedColor(color)}
+              />
+            );
+          })}
+          </div>
+        </div>
+
+        <div className="sidebar-section">
+          <h3>Price</h3>
+
+          <input
+            type="range"
+            min="0"
+            max={maxPrice}
+            value={Math.min(priceRange[1], maxPrice)}
+            onChange={(e) => setPriceRange([0, Number(e.target.value)])}
+          />
+
+          <span>Up to ${Math.min(priceRange[1], maxPrice)}</span>
+        </div>
+      </aside>
+
+      <div className="fashion-items-grid">
+        {filteredItems.map((itemData) => {
+          const { id, itemId, item, brand } = itemData;
+          const reviewsData = reviews[itemId] || {};
+          const finalRating = reviewsData?.averageRating || null;
+          const isBestSeller = id === bestSellersByBrand[brand];
+          const colorOptions = getColorOptions(itemData);
+          const selectedColorForItem = selectedColorByItem[id];
+          const displayImage = getDisplayImage(itemData);
+          const currentImages = getCurrentImages(itemData);
+
+          return (
+            <div
+              key={id}
+              className="fashion-card"
+              onClick={() => handleItemClick(id)}
+            >
+             <div
+              className="fashion-card-media"
+              style={{
+                background: "white",
+                zIndex: "1",
+                paddingTop: "20px",
+                filter: "brightness(0.98)",
+                width: "100%",
+                height: isVerySmall ? "230px" : "300px",
+                marginBottom: "10px",
+                marginTop: "10px",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {currentImages.length > 1 && (
+                <button
+                  type="button"
+                  className="image-arrow image-arrow-left"
+                  aria-label="Previous image"
+                  onClick={(e) => handleImageArrow(itemData, "prev", e)}
+                >
+                  ‹
+                </button>
+              )}
+
+              <img
+                src={displayImage}
+                alt={item.name}
+                style={{
+                  width: "100%",
+                  height: isVerySmall ? "230px" : "300px",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/fallback.png";
+                }}
+              />
+
+              {currentImages.length > 1 && (
+                <button
+                  type="button"
+                  className="image-arrow image-arrow-right"
+                  aria-label="Next image"
+                  onClick={(e) => handleImageArrow(itemData, "next", e)}
+                >
+                  ›
+                </button>
+              )}
+
+              <div className={isBestSeller ? "fashion-badge best" : "fashion-badge"}>
+                {isBestSeller ? t("best_seller") : t("topIt")}
+              </div>
+            </div>
+
+              <div className="fashion-product-brand">
+                {item?.brand || brand}
+              </div>
+
+              <div className="fashion-product-name">
+                {getTranslatedName(item, itemId)}
+              </div>
+
+             {colorOptions.length > 0 && (
+                <div
+                  className="fashion-color-options"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                {colorOptions.map((color) => {
+                  const swatchColor = getColorSwatch(color);
+
+                  const variantImages = sortImages(item?.imagesVariants?.[color] || []);
+                  const firstVariantImage = getImageUrl(variantImages?.[0]);
+
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`fashion-color-circle ${
+                        selectedColorForItem === color ? "active" : ""
+                      }`}
+                      title={color}
+                      aria-label={`Select ${color}`}
+                      onClick={(e) => handleColorSelect(id, color, e)}
+                      style={
+                        swatchColor
+                          ? { background: swatchColor }
+                          : {
+                              backgroundImage: `url("${firstVariantImage}")`,
+                              backgroundSize: "300%",
+                              backgroundPosition: "center",
+                              backgroundRepeat: "no-repeat",
+                            }
+                      }
+                    />
+                  );
+                })}
+                </div>
+              )}
+              <div className="item-price">${item.usdPrice}</div>
+
+            {item?.sold && Number(item.sold) > 0 && (
+              <div className="fashion-sold-badge">
+                {item.sold}+ sold out worldwide
+              </div>
+            )}
+
+              <div
+                className="item-type-stars"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (finalRating) {
+                    setItemData(itemData);
+                    push("/reviewPage");
+                  }
+                }}
+              >
+                {finalRating &&
+                  "★".repeat(Math.round(finalRating)) +
+                    "☆".repeat(5 - Math.round(finalRating))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default ItemFashionPage;

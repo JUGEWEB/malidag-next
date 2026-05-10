@@ -140,7 +140,7 @@
   flex: 1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 5px;
 }
 
 /* CARD */
@@ -161,7 +161,7 @@
   position: relative;
   overflow: hidden;
   padding-top: 20px;
-  filter: brightness(0.88) contrast(1.2);
+ 
 }
 
 .fashion-card-media img {
@@ -267,7 +267,7 @@
 
 .mobile-scroll-filters {
   display: flex;
-  gap: 10px;
+  gap: 5px;
   overflow-x: auto;
   padding: 10px 20px;
   scrollbar-width: none;
@@ -302,7 +302,7 @@
 
 @media (max-width: 900px) {
   .fashion-layout {
-    padding: 10px;
+    padding: 5px;
   }
 
   .fashion-sidebar {
@@ -323,7 +323,7 @@
 @media (max-width: 640px) {
   .fashion-items-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 5px;
   }
 
   .fashion-brand-top {
@@ -344,28 +344,7 @@
   }
 }
 
-@media (max-width: 900px) {
-  .fashion-layout {
-    padding: 10px;
-  }
 
-  .fashion-sidebar {
-    display: none;
-  }
-
-  .mobile-filters-wrapper {
-    display: block;
-  }
-
-  .fashion-items-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .fashion-card-media {
-    height: 240px;
-  }
-}
 
 .mobile-color-filters {
   display: flex;
@@ -446,4 +425,50 @@
   font-weight: 800;
   letter-spacing: 0.03em;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.22);
+}
+
+.more-colors-link {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 26px;
+}
+
+.more-colors-link:hover {
+  color: #1d4ed8;
+}
+
+@media (max-width: 900px) {
+  .mobile-filters-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #fff;
+    padding-bottom: 10px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.fashion-delivery-info {
+  margin-top: 8px;
+}
+
+.fashion-free-delivery {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #059669;
+  line-height: 1.3;
+}
+
+.fashion-delivery-date {
+  margin-top: 3px;
+  font-size: 0.74rem;
+  color: #6b7280;
+  font-weight: 500;
 }

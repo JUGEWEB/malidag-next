@@ -381,6 +381,16 @@ const handleImageArrow = (product, direction, e) => {
   });
 };
 
+const getEstimatedDeliveryDay = (daysToAdd = 7) => {
+  const date = new Date();
+
+  date.setDate(date.getDate() + daysToAdd);
+
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+  });
+};
+
 
   const handleItemClick = (id) => {
     if (id) push(`/product/${id}`);
@@ -610,6 +620,16 @@ const handleImageArrow = (product, direction, e) => {
           const displayImage = getDisplayImage(itemData);
           const currentImages = getCurrentImages(itemData);
 
+          const brandDelivery =
+          brandThemes?.find(
+            (x) =>
+              x?.brandName?.trim()?.toLowerCase() ===
+              brand?.trim()?.toLowerCase()
+          )?.delivery || null;
+
+          const visibleColorOptions = colorOptions.slice(0, 3);
+          const hiddenColorCount = Math.max(colorOptions.length - 3, 0);
+
           return (
             <div
               key={id}
@@ -622,7 +642,7 @@ const handleImageArrow = (product, direction, e) => {
                 background: "white",
                 zIndex: "1",
                 paddingTop: "20px",
-                filter: "brightness(0.98)",
+                filter: "brightness(0.97)",
                 width: "100%",
                 height: isVerySmall ? "230px" : "300px",
                 marginBottom: "10px",
@@ -686,7 +706,7 @@ const handleImageArrow = (product, direction, e) => {
                   className="fashion-color-options"
                   onClick={(e) => e.stopPropagation()}
                 >
-                {colorOptions.map((color) => {
+               {visibleColorOptions.map((color) => {
                   const swatchColor = getColorSwatch(color);
 
                   const variantImages = sortImages(item?.imagesVariants?.[color] || []);
@@ -715,8 +735,36 @@ const handleImageArrow = (product, direction, e) => {
                     />
                   );
                 })}
+
+                {hiddenColorCount > 0 && (
+                  <button
+                    type="button"
+                    className="more-colors-link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleItemClick(id);
+                    }}
+                  >
+                    +{hiddenColorCount} colors more
+                  </button>
+                )}
                 </div>
               )}
+
+              {brandDelivery?.isFree && (
+              <div className="fashion-delivery-info">
+                <div className="fashion-free-delivery">
+                  Free delivery
+                </div>
+
+                <div className="fashion-delivery-date">
+                  Get it by{" "}
+                  {getEstimatedDeliveryDay(
+                    brandDelivery?.estimatedDaysMax || 7
+                  )}
+                </div>
+              </div>
+            )}
               <div className="item-price">${item.usdPrice}</div>
 
             {item?.sold && Number(item.sold) > 0 && (

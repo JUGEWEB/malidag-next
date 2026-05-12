@@ -8,6 +8,7 @@ import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { useCheckoutStore } from "./checkoutStore";
+import colorSwatches from "../../lib/colors.json";
 
 function ItemFashionPage() {
   const [brandGroups, setBrandGroups] = useState([]);
@@ -257,28 +258,7 @@ const filteredItems = useMemo(() => {
 
 const getColorSwatch = (colorName = "") => {
   const color = colorName.trim().toLowerCase();
-
-  const swatches = {
-    black: "#111111",
-    white: "#f8f8f8",
-    red: "#dc2626",
-    blue: "#2563eb",
-    green: "#16a34a",
-    yellow: "#eab308",
-    pink: "#ec4899",
-    purple: "#9333ea",
-    orange: "#f97316",
-    brown: "#92400e",
-    grey: "#9ca3af",
-    gray: "#9ca3af",
-    silver: "#c0c0c0",
-    gold: "#d4af37",
-    beige: "#d6c7a1",
-    cream: "#f5f0dc",
-    navy: "#1e3a8a",
-  };
-
-  return swatches[color] || null;
+  return colorSwatches[color] || null;
 };
 
 const getColorFilterPreviewImage = (color) => {
@@ -386,9 +366,13 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
 
   date.setDate(date.getDate() + daysToAdd);
 
-  return date.toLocaleDateString("en-US", {
+  const weekday = date.toLocaleDateString("en-US", {
     weekday: "long",
   });
+
+  const day = date.getDate();
+
+  return `${weekday} ${day}`;
 };
 
 
@@ -409,10 +393,17 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
           <button
             key={brand.brandName}
             className="fashion-brand-logo-card"
-            onClick={() => {
-              setSelectedBrand(normalizeBrand(brand.brandName));
-              setSelectedBrandName(brand.brandName);
-            }}
+           onClick={() => {
+                const themeRoute = brand?.theme?.trim()?.toLowerCase();
+
+                if (!themeRoute || !brand?.brandName) return;
+
+                setSelectedBrandName(brand.brandName);
+
+                push(
+                  `/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`
+                );
+              }}
           >
             <img src={brand.logo} alt={`${brand.brandName} logo`} />
           </button>
@@ -765,7 +756,10 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
                 </div>
               </div>
             )}
-              <div className="item-price">${item.usdPrice}</div>
+             <div className="item-price">
+              <span className="price-currency">$</span>
+              {item.usdPrice}
+            </div>
 
             {item?.sold && Number(item.sold) > 0 && (
               <div className="fashion-sold-badge">
@@ -779,7 +773,7 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
                   e.stopPropagation();
                   if (finalRating) {
                     setItemData(itemData);
-                    push("/reviewPage");
+                    push(`/product/${id}/review`);
                   }
                 }}
               >

@@ -3,6 +3,7 @@ import initI18n from "@/components/i18nServer";
 import ReviewPage from "@/components/reviewPage";
 import { getReviewsForProductId } from "../../../../../lib/reviews";
 import clientPromise from "../../../../../lib/mongodb.js";
+import { notFound } from "next/navigation";
 
 export const revalidate = 60;
 
@@ -10,7 +11,7 @@ export const revalidate = 60;
 // Metadata
 // -----------------
 export async function generateMetadata({ params }) {
-  const { id } = params;
+ const { id } = await params;
   const headersList = await headers();
   const acceptLanguage = headersList.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
@@ -62,13 +63,20 @@ export async function generateMetadata({ params }) {
 // Page
 // -----------------
 export default async function ReviewRoute({ params }) {
-  const { id } = params;
+ const { id } = await params;
 
   const reviewsData = await getReviewsForProductId(id);
 
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB);
   const product = await db.collection("products").findOne({ id });
+
+  console.log("Review route id:", id);
+console.log("Product found:", !!product);
+
+  if (!product) {
+  notFound();
+}
 
   const safeReviews = (reviewsData.reviews || []).map((r) => ({
     name: r.name,
@@ -110,7 +118,11 @@ export default async function ReviewRoute({ params }) {
       />
       <ReviewPage
         productId={product.itemId}
-        product={product?.item}
+        product={{
+        ...product.item,
+        id: product.id,
+        itemId: product.itemId,
+      }}
         reviews={safeReviews}
         avg={reviewsData.avg}
         count={reviewsData.count}

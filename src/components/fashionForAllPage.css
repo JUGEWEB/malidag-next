@@ -238,10 +238,25 @@
 }
 
 .item-price {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #111827;
-  margin-bottom: 8px;
+  margin-top: 10px;
+  font-size: 1.38rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+  line-height: 1;
+  font-feature-settings: "tnum";
+}
+
+.price-currency {
+  font-size: 0.78em;
+  font-weight: 700;
+  margin-right: 2px;
+  opacity: 0.88;
+  vertical-align: top;
+}
+
+.fashion-card:hover .item-price {
+  opacity: 0.88;
 }
 
 .item-sold {
@@ -254,7 +269,7 @@
 .item-type-stars {
   margin-top: 8px;
   color: #a16207;
-  font-size: 0.9rem;
+  font-size: 1.5rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -340,7 +355,7 @@
   }
 
   .item-price {
-    font-size: 0.95rem;
+    font-size: 1.38rem;
   }
 }
 
@@ -405,12 +420,12 @@
 
 .fashion-product-name {
   margin-top: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 0px;
   font-size: 0.88rem;
   font-weight: 500;
   color: #6b7280;
   line-height: 1.35;
-  min-height: 36px;
+  min-height: 25px;
 }
 
  .fashion-sold-badge {
@@ -462,7 +477,7 @@
 .fashion-free-delivery {
   font-size: 0.78rem;
   font-weight: 800;
-  color: #059669;
+  color: black;
   line-height: 1.3;
 }
 

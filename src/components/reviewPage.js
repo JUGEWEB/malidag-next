@@ -36,7 +36,7 @@ const likedCount = parseInt(localStorage.getItem("likedCount") || "0", 10);
       }
 
       const goToProduct = (id) =>{
-        router.push(`/product/${product.id}`)
+        router.push(`/product/${product?.id}`)
       }
 
       // Function to render filled stars based on the finalRating

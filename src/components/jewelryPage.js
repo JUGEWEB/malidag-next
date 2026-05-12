@@ -1,47 +1,50 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
-import useScreenSize from "./useIsMobile";
 import Head from "next/head";
 import "./jewelryPage.css";
+import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
+import colorSwatches from "../../lib/colors.json";
+import { useCheckoutStore } from "./checkoutStore";
 
 const BASE_URL = "https://api.malidag.com";
 
 function JewelryPage() {
   const params = useParams();
-  const jewelryType = String(params?.type || params?.symbol || "watches").toLowerCase();
+ const jewelryType = "jewelry";
 
   const [items, setItems] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState({});
-  const [activeVideoId, setActiveVideoId] = useState(null);
   const [reviews, setReviews] = useState({});
   const [translations, setTranslations] = useState({});
+  const [activeVideoId, setActiveVideoId] = useState(null);
+
+  const [selectedBrand, setSelectedBrand] = useState("all");
+ const [selectedType, setSelectedType] = useState("watches");
+  const [selectedColor, setSelectedColor] = useState("all");
+  const [priceRange, setPriceRange] = useState([0, 10000]);
+
+  const [selectedColorByItem, setSelectedColorByItem] = useState({});
+  const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
+  const [brandThemes, setBrandThemes] = useState([]);
+const setSelectedBrandName = useCheckoutStore((state) => state.setSelectedBrandName);
 
   const router = useRouter();
-  const { isMobile, isTablet, isVerySmall, isSmallMobile } = useScreenSize();
+  const { isVerySmall } = useScreenSize();
   const { t } = useTranslation();
 
-  const isPhone = isVerySmall || isSmallMobile || isMobile;
-
-  const readableType =
-    jewelryType.charAt(0).toUpperCase() + jewelryType.slice(1);
-
+ const readableType = "Jewelry";
   const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
   const fetchTranslation = async (productId, lang) => {
     if (!productId || translations[productId]?.[lang]) return;
 
     try {
-      const response = await axios.get(
-        `${BASE_URL}/translate/product/translate/${productId}/${lang}`
-      );
-
+      const response = await axios.get(`${BASE_URL}/translate/product/translate/${productId}/${lang}`);
       setTranslations((prev) => ({
         ...prev,
         [productId]: {
@@ -81,38 +84,32 @@ function JewelryPage() {
     }
   };
 
-  const isJewelryMatch = (itemData) => {
-    const item = itemData?.item || {};
-    const details = itemData?.details || {};
+ const isJewelryMatch = (itemData) => {
+  const item = itemData?.item || {};
+  const details = itemData?.details || {};
 
-    const type = normalizeText(item.type || details.type);
-    const brandType = normalizeText(item.brandType || details.brandType);
-    const department = normalizeText(item.department || details.department);
-    const category = normalizeText(itemData.category || details.category);
-    const name = normalizeText(item.name || details.itemName);
+  const type = normalizeText(item.type || details.type);
+  const brandType = normalizeText(item.brandType || details.brandType);
+  const department = normalizeText(item.department || details.department);
+  const category = normalizeText(itemData.category || details.category);
+  const name = normalizeText(item.name || details.itemName);
 
-    if (jewelryType === "watches") {
-      return (
-        type === "watches" ||
-        type === "watch" ||
-        brandType === "watches" ||
-        brandType === "wathes" ||
-        brandType === "watch" ||
-        name.includes("watch") ||
-        ((department === "jewelry" || category === "jewelry") &&
-          (type.includes("watch") || brandType.includes("watch")))
-      );
-    }
-
-    return (
-      type === jewelryType ||
-      brandType === jewelryType ||
-      type.includes(jewelryType) ||
-      brandType.includes(jewelryType) ||
-      ((department === "jewelry" || category === "jewelry") &&
-        name.includes(jewelryType.slice(0, -1)))
-    );
-  };
+  return (
+    department === "jewelry" ||
+    category === "jewelry" ||
+    type === "watches" ||
+    type === "watch" ||
+    brandType === "watches" ||
+    brandType === "wathes" ||
+    brandType === "watch" ||
+    name.includes("watch") ||
+    name.includes("ring") ||
+    name.includes("necklace") ||
+    name.includes("bracelet") ||
+    name.includes("earring") ||
+    name.includes("jewelry")
+  );
+};
 
   useEffect(() => {
     const fetchJewelryItems = async () => {
@@ -121,11 +118,10 @@ function JewelryPage() {
 
         const response = await axios.get(`${BASE_URL}/items`);
         const allItems = Array.isArray(response.data) ? response.data : [];
-
         const fetchedItems = allItems.filter(isJewelryMatch);
-        setItems(fetchedItems);
-
         const lang = i18n.language || "en";
+
+        setItems(fetchedItems);
 
         fetchedItems.forEach((itemData) => {
           if (itemData?.itemId) {
@@ -133,16 +129,6 @@ function JewelryPage() {
             fetchReviews(itemData.itemId);
           }
         });
-
-        const uniqueCategories = [
-          ...new Set(
-            fetchedItems
-              .map((itemData) => itemData?.item?.department || itemData?.category)
-              .filter(Boolean)
-          ),
-        ];
-
-        setCategories(uniqueCategories);
       } catch (error) {
         console.error("Error fetching jewelry items:", error);
       } finally {
@@ -153,73 +139,158 @@ function JewelryPage() {
     fetchJewelryItems();
   }, [jewelryType]);
 
-  const toggleDropdown = (category) => {
-    const nextState = {};
+  useEffect(() => {
+    const lang = i18n.language || "en";
+    items.forEach((itemData) => fetchTranslation(itemData.itemId, lang));
+  }, [i18n.language, items]);
 
-    categories.forEach((cat) => {
-      nextState[cat] = cat === category ? !dropdownOpen[category] : false;
+  const getColorSwatch = (colorName = "") => {
+    const color = colorName.trim().toLowerCase();
+    return colorSwatches[color] || null;
+  };
+
+  const getImageUrl = (imageEntry) => {
+    if (!imageEntry) return "";
+    if (typeof imageEntry === "string") return imageEntry;
+    if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+    return "";
+  };
+
+  const sortImages = (images = []) => {
+    return [...images].sort((a, b) => {
+      const posA = typeof a === "object" && typeof a?.position === "number" ? a.position : 999999;
+      const posB = typeof b === "object" && typeof b?.position === "number" ? b.position : 999999;
+      return posA - posB;
     });
+  };
 
-    setDropdownOpen((prev) => ({
+  const getColorOptions = (product) => {
+    return Object.keys(product?.item?.imagesVariants || {});
+  };
+
+  const getCurrentImages = (product) => {
+    const variants = product?.item?.imagesVariants || {};
+    const selectedColorForItem = selectedColorByItem[product.id];
+
+    if (selectedColorForItem && Array.isArray(variants[selectedColorForItem])) {
+      return sortImages(variants[selectedColorForItem]);
+    }
+
+    const firstColor = Object.keys(variants)[0];
+    if (firstColor && Array.isArray(variants[firstColor])) {
+      return sortImages(variants[firstColor]);
+    }
+
+    return product?.item?.images || [];
+  };
+
+  const getDisplayImage = (product) => {
+    const images = getCurrentImages(product);
+    const index = selectedImageIndexByItem[product.id] || 0;
+
+    return getImageUrl(images[index]) || getImageUrl(product?.item?.images?.[0]) || "/fallback.png";
+  };
+
+  const getColorFilterPreviewImage = (color) => {
+    for (const itemData of items) {
+      const variantImages = sortImages(itemData?.item?.imagesVariants?.[color] || []);
+      const firstImage = getImageUrl(variantImages?.[0]);
+      if (firstImage) return firstImage;
+    }
+
+    return "";
+  };
+
+  const handleColorSelect = (itemId, color, e) => {
+    e.stopPropagation();
+
+    setSelectedColorByItem((prev) => ({
       ...prev,
-      mobileMenu: false,
-      ...nextState,
+      [itemId]: color,
+    }));
+
+    setSelectedImageIndexByItem((prev) => ({
+      ...prev,
+      [itemId]: 0,
     }));
   };
 
-  const closeAllDropdowns = () => {
-    const nextState = { mobileMenu: false };
+  const handleImageArrow = (product, direction, e) => {
+    e.stopPropagation();
 
-    categories.forEach((cat) => {
-      nextState[cat] = false;
+    const images = getCurrentImages(product);
+    if (images.length <= 1) return;
+
+    setSelectedImageIndexByItem((prev) => {
+      const current = prev[product.id] || 0;
+      const next = direction === "next"
+        ? (current + 1) % images.length
+        : (current - 1 + images.length) % images.length;
+
+      return {
+        ...prev,
+        [product.id]: next,
+      };
+    });
+  };
+
+  const brands = useMemo(() => {
+    return [...new Set(items.map((x) => x?.item?.brand || x?.details?.brand).filter(Boolean))];
+  }, [items]);
+
+  const types = useMemo(() => {
+    return [...new Set(items.map((x) => x?.item?.type || x?.item?.brandType).filter(Boolean))];
+  }, [items]);
+
+  const colors = useMemo(() => {
+    const allColors = [];
+
+    items.forEach((itemData) => {
+      Object.keys(itemData?.item?.imagesVariants || {}).forEach((color) => allColors.push(color));
     });
 
-    setDropdownOpen((prev) => ({
-      ...prev,
-      ...nextState,
-    }));
-  };
+    return [...new Set(allColors)];
+  }, [items]);
 
-  const handleMobileCategoryClick = (category) => {
-    const nextState = { mobileMenu: false };
+  const maxPrice = useMemo(() => {
+    const prices = items.map((x) => Number(x?.item?.usdPrice || 0));
+    return Math.ceil(Math.max(...prices, 100));
+  }, [items]);
 
-    categories.forEach((cat) => {
-      nextState[cat] = cat === category ? !dropdownOpen[category] : false;
+  const filteredItems = useMemo(() => {
+    return items.filter((itemData) => {
+      const item = itemData.item || {};
+      const price = Number(item?.usdPrice || 0);
+      const itemType = normalizeText(item?.type || item?.brandType);
+
+      const matchesBrand =
+        selectedBrand === "all" || normalizeText(item?.brand || itemData?.details?.brand) === selectedBrand;
+
+      const matchesType =
+        selectedType === "all" || itemType === selectedType || itemType.includes(selectedType);
+
+      const matchesColor =
+        selectedColor === "all" || Object.keys(item?.imagesVariants || {}).includes(selectedColor);
+
+      const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
+
+      return matchesBrand && matchesType && matchesColor && matchesPrice;
     });
+  }, [items, selectedBrand, selectedType, selectedColor, priceRange]);
 
-    setDropdownOpen((prev) => ({
-      ...prev,
-      ...nextState,
-    }));
+  useEffect(() => {
+  const fetchBrandThemes = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/brands/themes`);
+      const data = await res.json();
+      setBrandThemes(data || []);
+    } catch (err) {
+      console.error("Failed to fetch brand themes", err);
+    }
   };
 
-  const categorizedItems = categories.reduce((acc, category) => {
-    acc[category] = items.filter(
-      (itemData) =>
-        (itemData?.item?.department || itemData?.category) === category
-    );
-
-    return acc;
-  }, {});
-
-  const getHotItems = (categoryItems) => {
-    return [...categoryItems]
-      .sort((a, b) => Number(b.item?.sold || 0) - Number(a.item?.sold || 0))
-      .slice(0, 8);
-  };
-
-  const getDisplayImage = (itemData) => {
-    const item = itemData?.item || {};
-    const variants = item?.imagesVariants || {};
-
-    const firstVariantList = Object.values(variants).find(Array.isArray);
-    const firstVariant = firstVariantList?.[0];
-
-    if (typeof firstVariant === "string") return firstVariant;
-    if (firstVariant?.url) return firstVariant.url;
-
-    return item?.images?.[0] || "/fallback.png";
-  };
+  fetchBrandThemes();
+}, []);
 
   const getTranslatedName = (item, itemId) => {
     const lang = i18n.language || "en";
@@ -227,23 +298,11 @@ function JewelryPage() {
     const fallback = item?.name || "Jewelry item";
     const nameToShow = translated || fallback;
 
-    return nameToShow.length > 70
-      ? nameToShow.slice(0, 70) + "..."
-      : nameToShow;
+    return nameToShow.length > 20 ? `${nameToShow.substring(0, 20)}...` : nameToShow;
   };
 
-  const getHotTranslatedName = (item, itemId) => {
-    const lang = i18n.language || "en";
-    const translated = translations[itemId]?.[lang]?.name;
-    const fallback = item?.name || "Jewelry item";
-    const nameToShow = translated || fallback;
-
-    return nameToShow.length > 60
-      ? nameToShow.slice(0, 60) + "..."
-      : nameToShow;
-  };
-
-  const handleVideoPlay = (id) => {
+  const handleVideoPlay = (id, e) => {
+    e.stopPropagation();
     setActiveVideoId(id);
   };
 
@@ -251,51 +310,35 @@ function JewelryPage() {
     setActiveVideoId(null);
   };
 
+  const jewelryBrandThemes = useMemo(() => {
+  const jewelryBrandNames = new Set(brands.map((brand) => normalizeText(brand)));
+
+  return brandThemes.filter((brand) =>
+    jewelryBrandNames.has(normalizeText(brand?.brandName))
+  );
+}, [brandThemes, brands]);
+
+const getEstimatedDeliveryDay = (daysToAdd = 7) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysToAdd);
+
+  const weekday = date.toLocaleDateString("en-US", {
+    weekday: "long",
+  });
+
+  const day = date.getDate();
+
+  return `${weekday} ${day}`;
+};
+
   const handleItemClick = (id) => {
-    if (id) {
-      router.push(`/product/${id}`);
-    }
+    if (id) router.push(`/product/${id}`);
   };
 
-  if (loading) {
-    return (
-      <div
-        className="loading-message"
-        style={{
-          width: "100%",
-          height: "500px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontSize: "1.2rem",
-          color: "#555",
-          backgroundColor: "white",
-        }}
-      />
-    );
-  }
+  if (loading) return <div className="loading-message">{t("loading")}</div>;
 
   if (!items || items.length === 0) {
-    return (
-      <div
-        className="no-results-message"
-        style={{
-          width: "100%",
-          height: "500px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontSize: "1.1rem",
-          fontWeight: "500",
-          color: "#777",
-          backgroundColor: "#fff3f3",
-          border: "1px solid #ffdddd",
-          borderRadius: "8px",
-        }}
-      >
-        No {readableType.toLowerCase()} found.
-      </div>
-    );
+    return <div className="no-results-message">No {readableType.toLowerCase()} found.</div>;
   }
 
   const structuredData = {
@@ -315,477 +358,248 @@ function JewelryPage() {
     <>
       <Head>
         <title>{readableType} store | Malidag</title>
-        <meta
-          name="description"
-          content={`Shop ${readableType.toLowerCase()} and jewelry pieces on Malidag.`}
-        />
-        <link
-          rel="canonical"
-          href={`https://www.malidag.com/jewelry/${jewelryType}`}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-        />
+        <meta name="description" content={`Shop ${readableType.toLowerCase()} and jewelry pieces on Malidag.`} />
+        <link rel="canonical" href={`https://www.malidag.com/jewelry/${jewelryType}`} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </Head>
 
-      <div style={{ position: "relative", width: "100%" }}>
-        <div
-          className="coin-top-header"
-          style={{
-            color: "#222",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "100%",
-            boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.2)",
-            padding: "10px",
-            boxSizing: "border-box",
-            gap: "10px",
-            backgroundColor: "white",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              flexShrink: 0,
-              minWidth: 0,
-              fontWeight: 700,
-            }}
-          >
-            <span>{readableType} store</span>
+      <div className="jewelry-page-wrapper">
+
+        <div className="jewelry-brand-top">
+  {jewelryBrandThemes.map((brand) => (
+    <button
+      key={brand.brandName}
+      className="jewelry-brand-logo-card"
+      onClick={() => {
+        const themeRoute = brand?.theme?.trim()?.toLowerCase();
+
+        if (!themeRoute || !brand?.brandName) return;
+
+        setSelectedBrandName(brand.brandName);
+
+        router.push(
+          `/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`
+        );
+      }}
+    >
+      <img src={brand.logo} alt={`${brand.brandName} logo`} />
+    </button>
+  ))}
+</div>
+        <div className="jewelry-hero-row">
+          <div>
+            <div className="jewelry-eyebrow">Malidag Jewelry</div>
+            <h1>{readableType} store</h1>
           </div>
-
-          {isPhone ? (
-            <div className="coin-mobile-menu-wrapper">
-              <button
-                className="coin-mobile-menu-button"
-                onClick={() =>
-                  setDropdownOpen((prev) => ({
-                    ...prev,
-                    mobileMenu: !prev.mobileMenu,
-                  }))
-                }
-              >
-                {t("related_categories")} ☰
-              </button>
-            </div>
-          ) : (
-            <>
-              <div style={{ marginLeft: "20px", flexShrink: 0 }}>
-                {t("related_categories")}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginLeft: "10px",
-                  marginRight: "10px",
-                  justifyContent: "start",
-                  flexWrap: "nowrap",
-                  whiteSpace: "nowrap",
-                  overflowX: "auto",
-                }}
-              >
-                {categories.map((category, index) => (
-                  <div
-                    key={index}
-                    onClick={() => toggleDropdown(category)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "start",
-                      padding: "10px",
-                      cursor: "pointer",
-                      flexShrink: 0,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <div>{t(category)}</div>
-                    <span
-                      className={`dropdown-arrow ${
-                        dropdownOpen[category] ? "arrow-open" : "arrow-closed"
-                      }`}
-                    >
-                      ▼
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+          <div className="jewelry-count">{filteredItems.length} items</div>
         </div>
 
-        {isPhone && dropdownOpen.mobileMenu && (
-          <div className="coin-mobile-dropdown">
-            {categories.map((category, index) => (
-              <div
-                key={index}
-                className="coin-mobile-dropdown-item"
-                onClick={() => handleMobileCategoryClick(category)}
-              >
-                {t(category)}
-              </div>
+        <div className="mobile-filters-wrapper jewelry-mobile-filters">
+          <div className="mobile-scroll-filters">
+            <button className={selectedBrand === "all" ? "active-filter" : ""} onClick={() => setSelectedBrand("all")}>All Brands</button>
+            {brands.map((brand) => (
+              <button key={brand} className={selectedBrand === normalizeText(brand) ? "active-filter" : ""} onClick={() => setSelectedBrand(normalizeText(brand))}>{brand}</button>
             ))}
           </div>
-        )}
 
-        <div
-          className="dropdown-seitction"
-          style={{
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-            position: "absolute",
-            zIndex: 1000,
-            backgroundColor: "white",
-            width: "100%",
-          }}
-        >
-          {categories.map((category) =>
-            dropdownOpen[category] ? (
-              <div
-                key={category}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  position: "relative",
-                  padding: "12px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    paddingBottom: "10px",
-                    boxSizing: "border-box",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={closeAllDropdowns}
-                    className="coin-dropdown-close-button"
-                  >
-                    ✕
-                  </button>
-                </div>
+          <div className="mobile-scroll-filters">
+            <button className={selectedType === "all" ? "active-filter" : ""} onClick={() => setSelectedType("all")}>All Types</button>
+            {types.map((type) => (
+              <button key={type} className={selectedType === normalizeText(type) ? "active-filter" : ""} onClick={() => setSelectedType(normalizeText(type))}>{String(type).replaceAll("_", " ")}</button>
+            ))}
+          </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: isPhone ? "1fr" : "1fr 1.3fr",
-                    gap: isPhone ? "14px" : "20px",
-                    alignItems: "start",
-                  }}
-                >
-                  <div
-                    style={{
-                      minWidth: 0,
-                      maxHeight: isPhone ? "unset" : "360px",
-                      overflowY: isPhone ? "visible" : "auto",
-                      borderRight: isPhone ? "none" : "1px solid #eee",
-                      paddingRight: isPhone ? "0" : "16px",
-                    }}
-                  >
-                    <div style={{ color: "#222", marginBottom: "12px" }}>
-                      <strong>Malidag {t(category)}</strong>
-                    </div>
+          <div className="mobile-color-filters">
+            <button className={`mobile-color-circle all ${selectedColor === "all" ? "active" : ""}`} onClick={() => setSelectedColor("all")}>All</button>
+            {colors.map((color) => {
+              const swatchColor = getColorSwatch(color);
+              const previewImage = getColorFilterPreviewImage(color);
 
-                    <div
-                      className="types-list"
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: isPhone ? "8px" : "0",
-                      }}
-                    >
-                      {categorizedItems[category]
-                        ?.map((itemData) => itemData?.item?.type)
-                        .filter(Boolean)
-                        .filter((type, idx, arr) => arr.indexOf(type) === idx)
-                        .map((type, idx) => (
-                          <div
-                            key={idx}
-                            className="stale-ty-item"
-                            style={{
-                              color: "blue",
-                              padding: isPhone ? "8px 12px" : "10px 0",
-                              textDecoration: isPhone ? "none" : "underline",
-                              border: isPhone ? "1px solid #dcdcdc" : "none",
-                              borderRadius: isPhone ? "999px" : "0",
-                              background: isPhone ? "#f8f8f8" : "transparent",
-                              cursor: "pointer",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {t(type)}
-                          </div>
-                        ))}
-                    </div>
-                  </div>
+              return (
+                <button
+                  key={color}
+                  className={`mobile-color-circle ${selectedColor === color ? "active" : ""}`}
+                  title={color}
+                  aria-label={`Filter ${color}`}
+                  style={swatchColor ? { background: swatchColor } : { backgroundImage: `url("${previewImage}")` }}
+                  onClick={() => setSelectedColor(color)}
+                />
+              );
+            })}
+          </div>
 
-                  <div
-                    style={{
-                      minWidth: 0,
-                      maxHeight: "360px",
-                      overflowY: "auto",
-                      paddingRight: "4px",
-                    }}
-                  >
-                    <strong
-                      style={{
-                        color: "#222",
-                        display: "block",
-                        marginBottom: "12px",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {t("hot_label")}
-                    </strong>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: isPhone
-                          ? "repeat(3, minmax(0, 1fr))"
-                          : "repeat(auto-fill, minmax(170px, 1fr))",
-                        gap: isPhone ? "8px" : "12px",
-                      }}
-                    >
-                      {getHotItems(categorizedItems[category] || []).map(
-                        (hotItem, idx) => (
-                          <div
-                            key={idx}
-                            className="stable-hot-item"
-                            style={{
-                              border: "1px solid #eee",
-                              borderRadius: "10px",
-                              padding: "10px",
-                              background: "#fff",
-                            }}
-                          >
-                            <img
-                              src={getDisplayImage(hotItem)}
-                              alt={hotItem.item.name}
-                              onClick={() => handleItemClick(hotItem.id)}
-                              className="stable-hot-item-image"
-                              style={{
-                                width: "100%",
-                                height: "120px",
-                                objectFit: "contain",
-                                cursor: "pointer",
-                                marginBottom: "8px",
-                              }}
-                              onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = "/fallback.png";
-                              }}
-                            />
-
-                            <div
-                              onClick={() => handleItemClick(hotItem.id)}
-                              className="stable-hot-item-name"
-                              style={{
-                                cursor: "pointer",
-                                fontWeight: "600",
-                                marginBottom: "6px",
-                                lineHeight: "1.3",
-                              }}
-                            >
-                              {getHotTranslatedName(
-                                hotItem.item,
-                                hotItem.itemId
-                              )}
-                            </div>
-
-                            <div className="stable-hot-item-sold">
-                              {hotItem.item.sold} {t("sold")}
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null
-          )}
+          <div className="price-filter-mobile">
+            <input type="range" min="0" max={maxPrice} value={Math.min(priceRange[1], maxPrice)} onChange={(e) => setPriceRange([0, Number(e.target.value)])} />
+            <span>Max: ${Math.min(priceRange[1], maxPrice)}</span>
+          </div>
         </div>
-      </div>
 
-      <div className="item-coin-container">
-        <div
-          className="search-results-coin-container"
-          style={{
-            display: "grid",
-            gap: "5px",
-            padding: "5px",
-            gridTemplateColumns: isPhone
-              ? "repeat(2, minmax(0, 1fr))"
-              : isTablet
-              ? "repeat(3, minmax(0, 1fr))"
-              : "repeat(5, minmax(0, 1fr))",
-          }}
-        >
-          {items.map((itemData) => {
-            const { id, itemId, item } = itemData;
-            const { name, usdPrice, originalPrice, sold, videos } = item;
+        <div className="jewelry-layout">
+          <aside className="jewelry-sidebar">
+            <div className="sidebar-section">
+              <h3>Brands</h3>
+              <button className={`sidebar-btn ${selectedBrand === "all" ? "active" : ""}`} onClick={() => setSelectedBrand("all")}>All</button>
+              {brands.map((brand) => (
+                <button key={brand} className={`sidebar-btn ${selectedBrand === normalizeText(brand) ? "active" : ""}`} onClick={() => setSelectedBrand(normalizeText(brand))}>{brand}</button>
+              ))}
+            </div>
 
-            const reviewsData = reviews[itemId] || {};
-            const finalRating = reviewsData.averageRating;
-            const normalizedVideos = Array.isArray(videos) ? videos : [videos];
-            const firstVideoUrl = normalizedVideos.find(
-              (video) => typeof video === "string" && video.endsWith(".mp4")
-            );
+            <div className="sidebar-section">
+              <h3>Types</h3>
+              <button className={`sidebar-btn ${selectedType === "all" ? "active" : ""}`} onClick={() => setSelectedType("all")}>All</button>
+              {types.map((type) => (
+                <button key={type} className={`sidebar-btn ${selectedType === normalizeText(type) ? "active" : ""}`} onClick={() => setSelectedType(normalizeText(type))}>{String(type).replaceAll("_", " ")}</button>
+              ))}
+            </div>
 
-            return (
-              <div
-                key={id}
-                className="item-coin-card-jewelry"
-                style={{ width: "100%", maxWidth: "100%" }}
-              >
-                <div
-                  style={{
-                    background: "white",
-                    zIndex: "1",
-                    filter: "brightness(0.98) contrast(1.2)",
-                    width: "100%",
-                    height: isVerySmall ? "200px" : isPhone ? "220px" : "250px",
-                    marginBottom: "10px",
-                    marginTop: "10px",
-                    position: "relative",
-                  }}
-                >
-                  {activeVideoId === id && firstVideoUrl ? (
-                    <video
-                      src={firstVideoUrl}
-                      controls
-                      autoPlay
-                      onEnded={handleVideoStop}
-                      style={{
-                        width: "100%",
-                        height: isVerySmall
-                          ? "200px"
-                          : isPhone
-                          ? "220px"
-                          : "250px",
-                        objectFit: "contain",
-                      }}
+            <div className="sidebar-section">
+              <h3>Colors</h3>
+              <div className="sidebar-color-options">
+                <button className={`sidebar-color-circle all ${selectedColor === "all" ? "active" : ""}`} onClick={() => setSelectedColor("all")}>All</button>
+                {colors.map((color) => {
+                  const swatchColor = getColorSwatch(color);
+                  const previewImage = getColorFilterPreviewImage(color);
+
+                  return (
+                    <button
+                      key={color}
+                      className={`sidebar-color-circle ${selectedColor === color ? "active" : ""}`}
+                      title={color}
+                      aria-label={`Filter ${color}`}
+                      style={swatchColor ? { background: swatchColor } : { backgroundImage: `url("${previewImage}")` }}
+                      onClick={() => setSelectedColor(color)}
                     />
-                  ) : (
-                    <>
-                      <img
-                        src={getDisplayImage(itemData)}
-                        onClick={() => handleItemClick(id)}
-                        alt={name}
-                        style={{
-                          width: "100%",
-                          height: isVerySmall
-                            ? "200px"
-                            : isPhone
-                            ? "220px"
-                            : "250px",
-                          objectFit: "contain",
-                          cursor: "pointer",
-                        }}
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = "/fallback.png";
-                        }}
-                      />
+                  );
+                })}
+              </div>
+            </div>
 
-                      {firstVideoUrl && (
-                        <div
-                          className="play-button"
-                          onClick={() => handleVideoPlay(id)}
-                          style={{
-                            position: "absolute",
-                            left: "20px",
-                            bottom: "0px",
-                            zIndex: "2",
-                            transform: "translate(-50%, -50%)",
-                            fontSize: "1.5rem",
-                            color: "white",
-                            textShadow: "0 0 5px rgba(0,0,0,0.5)",
-                            cursor: "pointer",
+            <div className="sidebar-section">
+              <h3>Price</h3>
+              <input type="range" min="0" max={maxPrice} value={Math.min(priceRange[1], maxPrice)} onChange={(e) => setPriceRange([0, Number(e.target.value)])} />
+              <span>Up to ${Math.min(priceRange[1], maxPrice)}</span>
+            </div>
+          </aside>
+
+          <div className="jewelry-items-grid">
+            {filteredItems.map((itemData) => {
+              const { id, itemId, item } = itemData;
+              const { name, usdPrice, originalPrice, sold, numberOfItems, videos } = item || {};
+              const reviewsData = reviews[itemId] || {};
+              const finalRating = reviewsData.averageRating;
+              const colorOptions = getColorOptions(itemData);
+              const selectedColorForItem = selectedColorByItem[id];
+              const displayImage = getDisplayImage(itemData);
+              const currentImages = getCurrentImages(itemData);
+              const normalizedVideos = Array.isArray(videos) ? videos : [videos];
+              const firstVideoUrl = normalizedVideos.find((video) => typeof video === "string" && video.endsWith(".mp4"));
+              const visibleColorOptions = colorOptions.slice(0, 3);
+              const hiddenColorCount = Math.max(colorOptions.length - 3, 0);
+              const brandDelivery =
+                brandThemes?.find(
+                  (x) =>
+                    x?.brandName?.trim()?.toLowerCase() ===
+                    (item?.brand || itemData?.details?.brand || "")?.trim()?.toLowerCase()
+                )?.delivery || null;
+
+              return (
+                <div key={id} className="jewelry-card" onClick={() => handleItemClick(id)}>
+                  <div className="jewelry-card-media">
+                    {activeVideoId === id && firstVideoUrl ? (
+                      <video src={firstVideoUrl} controls autoPlay onEnded={handleVideoStop} />
+                    ) : (
+                      <>
+                        {currentImages.length > 1 && (
+                          <button type="button" className="image-arrow image-arrow-left" aria-label="Previous image" onClick={(e) => handleImageArrow(itemData, "prev", e)}>‹</button>
+                        )}
+
+                        <img
+                          src={displayImage}
+                          alt={name}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = "/fallback.png";
                           }}
-                        >
-                          ▶️
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                        />
 
-                <div className="item-details-jewelry">
-                   <div className="item-brand-jewelry">
-                    {item?.brand || itemData?.details?.brand || ""}
-                </div>
+                        {currentImages.length > 1 && (
+                          <button type="button" className="image-arrow image-arrow-right" aria-label="Next image" onClick={(e) => handleImageArrow(itemData, "next", e)}>›</button>
+                        )}
 
-                <div className="item-name-jewelry" title={getTranslatedName(item, itemId)}>
-                    {getTranslatedName(item, itemId)}
-                </div>
-
-                  <div className="item-prices-jewelry">
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "start",
-                        flexWrap: "wrap",
-                        gap: "4px",
-                      }}
-                    >
-                      <span className="item-price-jewelry">${usdPrice}</span>
-
-                      {Number(originalPrice) > 0 && (
-                        <span
-                          className="item-original-price-jewelry"
-                          style={{ color: "black" }}
-                        >
-                          ${originalPrice}
-                        </span>
-                      )}
-
-                      <span
-                        className="item-sold-jewelry"
-                        style={{
-                          display: "flex",
-                          marginLeft: "10px",
-                          fontSize: "0.8rem",
-                        }}
-                      >
-                        {sold}
-                        <div
-                          style={{
-                            marginLeft: "5px",
-                            fontWeight: "bold",
-                            color: "red",
-                          }}
-                        >
-                          {t("sold")}
-                        </div>
-                      </span>
-                    </div>
+                        {firstVideoUrl && (
+                          <button type="button" className="jewelry-play-button" aria-label="Play product video" onClick={(e) => handleVideoPlay(id, e)}>▶</button>
+                        )}
+                      </>
+                    )}
                   </div>
 
-                 {finalRating ? (
-                    <div
-                        className="item-stars-jewelry"
-                        onClick={() => router.push("/reviewPage")}
-                        title={t("view_reviews")}
-                    >
-                        {"★".repeat(Math.round(finalRating))}
-                        {"☆".repeat(5 - Math.round(finalRating))}
+                  <div className="jewelry-product-brand">{item?.brand || itemData?.details?.brand || "Malidag"}</div>
+                  <div className="jewelry-product-name" title={getTranslatedName(item, itemId)}>{getTranslatedName(item, itemId)}</div>
+
+                    {finalRating && (
+                    <div className="jewelry-stars" onClick={(e) => { e.stopPropagation(); router.push(`/product/${id}/review`); }} title={t("view_reviews")}>
+                      {"★".repeat(Math.round(finalRating))}{"☆".repeat(5 - Math.round(finalRating))}
                     </div>
-                    ) : null}
+                  )}
+
+                  {colorOptions.length > 0 && (
+                    <div className="jewelry-color-options" onClick={(e) => e.stopPropagation()}>
+                      {visibleColorOptions.map((color) => {
+                        const swatchColor = getColorSwatch(color);
+                        const variantImages = sortImages(item?.imagesVariants?.[color] || []);
+                        const firstVariantImage = getImageUrl(variantImages?.[0]);
+
+                        return (
+                          <button
+                            key={color}
+                            type="button"
+                            className={`jewelry-color-circle ${selectedColorForItem === color ? "active" : ""}`}
+                            title={color}
+                            aria-label={`Select ${color}`}
+                            onClick={(e) => handleColorSelect(id, color, e)}
+                            style={swatchColor ? { background: swatchColor } : { backgroundImage: `url("${firstVariantImage}")` }}
+                          />
+                        );
+                      })}
+
+                      {hiddenColorCount > 0 && (
+                        <button type="button" className="more-colors-link" onClick={(e) => { e.stopPropagation(); handleItemClick(id); }}>+{hiddenColorCount} colors more</button>
+                      )}
+                    </div>
+                  )}
+
+                 <div className="jewelry-delivery-info">
+
+                    {brandDelivery?.isFree && (
+                      <div className="jewelry-free-delivery">
+                        Free delivery
+                      </div>
+                    )}
+
+                    <div className="jewelry-delivery-date">
+                      Get it by{" "}
+                      {getEstimatedDeliveryDay(
+                        brandDelivery?.estimatedDaysMax || 7
+                      )}
+                    </div>
+
+                  </div>
+
+                  <div className="jewelry-price-row">
+                    <div className="jewelry-price"><span>$</span>{usdPrice}</div>
+                    {Number(originalPrice) > 0 && <div className="jewelry-original-price">${originalPrice}</div>}
+                  </div>
+
+                 {numberOfItems && Number(numberOfItems) > 0 && (
+                    <div className="jewelry-stock-badge">
+                      {numberOfItems} items in stock
+                    </div>
+                  )}
+
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </>

@@ -5,9 +5,18 @@ import "./menFashion.css";
 import RecommendedItem from "./personalRecommend";
 import { useCheckoutStore } from "./checkoutStore";
 import useFinalRating from "./finalRating";
+import axios from "axios";
+import { auth } from "@/components/firebaseConfig";
+import { message } from "antd";
+import { useRouter } from "next/navigation";
+
+const BASE_URL = "https://api.malidag.com";
+const BASKET_API = "https://api.malidag.com/add-to-basket";
 
 function ProductRating({ itemId }) {
   const { finalRating, loading, error } = useFinalRating(itemId || 0);
+
+
 
   if (loading) return null;
   if (error) return null;
@@ -38,11 +47,37 @@ function ProductRating({ itemId }) {
   );
 }
 
+const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
+
+const sortImages = (images = []) => {
+  return [...images].sort((a, b) => {
+    const posA =
+      typeof a === "object" && typeof a?.position === "number"
+        ? a.position
+        : 999999;
+
+    const posB =
+      typeof b === "object" && typeof b?.position === "number"
+        ? b.position
+        : 999999;
+
+    return posA - posB;
+  });
+};
+
 function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
   const [bestSellerByBrand, setBestSellerByBrand] = useState({});
+   const router = useRouter();
+const [messageApi, contextHolder] = message.useMessage();
+const [basketItems, setBasketItems] = useState([]);
 
   const allItems = useMemo(
     () => Object.values(groupedTypes || {}).flat(),
@@ -95,29 +130,18 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
     setBestSellerByBrand(brandBestSellerIds);
   }, [allItems]);
 
-  const convertToCrypto = (usdPrice, cryptocurrency) => {
-    const upperCrypto = String(cryptocurrency || "").toUpperCase();
-    if (!cryptoPrices?.[upperCrypto]) return null;
-    return (Number(usdPrice) / cryptoPrices[upperCrypto]).toFixed(2);
-  };
+ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysToAdd);
 
-  const getCryptoIcon = (cryptocurrency) => {
-    const cryptoIcons = {
-      ETH: "https://assets.coingecko.com/coins/images/279/large/ethereum.png?1595348880",
-      USDC: "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png?1547042389",
-      BUSD: "https://assets.coingecko.com/coins/images/9576/large/BUSD.png?1568947766",
-      SOL: "https://assets.coingecko.com/coins/images/4128/large/solana.png?1640133422",
-      BNB: "https://assets.coingecko.com/coins/images/825/large/binance-coin-logo.png?1547034615",
-      USDT: "https://assets.coingecko.com/coins/images/325/large/Tether-logo.png?1598003707",
-      BTC: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png?1547033579",
-      ADA: "https://assets.coingecko.com/coins/images/975/large/cardano.png?1547034860",
-    };
+  const weekday = date.toLocaleDateString("en-US", {
+    weekday: "long",
+  });
 
-    return (
-      cryptoIcons[String(cryptocurrency || "").toUpperCase()] ||
-      "/crypto-icons/default.png"
-    );
-  };
+  const day = date.getDate();
+
+  return `${weekday} ${day}`;
+};
 
   const handleColorSelect = (itemId, color, e) => {
     e.preventDefault();
@@ -134,15 +158,50 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
   };
 
   const getDisplayImage = (product) => {
-    const selectedColor = selectedColorByItem[product.id];
-    const variants = product?.item?.imagesVariants || {};
+  const selectedColor = selectedColorByItem[product.id];
+  const variants = product?.item?.imagesVariants || {};
 
-    if (selectedColor && variants[selectedColor]?.[0]) {
-      return variants[selectedColor][0];
-    }
+  if (selectedColor && Array.isArray(variants[selectedColor])) {
+    const sortedVariantImages = sortImages(variants[selectedColor]);
+    return getImageUrl(sortedVariantImages[0]) || "/fallback.png";
+  }
 
-    return product?.item?.images?.[0] || "/fallback.png";
-  };
+  return getImageUrl(product?.item?.images?.[0]) || "/fallback.png";
+};
+
+const fetchUserBasket = async () => {
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    setBasketItems([]);
+    return;
+  }
+
+  try {
+    const response = await axios.get(`${BASE_URL}/basket/${currentUser.uid}`);
+    setBasketItems(response.data.basket || []);
+  } catch (error) {
+    console.error("Error fetching basket:", error);
+    setBasketItems([]);
+  }
+};
+
+useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged(() => {
+    fetchUserBasket();
+  });
+
+  return () => unsubscribe();
+}, []);
+
+const getBasketQuantity = (itemId) => {
+  const basketItem = basketItems.find((item) => item.itemId === itemId);
+  return Number(basketItem?.quantity || 0);
+};
+
+const isItemInBasket = (itemId) => {
+  return getBasketQuantity(itemId) > 0;
+};
 
   const getColorSwatch = (colorName = "") => {
     const color = colorName.trim().toLowerCase();
@@ -188,19 +247,67 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
     return Math.round(((original - current) / original) * 100);
   };
 
-  const handleAddToBasketPreview = (product, selectedColor, selectedImage, e) => {
-    e.preventDefault();
-    e.stopPropagation();
+ const handleAddToBasket = async (product, selectedColor, selectedImage, e) => {
+  e.preventDefault();
+  e.stopPropagation();
 
-    setItemData({
-      ...product,
-      selectedColor,
-      selectedImage,
-    });
-  };
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    const currentPath =
+      typeof window !== "undefined"
+        ? window.location.pathname
+        : "/men-fashion";
+
+    router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+    return;
+  }
+
+  try {
+    const item = product?.item || {};
+    const details = product?.details || {};
+
+    const basketItem = {
+      userId: currentUser.uid,
+      item: {
+        id: product.id,
+        itemId: product.itemId,
+        name: item.name,
+        price: Number(item.usdPrice || 0),
+        color: selectedColor || null,
+        size: null,
+        image: selectedImage || getImageUrl(item?.images?.[0]),
+        brand: item.brand || details.brand,
+        brandPrice: item.brandPrice,
+        quantity: 1,
+        shippingCountry: details?.country || "",
+        selectedCountry: "",
+        eurText: details?.eurText || "",
+        poundText: details?.poundText || "",
+        brlText: details?.brlText || "",
+        tryText: details?.tryText || "",
+        audText: details?.audText || "",
+        sarText: details?.sarText || "",
+      },
+    };
+
+    const response = await axios.post(BASKET_API, basketItem);
+
+    if (response.status === 200 || response.status === 201) {
+      await fetchUserBasket();
+      messageApi.success(`${item.name} added to basket`);
+    } else {
+      messageApi.error("Failed to add to basket");
+    }
+  } catch (error) {
+    console.error("Error adding item to basket:", error);
+    messageApi.error("Error adding to basket");
+  }
+};
 
   return (
     <div className="men-fashion-page">
+      {contextHolder}
       <section className="men-hero">
         <img
           src="https://api.malidag.com/learn/videos/1754140515701-man-in-white-and-light-tan-outfit.jpg"
@@ -248,7 +355,6 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
             const selectedColor = selectedColorByItem[id];
             const colorOptions = getColorOptions(product);
             const displayImage = getDisplayImage(product);
-            const cryptoValue = convertToCrypto(item?.usdPrice, item?.cryptocurrency);
             const discountPercentage = getDiscountPercentage(
               item?.usdPrice,
               item?.originalPrice
@@ -315,19 +421,15 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                     )}
                   </div>
 
-                  <div className="product-crypto-row">
-                    <img
-                      src={getCryptoIcon(item?.cryptocurrency)}
-                      className="product-crypto-icon"
-                      alt={item?.cryptocurrency}
-                    />
-
-                    <span className="product-crypto-price">
-                      {cryptoValue
-                        ? `${cryptoValue} ${item?.cryptocurrency}`
-                        : item?.cryptocurrency || "USDT"}
-                    </span>
+                 <div className="product-delivery-info">
+                  <div className="product-free-delivery">
+                    Free delivery
                   </div>
+
+                  <div className="product-delivery-date">
+                    Get it by {getEstimatedDeliveryDay(7)}
+                  </div>
+                </div>
 
                   {showSold && (
                     <div className="product-meta">
@@ -377,15 +479,29 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
                     </div>
                   )}
 
-                  <button
-                    type="button"
-                    className="product-add-basket-btn"
-                    onClick={(e) =>
-                      handleAddToBasketPreview(product, selectedColor, displayImage, e)
-                    }
-                  >
-                    Add to Basket
-                  </button>
+                 {isItemInBasket(product.itemId) ? (
+                <button
+                  type="button"
+                  className="product-added-basket-btn"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push("/basket");
+                  }}
+                >
+                  🛒 {getBasketQuantity(product.itemId)}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="product-add-basket-btn"
+                  onClick={(e) =>
+                    handleAddToBasket(product, selectedColor, displayImage, e)
+                  }
+                >
+                  Add to Basket
+                </button>
+              )}
                 </div>
               </a>
             );

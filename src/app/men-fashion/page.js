@@ -4,7 +4,6 @@ import initI18n from "@/components/i18nServer";
 import MenFashion from "@/components/MenFa";
 
 const BASE_URL = "https://api.malidag.com";
-const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
 
 export const dynamic = "force-dynamic";
 
@@ -16,10 +15,13 @@ export async function generateMetadata() {
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-  const title = `${t("men_fashion_title", { defaultValue: "Men's Fashion" })} | Malidag`;
+  const title = `${t("men_fashion_title", {
+    defaultValue: "Men's Fashion",
+  })} | Malidag`;
+
   const description = t("men_fashion_description", {
     defaultValue:
-      "Discover top styles in men's fashion on Malidag. Shop with crypto or USD — from casual wear to premium looks.",
+      "Discover top styles in men's fashion on Malidag. Shop casual wear, shoes, jackets, and premium looks.",
   });
 
   const baseUrl = "https://web.malidag.com";
@@ -29,9 +31,13 @@ export async function generateMetadata() {
   const keywordsCsv =
     t("men_fashion_keywords", {
       defaultValue:
-        "men fashion, men's clothing, men's shoes, shirts, pants, jackets, crypto shopping, Malidag",
+        "men fashion, men's clothing, men's shoes, shirts, pants, jackets, Malidag",
     }) || "";
-  const keywords = keywordsCsv.split(",").map((k) => k.trim()).filter(Boolean);
+
+  const keywords = keywordsCsv
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
 
   return {
     title,
@@ -63,45 +69,82 @@ export async function generateMetadata() {
   };
 }
 
-async function getData() {
-  const [categoriesRes, itemsRes, cryptoRes] = await Promise.all([
-    fetch(`${BASE_URL}/categories/MenFashion`, { cache: "no-store" }),
-    fetch(`${BASE_URL}/items`, { cache: "no-store" }),
-    fetch(CRYPTO_URL, { cache: "no-store" }),
-  ]);
-
-  if (!categoriesRes.ok || !itemsRes.ok || !cryptoRes.ok) {
-    throw new Error("Failed to fetch one or more API endpoints");
+async function safeJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
   }
+}
 
-  const [categoriesData, itemsData, cryptoData] = await Promise.all([
-    categoriesRes.json(),
-    itemsRes.json(),
-    cryptoRes.json(),
+async function getData() {
+  const [categoriesRes, itemsRes] = await Promise.allSettled([
+    fetch(`${BASE_URL}/categories/MenFashion`, {
+      cache: "no-store",
+    }),
+    fetch(`${BASE_URL}/items`, {
+      cache: "no-store",
+    }),
   ]);
+
+  const categoriesOk =
+    categoriesRes.status === "fulfilled" && categoriesRes.value.ok;
+
+  const itemsOk =
+    itemsRes.status === "fulfilled" && itemsRes.value.ok;
+
+  const categoriesData = categoriesOk
+    ? await safeJson(categoriesRes.value)
+    : [];
+
+  const itemsData = itemsOk
+    ? await safeJson(itemsRes.value)
+    : [];
 
   const mtypes = Array.isArray(categoriesData) ? categoriesData : [];
-  const allItems = Array.isArray(itemsData) ? itemsData : itemsData?.items || [];
-  const cryptoPrices = cryptoData ?? [];
 
-  const menItems = allItems.filter(
-    (item) =>
-      (item?.item?.genre || "").toLowerCase().includes("men") &&
-      (item?.category || "").toLowerCase() !== "beauty"
-  );
+  const allItems = Array.isArray(itemsData)
+    ? itemsData
+    : Array.isArray(itemsData?.items)
+    ? itemsData.items
+    : [];
+
+ const menItems = allItems.filter((item) => {
+  const genre = String(item?.item?.genre || "")
+    .toLowerCase()
+    .trim();
+
+  const category = String(item?.category || "")
+    .toLowerCase()
+    .trim();
+
+  const isMen =
+    genre === "men" ||
+    genre === "man" ||
+    genre === "male" ||
+    genre === "mens" ||
+    genre === "men's";
+
+  return isMen && category !== "beauty";
+});
 
   const groupedTypes = menItems.reduce((acc, item) => {
     const type = item?.item?.type || "Other";
+
     if (!acc[type]) acc[type] = [];
     acc[type].push(item);
+
     return acc;
   }, {});
 
-  return { mtypes, groupedTypes, cryptoPrices };
+  return {
+    mtypes,
+    groupedTypes,
+  };
 }
 
 export default async function Page() {
-  const { mtypes, groupedTypes, cryptoPrices } = await getData();
+  const { mtypes, groupedTypes } = await getData();
 
   const baseUrl = "https://web.malidag.com";
   const url = `${baseUrl}/men-fashion`;
@@ -111,12 +154,22 @@ export default async function Page() {
     "@type": "CollectionPage",
     name: "Men's Fashion | Malidag",
     url,
-    description: "Shop the best men's fashion on Malidag with crypto or USD.",
+    description: "Shop the best men's fashion on Malidag.",
     breadcrumb: {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: `${baseUrl}/` },
-        { "@type": "ListItem", position: 2, name: "Men's Fashion", item: url },
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: `${baseUrl}/`,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Men's Fashion",
+          item: url,
+        },
       ],
     },
   };
@@ -127,10 +180,10 @@ export default async function Page() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
       <MenFashion
         mtypes={mtypes}
         groupedTypes={groupedTypes}
-        cryptoPrices={cryptoPrices}
       />
     </>
   );

@@ -10,8 +10,11 @@ import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import colorSwatches from "../../lib/colors.json";
 import { useCheckoutStore } from "./checkoutStore";
+import { auth } from "@/components/firebaseConfig";
+import { message } from "antd";
 
 const BASE_URL = "https://api.malidag.com";
+const BASKET_API = "https://api.malidag.com/add-to-basket";
 
 function JewelryPage() {
   const params = useParams();
@@ -32,6 +35,9 @@ function JewelryPage() {
   const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
   const [brandThemes, setBrandThemes] = useState([]);
 const setSelectedBrandName = useCheckoutStore((state) => state.setSelectedBrandName);
+const [messageApi, contextHolder] = message.useMessage();
+const [addedToCart, setAddedToCart] = useState({});
+const [basketItems, setBasketItems] = useState([]);
 
   const router = useRouter();
   const { isVerySmall } = useScreenSize();
@@ -56,6 +62,22 @@ const setSelectedBrandName = useCheckoutStore((state) => state.setSelectedBrandN
       console.error(`Error fetching translation for ${productId}`, error);
     }
   };
+
+  const fetchUserBasket = async () => {
+  const currentUser = auth?.currentUser;
+  if (!currentUser) {
+    setBasketItems([]);
+    return;
+  }
+
+  try {
+    const response = await axios.get(`${BASE_URL}/basket/${currentUser.uid}`);
+    setBasketItems(response.data.basket || []);
+  } catch (error) {
+    console.error("Error fetching basket:", error);
+    setBasketItems([]);
+  }
+};
 
   const fetchReviews = async (productId) => {
     if (!productId) return;
@@ -109,6 +131,23 @@ const setSelectedBrandName = useCheckoutStore((state) => state.setSelectedBrandN
     name.includes("earring") ||
     name.includes("jewelry")
   );
+};
+
+useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged(() => {
+    fetchUserBasket();
+  });
+
+  return () => unsubscribe();
+}, []);
+
+const getBasketQuantity = (itemId) => {
+  const basketItem = basketItems.find((item) => item.itemId === itemId);
+  return Number(basketItem?.quantity || 0);
+};
+
+const isItemInBasket = (itemId) => {
+  return getBasketQuantity(itemId) > 0;
 };
 
   useEffect(() => {
@@ -331,6 +370,76 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
   return `${weekday} ${day}`;
 };
 
+const handleAddToBasket = async (itemData, e) => {
+  e.stopPropagation();
+
+  const currentUser = auth?.currentUser;
+
+ if (!currentUser) {
+  const currentPath =
+    typeof window !== "undefined"
+      ? window.location.pathname
+      : "/jewelry";
+
+  router.push(
+    `/auth?redirect=${encodeURIComponent(currentPath)}`
+  );
+
+  return;
+}
+
+  try {
+    const item = itemData?.item || {};
+    const colorOptions = getColorOptions(itemData);
+
+    const selectedColorForBasket =
+      selectedColorByItem[itemData.id] ||
+      colorOptions?.[0] ||
+      null;
+
+    const variantImages =
+      item?.imagesVariants?.[selectedColorForBasket] || [];
+
+    const basketImage =
+      getImageUrl(sortImages(variantImages)?.[0]) ||
+      getImageUrl(item?.images?.[0]);
+
+    const basketItem = {
+      userId: currentUser.uid,
+
+      item: {
+        id: itemData.id,
+        itemId: itemData.itemId,
+        name: item.name,
+        price: Number(item.usdPrice || 0),
+        color: selectedColorForBasket,
+        size: null,
+        image: basketImage,
+        brand: item.brand,
+        brandPrice: item.brandPrice,
+        quantity: 1,
+      },
+    };
+
+    const response = await axios.post(
+      BASKET_API,
+      basketItem
+    );
+
+    if (response.status === 200 || response.status === 201) {
+
+ await fetchUserBasket();
+
+  messageApi.success(`${item.name} added to cart`);
+} else {
+      messageApi.error("Failed to add to cart");
+    }
+  } catch (error) {
+    console.error("Error adding item to basket:", error);
+    messageApi.error("Error adding to cart");
+  }
+};
+
   const handleItemClick = (id) => {
     if (id) router.push(`/product/${id}`);
   };
@@ -362,6 +471,8 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
         <link rel="canonical" href={`https://www.malidag.com/jewelry/${jewelryType}`} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </Head>
+
+      {contextHolder}
 
       <div className="jewelry-page-wrapper">
 
@@ -536,13 +647,31 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
                   <div className="jewelry-product-brand">{item?.brand || itemData?.details?.brand || "Malidag"}</div>
                   <div className="jewelry-product-name" title={getTranslatedName(item, itemId)}>{getTranslatedName(item, itemId)}</div>
 
-                    {finalRating && (
-                    <div className="jewelry-stars" onClick={(e) => { e.stopPropagation(); router.push(`/product/${id}/review`); }} title={t("view_reviews")}>
-                      {"★".repeat(Math.round(finalRating))}{"☆".repeat(5 - Math.round(finalRating))}
+                   {finalRating && (
+                    <div
+                      className="jewelry-stars"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/product/${id}/review`);
+                      }}
+                      title={t("view_reviews")}
+                    >
+                      <span className="jewelry-rating-number">
+                        {Number(finalRating).toFixed(1)}/5
+                      </span>
+
+                      <span className="jewelry-rating-stars">
+                        {"★".repeat(Math.round(finalRating))}
+                        {"☆".repeat(5 - Math.round(finalRating))}
+                      </span>
+
+                      <span className="jewelry-review-count">
+                        ({reviewsData?.reviewsArray?.length || 0} reviews)
+                      </span>
                     </div>
                   )}
 
-                  {colorOptions.length > 0 && (
+                  {colorOptions.length > 1 && (
                     <div className="jewelry-color-options" onClick={(e) => e.stopPropagation()}>
                       {visibleColorOptions.map((color) => {
                         const swatchColor = getColorSwatch(color);
@@ -579,7 +708,7 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
                     <div className="jewelry-delivery-date">
                       Get it by{" "}
                       {getEstimatedDeliveryDay(
-                        brandDelivery?.estimatedDaysMax || 7
+                        brandDelivery?.estimatedDaysMin || 7
                       )}
                     </div>
 
@@ -595,6 +724,30 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
                       {numberOfItems} items in stock
                     </div>
                   )}
+
+                {isItemInBasket(itemId) ? (
+                <button
+                  type="button"
+                  className="jewelry-added-cart-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push("/basket");
+                  }}
+                >
+                  <span className="jewelry-cart-icon">🛒</span>
+                  <span className="jewelry-cart-added-text">
+                    {getBasketQuantity(itemId)}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="jewelry-add-cart-btn"
+                  onClick={(e) => handleAddToBasket(itemData, e)}
+                >
+                  Add to cart
+                </button>
+              )}
 
                 </div>
               );

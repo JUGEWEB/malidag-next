@@ -30,6 +30,7 @@ import Browsing from "./basedbrowsing";
 
 import ItemFashionPage from "./fashionForAllPage";
 import TopItem from "./topItem";
+import MalidagNews from "./malidagNews";
 
 const Block = ({ children, className = "", background = "transparent" }) => (
   <div
@@ -167,6 +168,7 @@ const Malidag = ({
           <YouMayLike user={user} />
         </Block>
       )}
+      
 
       {isSmallPhone && (
         <CenteredBlock>
@@ -230,7 +232,10 @@ const Malidag = ({
       <Block className="malidag-block malidag-block--flush">
         <RecommendedItem />
       </Block>
+
+      <MalidagNews/>
     </div>
+    
   );
 };
 

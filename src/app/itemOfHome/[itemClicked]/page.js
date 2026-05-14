@@ -6,6 +6,8 @@ import { headers } from "next/headers";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
+    const { itemClicked } = await params;
+
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
@@ -13,10 +15,9 @@ export async function generateMetadata({ params }) {
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-  const { itemClicked } = params;
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
-  const url = `https://www.malidag.com/itemOfHome?itemClicked=${encodeURIComponent(
+  const url = `https://www.malidag.com/itemOfHome/${encodeURIComponent(
     itemClicked
   )}`;
   const ogImage = "https://web.malidag.com/og/home-kitchen.jpg";

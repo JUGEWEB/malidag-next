@@ -1,412 +1,878 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import useScreenSize from "./useIsMobile";
-import './itemOfWomen.css';
+import "./itemOfhome.css";
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
+import { auth } from "@/components/firebaseConfig";
+import { message } from "antd";
+import colorSwatches from "../../lib/colors.json";
+import { useRouter, useParams } from "next/navigation";
 
-function ItemOfHome({itemClicked} ) {
-   const router = useRouter()
+const BASE_URL = "https://api.malidag.com";
+const BASKET_API = "https://api.malidag.com/add-to-basket";
+
+function ItemOfHome({ itemClicked }) {
+  const router = useRouter();
+const params = useParams();
   const [items, setItems] = useState([]);
-  const [cryptoPrices, setCryptoPrices] = useState({});
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState({});
+  const [reviews, setReviews] = useState({});
   const [activeVideoId, setActiveVideoId] = useState(null);
-  const [beautyImages, setBeautyImages] = useState([]); // Store beauty images
-  const [selectedSize, setSelectedSize] = useState(null); // Track selected size
-   const [reviews, setReviews] = useState({}); // Store reviews data
-            const {isMobile, isDesktop, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall} = useScreenSize()
- 
+  const [beautyImages, setBeautyImages] = useState([]);
+  const [basketItems, setBasketItems] = useState([]);
+
+  const [selectedBrand, setSelectedBrand] = useState("all");
+  const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+const [selectedType, setSelectedType] = useState("");
+
+const routeType = params?.itemClicked;
+  const currentType = normalizeText(itemClicked || routeType);
+  const [selectedColor, setSelectedColor] = useState("all");
+  const [priceRange, setPriceRange] = useState([0, 10000]);
+
+  const [selectedColorByItem, setSelectedColorByItem] = useState({});
+  const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
+  const [brandThemes, setBrandThemes] = useState([]);
+
+const setSelectedBrandName = useCheckoutStore(
+  (state) => state.setSelectedBrandName
+);
+
   const { t } = useTranslation();
+  const [messageApi, contextHolder] = message.useMessage();
+
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
-  console.log('video', activeVideoId)
-  console.log('itemClick', itemClicked)
+  const fetchUserBasket = async () => {
+    const currentUser = auth?.currentUser;
 
-  const fetchCryptoPrices = async (symbols) => {
+    if (!currentUser) {
+      setBasketItems([]);
+      return;
+    }
+
     try {
-      const response = await axios.get("https://api.malidag.com/crypto-prices");
-      console.log("Response data:", response.data);
-  
-      // Filter the response data based on the provided symbols
-      const prices = symbols.reduce((acc, symbol) => {
-        if (response.data[symbol]) {
-          acc[symbol] = parseFloat(response.data[symbol]); // Parse the price to a float
-        }
-        return acc;
-      }, {});
-  
-      setCryptoPrices(prices);
+      const response = await axios.get(`${BASE_URL}/basket/${currentUser.uid}`);
+      setBasketItems(response.data.basket || []);
     } catch (error) {
-      console.error("Error fetching crypto prices:", error);
+      console.error("Error fetching basket:", error);
+      setBasketItems([]);
     }
   };
 
   useEffect(() => {
-    const fetchBeautyImages = async () => {
-      try {
-        const response = await axios.get("https://api.malidag.com/women/images");
+    const unsubscribe = auth.onAuthStateChanged(() => {
+      fetchUserBasket();
+    });
 
-        // ✅ Filter images where type matches itemClicked
-        const filteredImages = response.data.filter(
-          (image) => image.type.toLowerCase() === itemClicked.toLowerCase()
+    return () => unsubscribe();
+  }, []);
+
+  const getBasketQuantity = (itemId) => {
+    const basketItem = basketItems.find((item) => item.itemId === itemId);
+    return Number(basketItem?.quantity || 0);
+  };
+
+  const isItemInBasket = (itemId) => getBasketQuantity(itemId) > 0;
+
+  useEffect(() => {
+    const fetchBeautyImages = async () => {
+      if (!itemClicked) return;
+
+      try {
+        const response = await axios.get(`${BASE_URL}/home_kitchen/images`);
+        const imageData = Array.isArray(response.data) ? response.data : [];
+
+        const filteredImages = imageData.filter(
+          (image) =>
+            image?.type?.toLowerCase() === itemClicked?.toLowerCase()
         );
-          console.log("filtered", filteredImages)
+
         setBeautyImages(filteredImages);
       } catch (error) {
-        console.error("Error fetching beauty images:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error fetching home images:", error);
       }
     };
 
     fetchBeautyImages();
-  }, [itemClicked, router.isReady]); // ✅ Re-fetch when `itemClicked` changes
+  }, [itemClicked]);
 
-  // Fetch reviews from the endpoint
-                const fetchReviews = async (productId) => {
-                  try {
-                    const response = await axios.get(`https://api.malidag.com/get-reviews/${productId}`);
-                    if (response.data.success) {
-                     
-                      const reviewsArray = response.data.reviews || [];
-                      const totalRating = reviewsArray.reduce((acc, review) => {
-                        let rating = parseFloat(review.rating);
-                        return acc + (isNaN(rating) ? 4 : rating); // If rating is invalid, treat as 5 stars
-                      }, 0);
-                      const averageRating = reviewsArray.length ? (totalRating / reviewsArray.length).toFixed(2) : null;
-              
-                      setReviews((prevReviews) => ({
-                        ...prevReviews,
-                        [productId]: { averageRating, reviewsArray },
-                      }));
-              
-                    }
-                  } catch (error) {
-                    console.error("Error fetching reviews:", error);
-                  }
-                };
-              
+ useEffect(() => {
+  if (currentType) {
+    setSelectedType(currentType);
+  }
+}, [currentType]);
+
+  const fetchReviews = async (productId) => {
+    if (!productId) return;
+
+    try {
+      const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
+
+      if (response.data.success) {
+        const reviewsArray = response.data.reviews || [];
+
+        const totalRating = reviewsArray.reduce((acc, review) => {
+          const rating = parseFloat(review.rating);
+          return acc + (isNaN(rating) ? 4 : rating);
+        }, 0);
+
+        const averageRating = reviewsArray.length
+          ? (totalRating / reviewsArray.length).toFixed(2)
+          : null;
+
+        setReviews((prevReviews) => ({
+          ...prevReviews,
+          [productId]: { averageRating, reviewsArray },
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await axios.get(`https://api.malidag.com/items/${itemClicked}`);
-        const fetchedItems = response.data.items || [];
-        const filteredItems = fetchedItems.filter(item => item.category === "Home & Kitchen");
-       setItems(filteredItems)
+        setLoading(true);
 
-        const uniqueCategories = [...new Set(fetchedItems.map(item => item.category))];
-        setCategories(uniqueCategories);
+        const response = await axios.get(`${BASE_URL}/items`);
 
-         // Fetch reviews for each item
-       filteredItems.forEach((item) => {
-        fetchReviews(item.itemId); // Fetch reviews for each product
-      });
-       
+        const fetchedItems = Array.isArray(response.data)
+          ? response.data
+          : response.data.items || [];
 
-        const cryptoSymbols = [
-          ...new Set(fetchedItems.map((item) => `${item.item.cryptocurrency}`)),
-        ];
-        await fetchCryptoPrices(cryptoSymbols);
+        const filteredItems = fetchedItems.filter(
+          (item) => normalizeText(item.category) === "home_kitchen"
+        );
+
+        setItems(filteredItems);
+
+        filteredItems.forEach((item) => {
+          fetchReviews(item.itemId);
+        });
       } catch (error) {
-        console.error("Error fetching items:", error);
+        console.error("Error fetching home items:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchItems();
-  }, [itemClicked]);
+  }, []);
 
+  useEffect(() => {
+  const fetchBrandThemes = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/brands/themes`);
+      setBrandThemes(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch brand themes:", error);
+    }
+  };
 
-  const toggleDropdown = (category) => {
-    setDropdownOpen((prev) => ({
+  fetchBrandThemes();
+}, []);
+
+  const getColorSwatch = (colorName = "") => {
+    const color = colorName.trim().toLowerCase();
+    return colorSwatches[color] || null;
+  };
+
+  const getImageUrl = (imageEntry) => {
+    if (!imageEntry) return "";
+    if (typeof imageEntry === "string") return imageEntry;
+    if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+    return "";
+  };
+
+  const sortImages = (images = []) => {
+    return [...images].sort((a, b) => {
+      const posA =
+        typeof a === "object" && typeof a?.position === "number"
+          ? a.position
+          : 999999;
+
+      const posB =
+        typeof b === "object" && typeof b?.position === "number"
+          ? b.position
+          : 999999;
+
+      return posA - posB;
+    });
+  };
+
+  const getColorOptions = (product) => {
+    return Object.keys(product?.item?.imagesVariants || {});
+  };
+
+  const getCurrentImages = (product) => {
+    const variants = product?.item?.imagesVariants || {};
+    const selectedColorForItem = selectedColorByItem[product.id];
+
+    if (selectedColorForItem && Array.isArray(variants[selectedColorForItem])) {
+      return sortImages(variants[selectedColorForItem]);
+    }
+
+    const firstColor = Object.keys(variants)[0];
+
+    if (firstColor && Array.isArray(variants[firstColor])) {
+      return sortImages(variants[firstColor]);
+    }
+
+    return product?.item?.images || [];
+  };
+
+  const getDisplayImage = (product) => {
+    const images = getCurrentImages(product);
+    const index = selectedImageIndexByItem[product.id] || 0;
+
+    return (
+      getImageUrl(images[index]) ||
+      getImageUrl(product?.item?.images?.[0]) ||
+      "/fallback.png"
+    );
+  };
+
+  const brands = useMemo(() => {
+    return [
+      ...new Set(
+        items.map((x) => x?.item?.brand || x?.details?.brand).filter(Boolean)
+      ),
+    ];
+  }, [items]);
+
+  const types = useMemo(() => {
+    return [
+      ...new Set(
+        items
+          .map((x) => x?.item?.type || x?.item?.brandType || x?.details?.type)
+          .filter(Boolean)
+      ),
+    ];
+  }, [items]);
+
+  const colors = useMemo(() => {
+    const allColors = [];
+
+    items.forEach((itemData) => {
+      Object.keys(itemData?.item?.imagesVariants || {}).forEach((color) => {
+        allColors.push(color);
+      });
+    });
+
+    return [...new Set(allColors)];
+  }, [items]);
+
+  const homeBrandThemes = useMemo(() => {
+  const homeBrandNames = new Set(brands.map((brand) => normalizeText(brand)));
+
+  return brandThemes.filter((brand) =>
+    homeBrandNames.has(normalizeText(brand?.brandName))
+  );
+}, [brandThemes, brands]);
+
+  const maxPrice = useMemo(() => {
+    const prices = items.map((x) => Number(x?.item?.usdPrice || 0));
+    return Math.ceil(Math.max(...prices, 100));
+  }, [items]);
+
+const filteredItems = useMemo(() => {
+ const activeType = normalizeText(selectedType || currentType);
+
+  return items.filter((itemData) => {
+    const item = itemData.item || {};
+    const price = Number(item?.usdPrice || 0);
+
+    const itemType = normalizeText(
+      item?.type ||
+      item?.brandType ||
+      itemData?.details?.type ||
+      itemData?.details?.brandType
+    );
+
+    const matchesBrand =
+      selectedBrand === "all" ||
+      normalizeText(item?.brand || itemData?.details?.brand) === selectedBrand;
+
+    const matchesType =
+      activeType === "all" || itemType === activeType;
+
+    const matchesColor =
+      selectedColor === "all" ||
+      Object.keys(item?.imagesVariants || {}).includes(selectedColor);
+
+    const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
+
+    return matchesBrand && matchesType && matchesColor && matchesPrice;
+  });
+}, [items, selectedBrand, selectedType, selectedColor, priceRange, itemClicked]);
+
+console.log("itemClicked prop:", itemClicked);
+console.log("selectedType:", selectedType);
+console.log("items length:", items.length);
+console.log(
+  "types:",
+  items.map((x) => ({
+    itemType: x?.item?.type,
+    brandType: x?.item?.brandType,
+    detailsType: x?.details?.type,
+    detailsBrandType: x?.details?.brandType,
+  }))
+);
+
+  const handleColorSelect = (itemId, color, e) => {
+    e.stopPropagation();
+
+    setSelectedColorByItem((prev) => ({
       ...prev,
-      [category]: !prev[category],
+      [itemId]: color,
+    }));
+
+    setSelectedImageIndexByItem((prev) => ({
+      ...prev,
+      [itemId]: 0,
     }));
   };
 
-  if (loading) return <div className="loading-message">{t("loading")}</div>;
+  const handleImageArrow = (product, direction, e) => {
+    e.stopPropagation();
 
- 
+    const images = getCurrentImages(product);
+    if (images.length <= 1) return;
 
-  const categorizedItems = categories.reduce((acc, category) => {
-    acc[category] = items.filter((item) => item.category === category);
-    return acc;
-  }, {});
+    setSelectedImageIndexByItem((prev) => {
+      const current = prev[product.id] || 0;
+      const next =
+        direction === "next"
+          ? (current + 1) % images.length
+          : (current - 1 + images.length) % images.length;
 
-  const getHotItems = (categoryItems) => {
-    return [...categoryItems]
-      .sort((a, b) => b.item.sold - a.item.sold)
-      .slice(0, 4); // Top 3 sold items
+      return {
+        ...prev,
+        [product.id]: next,
+      };
+    });
   };
 
-
-  const handleVideoPlay = (id, videoUrl) => {
-    console.log('Playing video:', videoUrl); // Debugging line
+  const handleVideoPlay = (id, e) => {
+    e.stopPropagation();
     setActiveVideoId(id);
   };
-  
+
   const handleVideoStop = () => {
     setActiveVideoId(null);
   };
 
-  const handleNavigate = (id) => {
-    router.push(`/product/${id}`);
+  const handleItemClick = (id) => {
+    if (id) router.push(`/product/${id}`);
   };
 
-   // Apply size filter if selectedSize is set
-   const displayedItems = selectedSize ? filterItemsBySize(selectedSize) : items;
+  const getEstimatedDeliveryDay = (daysToAdd = 7) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysToAdd);
+
+    const weekday = date.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+
+    return `${weekday} ${date.getDate()}`;
+  };
+
+  const handleAddToBasket = async (itemData, e) => {
+    e.stopPropagation();
+
+    const currentUser = auth?.currentUser;
+
+    if (!currentUser) {
+      const currentPath =
+        typeof window !== "undefined" ? window.location.pathname : "/home";
+
+      router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
+    try {
+      const item = itemData?.item || {};
+      const details = itemData?.details || {};
+      const colorOptions = getColorOptions(itemData);
+
+      const selectedColorForBasket =
+        selectedColorByItem[itemData.id] || colorOptions?.[0] || null;
+
+      const variantImages = item?.imagesVariants?.[selectedColorForBasket] || [];
+
+      const basketImage =
+        getImageUrl(sortImages(variantImages)?.[0]) ||
+        getImageUrl(item?.images?.[0]);
+
+      const basketItem = {
+        userId: currentUser.uid,
+        item: {
+          id: itemData.id,
+          itemId: itemData.itemId,
+          name: item.name,
+          price: Number(item.usdPrice || 0),
+          color: selectedColorForBasket,
+          size: null,
+          image: basketImage,
+          brand: item.brand || details.brand,
+          brandPrice: item.brandPrice || details.brandPrice,
+          quantity: 1,
+          shippingCountry: details?.country || "",
+          selectedCountry: "",
+          eurText: details?.eurText || "",
+          poundText: details?.poundText || "",
+          brlText: details?.brlText || "",
+          tryText: details?.tryText || "",
+          audText: details?.audText || "",
+          sarText: details?.sarText || "",
+        },
+      };
+
+      const response = await axios.post(BASKET_API, basketItem);
+
+      if (response.status === 200 || response.status === 201) {
+        await fetchUserBasket();
+        messageApi.success(`${item.name} added to cart`);
+      } else {
+        messageApi.error("Failed to add to cart");
+      }
+    } catch (error) {
+      console.error("Error adding item to basket:", error);
+      messageApi.error("Error adding to cart");
+    }
+  };
+
+  if (loading) {
+    return <div className="home-loading">{t("loading")}</div>;
+  }
 
   return (
-    <>
-   <div  style={{maxWidth: "100%", width: "100%", color: "black"}}>
-      <div style={{width: "100%", overflowX: "auto"}}>
-      <div style={{width: "100%", maxWidth: "100%", display: "flex", alignItems: "center", justifyContent: "start", padding: "10px"}}>
-        <div>Malidag {itemClicked}</div>
-        <div style={{ marginLeft: "20px" }}>{t("related_categories")}</div>
-           <div style={{ marginLeft: "20px" }}>
-        {categories.map((category, index) => (
-  <div key={index}>
-    <div
-      onClick={() => toggleDropdown(category)}
-    >
-      {category}
-      <span className={`dropdown-arrow ${dropdownOpen[category] ? "arrow-open" : "arrow-closed"}`}>
-        ▼
-      </span>
-    </div>
-  </div>
-))}
-</div>
-</div>
-</div>
-        <div>
+    <main className="home-page">
+      {contextHolder}
 
-          <div style={{position: "relative", width: "100%"}}>
-
-{/* Render dropdown separately so you can move it wherever you want */}
-<div style={{position: "absolute", width: "100%", zIndex: "1000", backgroundColor: "white"}}>
-{categories.map((category) =>
-  dropdownOpen[category] ? (
-    <div key={category}  style={{position: "relative", width: "100%", display: "flex", alignItems: "center"}}>
-      <div className="stable-catgory-types">
-        <strong>malidag {category}</strong>
-        {categorizedItems[category]
-          .map((item) => item.item.type)
-          .filter((type, idx, arr) => arr.indexOf(type) === idx)
-          .map((type, idx) => (
-            <div key={idx} className="stable-tpe-item">
-              {type}
-            </div>
+      {beautyImages.length > 0 && (
+        <section className="home-hero">
+          {beautyImages.map((img, index) => (
+            <img
+              key={index}
+              src={img.imageUrl}
+              alt={itemClicked || "Home kitchen"}
+              className="home-hero-image"
+            />
           ))}
-      </div>
-      <div>
-        <strong style={{ marginLeft: "50%" , width: "100%"}}>{t("hot_label")}</strong>
-        <div style={{width: "100%", backgroundColor: "white"}}>
-          {getHotItems(categorizedItems[category]).map((hotItem, idx) => (
-            <div key={idx} style={{width: "250px"}}>
-              <img
-                src={hotItem.item.images[0]}
-                alt={hotItem.item.name}
-                onClick={() => handleNavigate(hotItem.id)}
-                className="stable-ht-item-image"
-              />
-              <div className="stable-ht-item-name">{hotItem.item.name}</div>
-              <div className="stable-ht-item-sold">{hotItem.item.sold} {t("sold")}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  ) : null
-)}
-</div>
-
-          </div>
-        </div>
-      </div>
-      {loading ? (
-        <p>{t("loading_images")}</p>
-      ) : (
-        <div className="beauty-images-container" 
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center", maxWidth: "100%"
-        }}
-        >
-          {beautyImages.length > 0 ? (
-            beautyImages.map((img, index) => (
-              <img
-                key={index}
-                src={img.imageUrl} // ✅ Corrected URL
-                alt={itemClicked}
-                className="beauty-image"
-                style={{maxHeight: "400px", width: "100%", objectFit: "cover"}}
-              />
-            ))
-          ) : (
-            <p ></p>
-          )}
-        </div>
+        </section>
       )}
-    <div style={{width: "100%"}}>
 
-      <div style={{
-  display: "grid",
-  width: "100%",
-  maxWidth: "100%",
-  gap: "5px",
-  padding: "5px",
-  gridTemplateColumns:
-    isVerySmall
-      ? "repeat(2, 1fr)"
-      : isVeryVerySmall
-      ? "repeat(1, 1fr)"
-      : isSmallMobile
-      ? "repeat(2, 1fr)"
-      : isMobile
-      ? "repeat(3, 1fr)"
-      : isTablet
-      ? "repeat(3, 1fr)"
-      : "repeat(3, 1fr)",
-}}>
-        {displayedItems.map((itemData) => {
-          const item = itemData.item;
-          const {itemId, id } = itemData;
-          const { name, usdPrice, originalPrice, cryptocurrency, sold, videos } = item;
-          const cryptoSymbol = `${cryptocurrency}`;
-          const crypto = String(cryptocurrency);
-           const reviewsData = reviews[itemId] || {}; // Ensure it exists
-            const finalRating = reviewsData ? reviewsData.averageRating :  t("no_rating");
-          const cryptoPriceInUSD = cryptoPrices[cryptoSymbol] || 0;
-          const itemPriceInCrypto =
-            cryptoPriceInUSD > 0 ? (usdPrice / cryptoPriceInUSD).toFixed(6) : "N/A";
+      {homeBrandThemes.length > 0 && (
+  <section className="home-brand-top">
+    {homeBrandThemes.map((brand) => (
+      <button
+        key={brand.brandName}
+        type="button"
+        className="home-brand-logo-card"
+        onClick={() => {
+          const themeRoute = brand?.theme?.trim()?.toLowerCase();
+
+          if (!themeRoute || !brand?.brandName) return;
+
+          setSelectedBrandName(brand.brandName);
+
+          router.push(
+            `/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`
+          );
+        }}
+      >
+        <img src={brand.logo} alt={`${brand.brandName} logo`} />
+      </button>
+    ))}
+  </section>
+)}
+
+      <section className="home-top-row">
+        <div>
+          <p className="home-eyebrow">Malidag Home</p>
+          <h1 className="home-title">Home & Kitchen</h1>
+        </div>
+
+        <div className="home-count">{filteredItems.length} items</div>
+      </section>
+
+      <section className="home-mobile-filters">
+        <div className="home-scroll-filters">
+          <button
+            className={selectedBrand === "all" ? "active-filter" : ""}
+            onClick={() => setSelectedBrand("all")}
+          >
+            All Brands
+          </button>
+
+          {brands.map((brand) => (
+            <button
+              key={brand}
+              className={
+                selectedBrand === normalizeText(brand) ? "active-filter" : ""
+              }
+              onClick={() => setSelectedBrand(normalizeText(brand))}
+            >
+              {brand}
+            </button>
+          ))}
+        </div>
+
+       <div className="home-scroll-filters">
+  <button
+    className={selectedType === "all" ? "active-filter" : ""}
+    onClick={() => setSelectedType("all")}
+  >
+    All
+  </button>
+
+  {types.map((type) => (
+    <button
+      key={type}
+      className={
+        selectedType === normalizeText(type) ? "active-filter" : ""
+      }
+      onClick={() => setSelectedType(normalizeText(type))}
+    >
+      {String(type).replaceAll("_", " ")}
+    </button>
+  ))}
+</div>
+
+        <div className="home-price-mobile">
+          <input
+            type="range"
+            min="0"
+            max={maxPrice}
+            value={Math.min(priceRange[1], maxPrice)}
+            onChange={(e) => setPriceRange([0, Number(e.target.value)])}
+          />
+          <span>Max: ${Math.min(priceRange[1], maxPrice)}</span>
+        </div>
+      </section>
+
+      <section className="home-layout">
+        <aside className="home-sidebar">
+          <div className="home-sidebar-section">
+            <h3>Brands</h3>
+
+            <button
+              className={`home-sidebar-btn ${
+                selectedBrand === "all" ? "active" : ""
+              }`}
+              onClick={() => setSelectedBrand("all")}
+            >
+              All
+            </button>
+
+            {brands.map((brand) => (
+              <button
+                key={brand}
+                className={`home-sidebar-btn ${
+                  selectedBrand === normalizeText(brand) ? "active" : ""
+                }`}
+                onClick={() => setSelectedBrand(normalizeText(brand))}
+              >
+                {brand}
+              </button>
+            ))}
+          </div>
+
+          <div className="home-sidebar-section">
+            <h3>Types</h3>
+
+            <button
+              className={`home-sidebar-btn ${
+                selectedType === "all" ? "active" : ""
+              }`}
+              onClick={() => setSelectedType("all")}
+            >
+              All
+            </button>
+
+            {types.map((type) => (
+              <button
+                key={type}
+                className={`home-sidebar-btn ${
+                  selectedType === normalizeText(type) ? "active" : ""
+                }`}
+                onClick={() => setSelectedType(normalizeText(type))}
+              >
+                {String(type).replaceAll("_", " ")}
+              </button>
+            ))}
+          </div>
+
+          {colors.length > 0 && (
+            <div className="home-sidebar-section">
+              <h3>Colors</h3>
+
+              <div className="home-color-options">
+                <button
+                  className={`home-color-circle all ${
+                    selectedColor === "all" ? "active" : ""
+                  }`}
+                  onClick={() => setSelectedColor("all")}
+                >
+                  All
+                </button>
+
+                {colors.map((color) => {
+                  const swatchColor = getColorSwatch(color);
+
+                  return (
+                    <button
+                      key={color}
+                      className={`home-color-circle ${
+                        selectedColor === color ? "active" : ""
+                      }`}
+                      title={color}
+                      aria-label={`Filter ${color}`}
+                      style={swatchColor ? { background: swatchColor } : {}}
+                      onClick={() => setSelectedColor(color)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="home-sidebar-section">
+            <h3>Price</h3>
+
+            <input
+              type="range"
+              min="0"
+              max={maxPrice}
+              value={Math.min(priceRange[1], maxPrice)}
+              onChange={(e) => setPriceRange([0, Number(e.target.value)])}
+            />
+
+            <span>Up to ${Math.min(priceRange[1], maxPrice)}</span>
+          </div>
+        </aside>
+
+        <div className="home-grid">
+          {filteredItems.map((itemData) => {
+            const { id, itemId, item } = itemData;
+            const {
+              name,
+              usdPrice,
+              originalPrice,
+              sold,
+              numberOfItems,
+              videos,
+            } = item || {};
+
+            const reviewsData = reviews[itemId] || {};
+            const finalRating = reviewsData.averageRating;
+            const colorOptions = getColorOptions(itemData);
+            const selectedColorForItem = selectedColorByItem[id];
+            const displayImage = getDisplayImage(itemData);
+            const currentImages = getCurrentImages(itemData);
 
             const normalizedVideos = Array.isArray(videos) ? videos : [videos];
             const firstVideoUrl = normalizedVideos.find(
               (video) => typeof video === "string" && video.endsWith(".mp4")
             );
 
-          return (
-            <div key={id} className="itm-card">
-              <div
-               style={{
-                  background: 'white',
-                  zIndex: '1',
-                 paddingTop: "20px",
-                 filter: "brightness(0.880000000) contrast(1.2)",
-                  width: '100%',
-                  height:(isVerySmall) ? "230px" :  "300px",
-                  marginBottom: '10px',
-                  marginTop: '10px',
-                  position: 'relative',
-                }}
+            const visibleColorOptions = colorOptions.slice(0, 3);
+            const hiddenColorCount = Math.max(colorOptions.length - 3, 0);
+
+            return (
+              <article
+                key={id}
+                className="home-card"
+                onClick={() => handleItemClick(id)}
               >
-                {activeVideoId === id && firstVideoUrl  ? (
-                  <video
-                    src={firstVideoUrl}
-                    controls
-                    autoPlay
-                    onEnded={handleVideoStop}
-                     style={{ width: "100%",
-                      height: (isVerySmall) ? "230px" :  "300px",
-                      objectFit: "contain" }}
-                  />
-                ) : (
-                  <>
-                    <img
-                      className="item-imageof"
-                      src={item.images[0]}
-                      alt={name}
-                      onClick={() => handleNavigate(id)} // Navigate when clicking the card
-                        style={{ width: "100%",
-                        height:(isVerySmall) ? "230px" :  "300px",
-                        objectFit: "contain"}}
+                <div className="home-media">
+                  {activeVideoId === id && firstVideoUrl ? (
+                    <video
+                      src={firstVideoUrl}
+                      controls
+                      autoPlay
+                      onEnded={handleVideoStop}
+                      className="home-item-video"
                     />
-                     {firstVideoUrl && ( 
-                      <div
-                        className="play-button"
-                        onClick={() => handleVideoPlay(id)}
-                        style={{
-                          position: 'absolute',
-                          left: '20px',
-                          bottom: '0px',
-                          zIndex: '2',
-                          transform: 'translate(-50%, -50%)',
-                          fontSize: '1.5rem',
-                          color: 'white',
-                          textShadow: '0 0 5px rgba(0,0,0,0.5)',
-                          cursor: 'pointer',
+                  ) : (
+                    <>
+                      {currentImages.length > 1 && (
+                        <button
+                          type="button"
+                          className="home-image-arrow home-image-arrow-left"
+                          onClick={(e) => handleImageArrow(itemData, "prev", e)}
+                        >
+                          ‹
+                        </button>
+                      )}
+
+                      <img
+                        src={displayImage}
+                        alt={name || "Product"}
+                        className="home-item-image"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/fallback.png";
+                        }}
+                      />
+
+                      {currentImages.length > 1 && (
+                        <button
+                          type="button"
+                          className="home-image-arrow home-image-arrow-right"
+                          onClick={(e) => handleImageArrow(itemData, "next", e)}
+                        >
+                          ›
+                        </button>
+                      )}
+
+                      {firstVideoUrl && (
+                        <button
+                          type="button"
+                          className="home-play-button"
+                          onClick={(e) => handleVideoPlay(id, e)}
+                        >
+                          ▶
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className="home-product-brand">
+                  {item?.brand || itemData?.details?.brand || "Malidag"}
+                </div>
+
+                <h3 className="home-item-name" title={name}>
+                  {name?.length > 42 ? `${name.substring(0, 42)}...` : name}
+                </h3>
+
+                {finalRating && (
+                  <div
+                    className="home-item-stars"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setItemData(itemData);
+                      router.push(`/product/${id}/review`);
+                    }}
+                  >
+                    <span>{Number(finalRating).toFixed(1)}/5</span>
+                    <span>
+                      {"★".repeat(Math.round(finalRating))}
+                      {"☆".repeat(5 - Math.round(finalRating))}
+                    </span>
+                    <span>({reviewsData?.reviewsArray?.length || 0})</span>
+                  </div>
+                )}
+
+                {colorOptions.length > 1 && (
+                  <div
+                    className="home-card-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {visibleColorOptions.map((color) => {
+                      const swatchColor = getColorSwatch(color);
+                      const variantImages = sortImages(
+                        item?.imagesVariants?.[color] || []
+                      );
+                      const firstVariantImage = getImageUrl(variantImages?.[0]);
+
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`home-card-color-circle ${
+                            selectedColorForItem === color ? "active" : ""
+                          }`}
+                          title={color}
+                          onClick={(e) => handleColorSelect(id, color, e)}
+                          style={
+                            swatchColor
+                              ? { background: swatchColor }
+                              : {
+                                  backgroundImage: `url("${firstVariantImage}")`,
+                                }
+                          }
+                        />
+                      );
+                    })}
+
+                    {hiddenColorCount > 0 && (
+                      <button
+                        type="button"
+                        className="home-more-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleItemClick(id);
                         }}
                       >
-                        ▶️
-                      </div>
+                        +{hiddenColorCount} more
+                      </button>
                     )}
-                  </>
+                  </div>
                 )}
-              </div>
-              <div className="item-details"  onClick={() => handleNavigate(id)} >
-                <div className="item-name" title={name}>
-                  {name.length > 20 ? `${name.substring(0, 20)}...` : name}
-                </div>
-                <div className="item-prices">
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span className="item-price">${usdPrice}</span>
-                    {originalPrice > 0 && (
-                      <span className="item-original-price">${originalPrice}</span>
-                    )}
-                    <span
-                      className="item-sold"
-                      style={{ display: "flex", marginLeft: "10px", fontSize: "0.8rem" }}
-                    >
-                      {sold}{" "}
-                      <div style={{ marginLeft: "5px", fontWeight: "bold", color: "red" }}>
-                         {t("sold")}
-                      </div>
-                    </span>
-                  </div>
-                  <div className="item-crypto">
-                    <img
-                      src={`https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/svg/color/${crypto.toLowerCase()}.svg`}
-                      alt={cryptocurrency}
-                      className="crypto-icon"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "https://cryptologos.cc/logos/binance-usd-busd-logo.png";
-                      }}
-                    />
-                    <span className="item-crypto-price">
-                      {itemPriceInCrypto !== "N/A"
-                        ? `${itemPriceInCrypto} ${cryptocurrency}`
-                        : t("price_unavailable")}
-                    </span>
+
+                <div className="home-delivery-info">
+                  <div className="home-free-delivery">Free delivery</div>
+                  <div className="home-delivery-date">
+                    Get it by {getEstimatedDeliveryDay(7)}
                   </div>
                 </div>
-                  <div
-  className="item-type-stars"
-  onClick={() => {
-    setItemData(itemData); // Store the item data in Zustand
-    router.push("/reviewPage"); // Navigate to the review page
-  }}
-  title={t("view_reviews")}
->
-  {finalRating
-    ? "★".repeat(Math.round(finalRating)) + "☆".repeat(5 - Math.round(finalRating))
-    : t("no_rating")}
-</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-    </>
-    
+
+                <div className="home-item-prices">
+                  <span className="home-item-price">${usdPrice}</span>
+
+                  {Number(originalPrice) > 0 && (
+                    <span className="home-item-original-price">
+                      ${originalPrice}
+                    </span>
+                  )}
+
+                  {sold && <span className="home-item-sold">{sold} sold</span>}
+                </div>
+
+                {numberOfItems && Number(numberOfItems) > 0 && (
+                  <div className="home-stock-badge">
+                    {numberOfItems} items in stock
+                  </div>
+                )}
+
+                {isItemInBasket(itemId) ? (
+                  <button
+                    type="button"
+                    className="home-added-cart-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push("/basket");
+                    }}
+                  >
+                    🛒 {getBasketQuantity(itemId)}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="home-add-cart-btn"
+                    onClick={(e) => handleAddToBasket(itemData, e)}
+                  >
+                    Add to cart
+                  </button>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </main>
   );
 }
 

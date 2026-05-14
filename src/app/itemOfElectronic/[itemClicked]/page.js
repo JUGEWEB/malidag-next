@@ -12,7 +12,7 @@ export async function generateMetadata({ params }) {
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-  const { itemClicked } = params;
+  const { itemClicked } = await params;
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
   const baseUrl = "https://www.malidag.com";

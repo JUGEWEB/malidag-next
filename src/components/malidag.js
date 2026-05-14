@@ -31,6 +31,7 @@ import Browsing from "./basedbrowsing";
 import ItemFashionPage from "./fashionForAllPage";
 import TopItem from "./topItem";
 import MalidagNews from "./malidagNews";
+import SearchSuggestionsDesktop from "./searchSuggestionDesktop";
 
 const Block = ({ children, className = "", background = "transparent" }) => (
   <div
@@ -188,6 +189,12 @@ const Malidag = ({
         </Block>
 
        )}
+
+        {(isMobile || isTablet || isDesktop) && (
+           <Block className="malidag-block malidag-block--flush" background="white">
+          <SearchSuggestionsDesktop userId={user?.uid} />
+        </Block>
+        )}
       
 
       {isDesktopLike && (

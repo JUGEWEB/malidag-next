@@ -5,19 +5,22 @@ import axios from "axios";
 import "./saveBig.css";
 import { useRouter } from "next/navigation";
 import { useCheckoutStore } from "./checkoutStore";
+import { auth } from "@/components/firebaseConfig";
+import colorSwatches from "../../lib/colors.json";
 
 const BASE_URL = "https://api.malidag.com";
-const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
+
+const BASKET_API = "https://api.malidag.com/add-to-basket";
 
 function SaveBig() {
   const router = useRouter();
   const setItemData = useCheckoutStore((state) => state.setItemData);
-
+const [reviews, setReviews] = useState({});
   const [types, setTypes] = useState({});
-  const [cryptoPrices, setCryptoPrices] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
   const [bestSellerId, setBestSellerId] = useState(null);
+  const [basketItems, setBasketItems] = useState([]);
 
   useEffect(() => {
     const fetchFilteredItems = async () => {
@@ -31,12 +34,7 @@ function SaveBig() {
   const discount =
     originalPrice > 0 ? (originalPrice - usdPrice) / originalPrice : 0;
 
-  return (
-    ["BNB", "BTC", "ETH", "USDC", "USDT", "ADA", "BUSD", "SOL"].includes(
-      String(item?.item?.cryptocurrency || "").toUpperCase()
-    ) &&
-    discount <= 0.2
-  );
+  return originalPrice > usdPrice && discount <= 0.2;
 });
 
         const groupedData = filteredData.reduce((acc, item) => {
@@ -53,7 +51,10 @@ function SaveBig() {
 setBestSellerId(bestSeller?.id || null);
 
         const initialColors = {};
+
         filteredData.forEach((product) => {
+          if (product?.itemId) fetchReviews(product.itemId);
+
           const colorKeys = Object.keys(product?.item?.imagesVariants || {});
           if (colorKeys.length > 0) {
             initialColors[product.id] = colorKeys[0];
@@ -69,19 +70,7 @@ setBestSellerId(bestSeller?.id || null);
       }
     };
 
-    const fetchCryptoPrices = async () => {
-      try {
-        const response = await axios.get(CRYPTO_URL);
-        setCryptoPrices(response.data || {});
-      } catch (error) {
-        console.error("Error fetching crypto prices:", error);
-      }
-    };
-
     fetchFilteredItems();
-    fetchCryptoPrices();
-    const intervalId = setInterval(fetchCryptoPrices, 5000);
-    return () => clearInterval(intervalId);
   }, []);
 
   const allItems = useMemo(() => Object.values(types).flat(), [types]);
@@ -111,47 +100,80 @@ setBestSellerId(bestSeller?.id || null);
       router.push(`/item-of-men/${formattedType}`);
     } else if (category === "electronic") {
       router.push(`/itemOfElectronic/${formattedType}`);
-    } else if (category === "home & kitchen") {
+    } else if (category === "home_kitchen") {
       router.push(`/itemOfHome/${formattedType}`);
-    } else if (category === "pet care") {
+    } else if (category === "pet_care") {
       router.push(`/petCare/${gender}/${formattedType}`);
     } else {
       console.warn("No route matched for:", { type, category, gender });
     }
   };
 
-  const convertToCrypto = (usdPrice, cryptocurrency) => {
-    const upperCrypto = String(cryptocurrency || "").toUpperCase();
-    if (!cryptoPrices[upperCrypto]) return null;
-    return (Number(usdPrice) / cryptoPrices[upperCrypto]).toFixed(2);
-  };
+  const fetchUserBasket = async () => {
+  const currentUser = auth?.currentUser;
 
-  const getCryptoIcon = (cryptocurrency) => {
-    const cryptoIcons = {
-      ETH: "https://assets.coingecko.com/coins/images/279/large/ethereum.png?1595348880",
-      USDC: "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png?1547042389",
-      BUSD: "https://assets.coingecko.com/coins/images/9576/large/BUSD.png?1568947766",
-      SOL: "https://assets.coingecko.com/coins/images/4128/large/solana.png?1640133422",
-      BNB: "https://assets.coingecko.com/coins/images/825/large/binance-coin-logo.png?1547034615",
-      USDT: "https://assets.coingecko.com/coins/images/325/large/Tether-logo.png?1598003707",
-      BTC: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png?1547033579",
-      ADA: "https://assets.coingecko.com/coins/images/975/large/cardano.png?1547034860",
-    };
-    return cryptoIcons[String(cryptocurrency || "").toUpperCase()] || "/crypto-icons/default.png";
-  };
+  if (!currentUser) {
+    setBasketItems([]);
+    return;
+  }
 
-  const renderStars = (rating) => {
-    const safeRating = Math.round(Number(rating) || 0);
-    return (
-      <div className="bbe-stars-container">
-        {Array.from({ length: 5 }, (_, i) => (
-          <span key={i} className={i < safeRating ? "bbe-star filled" : "bbe-star empty"}>
-            ★
-          </span>
-        ))}
-      </div>
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/basket/${currentUser.uid}`
     );
-  };
+
+    setBasketItems(response.data.basket || []);
+  } catch (error) {
+    console.error("Error fetching basket:", error);
+    setBasketItems([]);
+  }
+};
+
+const getBasketQuantity = (itemId) => {
+  const basketItem = basketItems.find(
+    (item) => item.itemId === itemId
+  );
+
+  return Number(basketItem?.quantity || 0);
+};
+
+const isItemInBasket = (itemId) => {
+  return getBasketQuantity(itemId) > 0;
+};
+
+ const fetchReviews = async (productId) => {
+  if (!productId) return;
+
+  try {
+    const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
+
+    if (response.data.success) {
+      const reviewsArray = response.data.reviews || [];
+
+      const totalRating = reviewsArray.reduce((acc, review) => {
+        const rating = parseFloat(review.rating);
+        return acc + (isNaN(rating) ? 4 : rating);
+      }, 0);
+
+      const averageRating = reviewsArray.length
+        ? (totalRating / reviewsArray.length).toFixed(2)
+        : null;
+
+      setReviews((prev) => ({
+        ...prev,
+        [productId]: { averageRating, reviewsArray },
+      }));
+    }
+  } catch (error) {
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: 4.3,
+        reviewsArray: Array(133).fill({ rating: 4.3 }),
+      },
+    }));
+  }
+};
 
   const handleItemClick = (id) => {
     router.push(`/product/${id}`);
@@ -206,40 +228,11 @@ setBestSellerId(bestSeller?.id || null);
   return getImageUrl(product?.item?.images?.[0]) || "/fallback.png";
 };
 
-  const getColorSwatch = (colorName = "") => {
-    const color = colorName.trim().toLowerCase();
+const getColorSwatch = (colorName = "") => {
+  const color = colorName.trim().toLowerCase();
 
-    const swatches = {
-      black: "#111111",
-      white: "#f8f8f8",
-      red: "#dc2626",
-      blue: "#2563eb",
-      green: "#16a34a",
-      yellow: "#eab308",
-      pink: "#ec4899",
-      purple: "#9333ea",
-      orange: "#f97316",
-      brown: "#92400e",
-      grey: "#9ca3af",
-      gray: "#9ca3af",
-      silver: "#c0c0c0",
-      gold: "#d4af37",
-      beige: "#d6c7a1",
-      cream: "#f5f0dc",
-      ivory: "#fffff0",
-      navy: "#1e3a8a",
-      "sky blue": "#38bdf8",
-      skyblue: "#38bdf8",
-      maroon: "#7f1d1d",
-      olive: "#556b2f",
-      khaki: "#c3b091",
-      multicolor: "linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #a855f7)",
-      transparent:
-        "linear-gradient(135deg, #ddd 25%, #fff 25%, #fff 50%, #ddd 50%, #ddd 75%, #fff 75%, #fff 100%)",
-    };
-
-    return swatches[color] || "#d1d5db";
-  };
+  return colorSwatches[color] || null;
+};
 
   const getDiscountPercentage = (usdPrice, originalPrice) => {
   const current = Number(usdPrice || 0);
@@ -249,14 +242,83 @@ setBestSellerId(bestSeller?.id || null);
   return Math.round(((original - current) / original) * 100);
 };
 
-  const handleAddToBasketPreview = (product, selectedColor, selectedImage, e) => {
-    e.stopPropagation();
-    setItemData({
-      ...product,
-      selectedColor,
-      selectedImage,
-    });
-  };
+ const handleAddToBasketPreview = async (
+  product,
+  selectedColor,
+  selectedImage,
+  e
+) => {
+  e.stopPropagation();
+
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    router.push(`/auth?redirect=${encodeURIComponent("/save-big")}`);
+    return;
+  }
+
+  try {
+    const item = product?.item || {};
+    const details = product?.details || {};
+
+    const basketItem = {
+      userId: currentUser.uid,
+      item: {
+        id: product.id,
+        itemId: product.itemId,
+        name: item.name,
+        price: Number(item.usdPrice || 0),
+        color: selectedColor || null,
+        size: null,
+        image: selectedImage,
+        brand: item.brand || details.brand,
+        brandPrice: item.brandPrice || details.brandPrice,
+        quantity: 1,
+        shippingCountry: details?.country || "",
+        selectedCountry: "",
+        eurText: details?.eurText || "",
+        poundText: details?.poundText || "",
+        brlText: details?.brlText || "",
+        tryText: details?.tryText || "",
+        audText: details?.audText || "",
+        sarText: details?.sarText || "",
+      },
+    };
+
+   const response = await axios.post(BASKET_API, basketItem);
+
+if (response.status === 200 || response.status === 201) {
+  await fetchUserBasket();
+}
+  } catch (error) {
+    console.error("Error adding item to basket:", error);
+  }
+};
+
+  const renderStars = (rating) => {
+  const safeRating = Math.round(Number(rating) || 0);
+
+  return (
+    <span className="bbe-stars-container">
+      {Array.from({ length: 5 }, (_, i) => (
+        <span
+          key={i}
+          className={i < safeRating ? "bbe-star filled" : "bbe-star empty"}
+        >
+          ★
+        </span>
+      ))}
+    </span>
+  );
+};
+
+useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged(() => {
+    fetchUserBasket();
+  });
+
+  return () => unsubscribe();
+}, []);
 
   if (loading) {
     return (
@@ -293,7 +355,6 @@ setBestSellerId(bestSeller?.id || null);
           const selectedColor = selectedColorByItem[id];
           const colorOptions = getColorOptions(product);
           const displayImage = getDisplayImage(product);
-          const cryptoValue = convertToCrypto(item?.usdPrice, item?.cryptocurrency);
           const isBestSeller = id === bestSellerId;
           const discountPercentage = getDiscountPercentage(item?.usdPrice, item?.originalPrice);
 
@@ -325,68 +386,142 @@ setBestSellerId(bestSeller?.id || null);
   </div>
 
   <div className="bbe-item-info" onClick={() => handleItemClick(id)}>
-    <div className="bbe-item-price-row">
-      <span className="bbe-item-price">${item?.usdPrice}</span>
+   <div className="bbe-item-brand">
+  {item?.brand || product?.details?.brand || "Malidag"}
+</div>
 
-      <span className="bbe-deals-badge">Deal</span>
+<div className="bbe-item-name">
+  {item?.name?.length > 70 ? `${item.name.slice(0, 70)}...` : item?.name}
+</div>
 
-      {Number(item?.originalPrice || 0) > 0 && (
-        <span className="bbe-item-original-price">
-          ${Number(item.originalPrice).toFixed(2)}
-        </span>
+<div className="bbe-item-price-row">
+  <span className="bbe-item-price">${item?.usdPrice}</span>
+
+  <span className="bbe-deals-badge">Deal</span>
+
+  {Number(item?.originalPrice || 0) > 0 && (
+    <span className="bbe-item-original-price">
+      ${Number(item.originalPrice).toFixed(2)}
+    </span>
+  )}
+</div>
+
+<div
+  className="bbe-item-rating"
+  onClick={(e) => {
+    e.stopPropagation();
+    router.push(`/product/${id}/review`);
+  }}
+  title="View reviews"
+>
+  {(() => {
+    const reviewData = reviews[product.itemId] || {};
+    const rating = Number(reviewData.averageRating || 4.3);
+    const reviewCount = reviewData.reviewsArray?.length || 133;
+
+    return (
+      <>
+        <span className="bbe-rating-number">{rating.toFixed(1)}/5</span>
+        {renderStars(rating)}
+        <span className="bbe-review-count">({reviewCount} reviews)</span>
+      </>
+    );
+  })()}
+</div>
+
+{colorOptions.length > 1 && (
+  <div className="bbe-color-block" onClick={(e) => e.stopPropagation()}>
+    <div className="bbe-color-label">
+      Color: <span>{selectedColor}</span>
+    </div>
+
+    <div className="bbe-color-options">
+      {colorOptions.slice(0, 3).map((color) => (
+        <button
+          key={color}
+          type="button"
+          className={`bbe-color-circle ${
+            selectedColor === color ? "active" : ""
+          }`}
+          title={color}
+          aria-label={`Select ${color}`}
+         style={
+  getColorSwatch(color)
+    ? { background: getColorSwatch(color) }
+    : {
+        backgroundImage: `url("${getImageUrl(
+          product?.item?.imagesVariants?.[color]?.[0]
+        )}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+}
+          onClick={(e) => handleColorSelect(id, color, e)}
+        />
+      ))}
+
+      {colorOptions.length > 3 && (
+        <button
+          type="button"
+          className="bbe-more-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleItemClick(id);
+          }}
+        >
+          +{colorOptions.length - 3} colors more
+        </button>
       )}
     </div>
+  </div>
+)}
 
-    <div className="bbe-crypto-row">
-      <img
-        src={getCryptoIcon(item?.cryptocurrency)}
-        className="bbe-crypto-icon"
-        alt={item?.cryptocurrency}
-      />
-      <span className="bbe-crypto-price">
-        {cryptoValue ? `${cryptoValue} ${item?.cryptocurrency}` : item?.cryptocurrency}
-      </span>
-    </div>
+{Number(item?.numberOfItems || product?.details?.numberItemText || 0) > 0 && (
+  <div
+    className={
+      Number(item?.numberOfItems || product?.details?.numberItemText || 0) < 100
+        ? "bbe-stock-badge low"
+        : "bbe-stock-badge"
+    }
+  >
+    {Number(item?.numberOfItems || product?.details?.numberItemText || 0) < 100
+      ? `Only ${item?.numberOfItems || product?.details?.numberItemText} left in stock`
+      : `${item?.numberOfItems || product?.details?.numberItemText} items in stock`}
+  </div>
+)}
 
-    <div className="bbe-item-name">
-      {item?.name?.length > 70 ? `${item.name.slice(0, 70)}...` : item?.name}
-    </div>
+{isItemInBasket(product.itemId) ? (
+  <button
+    type="button"
+    className="bbe-added-basket-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      router.push("/basket");
+    }}
+  >
+    <span className="bbe-cart-icon">🛒</span>
 
-    {colorOptions.length > 0 && (
-      <div className="bbe-color-block" onClick={(e) => e.stopPropagation()}>
-        <div className="bbe-color-label">
-          Color: <span>{selectedColor}</span>
-        </div>
+    <span className="bbe-cart-count">
+      {getBasketQuantity(product.itemId)}
+    </span>
+  </button>
+) : (
+  <button
+    type="button"
+    className="bbe-add-basket-btn"
+    onClick={(e) =>
+      handleAddToBasketPreview(
+        product,
+        selectedColor,
+        displayImage,
+        e
+      )
+    }
+  >
+    Add to Basket
+  </button>
+)}
 
-        <div className="bbe-color-options">
-          {colorOptions.map((color) => (
-            <button
-              key={color}
-              type="button"
-              className={`bbe-color-circle ${
-                selectedColor === color ? "active" : ""
-              }`}
-              title={color}
-              aria-label={`Select ${color}`}
-              style={{ background: getColorSwatch(color) }}
-              onClick={(e) => handleColorSelect(id, color, e)}
-            />
-          ))}
-        </div>
-      </div>
-    )}
-
-    <div className="bbe-item-rating">{renderStars(item?.rating || 0)}</div>
-
-    <button
-      type="button"
-      className="bbe-add-basket-btn"
-      onClick={(e) =>
-        handleAddToBasketPreview(product, selectedColor, displayImage, e)
-      }
-    >
-      Add to Basket
-    </button>
   </div>
 </div>
           );

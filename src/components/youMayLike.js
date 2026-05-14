@@ -1,25 +1,30 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useRouter, usePathname } from "next/navigation";
 import useScreenSize from "./useIsMobile";
 import "./youMayLike.css";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
+import { AppContext } from "./appContext";
 
 const BASE_URL = "https://api.malidag.com";
 
-function YouMayLike({ user }) {
+
+function YouMayLike() {
   const router = useRouter();
+  const appContext = useContext(AppContext);
+  const user = appContext?.user || null;
   const [suggestedItems, setSuggestedItems] = useState([]);
   const [userSearchHistory, setUserSearchHistory] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [cryptoPrices, setCryptoPrices] = useState({});
+  const [reviews, setReviews] = useState({});
   const { isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall, isVeryVerySmall,  } = useScreenSize();
 const { t } = useTranslation();
  const itemsPerSlide = isMobile || isSmallMobile || isVerySmall ? 2 : 6;
-  const stars = Math.floor(Math.random() * 5) + 1;
+
+  console.log("userId:", user?.uid);
 
   // Fetch user search history
   useEffect(() => {
@@ -27,7 +32,13 @@ const { t } = useTranslation();
       try {
         const response = await fetch(`${BASE_URL}/search-items?userId=${user?.uid}`);
         const data = await response.json();
-        setUserSearchHistory(data?.userSearches || []);
+       setUserSearchHistory(
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.userSearches)
+          ? data.userSearches
+          : []
+      );
       } catch (error) {
         console.error("Error fetching user search history:", error);
       }
@@ -38,40 +49,73 @@ const { t } = useTranslation();
     }
   }, [user?.uid]);
 
-  // Fetch crypto prices
-  const fetchCryptoPrices = async () => {
-    try {
-      const response = await fetch(`${BASE_URL}/crypto-prices`);
-      const prices = await response.json();
-      setCryptoPrices(prices);
-    } catch (error) {
-      console.error("Error fetching crypto prices:", error);
+ const fetchReviews = async (productId) => {
+  if (!productId || reviews[productId]) return;
+
+  try {
+    const response = await fetch(`${BASE_URL}/get-reviews/${productId}`);
+    const data = await response.json();
+
+    if (data.success) {
+      const reviewsArray = data.reviews || [];
+
+      const totalRating = reviewsArray.reduce((acc, review) => {
+        const rating = parseFloat(review.rating);
+        return acc + (isNaN(rating) ? 4 : rating);
+      }, 0);
+
+      const averageRating = reviewsArray.length
+        ? (totalRating / reviewsArray.length).toFixed(1)
+        : null;
+
+      setReviews((prev) => ({
+        ...prev,
+        [productId]: {
+          averageRating,
+          reviewsArray,
+        },
+      }));
     }
-  };
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+  }
+};
 
   // Fetch items based on search history
   useEffect(() => {
     const fetchSuggestedItems = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/items`);
-        const data = await response.json();
+       const response = await fetch(`${BASE_URL}/items`);
+const data = await response.json();
 
-        const searchedTerms = userSearchHistory.map(s => s.search.toLowerCase());
+const itemsArray = Array.isArray(data)
+  ? data
+  : Array.isArray(data?.items)
+  ? data.items
+  : [];
 
-        const matchedItems = data.items.filter(item =>
-          searchedTerms.some(term =>
-            item.item.name?.toLowerCase().includes(term) ||
-            item.item.type?.toLowerCase().includes(term) ||
-            item.category?.toLowerCase().includes(term) ||
-            item.item.theme?.toLowerCase().includes(term)
-          )
-        );
+const searchedTerms = userSearchHistory
+  .map((s) => String(s.search || "").toLowerCase().replace(/\+/g, " "))
+  .filter(Boolean);
 
-        setSuggestedItems(matchedItems);
+const matchedItems = itemsArray.filter((item) =>
+  searchedTerms.some((term) =>
+    item?.item?.name?.toLowerCase().includes(term) ||
+    item?.item?.type?.toLowerCase().includes(term) ||
+    item?.category?.toLowerCase().includes(term) ||
+    item?.item?.theme?.toLowerCase().includes(term) ||
+    item?.item?.brand?.toLowerCase().includes(term)
+  )
+);
 
-         // ✅ Save count in localStorage
-    localStorage.setItem("suggestedItemsCount", matchedItems.length);
-        await fetchCryptoPrices();
+setSuggestedItems(matchedItems);
+matchedItems.forEach((item) => {
+  if (item?.itemId) {
+    fetchReviews(item.itemId);
+  }
+});
+localStorage.setItem("suggestedItemsCount", matchedItems.length);
+       
       } catch (error) {
         console.error("Error fetching suggested items:", error);
       }
@@ -96,11 +140,6 @@ const { t } = useTranslation();
     setCurrentSlide(prev => (prev === 0 ? totalSlides - 1 : prev - 1));
   };
 
-  const convertToCrypto = (usd, crypto) => {
-    const price = cryptoPrices[crypto];
-    if (!price) return null;
-    return (parseFloat(usd) / parseFloat(price)).toFixed(2);
-  };
 
   const handleItemClick = (id) => {
     if (id) router.push(`/product/${id}`);
@@ -146,21 +185,43 @@ const { t } = useTranslation();
                 {currentItems.map((item, index) => (
                   <div className="carousel-it" key={index}>
                     <img
-                      src={item.item.images[0]}
+                     src={
+                      typeof item?.item?.images?.[0] === "string"
+                        ? item.item.images[0]
+                        : item?.item?.images?.[0]?.url || "/fallback.png"
+                    }
                       alt={item.item.name}
                       className="carousel-ima"
                       style={{ cursor: "pointer" }}
+
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/fallback.png";
+                      }}
                       onClick={() => handleItemClick(item.id)}
                     />
                     <div className="reconded-price">${item.item.usdPrice}</div>
-                    <div className="reconded-price">
-                      {item.item.usdPrice && item.item.cryptocurrency
-                        ? `${convertToCrypto(item.item.usdPrice, item.item.cryptocurrency)} ${item.item.cryptocurrency}`
-                        : "Price in crypto N/A"}
-                    </div>
-                    <div className="item-s">
-                      {"★".repeat(stars)}{"☆".repeat(5 - stars)}
-                    </div>
+                   
+                   {reviews[item.itemId]?.averageRating && (
+                        <div
+                          className="item-s"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/product/${item.id}/review`);
+                          }}
+                        >
+                          <span>{reviews[item.itemId].averageRating}/5</span>{" "}
+                          <span>
+                            {"★".repeat(Math.round(Number(reviews[item.itemId].averageRating)))}
+                            {"☆".repeat(
+                              5 - Math.round(Number(reviews[item.itemId].averageRating))
+                            )}
+                          </span>{" "}
+                          <span>
+                            ({reviews[item.itemId]?.reviewsArray?.length || 0} reviews)
+                          </span>
+                        </div>
+                      )}
                     <p className="item-na" onClick={() => handleItemClick(item.id)}>
                       {item.item.name}
                     </p>

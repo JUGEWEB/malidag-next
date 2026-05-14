@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from "react";
 import axios from 'axios';
 import useScreenSize from './useIsMobile';
+import { AppContext } from "./appContext";
 
-const SearchSuggestions = ({ userId }) => {
+const SearchSuggestions = () => {
+   const appContext = useContext(AppContext);
+   const userId = appContext?.user?.uid;
   const [suggestions, setSuggestions] = useState([]); // { brand, items: [] }
   const { isMobile, isDesktop, isTablet } = useScreenSize();
   const[brandCount, setBrandCount] = useState(0);
-  console.log("userId:", userId)
+  console.log("userIdad:", userId)
    console.log("API response:", suggestions);
 
 

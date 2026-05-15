@@ -733,3 +733,313 @@ body {
   border: 1px solid rgba(255,255,255,0.45);
   box-shadow: var(--shadow-md);
 }
+
+.women-filter-section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  padding: 20px;
+}
+
+.women-filter-section h3 {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.women-color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.women-color-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid rgba(31, 23, 32, 0.12);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.women-color-circle:hover {
+  transform: translateY(-2px);
+  border-color: rgba(198, 166, 107, 0.6);
+}
+
+.women-color-circle.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(198, 166, 107, 0.2);
+}
+
+.women-color-circle.all {
+  width: auto;
+  min-width: 54px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, #fff, #f7f0e8);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.women-image-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 42px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(31, 23, 32, 0.72);
+  color: #fff;
+  font-size: 1.55rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 24px rgba(31, 23, 32, 0.18);
+  transition: var(--transition);
+}
+
+.women-image-arrow:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  transform: translateY(-50%) scale(1.08);
+}
+
+.women-image-arrow-left {
+  left: 12px;
+}
+
+.women-image-arrow-right {
+  right: 12px;
+}
+
+.women-card-colors {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 0 0 14px;
+}
+
+.women-card-color-circle {
+  width: 31px;
+  height: 31px;
+  border-radius: 999px;
+  border: 2px solid rgba(31, 23, 32, 0.1);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 6px 14px rgba(31, 23, 32, 0.08);
+}
+
+.women-card-color-circle:hover {
+  transform: translateY(-2px) scale(1.05);
+  border-color: rgba(198, 166, 107, 0.7);
+}
+
+.women-card-color-circle.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(198, 166, 107, 0.22);
+}
+
+.women-more-colors {
+  border: none;
+  background: transparent;
+  color: var(--gold-deep);
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.women-delivery-info {
+  display: grid;
+  gap: 3px;
+  margin-top: 12px;
+  font-size: 0.82rem;
+}
+
+.women-free-delivery {
+  color: var(--success);
+  font-weight: 900;
+}
+
+.women-delivery-date {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.women-stock-badge {
+  width: fit-content;
+  margin-top: 12px;
+  color: #7a5424;
+  background: #fff6df;
+  border: 1px solid rgba(198, 166, 107, 0.22);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.women-add-cart-btn,
+.women-added-cart-btn {
+  width: 100%;
+  margin-top: 14px;
+  border: none;
+  border-radius: 16px;
+  padding: 13px 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.women-add-cart-btn {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #49323d);
+  box-shadow: 0 12px 24px rgba(31, 23, 32, 0.18);
+}
+
+.women-add-cart-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+}
+
+.women-added-cart-btn {
+  color: #14532d;
+  background: #dcfce7;
+}
+
+.women-brand-top {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 2px 18px;
+  margin-bottom: 12px;
+}
+
+.women-brand-logo-card {
+  flex: 0 0 auto;
+  width: 110px;
+  height: 76px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.women-brand-logo-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(198, 166, 107, 0.4);
+}
+
+.women-brand-logo-card img {
+  max-width: 100%;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+.women-mobile-sticky-bar {
+  display: none;
+}
+
+.women-mobile-filter-panel {
+  display: none;
+}
+
+@media (max-width: 992px) {
+  .women-brand-top {
+    display: none;
+  }
+
+  .size-filter-card.mobile {
+    display: none;
+  }
+
+  .women-mobile-sticky-bar {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    margin-bottom: 14px;
+    background: rgba(252, 250, 247, 0.94);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .women-mobile-brand-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 2px 0 8px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .women-mobile-brand-logo {
+    flex: 0 0 auto;
+    width: 76px;
+    height: 52px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px;
+    cursor: pointer;
+    scroll-snap-align: start;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .women-mobile-brand-logo img {
+    max-width: 100%;
+    max-height: 34px;
+    object-fit: contain;
+  }
+
+  .women-mobile-filter-toggle {
+    height: 52px;
+    border: none;
+    border-radius: 16px;
+    padding: 0 16px;
+    color: #fff;
+    font-weight: 900;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--accent), #49323d);
+    box-shadow: 0 10px 22px rgba(31, 23, 32, 0.18);
+  }
+
+  .women-mobile-filter-panel {
+    position: sticky;
+    top: 72px;
+    z-index: 55;
+    display: block;
+    margin-bottom: 16px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+}

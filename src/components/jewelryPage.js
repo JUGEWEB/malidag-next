@@ -18,7 +18,20 @@ const BASKET_API = "https://api.malidag.com/add-to-basket";
 
 function JewelryPage() {
   const params = useParams();
- const jewelryType = "jewelry";
+ const routeType = params?.jewelryType || params?.itemClicked || params?.type;
+
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+
+const currentType = normalizeText(routeType || "watches");
+
+const jewelryType = currentType || "jewelry";
+
+const [selectedType, setSelectedType] = useState("");
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +40,6 @@ function JewelryPage() {
   const [activeVideoId, setActiveVideoId] = useState(null);
 
   const [selectedBrand, setSelectedBrand] = useState("all");
- const [selectedType, setSelectedType] = useState("watches");
   const [selectedColor, setSelectedColor] = useState("all");
   const [priceRange, setPriceRange] = useState([0, 10000]);
 
@@ -43,8 +55,9 @@ const [basketItems, setBasketItems] = useState([]);
   const { isVerySmall } = useScreenSize();
   const { t } = useTranslation();
 
- const readableType = "Jewelry";
-  const normalizeText = (value) => String(value || "").trim().toLowerCase();
+ const readableType = currentType
+  ? currentType.replaceAll("_", " ")
+  : "Jewelry";
 
   const fetchTranslation = async (productId, lang) => {
     if (!productId || translations[productId]?.[lang]) return;
@@ -132,6 +145,12 @@ const [basketItems, setBasketItems] = useState([]);
     name.includes("jewelry")
   );
 };
+
+useEffect(() => {
+  if (currentType) {
+    setSelectedType(currentType);
+  }
+}, [currentType]);
 
 useEffect(() => {
   const unsubscribe = auth.onAuthStateChanged(() => {
@@ -300,7 +319,12 @@ const isItemInBasket = (itemId) => {
     return items.filter((itemData) => {
       const item = itemData.item || {};
       const price = Number(item?.usdPrice || 0);
-      const itemType = normalizeText(item?.type || item?.brandType);
+     const itemType = normalizeText(
+  item?.type ||
+    item?.brandType ||
+    itemData?.details?.type ||
+    itemData?.details?.brandType
+);
 
       const matchesBrand =
         selectedBrand === "all" || normalizeText(item?.brand || itemData?.details?.brand) === selectedBrand;

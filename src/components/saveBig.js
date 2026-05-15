@@ -104,7 +104,11 @@ setBestSellerId(bestSeller?.id || null);
       router.push(`/itemOfHome/${formattedType}`);
     } else if (category === "pet_care") {
       router.push(`/petCare/${gender}/${formattedType}`);
-    } else {
+    }  else if (
+  category === "jewelry"
+) {
+  router.push(`/jewelry/${formattedType}`);
+} else {
       console.warn("No route matched for:", { type, category, gender });
     }
   };

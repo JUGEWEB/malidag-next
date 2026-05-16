@@ -8,7 +8,7 @@
 
 .suggestion-card-c {
   width: 100%;
-  background: #cb874e;
+  background: #6ca1eb;
   border: 1px solid #e5e7eb;
   border-radius: 0px;
   padding: 5px;
@@ -71,7 +71,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: white;
   font-size: 13px;
   font-weight: 700;
   text-decoration: underline;

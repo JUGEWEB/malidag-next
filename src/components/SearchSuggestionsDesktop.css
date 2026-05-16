@@ -2,14 +2,14 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 12px;
+  gap: 5px;
+  padding: 5px;
 }
 
 .suggestion-row-desktop {
   width: 100%;
   display: grid;
-  gap: 18px;
+  gap: 2px;
   align-items: stretch;
 }
 
@@ -31,17 +31,16 @@
 
 .suggestion-card-desktop {
   width: 100%;
-  background: #ffffff;
+  background: #cb874e;
   border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  padding: 14px;
+  padding: 5px;
   color: #111827;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
 }
 
 .suggestion-title-desktop {
   margin: 0 0 14px;
-  font-size: 15px;
+  font-size: 19px;
   font-weight: 800;
   color: #111827;
   line-height: 1.3;
@@ -49,7 +48,7 @@
 
 .suggestion-items-desktop {
   display: grid;
-  gap: 10px;
+  gap: 5px;
 }
 
 /* 4 items: 2 up / 2 down */
@@ -71,8 +70,7 @@
 .layout-single-brand .suggestion-items-desktop {
   display: flex;
   overflow-x: auto;
-  gap: 14px;
-  padding-bottom: 6px;
+  gap: 5px;
   scroll-snap-type: x mandatory;
 }
 
@@ -85,15 +83,15 @@
   min-width: 0;
   background: #ffffff;
   border: 1px solid #f1f5f9;
-  border-radius: 14px;
-  padding: 10px;
+  border-radius: 0px;
+  padding: 5px;
   text-align: center;
   overflow: hidden;
 }
 
 .suggestion-image-desktop {
   width: 100%;
-  height: 120px;
+  height: 150px;
   object-fit: contain;
   display: block;
   margin-bottom: 8px;

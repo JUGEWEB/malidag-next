@@ -136,7 +136,7 @@ const handleVisitBrand = (brandName) => {
               } ${row.length === 1 ? "layout-single-brand" : ""}`}
             >
               <h3 className="suggestion-title-desktop">
-                Suggested Brands Inspired by Your Searches
+                Explore {brand}
               </h3>
 
               <div className="suggestion-items-desktop">
@@ -166,7 +166,7 @@ const handleVisitBrand = (brandName) => {
                 className="suggestion-brand-button-desktop"
                 onClick={() => handleVisitBrand(brand)}
               >
-                Visit {brand}
+                view more
               </button>
             </article>
           );

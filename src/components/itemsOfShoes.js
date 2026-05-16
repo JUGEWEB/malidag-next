@@ -6,9 +6,12 @@ import axios from "axios";
 import "./itemOfShoes.css";
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
+import colorSwatches from "../../lib/colors.json";
+import { auth } from "@/components/firebaseConfig";
+import { message } from "antd";
 
 const BASE_URL = "https://api.malidag.com";
-const STABLE_COINS = new Set(["USDT", "USDC", "BUSD"]);
+const BASKET_API = "https://api.malidag.com/add-to-basket";
 
 function ItemOfShoes({ itemClicked }) {
   const router = useRouter();
@@ -16,13 +19,35 @@ function ItemOfShoes({ itemClicked }) {
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [items, setItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [dropdownOpen, setDropdownOpen] = useState({});
   const [activeVideoId, setActiveVideoId] = useState(null);
   const [beautyImages, setBeautyImages] = useState([]);
   const [selectedSize, setSelectedSize] = useState(null);
   const [reviews, setReviews] = useState({});
   const [loading, setLoading] = useState(true);
+  const [selectedColor, setSelectedColor] = useState("all");
+const [selectedColorByItem, setSelectedColorByItem] = useState({});
+const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
+const [brandThemes, setBrandThemes] = useState([]);
+const [filtersOpen, setFiltersOpen] = useState(false);
+const [basketItems, setBasketItems] = useState([]);
+const [messageApi, contextHolder] = message.useMessage();
+
+const getColorSwatch = (colorName = "") => {
+  const color = colorName.trim().toLowerCase();
+  return colorSwatches[color] || color;
+};
+
+const colors = useMemo(() => {
+  const allColors = [];
+
+  items.forEach((itemData) => {
+    Object.keys(itemData?.item?.imagesVariants || {}).forEach((color) => {
+      allColors.push(color);
+    });
+  });
+
+  return [...new Set(allColors)];
+}, [items]);
 
   const brandUrls = {
     adidas: "https://cdn.malidag.com/brand-logos/1760351238093-o8o8u03t57.png",
@@ -59,6 +84,19 @@ function ItemOfShoes({ itemClicked }) {
   };
 
   useEffect(() => {
+  const fetchBrandThemes = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/brands/themes`);
+      setBrandThemes(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch brand themes:", error);
+    }
+  };
+
+  fetchBrandThemes();
+}, []);
+
+  useEffect(() => {
     const fetchBeautyImages = async () => {
       if (!itemClicked || typeof itemClicked !== "string") {
         setBeautyImages([]);
@@ -86,7 +124,6 @@ function ItemOfShoes({ itemClicked }) {
     const fetchItems = async () => {
       if (!itemClicked || typeof itemClicked !== "string") {
         setItems([]);
-        setCategories([]);
         setLoading(false);
         return;
       }
@@ -107,23 +144,16 @@ function ItemOfShoes({ itemClicked }) {
 
         setItems(filteredItems);
 
-        const uniqueCategories = [
-          ...new Set(
-            filteredItems
-              .map((item) => item.category?.toLowerCase()?.trim())
-              .filter(Boolean)
-          ),
-        ];
-
-        setCategories(uniqueCategories);
-
         filteredItems.forEach((item) => {
           fetchReviews(item.itemId);
         });
       } catch (error) {
         console.error("Error fetching items:", error);
-        setItems([]);
-        setCategories([]);
+        if (!itemClicked || typeof itemClicked !== "string") {
+          setItems([]);
+          setLoading(false);
+          return;
+        }
       } finally {
         setLoading(false);
       }
@@ -131,13 +161,6 @@ function ItemOfShoes({ itemClicked }) {
 
     fetchItems();
   }, [itemClicked]);
-
-  const toggleDropdown = (category) => {
-    setDropdownOpen((prev) => ({
-      ...prev,
-      [category]: !prev[category],
-    }));
-  };
 
   const getAllSizes = (itemsList) => {
     const allSizes = itemsList.map((entry) => {
@@ -163,15 +186,6 @@ function ItemOfShoes({ itemClicked }) {
     });
   };
 
-  const categorizedItems = useMemo(() => {
-    return categories.reduce((acc, category) => {
-      acc[category] = items.filter(
-        (item) => item.category?.toLowerCase()?.trim() === category
-      );
-      return acc;
-    }, {});
-  }, [categories, items]);
-
   const brands = useMemo(() => {
     return [
       ...new Set(
@@ -182,14 +196,105 @@ function ItemOfShoes({ itemClicked }) {
     ];
   }, [items]);
 
-  const displayedItems = selectedSize ? filterItemsBySize(selectedSize) : items;
+  const sortImages = (images = []) =>
+  [...images].sort((a, b) => {
+    const posA = typeof a === "object" && typeof a?.position === "number" ? a.position : 999999;
+    const posB = typeof b === "object" && typeof b?.position === "number" ? b.position : 999999;
+    return posA - posB;
+  });
+
+const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
+
+const getColorOptions = (itemData) =>
+  Object.keys(itemData?.item?.imagesVariants || {});
+
+const getCurrentImages = (itemData) => {
+  const variants = itemData?.item?.imagesVariants || {};
+  const selectedColorForItem = selectedColorByItem[itemData.id];
+
+  if (selectedColorForItem && Array.isArray(variants[selectedColorForItem])) {
+    return sortImages(variants[selectedColorForItem]);
+  }
+
+  const firstColor = Object.keys(variants)[0];
+
+  if (firstColor && Array.isArray(variants[firstColor])) {
+    return sortImages(variants[firstColor]);
+  }
+
+  return itemData?.item?.images || [];
+};
+
+const getDisplayImage = (itemData) => {
+  const images = getCurrentImages(itemData);
+  const index = selectedImageIndexByItem[itemData.id] || 0;
+
+  return (
+    getImageUrl(images[index]) ||
+    getImageUrl(itemData?.item?.images?.[0]) ||
+    "/fallback.png"
+  );
+};
+
+const handleColorSelect = (itemId, color, e) => {
+  e.stopPropagation();
+
+  setSelectedColorByItem((prev) => ({
+    ...prev,
+    [itemId]: color,
+  }));
+
+  setSelectedImageIndexByItem((prev) => ({
+    ...prev,
+    [itemId]: 0,
+  }));
+};
+
+const handleImageArrow = (itemData, direction, e) => {
+  e.stopPropagation();
+
+  const images = getCurrentImages(itemData);
+  if (images.length <= 1) return;
+
+  setSelectedImageIndexByItem((prev) => {
+    const current = prev[itemData.id] || 0;
+    const next =
+      direction === "next"
+        ? (current + 1) % images.length
+        : (current - 1 + images.length) % images.length;
+
+    return { ...prev, [itemData.id]: next };
+  });
+};
+
+ const displayedItems = useMemo(() => {
+  return items.filter((itemData) => {
+    const matchesSize =
+      !selectedSize ||
+      Object.values(itemData?.item?.size || {})
+        .flat()
+        .some((s) =>
+          String(s)
+            .split(",")
+            .map((x) => x.trim())
+            .includes(selectedSize)
+        );
+
+    const matchesColor =
+      selectedColor === "all" ||
+      Object.keys(itemData?.item?.imagesVariants || {}).includes(selectedColor);
+
+    return matchesSize && matchesColor;
+  });
+}, [items, selectedSize, selectedColor]);
+
   const allSizes = getAllSizes(items);
 
-  const getHotItems = (categoryItems = []) => {
-    return [...categoryItems]
-      .sort((a, b) => (b?.item?.sold || 0) - (a?.item?.sold || 0))
-      .slice(0, 4);
-  };
 
   const handleVideoPlay = (id) => {
     setActiveVideoId(id);
@@ -219,16 +324,99 @@ function ItemOfShoes({ itemClicked }) {
     router.push("/reviewPage");
   };
 
-  const formatStablePrice = (usdPrice, cryptocurrency) => {
-    const coin = String(cryptocurrency || "USDT").toUpperCase();
-    const value = Number(usdPrice || 0);
+  const fetchUserBasket = async () => {
+  const currentUser = auth?.currentUser;
 
-    if (STABLE_COINS.has(coin)) {
-      return `${value.toFixed(2)} ${coin}`;
+  if (!currentUser) {
+    setBasketItems([]);
+    return;
+  }
+
+  try {
+    const response = await axios.get(`${BASE_URL}/basket/${currentUser.uid}`);
+    setBasketItems(response.data.basket || []);
+  } catch (error) {
+    console.error("Error fetching basket:", error);
+    setBasketItems([]);
+  }
+};
+
+useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged(() => {
+    fetchUserBasket();
+  });
+
+  return () => unsubscribe();
+}, []);
+
+const getBasketQuantity = (itemId) => {
+  const basketItem = basketItems.find((item) => item.itemId === itemId);
+  return Number(basketItem?.quantity || 0);
+};
+
+const isItemInBasket = (itemId) => getBasketQuantity(itemId) > 0;
+
+const handleAddToBasket = async (itemData, e) => {
+  e.stopPropagation();
+
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    const currentPath =
+      typeof window !== "undefined" ? window.location.pathname : "/";
+
+    router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+    return;
+  }
+
+  try {
+    const item = itemData?.item || {};
+    const colorOptions = getColorOptions(itemData);
+
+    const selectedColorForBasket =
+      selectedColorByItem[itemData.id] || colorOptions?.[0] || null;
+
+    const variantImages = item?.imagesVariants?.[selectedColorForBasket] || [];
+
+    const basketImage =
+      getImageUrl(sortImages(variantImages)?.[0]) ||
+      getImageUrl(item?.images?.[0]);
+
+    const basketItem = {
+      userId: currentUser.uid,
+      item: {
+        id: itemData.id,
+        itemId: itemData.itemId,
+        name: item.name,
+        price: Number(item.usdPrice || 0),
+        color: selectedColorForBasket,
+        size: selectedSize || null,
+        image: basketImage,
+        brand: item.brand,
+        brandPrice: item.brandPrice,
+        quantity: 1,
+      },
+    };
+
+    const response = await axios.post(BASKET_API, basketItem);
+
+    if (response.status === 200 || response.status === 201) {
+      await fetchUserBasket();
+     setTimeout(() => {
+  messageApi.success(`${item.name} added to cart`);
+}, 0);
+    } else {
+     setTimeout(() => {
+  messageApi.error("Failed to add to cart");
+}, 0);
     }
-
-    return t("price_unavailable");
-  };
+  } catch (error) {
+    console.error("Error adding item to basket:", error);
+   setTimeout(() => {
+  messageApi.error("Error adding to cart");
+}, 0);
+  }
+};
 
   const pageTitle = itemClicked
     ? `Malidag ${itemClicked.replace(/-/g, " ")}`
@@ -334,44 +522,84 @@ return (
         </section>
       )}
 
-      <section className="shoe-toolbar">
-        <div className="shoe-toolbar-main">
-          <div className="shoe-section-heading">
-            <span className="shoe-section-kicker">{t("filter_by_size")}</span>
-            <h2>{t("choose_size") || "Choose your size"}</h2>
-          </div>
+      <section className={`shoe-toolbar ${filtersOpen ? "open" : ""}`}>
+  <button
+    type="button"
+    className="shoe-filter-toggle"
+    onClick={() => setFiltersOpen((prev) => !prev)}
+  >
+    Filters
+    {(selectedSize || selectedColor !== "all") && (
+      <span className="shoe-filter-active-dot" />
+    )}
+  </button>
 
-          <div className="shoe-size-list">
-            {allSizes.map((size) => (
-              <button
-                key={size}
-                type="button"
-                className={`shoe-size-chip ${selectedSize === size ? "active" : ""}`}
-                onClick={() => setSelectedSize(size)}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
+  <div className="shoe-filter-content">
+    <div className="shoe-toolbar-main">
+      <div className="shoe-section-heading">
+        <span className="shoe-section-kicker">{t("filter_by_size")}</span>
+        <h2>{t("choose_size") || "Choose your size"}</h2>
+      </div>
 
-        <div className="shoe-toolbar-side">
-          <div className="shoe-toolbar-info">
-            <span>{t("results") || "Results"}</span>
-            <strong>{displayedItems.length}</strong>
-          </div>
+      <div className="shoe-size-list">
+        {allSizes.map((size) => (
+          <button
+            key={size}
+            type="button"
+            className={`shoe-size-chip ${selectedSize === size ? "active" : ""}`}
+            onClick={() => setSelectedSize(size)}
+          >
+            {size}
+          </button>
+        ))}
+      </div>
+    </div>
 
-          {selectedSize && (
-            <button
-              type="button"
-              className="shoe-clear-btn"
-              onClick={() => setSelectedSize(null)}
-            >
-              {t("clear_filter") || "Clear filter"}
-            </button>
-          )}
-        </div>
-      </section>
+    <div className="shoe-color-filter">
+      <span className="shoe-section-kicker">Colors</span>
+
+      <div className="shoe-color-list">
+        <button
+          type="button"
+          className={`shoe-color-chip all ${
+            selectedColor === "all" ? "active" : ""
+          }`}
+          onClick={() => setSelectedColor("all")}
+        >
+          All
+        </button>
+
+        {colors.map((color) => (
+          <button
+            key={color}
+            type="button"
+            className={`shoe-color-chip ${
+              selectedColor === color ? "active" : ""
+            }`}
+            title={color}
+            style={{ background: getColorSwatch(color) }}
+            onClick={() => setSelectedColor(color)}
+          />
+        ))}
+      </div>
+    </div>
+
+    <div className="shoe-toolbar-side">
+      {(selectedSize || selectedColor !== "all") && (
+        <button
+          type="button"
+          className="shoe-clear-btn"
+          onClick={() => {
+            setSelectedSize(null);
+            setSelectedColor("all");
+          }}
+        >
+          {t("clear_filter") || "Clear filter"}
+        </button>
+      )}
+    </div>
+  </div>
+</section>
 
       <section className="shoe-brand-section">
         <div className="shoe-section-heading shoe-section-heading-row">
@@ -447,7 +675,6 @@ return (
                 name,
                 usdPrice,
                 originalPrice,
-                cryptocurrency,
                 sold,
                 videos,
                 genre,
@@ -457,7 +684,6 @@ return (
 
               const reviewsData = reviews[itemId] || {};
               const finalRating = reviewsData?.averageRating;
-              const crypto = String(cryptocurrency || "USDT").toUpperCase();
 
               const normalizedVideos = Array.isArray(videos)
                 ? videos
@@ -473,9 +699,43 @@ return (
                 ? Math.round(Number(finalRating))
                 : 0;
 
+                const colorOptions = getColorOptions(itemData);
+                  const selectedColorForItem = selectedColorByItem[id];
+                  const displayImage = getDisplayImage(itemData);
+                  const currentImages = getCurrentImages(itemData);
+                  const visibleColorOptions = colorOptions.slice(0, 4);
+              const hiddenColorCount = Math.max(colorOptions.length - 4, 0);
+
+              const brandDelivery =
+                brandThemes?.find(
+                  (x) =>
+                    x?.brandName?.trim()?.toLowerCase() ===
+                    (item?.brand || "")?.trim()?.toLowerCase()
+                )?.delivery || null;
+
               return (
                 <article key={id} className="shoe-card">
                   <div className="shoe-card-media">
+
+                    {currentImages.length > 1 && (
+                    <button
+                      type="button"
+                      className="shoe-image-arrow shoe-image-arrow-left"
+                      onClick={(e) => handleImageArrow(itemData, "prev", e)}
+                    >
+                      ‹
+                    </button>
+                  )}
+
+                  {currentImages.length > 1 && (
+                  <button
+                    type="button"
+                    className="shoe-image-arrow shoe-image-arrow-right"
+                    onClick={(e) => handleImageArrow(itemData, "next", e)}
+                  >
+                    ›
+                  </button>
+                )}
                     {activeVideoId === id && firstVideoUrl ? (
                       <video
                         src={firstVideoUrl}
@@ -488,20 +748,16 @@ return (
                       <>
                         <img
                           className="shoe-card-image"
-                          src={item?.images?.[0]}
+                         src={displayImage}
                           alt={name}
                           onClick={() => handleNavigate(id)}
                         />
 
                         <div className="shoe-card-badges">
                           <span className="shoe-card-badge shoe-card-badge-dark">
-                            {type || "Premium"}
+                            { "Premium"}
                           </span>
-                          {brand && (
-                            <span className="shoe-card-badge">
-                              {brand}
-                            </span>
-                          )}
+                         
                         </div>
 
                         {firstVideoUrl && (
@@ -530,7 +786,50 @@ return (
                             : name}
                         </div>
 
-                        <div className="shoe-card-rating">
+                        {colorOptions.length > 1 && (
+                  <div className="shoe-card-colors" onClick={(e) => e.stopPropagation()}>
+                    {visibleColorOptions.map((color) => {
+                      const swatchColor = getColorSwatch(color);
+                      const variantImages = sortImages(item?.imagesVariants?.[color] || []);
+                      const firstVariantImage = getImageUrl(variantImages?.[0]);
+
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`shoe-card-color-circle ${
+                            selectedColorForItem === color ? "active" : ""
+                          }`}
+                          title={color}
+                          onClick={(e) => handleColorSelect(id, color, e)}
+                          style={
+                            swatchColor
+                              ? { background: swatchColor }
+                              : { backgroundImage: `url("${firstVariantImage}")` }
+                          }
+                        />
+                      );
+                    })}
+
+                    {hiddenColorCount > 0 && (
+                      <button
+                        type="button"
+                        className="shoe-more-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNavigate(id);
+                        }}
+                      >
+                        +{hiddenColorCount} more
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                        <div  onClick={(e) => {
+                          e.stopPropagation();
+                          handleReviewNavigate(itemData);
+                        }} className="shoe-card-rating">
                           <span className="shoe-rating-stars">
                             {ratingNumber > 0
                               ? "★".repeat(ratingNumber) +
@@ -555,19 +854,29 @@ return (
                         )}
                       </div>
 
-                      <div className="shoe-card-stable">
-                        <img
-                          src={`https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/svg/color/${crypto.toLowerCase()}.svg`}
-                          alt={cryptocurrency}
-                          className="shoe-card-crypto"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src =
-                              "https://cryptologos.cc/logos/binance-usd-busd-logo.png";
-                          }}
-                        />
-                        <span>{formatStablePrice(usdPrice, cryptocurrency)}</span>
-                      </div>
+                     <div className="shoe-delivery-info">
+                      {brandDelivery?.isFree && (
+                        <span className="shoe-free-delivery">Free delivery</span>
+                      )}
+
+                      <span className="shoe-delivery-date">
+                        Get it by {brandDelivery?.estimatedDaysMax || 7} days
+                      </span>
+                    </div>
+
+                        {Number(item.numberOfItems || 0) > 0 && (
+                          <div
+                            className={
+                              Number(item.numberOfItems) <= 23
+                                ? "shoe-stock-badge low"
+                                : "shoe-stock-badge"
+                            }
+                          >
+                            {Number(item.numberOfItems) <= 23
+                              ? `Only ${item.numberOfItems} items left in stock`
+                              : `${item.numberOfItems} items in stock`}
+                          </div>
+                        )}
 
                       <div className="shoe-card-meta">
                         <span>{genre || "Fashion"}</span>
@@ -578,28 +887,27 @@ return (
                     </div>
 
                     <div className="shoe-card-actions">
-                      <button
-                        type="button"
-                        className="shoe-secondary-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReviewNavigate(itemData);
-                        }}
-                        title={t("view_reviews")}
-                      >
-                        {t("view_reviews") || "View reviews"}
-                      </button>
 
-                      <button
-                        type="button"
-                        className="shoe-primary-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleNavigate(id);
-                        }}
-                      >
-                        {t("view_product") || "View product"}
-                      </button>
+                     {isItemInBasket(itemId) ? (
+  <button
+    type="button"
+    className="shoe-added-cart-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      router.push("/basket");
+    }}
+  >
+    🛒 {getBasketQuantity(itemId)}
+  </button>
+) : (
+  <button
+    type="button"
+    className="shoe-primary-btn"
+    onClick={(e) => handleAddToBasket(itemData, e)}
+  >
+    Add to cart
+  </button>
+)}
                     </div>
                   </div>
                 </article>

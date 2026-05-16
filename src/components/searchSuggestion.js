@@ -117,9 +117,7 @@ const handleVisitBrand = (brandName) => {
               visibleItems.length === 3 ? "layout-three" : "layout-four"
             }`}
           >
-            <h3 className="suggestion-title-c">
-              Suggested Brands Inspired by Your Searches
-            </h3>
+            <h3 className="suggestion-title-ch1"> Explore {brand}</h3>
 
             <div className="suggestion-items-c">
               {visibleItems.map((item) => (
@@ -145,7 +143,7 @@ const handleVisitBrand = (brandName) => {
             className="suggestion-brand-button-c"
             onClick={() => handleVisitBrand(brand)}
           >
-            Visit {brand}
+            Explore more
           </button>
           </article>
         );

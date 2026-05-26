@@ -26,7 +26,7 @@ const ThemeForFashionKick = () => {
     <div
       style={{
         overflow: "hidden",
-        width: isDesktop || isTablet || isMobile ? "270px" : "150px",
+        width: isDesktop || isTablet || isMobile ? /*"270px"*/ "600px" : "150px",
         boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
         backgroundColor: "#fdfdfd",
         height: isDesktop || isTablet || isMobile ? "400px" : "270px",

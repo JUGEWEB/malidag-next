@@ -26,8 +26,8 @@ const ThemeForWomenFashion = () => {
     <div
       style={{
         overflow: "hidden",
-        width: isDesktop || isTablet || isMobile ? "270px" : "100%",
-        height: isSmallMobile || isVerySmall ? "100%" : "400px",
+        width: isDesktop || isTablet || isMobile ? /*"270px"*/ "1200px" : "100%",
+        height: isSmallMobile || isVerySmall ? "100%" : /*"400px"*/ "600px",
         boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
         backgroundColor: "#fdfdfd",
         borderRadius: "0px",

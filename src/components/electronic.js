@@ -216,6 +216,8 @@ function Electronic({
     );
   };
 
+  if (!items || items.length === 0) return null;
+
   return (
     <section className="electronic-carousel" aria-label={`${title} carousel`}>
       {showHeader && (

@@ -6,6 +6,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
 import { auth } from "@/components/firebaseConfig";
+import colorSwatches from "../../lib/colors.json";
 import { message } from "antd";
 import "./itemOfmen.css";
 
@@ -207,41 +208,10 @@ const handleAddToBasket = async (itemData, e) => {
     return Object.keys(imagesVariants).filter(Boolean);
   };
 
-  const getColorSwatch = (colorName = "") => {
-    const color = String(colorName).trim().toLowerCase();
-
-    const swatches = {
-      black: "#111111",
-      white: "#f8f8f8",
-      red: "#dc2626",
-      blue: "#2563eb",
-      green: "#16a34a",
-      yellow: "#eab308",
-      pink: "#ec4899",
-      purple: "#9333ea",
-      orange: "#f97316",
-      brown: "#92400e",
-      grey: "#9ca3af",
-      gray: "#9ca3af",
-      silver: "#c0c0c0",
-      gold: "#d4af37",
-      beige: "#d6c7a1",
-      cream: "#f5f0dc",
-      ivory: "#fffff0",
-      navy: "#1e3a8a",
-      "sky blue": "#38bdf8",
-      skyblue: "#38bdf8",
-      maroon: "#7f1d1d",
-      olive: "#556b2f",
-      khaki: "#c3b091",
-      multicolor:
-        "linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #a855f7)",
-      transparent:
-        "linear-gradient(135deg, #ddd 25%, #fff 25%, #fff 50%, #ddd 50%, #ddd 75%, #fff 75%, #fff 100%)",
-    };
-
-    return swatches[color] || "#d1d5db";
-  };
+ const getColorSwatch = (colorName = "") => {
+  const color = colorName.trim().toLowerCase();
+  return colorSwatches[color] || null;
+};
 
   const getDiscountPercentage = (usdPrice, originalPrice) => {
     const current = Number(usdPrice || 0);
@@ -741,7 +711,7 @@ useEffect(() => {
                         className="men-list-content men-reset-button"
                         onClick={() => handleNavigate(id)}
                       >
-                        {colorOptions.length > 0 && (
+                        {colorOptions.length > 1 && (
                           <div
                             className="men-list-color-block"
                             onClick={(e) => {

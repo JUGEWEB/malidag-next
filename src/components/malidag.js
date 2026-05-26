@@ -183,6 +183,8 @@ const Malidag = ({
         </CenteredBlock>
       )}
 
+      {/*
+
        {isSmallPhone && (
         <Block className="malidag-block malidag-block--flush" background="white">
           <SearchSuggestions userId={user?.uid} />
@@ -195,7 +197,7 @@ const Malidag = ({
           <SearchSuggestionsDesktop userId={user?.uid} />
         </Block>
         )}
-      
+      */}
 
       {isDesktopLike && (
         <Block className="malidag-block malidag-block--flush" background="white">
@@ -234,9 +236,13 @@ const Malidag = ({
         </Block>
       )}
 
+      {/*
+
       <Block className="malidag-block malidag-block--flush">
         <MalidagCategories3 />
       </Block>
+
+      */}
 
       <Block className="malidag-block malidag-block--flush">
         <RecommendedItem />

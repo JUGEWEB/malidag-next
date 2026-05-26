@@ -29,7 +29,11 @@ const MainSlider = ({ user }) => {
   const sliderRef = useRef(null);
 
   const isStandardWidth = isDesktop || isTablet || isMobile;
-  const isHome = pathname === '/';
+ 
+const pathSegments = pathname.split("/").filter(Boolean);
+
+const isHome = pathname === "/fr";
+
 
   const slides = useMemo(
     () => [
@@ -58,6 +62,20 @@ const MainSlider = ({ user }) => {
 
        {
         id: '1',
+        url: 'https://cdn.malidag.com/public/header/2341/Jack%20&%20Jones%20x%20Kubilay%20Aka%20_%20Tarz%C3%84%C2%B1n%20Seni%20Konu%C3%85%C2%9Fsun_1080p.mp4',
+        type: 'black',
+        content: 'video',
+        cover: 'https://cdn.malidag.com/themes/1779235151790-63f824f3-c32f-4859-8210-1539b0c19598.webp',
+        router: '/itemPage/shoes?q=shoes',
+        headerText: 'Explore sneakers collections that fit your style',
+        paragText: 'Discover the latest trends in sneakers and find your perfect pair.',
+        buttonText: 'View page',
+      },
+
+      /*
+
+       {
+        id: '2',
         url: 'https://cdn.malidag.com/themes/1775519689314-b9c85daf-7c62-4ba1-8078-c775bb83dc1b.webp',
         type: '#ff9a00',
         content: 'image',
@@ -66,6 +84,7 @@ const MainSlider = ({ user }) => {
          sub: 'Elevate your style this season ✨',
         buttonText: 'Explore Brand',
       },
+      */
       {
         id: '2',
         url: 'https://cdn.malidag.com/public/header/3/malidag-all-header.webp',
@@ -81,9 +100,9 @@ const MainSlider = ({ user }) => {
 
   const routeMap = useMemo(
     () => ({
-      '1': '/brand/theme1/jackjones',
+      '2': '/brand/theme1/jackjones',
      // '2': '/product/9e0da5b9-f4b3-42d0-8024-211ea47d0abd',
-      '2': '/save-big',
+      '3': '/save-big',
     }),
     []
   );
@@ -251,11 +270,12 @@ const MainSlider = ({ user }) => {
                           src={slide.url}
                           cover={slide.cover}
                           onClick={() => goToRoute(slide.router)}
+                         
                           onPlayClick={() => {
-                            if (currentSlide === index) {
-                              setPlayingVideoId(slide.id);
-                            }
+                            setCurrentSlide(index);
+                            setPlayingVideoId(slide.id);
                           }}
+
                           onVideoEnd={() => {
                             if (playingVideoId === slide.id) {
                               setPlayingVideoId(null);
@@ -369,9 +389,11 @@ const MainSlider = ({ user }) => {
                 <MalidagCategorySmall />
               </div>
             ) : (
+              
               <div>
                 <MalidagCategory user={user} />
               </div>
+              
             )}
           </div>
         </div>

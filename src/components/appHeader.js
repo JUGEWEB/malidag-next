@@ -64,14 +64,14 @@ function AppHeader(props) {
               <NavMenu  basketItems={basketItems} /> 
                 )}
               
-                  {pathname === "/" && (
+                  {pathname === "/fr" && (
         <div>
           <MainSlider user={user} />
         </div>
       )}
                
 
-      {pathname === "/" && (
+      {pathname === "/fr" && (
         <div style={{ width: "100%", backgroundColor: "#ddd5" }}>
           <SpanWarnings />
         </div>

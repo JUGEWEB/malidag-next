@@ -62,34 +62,34 @@ const SlideVideo = ({
               zIndex: 3,
             }}
           >
-            ▶
+            ↻
           </button>
         </>
-      ) : (
-        <video
-          key={src}
-          muted
-          playsInline
-          autoPlay
-          controls={false}
-          preload="metadata"
-          poster={cover}
-          onEnded={() => {
-            onVideoEnd?.();
-          }}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            backgroundColor: '#000',
-            display: 'block',
-          }}
-        >
-          <source src={src} type="video/webm" />
-          <source src={mp4Fallback} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      )}
+) : (
+  <video
+    key={src}
+    muted
+    playsInline
+    controls={false}
+    autoPlay
+    preload="metadata"
+    poster={cover}
+    onEnded={() => {
+      onVideoEnd?.();
+    }}
+    style={{
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      backgroundColor: '#000',
+      display: 'block',
+    }}
+  >
+    <source src={src} type="video/webm" />
+    <source src={mp4Fallback} type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+)}
 
       {overlay && (
         <div

@@ -10,18 +10,13 @@ import i18n from "i18next";
 
 import en from "../keywords.json";
 import fr from "../locales/fr/keywords.json";
-import ar from "../locales/ar/keywords.json";
-import pt from "../locales/pt/keywords.json";
 
 const LANG_KEYWORDS_MAP = {
   en,
-  fr,
-  ar,
-  pt,
-  "pt-BR": pt, // Brazil uses Portuguese keywords for now
+  fr
 };
 
-const SUPPORTED_LANGS = ["en", "fr", "ar", "pt", "pt-BR"];
+const SUPPORTED_LANGS = ["en", "fr"];
 
 function InputSearch({ isBasketVisible, basketItems, user }) {
   const [searchTerm, setSearchTerm] = useState("");

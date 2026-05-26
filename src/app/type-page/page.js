@@ -13,10 +13,10 @@ export async function generateMetadata() {
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
-  const title = `${t("new_crypto_products_title", { defaultValue: "New Crypto Product Arrivals" })} | Malidag`;
-  const description = t("new_crypto_products_description", {
+  const title = `${t("new_products_title", { defaultValue: "New Product Arrivals" })} | Malidag`;
+  const description = t("new_products_description", {
     defaultValue:
-      "Discover the newest crypto-friendly items added in the last 60 days. Shop by type, explore trending categories, and pay with cryptocurrency.",
+      "Discover the newest items added in the last 60 days. Shop by type, explore trending categories.",
   });
 
   const baseUrl = "https://www.malidag.com";
@@ -24,9 +24,9 @@ export async function generateMetadata() {
   const ogImage = `${baseUrl}/og/new-arrivals.jpg`;
 
   const keywordsCsv =
-    t("new_crypto_products_keywords", {
+    t("new_products_keywords", {
       defaultValue:
-        "new crypto products, latest blockchain items, new arrivals, crypto deals, crypto shopping, shop by type, digital goods, crypto payments",
+        "new products, latest items, new arrivals, product deals, product shopping, shop by type, digital goods",
     }) || "";
   const keywords = keywordsCsv.split(",").map((k) => k.trim()).filter(Boolean);
 

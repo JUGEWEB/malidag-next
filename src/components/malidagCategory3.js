@@ -117,6 +117,8 @@ function MalidagCategories3({ user, auth }) {
     )}
     </div>
 
+    {/*
+
     <div style={{margin: "20px"}}>
 
      {(isDesktop) && (
@@ -125,6 +127,9 @@ function MalidagCategories3({ user, auth }) {
       </div>
     )}
     </div>
+    */}
+
+    {/*
 
     <div style={{margin: "20px"}}>
 
@@ -133,6 +138,7 @@ function MalidagCategories3({ user, auth }) {
     )}
 
     </div>
+    */}
      
     </div>
   );

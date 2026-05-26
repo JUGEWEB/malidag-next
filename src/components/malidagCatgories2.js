@@ -13,6 +13,7 @@ import ThemeForWomenFashion from "./themeForWomenFashion";
 import ThemeForKidsFashion from "./themeForKidFashion";
 import ThemeForKidToy from "./themeForKidsToy";
 import ThemeForHomeAndKitchen from "./themeForHomeAndKitchen";
+import ThemeForWomenFashionBrand1 from "./themeForWomenFashionBrand1";
 
 const BASE_URL = "https://api.malidag.com";
 const BASE_URLs = "https://api.malidag.com";
@@ -107,19 +108,28 @@ function MalidagCategories2({ user, auth }) {
   return (
     <div style={{display: "flex", alignItems: "center", justifyContent:isDesktop ? "center" : "start", width: "100%", margin: "0px", overflowX: "auto"}}>
 
+{/*
       <div  style={{margin: "20px"}}>
        {(isDesktop || isTablet || isMobile) && (
       <ThemeForGamers/>
        )}
 
        </div>
+       */}
 
        <div  style={{margin: "20px"}}>
        {(isDesktop || isTablet || isMobile) && (
+
+        <ThemeForWomenFashionBrand1/>
+
+        /*
       <ThemeForWomenFashion/>
+      */
        )}
 
        </div>
+
+       {/*
 
         <div  style={{margin: "20px"}}>
        {(isDesktop || isTablet || isMobile) && (
@@ -127,13 +137,16 @@ function MalidagCategories2({ user, auth }) {
        )}
 
        </div>
+       */}
 
+{/*
         <div  style={{margin: "20px"}}>
        {(isDesktop || isTablet || isMobile) && (
       <ThemeForKidsFashion/>
        )}
 
        </div>
+       */}
      
     </div>
   );

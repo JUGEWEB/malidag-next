@@ -1,70 +1,106 @@
-import { headers } from "next/headers";
-import initI18n from "@/components/i18nServer";
-import Malidag from "@/components/malidag";
 
-// ✅ SEO metadata (server-side only)
-export async function generateMetadata() {
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+// app/[country]/page.js
 
-  const i18n = await initI18n(lang);
+import Link from "next/link";
+import HomePageClient from "@/components/HomePageClient.js";
 
-  const title =
-    i18n.t("home_title") || "Global Shopping Made Simple | Malidag";
-  const description =
-    i18n.t("home_description") ||
-    "Discover fashion, electronics, beauty, and more from top brands. Pay securely with credit cards or cryptocurrencies like Bitcoin, Ethereum, and USDT on Malidag.";
-  const keywords =
-    i18n.t("home_keywords") ||
-    "online shopping, pay with credit card, pay with Bitcoin, pay with Ethereum, pay with crypto, fashion, electronics, beauty, Malidag";
+const AVAILABLE_COUNTRIES = [
+  {
+    code: "fr",
+    name: "France",
+    flag: "🇫🇷",
+  },
 
-  const ogImage = {
-    url: "https://web.malidag.com/og/home.jpg",
-    width: 1200,
-    height: 630,
-    type: "image/jpeg",
-    alt: "Malidag Logo – Global Shopping Made Simple",
-  };
+  // future countries
+  // {
+  //   code: "de",
+  //   name: "Germany",
+  //   flag: "🇩🇪",
+  // },
+];
 
-  return {
-    title,
-    description,
-    keywords,
-    alternates: { canonical: "https://web.malidag.com/" },
-    openGraph: {
-      title,
-      description,
-      url: "https://web.malidag.com/",
-      siteName: "Malidag",
-      images: [ogImage],
-      locale: lang,
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [ogImage.url],
-    },
-    other: {
-      "script:ld+json": JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        name: "Malidag",
-        url: "https://web.malidag.com",
-        logo: ogImage.url,
-      }),
-    },
-  };
-}
+export default function CountryShopPage({ params }) {
+  const countryCode = params.country?.toLowerCase();
 
-// ✅ Page
-export default function Page() {
+  const selectedCountry = AVAILABLE_COUNTRIES.find(
+    (c) => c.code === countryCode
+  );
+
+  // graceful fallback
+  if (!selectedCountry) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+          background: "#fff",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "600px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "32px",
+              marginBottom: "15px",
+            }}
+          >
+            Delivery country unavailable
+          </h1>
+
+          <p
+            style={{
+              color: "#666",
+              marginBottom: "30px",
+            }}
+          >
+            Malidag currently delivers only to the countries below.
+            You can still continue shopping by selecting one of
+            our supported delivery destinations.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "15px",
+            }}
+          >
+            {AVAILABLE_COUNTRIES.map((country) => (
+              <Link
+                key={country.code}
+                href={`/${country.code}`}
+                style={{
+                  border: "1px solid #ddd",
+                  borderRadius: "16px",
+                  padding: "18px",
+                  textDecoration: "none",
+                  color: "#000",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span>
+                  {country.flag} {country.name}
+                </span>
+
+                <span>Continue →</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <>
-      <h1 className="sr-only">Global Shopping Made Simple | Malidag</h1>
-      <Malidag view="home" />
-    </>
+    <HomePageClient countryCode={selectedCountry.code} />
   );
 }

@@ -10,6 +10,8 @@ import ThemeForFashionKick from "./themeForFasionKick";
 import ThemeForMenFashion from "./themeForMenFashion";
 import ThemeForGamers from "./themeForGamers";
 import ThemeWithText from "./themewithtext";
+import ThemeForFashionKickBrand1 from "./themeFoeFashionKickBrand1";
+import ThemeForMenFashionBrand1 from "./ThemeForMenFashionBrand1";
 
 const BASE_URL = "https://api.malidag.com";
 const BASE_URLs = "https://api.malidag.com";
@@ -107,25 +109,37 @@ function MalidagCategory({ user, auth }) {
 
   return (
     <div style={{display: "flex", alignItems: "center", justifyContent:isDesktop ? "center" : "start", width: "100%", margin: "0px", overflowX: "auto"}}>
-<div style={{margin: "20px"}}>
+ {/* <div style={{margin: "20px"}}>
 {(isTablet || isDesktop || isMobile) && (
       <ThemeForPersonnalCare/>
     )}
     </div>
+    */}
 
-    <div style={{margin: "20px"}}>
+    <div style={{margin: /*"20px"*/ "5px", marginTop: "20px"}}>
 
     {(isTablet || isDesktop || isMobile) && (
+
+      <ThemeForFashionKickBrand1/>
+      /*
       <ThemeForFashionKick/>
+      */
     )}
     </div>
 
-    <div style={{margin: "20px"}}>
+    <div style={{margin: /*"20px"*/ "5px", marginTop: "20px"}}>
 
     {(isTablet || isDesktop || isMobile) && (
+
+      <ThemeForMenFashionBrand1/>
+      /*
       <ThemeForMenFashion/>
+      */
+     
     )}
     </div>
+
+    {/*
 
      <div style={{margin: "20px"}}>
 
@@ -133,6 +147,7 @@ function MalidagCategory({ user, auth }) {
       <ThemeWithText/>
     )}
     </div>
+    */}
      
     </div>
   );

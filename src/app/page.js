@@ -12,11 +12,11 @@ const AVAILABLE_COUNTRIES = [
   },
 
   // future countries
-  // {
-  //   code: "de",
-  //   name: "Germany",
-  //   flag: "🇩🇪",
-  // },
+   {
+    code: "gb",
+    name: "United Kingdom",
+    flag: "🇬🇧",
+ },
 ];
 
 export default function CountryShopPage({ params }) {

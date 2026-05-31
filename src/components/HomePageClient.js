@@ -16,11 +16,17 @@ const AVAILABLE_COUNTRIES = [
 
   // future
   // { name: "Germany", code: "de", flag: "🇩🇪" },
-  // { name: "United Kingdom", code: "uk", flag: "🇬🇧" },
+   { name: "United Kingdom", code: "gb", flag: "🇬🇧" },
 ];
 
 export default function CountrySelectorPage() {
   const [detectedCountry, setDetectedCountry] = useState(null);
+
+  const SELECTED_COUNTRY_KEY = "selectedCountry";
+
+const saveDeliveryCountry = (country) => {
+  localStorage.setItem(SELECTED_COUNTRY_KEY, JSON.stringify(country));
+};
 
   useEffect(() => {
     const detectCountry = async () => {
@@ -100,8 +106,9 @@ export default function CountrySelectorPage() {
               We detected your location:
             </p>
 
-            <Link
+           <Link
               href={`/${supportedDetectedCountry.code}`}
+              onClick={() => saveDeliveryCountry(supportedDetectedCountry)}
             >
               Continue to {supportedDetectedCountry.name} →
             </Link>
@@ -143,9 +150,10 @@ export default function CountrySelectorPage() {
           }}
         >
           {AVAILABLE_COUNTRIES.map((country) => (
-            <Link
+           <Link
               key={country.code}
               href={`/${country.code}/`}
+              onClick={() => saveDeliveryCountry(country)}
               style={{
                 border: "1px solid #ddd",
                 borderRadius: "16px",

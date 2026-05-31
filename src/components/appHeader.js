@@ -21,6 +21,15 @@ function AppHeader(props) {
     basketItems, user, connectors, connect, address, disconnect,
     isConnected, pendingConnector, allCountries, country, setCountry
   } = props;
+
+  const pathSegments = pathname.split("/").filter(Boolean);
+const routeCountryCode = pathSegments[0];
+
+const isCountryHome =
+  routeCountryCode &&
+  (pathname === `/${routeCountryCode}` ||
+    pathname === `/${routeCountryCode}/`);
+
     return(
         <div style={{position: "relative", width: "100%", backgroundColor: "white"}}>   
                 {/* Header */}
@@ -64,14 +73,14 @@ function AppHeader(props) {
               <NavMenu  basketItems={basketItems} /> 
                 )}
               
-                  {pathname === "/fr" && (
+                {isCountryHome && (
         <div>
-          <MainSlider user={user} />
+          <MainSlider user={user} country={country} />
         </div>
       )}
                
 
-      {pathname === "/fr" && (
+     {isCountryHome && (
         <div style={{ width: "100%", backgroundColor: "#ddd5" }}>
           <SpanWarnings />
         </div>

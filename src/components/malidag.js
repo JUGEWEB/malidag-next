@@ -103,15 +103,22 @@ const Malidag = ({
     }
   }, []);
 
-  if (view === "fashionPage") return <ItemFashionPage />;
-  if (view === "topitem") return <TopItem user={user} />;
-  if (view === "browsing") return <Browsing user={user} />;
+  if (view === "fashionPage") return <ItemFashionPage country={country} />;
+if (view === "topitem") return <TopItem user={user} country={country} />;
+if (view === "browsing") return <Browsing user={user} country={country} />;
+
+  const countryCode = country?.code || "fr";
+
+const withCountry = (path) => {
+  if (!path) return `/${countryCode}`;
+  return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
   return (
     <div className="malidag-page-shell">
       {(isMobile || isTablet || isDesktop) && (
         <Block className="malidag-block malidag-block--flush">
-          <MalidagCategories2 />
+          <MalidagCategories2 country={country} />
         </Block>
       )}
 
@@ -120,15 +127,16 @@ const Malidag = ({
           <FashionForAll
             title={t("fashion_for_all")}
             viewMoreLabel={t("view_more")}
-            sectionRoute="/fashionPage"
+            sectionRoute={withCountry("/fashionPage")}
             category="shoes"
+            country={country}
           />
         </Block>
       )}
 
       {isSmallPhone && (
         <CenteredBlock>
-          <ThemeForPersonnalCare />
+          <ThemeForPersonnalCare country={country} />
         </CenteredBlock>
       )}
 
@@ -137,49 +145,51 @@ const Malidag = ({
           <Electronic
             title={t("home_office_tech")}
             viewMoreLabel={t("view_more")}
-            sectionRoute="/electronic"
+            sectionRoute={withCountry("/electronic")}
+            country={country}
           />
         </Block>
       )}
 
       {isSmallPhone && (
         <CenteredBlock>
-          <ThemeForWomenFashion />
+          <ThemeForWomenFashion country={country} />
         </CenteredBlock>
       )}
 
       {isMobileLike && (
         <Block className="malidag-block malidag-block--flush" background="white">
-          <TopTopic
-            title={t("top_items")}
-            viewMoreLabel={t("explore_now")}
-            sectionRoute="/topitem"
-          />
+         <TopTopic
+          title={t("top_items")}
+          viewMoreLabel={t("explore_now")}
+          sectionRoute={withCountry("/topitem")}
+          country={country}
+        />
         </Block>
       )}
 
       {isSmallPhone && (
         <CenteredBlock>
-          <ThemeForHomeAndKitchen />
+          <ThemeForHomeAndKitchen country={country} />
         </CenteredBlock>
       )}
 
       {isDesktopLike && (
         <Block className="malidag-block malidag-block--flush">
-          <YouMayLike user={user} />
+          <YouMayLike user={user} country={country} />
         </Block>
       )}
       
 
       {isSmallPhone && (
         <CenteredBlock>
-          <ThemeForKidsFashion />
+          <ThemeForKidsFashion country={country} />
         </CenteredBlock>
       )}
 
       {isSmallPhone && (
         <CenteredBlock>
-          <ThemeForKidToy />
+          <ThemeForKidToy country={country} />
         </CenteredBlock>
       )}
 
@@ -187,42 +197,44 @@ const Malidag = ({
 
        {isSmallPhone && (
         <Block className="malidag-block malidag-block--flush" background="white">
-          <SearchSuggestions userId={user?.uid} />
+          <SearchSuggestions userId={user?.uid} country={country} />
         </Block>
 
        )}
 
         {(isMobile || isTablet || isDesktop) && (
            <Block className="malidag-block malidag-block--flush" background="white">
-          <SearchSuggestionsDesktop userId={user?.uid} />
+          <SearchSuggestionsDesktop userId={user?.uid} country={country} />
         </Block>
         )}
       */}
 
       {isDesktopLike && (
         <Block className="malidag-block malidag-block--flush" background="white">
-          <FashionForAll
-            title={t("fashion_for_all")}
-            viewMoreLabel={t("view_more")}
-            sectionRoute="/fashionPage"
-            category="shoes"
-          />
+         <FashionForAll
+          title={t("fashion_for_all")}
+          viewMoreLabel={t("view_more")}
+          sectionRoute={withCountry("/fashionPage")}
+          category="shoes"
+          country={country}
+        />
         </Block>
       )}
 
       {isDesktopLike && (
         <Block className="malidag-block malidag-block--flush" background="white">
-          <Electronic
-            title={t("home_office_tech")}
-            viewMoreLabel={t("view_more")}
-            sectionRoute="/electronic"
-          />
+         <Electronic
+          title={t("home_office_tech")}
+          viewMoreLabel={t("view_more")}
+          sectionRoute={withCountry("/electronic")}
+          country={country}
+        />
         </Block>
       )}
 
       {isMobileLike && (
         <Block className="malidag-block malidag-block--flush">
-          <YouMayLike />
+          <YouMayLike country={country} />
         </Block>
       )}
 
@@ -231,7 +243,8 @@ const Malidag = ({
           <TopTopic
             title={t("top_items")}
             viewMoreLabel={t("explore_now")}
-            sectionRoute="/topitem"
+            sectionRoute={withCountry("/topitem")}
+            country={country}
           />
         </Block>
       )}
@@ -239,13 +252,13 @@ const Malidag = ({
       {/*
 
       <Block className="malidag-block malidag-block--flush">
-        <MalidagCategories3 />
+        <MalidagCategories3 country={country} />
       </Block>
 
       */}
 
       <Block className="malidag-block malidag-block--flush">
-        <RecommendedItem />
+        <RecommendedItem country={country} />
       </Block>
     </div>
     

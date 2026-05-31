@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import axios from "axios";
 import "./fashionForAllPage.css";
 import useScreenSize from "./useIsMobile";
@@ -9,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { useCheckoutStore } from "./checkoutStore";
 import colorSwatches from "../../lib/colors.json";
+import { usePathname, useRouter } from "next/navigation";
 
 function ItemFashionPage() {
   const [brandGroups, setBrandGroups] = useState([]);
@@ -17,7 +17,6 @@ function ItemFashionPage() {
   const [loading, setLoading] = useState(true);
   const { isMobile, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall } = useScreenSize();
    const [reviews, setReviews] = useState({}); // Store reviews data
-   const { push } = useRouter();
   const [brandThemes, setBrandThemes] = useState([]);
   const [translations, setTranslations] = useState({});
   const { t } = useTranslation();
@@ -30,6 +29,17 @@ const [priceRange, setPriceRange] = useState([0, 10000]);
 
 const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
+const { push } = useRouter();
+const pathname = usePathname();
+
+const routeCountryCode = pathname.split("/").filter(Boolean)[0];
+
+const countryCode = routeCountryCode;
+
+const countryName = countryCode?.toUpperCase() || "your country";
+
+  console.log("Selected country code in fashion page:", countryCode);
+const hasCountry = Boolean(countryCode);
 
 const fetchTranslation = async (productId, lang) => {
   if (translations[productId]?.[lang]) return;
@@ -85,92 +95,113 @@ const fetchTranslation = async (productId, lang) => {
 }, []);
 
   // Fetch brands from clothing, shoes, and bags
-  useEffect(() => {
-    const fetchBrands = async () => {
-      try {
-        const categories = ["clothing", "shoes", "bags"];
-        const brandSets = await Promise.all(
-          categories.map((cat) =>
-            axios
-              .get(`https://api.malidag.com/api/categories/${cat}/brands`)
-              .then((res) => res.data?.brands || [])
-              .catch(() => [])
-          )
-        );
+useEffect(() => {
+  if (!countryCode) {
+    return;
+  }
 
-        // Merge all brands and remove duplicates by name
-        const mergedBrands = Array.from(
-          new Map(
-            brandSets.flat().map((brand) => [brand.brand, brand])
-          ).values()
-        );
+  const fetchBrands = async () => {
+    setLoading(true);
 
-        setBrandGroups(mergedBrands);
-      } catch (error) {
-        console.error("Error fetching fashion brands:", error);
-      }
-    };
+    try {
+     const categories = ["clothes", "shoes", "bags"];
 
-    fetchBrands();
-  }, []);
-
-  useEffect(() => {
-    const fetchTopItemsAndBestSellers = async () => {
-      const itemsMap = {};
-      const bestSellerMap = {};
-      const allSymbols = new Set();
-
-      await Promise.all(
-        brandGroups.map(async (group) => {
-          const brandName = group.brand;
-          try {
-            const topItemsRes = await axios.get(
-              `https://api.malidag.com/api/brands/${encodeURIComponent(brandName)}/top-items`
-            );
-            const bestSellerRes = await axios.get(
-              `https://api.malidag.com/api/brands/${encodeURIComponent(brandName)}/best-seller`
-            );
-
-            const topItems = topItemsRes.data || [];
-           itemsMap[brandName.trim().toLowerCase()] = topItems;
-
-
-            const bestSellerId = bestSellerRes.data?.id;
-            if (bestSellerId) {
-              bestSellerMap[brandName] = bestSellerId;
-            }
-
-            topItems.forEach((item) => {
-              if (item.cryptocurrency) {
-                allSymbols.add(item.cryptocurrency);
-              }
-            });
-
-            const lang = i18n.language || "en";
-itemsMap[brandName.trim().toLowerCase()]?.forEach((item) => {
-  fetchTranslation(item.itemId, lang);
-});
-
-
-             // Fetch reviews for each item
-       topItems.forEach((item) => {
-        fetchReviews(item.itemId); // Fetch reviews for each product
-      });
-          } catch (error) {
-            console.warn(`Error fetching items for ${brandName}`, error);
-          }
-        })
+      const brandSets = await Promise.all(
+        categories.map((cat) =>
+          axios
+            .get(
+              `https://api.malidag.com/api/categories/${cat}/brands?country=${countryCode}`
+            )
+            .then((res) => res.data?.brands || [])
+            .catch(() => [])
+        )
       );
 
-      setTopItemsPerBrand(itemsMap);
-      setBestSellersByBrand(bestSellerMap);
-      setLoading(false);
-    };
+      const mergedBrands = Array.from(
+        new Map(
+          brandSets.flat().map((brand) => [brand.brand, brand])
+        ).values()
+      );
 
-    if (brandGroups.length > 0) {
-      fetchTopItemsAndBestSellers();
+      setBrandGroups(mergedBrands);
+
+    if (mergedBrands.length === 0) {
+  setTopItemsPerBrand({});
+  setBestSellersByBrand({});
+  setLoading(false);
+}
+
+    } catch (error) {
+      console.error("Error fetching fashion brands:", error);
+      setBrandGroups([]);
+      setTopItemsPerBrand({});
+      setBestSellersByBrand({});
+      setLoading(false);
     }
-  }, [brandGroups]);
+  };
+
+  fetchBrands();
+}, [countryCode]);
+
+useEffect(() => {
+  if (!countryCode) {
+    setLoading(false);
+    return;
+  }
+
+   if (brandGroups.length === 0) {
+    return;
+  }
+
+  const fetchTopItemsAndBestSellers = async () => {
+    const itemsMap = {};
+    const bestSellerMap = {};
+
+    await Promise.all(
+      brandGroups.map(async (group) => {
+        const brandName = group.brand;
+
+        try {
+          const encodedBrandName = encodeURIComponent(brandName);
+
+          const topItemsRes = await axios.get(
+            `https://api.malidag.com/api/brands/${encodedBrandName}/top-items?country=${countryCode}`
+          );
+
+          const bestSellerRes = await axios.get(
+            `https://api.malidag.com/api/brands/${encodedBrandName}/best-seller?country=${countryCode}`
+          );
+
+          const topItems = topItemsRes.data || [];
+
+          itemsMap[brandName.trim().toLowerCase()] = topItems;
+
+          const bestSellerId = bestSellerRes.data?.id;
+          if (bestSellerId) {
+            bestSellerMap[brandName.trim().toLowerCase()] = bestSellerId;
+          }
+
+          const lang = i18n.language || "en";
+
+          topItems.forEach((item) => {
+            fetchTranslation(item.itemId, lang);
+            fetchReviews(item.itemId);
+          });
+        } catch (error) {
+          console.warn(`Error fetching items for ${brandName}`, error);
+        }
+      })
+    );
+
+    setTopItemsPerBrand(itemsMap);
+    setBestSellersByBrand(bestSellerMap);
+    setLoading(false);
+  };
+
+  if (brandGroups.length > 0) {
+    fetchTopItemsAndBestSellers();
+  }
+}, [brandGroups, countryCode]);
 
   useEffect(() => {
   const lang = i18n.language || "en";
@@ -256,6 +287,14 @@ const filteredItems = useMemo(() => {
   });
 }, [allFashionItems, selectedBrand, selectedType, selectedColor, priceRange]);
 
+const hasLoadedItems = allFashionItems.length > 0;
+const hasActiveFilters =
+  selectedBrand !== "all" ||
+  selectedType !== "all" ||
+  selectedColor !== "all" ||
+  priceRange[0] > 0 ||
+  priceRange[1] < maxPrice;
+
 const getColorSwatch = (colorName = "") => {
   const color = colorName.trim().toLowerCase();
   return colorSwatches[color] || null;
@@ -327,6 +366,13 @@ const getDisplayImage = (product) => {
   );
 };
 
+
+const withCountry = (path) => {
+  const code = countryCode || "fr";
+  if (!path) return `/${code}`;
+  return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
 const handleColorSelect = (itemId, color, e) => {
   e.stopPropagation();
 
@@ -377,10 +423,68 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
 
 
   const handleItemClick = (id) => {
-    if (id) push(`/product/${id}`);
+   if (id) push(withCountry(`/product/${id}`));
   };
 
-  if (loading) return <div className="loading-message">{t("loading")}</div>;
+if (loading) {
+  return (
+    <div className="fashion-page-wrapper">
+      <div className="fashion-loading-state">
+        <div className="fashion-loading-spinner" />
+
+        <h2>Finding products for {countryName}</h2>
+
+        <p>
+          We are checking brands, prices, availability, and delivery options for
+          your selected location.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+ if (!loading && filteredItems.length === 0) {
+  return (
+    <div className="fashion-page-wrapper">
+      <div className="country-empty-state">
+        <div className="country-empty-icon">📍</div>
+
+        <h2>
+          {hasLoadedItems
+            ? "No products match your filters"
+            : `No products available for delivery to ${countryName}`}
+        </h2>
+
+        <p>
+          {hasLoadedItems
+            ? "Try changing your brand, type, color, or price filters to see more products."
+            : `We do not currently have fashion products available for delivery to ${countryName}.`}
+        </p>
+
+        {!hasLoadedItems && (
+          <p>
+            You can choose a different delivery location from the selector above.
+          </p>
+        )}
+
+        {hasActiveFilters && (
+          <button
+            type="button"
+            className="empty-state-action"
+            onClick={() => {
+              setSelectedBrand("all");
+              setSelectedType("all");
+              setSelectedColor("all");
+              setPriceRange([0, maxPrice]);
+            }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
   return (
   <div className="fashion-page-wrapper">
@@ -400,9 +504,9 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
 
                 setSelectedBrandName(brand.brandName);
 
-                push(
-                  `/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`
-                );
+               push(
+  withCountry(`/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`)
+);
               }}
           >
             <img src={brand.logo} alt={`${brand.brandName} logo`} />
@@ -773,7 +877,7 @@ const getEstimatedDeliveryDay = (daysToAdd = 7) => {
                   e.stopPropagation();
                   if (finalRating) {
                     setItemData(itemData);
-                    push(`/product/${id}/review`);
+                   push(withCountry(`/product/${id}/review`));
                   }
                 }}
               >

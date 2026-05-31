@@ -42,7 +42,6 @@ const isCheckoutPage =
   pathname === "/cardCheckout";
 
 
-
   const showModal = () => setIsModalVisible(true); // Function to show the modal
   const handleCancel = () => setIsModalVisible(false); // Function to hide the modal
 

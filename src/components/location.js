@@ -6,11 +6,29 @@ import { Dropdown } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { FiMapPin } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
+import { usePathname, useRouter } from "next/navigation";
 
 function Location({ country, allCountries = [], setCountry }) {
   const [isOpen, setIsOpen] = useState(false);
   const { isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall } = useScreenSize();
   const { t } = useTranslation();
+
+  const router = useRouter();
+const pathname = usePathname();
+
+const handleCountryChange = (nextCountry) => {
+  setCountry(nextCountry);
+
+  const segments = pathname.split("/").filter(Boolean);
+
+  if (segments.length === 0) {
+    router.push(`/${nextCountry.code}`);
+    return;
+  }
+
+  segments[0] = nextCountry.code;
+  router.push(`/${segments.join("/")}`);
+};
 
   if (!country || !country.code || !country.name) {
     return null; // or a loading spinner
@@ -21,7 +39,10 @@ function Location({ country, allCountries = [], setCountry }) {
   const menuItems = allCountries.map((c) => ({
     key: c.code,
     label: (
-      <div onClick={() => setCountry(c)} style={{ display: "flex", alignItems: "center" }}>
+     <div
+      onClick={() => handleCountryChange(c)}
+      style={{ display: "flex", alignItems: "center" }}
+    >
         <img src={c.flag} alt={c.name} style={{ width: 20, marginRight: 10 }} />
         {c.name}
       </div>

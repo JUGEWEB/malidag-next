@@ -23,6 +23,7 @@ function FashionForAll({
   category = 'clothes',
   showHeader = true,
   showViewMore = true,
+  country,
 }) {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

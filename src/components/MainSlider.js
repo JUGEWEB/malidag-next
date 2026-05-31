@@ -20,7 +20,7 @@ const Slider = dynamic(() => import('react-slick').then((mod) => mod.default), {
 
 const SLIDE_STORAGE_KEY = 'malidag_home_current_slide';
 
-const MainSlider = ({ user }) => {
+const MainSlider = ({ user, country }) => {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -32,7 +32,22 @@ const MainSlider = ({ user }) => {
  
 const pathSegments = pathname.split("/").filter(Boolean);
 
-const isHome = pathname === "/fr";
+const routeCountryCode = pathSegments[0];
+const selectedCountryCode = country?.code || routeCountryCode;
+
+const routeCountryPrefix = `/${routeCountryCode}`;
+const selectedCountryPrefix = `/${selectedCountryCode}`;
+
+const isHome =
+  pathname === routeCountryPrefix || pathname === `${routeCountryPrefix}/`;
+
+const withCountry = useCallback(
+  (path) => {
+    if (!path) return selectedCountryPrefix;
+    return `${selectedCountryPrefix}${path.startsWith("/") ? path : `/${path}`}`;
+  },
+  [selectedCountryPrefix]
+);
 
 
   const slides = useMemo(
@@ -134,15 +149,17 @@ const isHome = pathname === "/fr";
     setPlayingVideoId(null);
   }, []);
 
-  const goToRoute = useCallback(
-    (path) => {
-      if (!path) return;
-      saveSlideIndex(currentSlide);
-      stopVideoPlayback();
-      router.push(path);
-    },
-    [router, currentSlide, saveSlideIndex, stopVideoPlayback]
-  );
+ const goToRoute = useCallback(
+  (path) => {
+    if (!path) return;
+
+    saveSlideIndex(currentSlide);
+    stopVideoPlayback();
+
+    router.push(withCountry(path));
+  },
+  [router, currentSlide, saveSlideIndex, stopVideoPlayback, withCountry]
+);
 
   const handleNavigation = useCallback(
     (id) => {
@@ -375,7 +392,7 @@ const isHome = pathname === "/fr";
             <span className="span-warning">
               {t('shipping_notice')}
               <a
-                onClick={() => router.push('/international-shipping')}
+               onClick={() => router.push(withCountry('/international-shipping'))}
                 className="main-slider__shipping-link"
               >
                 {t('learn_about_shipping')}

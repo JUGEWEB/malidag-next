@@ -43,6 +43,16 @@ function FashionForAll({
 
   const showDesktopArrows = !isMobile && !isSmallMobile && !isVerySmall;
 
+  const countryCode = country?.code?.toLowerCase() || "fr";
+
+const withCountry = (path) => {
+  if (!path) return `/${countryCode}`;
+
+  const cleanPath = path.replace(/^\/(fr|gb|us|de|ie|au|be)(\/|$)/, "/");
+
+  return `/${countryCode}${cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`}`;
+};
+
   const updateScrollState = useCallback(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -309,7 +319,7 @@ console.log('raw data.items:', data?.items);
                 className={`carousel-item ${itemsPerRowClass}`}
               >
                 <Link
-                  href={`${productRouteBase}/${item.id}`}
+                 href={`${withCountry(productRouteBase)}/${item.id}`}
                   className="carousel-card"
                   aria-label={`Open ${itemName}`}
                   target="_blank"
@@ -385,7 +395,7 @@ console.log('raw data.items:', data?.items);
 
           {showViewMore && sectionRoute && (
             <a
-              href={sectionRoute}
+             href={sectionRoute}
               className="fashion-carousel__view-more"
               aria-label={`View more from ${title}`}
               target="_blank"

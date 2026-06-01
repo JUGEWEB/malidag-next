@@ -29,6 +29,7 @@ function MalidagHeader({ user, isConnected, connect, address, disconnect, pendin
   const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
    const router = useRouter();
    const pathname = usePathname();
+   const isCountrySelectorPage = pathname === "/";
   const { isLoading, connectors, } = useConnect(); // Destructure wagmi's useConnect
   const [showDisconnect, setShowDisconnect] = useState(false);
   const [isBasketVisible, setIsBasketVisible] = useState(false);
@@ -63,9 +64,9 @@ const isCheckoutPage =
 }, [pathname]);
   
 
-  const home = () => {
-    router.push('/')
-  }
+ const home = () => {
+  router.push(`/${country?.code}`);
+};
 
 
     const truncateAddress = (address, startLength = 6, endLength = 4) => {
@@ -97,6 +98,10 @@ const isCheckoutPage =
         ]}
       />
     );
+
+    if (isCountrySelectorPage) {
+  return null;
+}
 
   return (
     <div
@@ -306,7 +311,7 @@ const isCheckoutPage =
 
 {basketItems?.length > 0 && (
           <div style={{backgroundColor: (isTablet || isDesktop) ? "black" : "#333",}}>
-          <Link href="/basket">
+         <Link href={`/${country?.code}/basket`}>
         <div
           style={{
             cursor: "pointer",

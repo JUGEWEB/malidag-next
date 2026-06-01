@@ -16,18 +16,54 @@ function Location({ country, allCountries = [], setCountry }) {
   const router = useRouter();
 const pathname = usePathname();
 
+React.useEffect(() => {
+  const syncFromStorage = () => {
+    const savedCountry = localStorage.getItem("selectedCountry");
+    if (!savedCountry) return;
+
+    try {
+      const parsedCountry = JSON.parse(savedCountry);
+
+      if (!parsedCountry?.code) return;
+      if (parsedCountry.code === country?.code) return;
+
+      setCountry(parsedCountry);
+
+      const segments = pathname.split("/").filter(Boolean);
+
+      if (segments.length === 0) {
+        router.replace(`/${parsedCountry.code}`);
+        return;
+      }
+
+      segments[0] = parsedCountry.code;
+      router.replace(`/${segments.join("/")}`);
+    } catch (err) {
+      console.error("Invalid selectedCountry:", err);
+    }
+  };
+
+  syncFromStorage();
+
+  window.addEventListener("countryChanged", syncFromStorage);
+
+  return () => {
+    window.removeEventListener("countryChanged", syncFromStorage);
+  };
+}, [pathname, country?.code, router, setCountry]);
+
 const handleCountryChange = (nextCountry) => {
   setCountry(nextCountry);
 
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length === 0) {
-    router.push(`/${nextCountry.code}`);
+   router.replace(`/${nextCountry.code}`);
     return;
   }
 
   segments[0] = nextCountry.code;
-  router.push(`/${segments.join("/")}`);
+ router.replace(`/${segments.join("/")}`);
 };
 
   if (!country || !country.code || !country.name) {

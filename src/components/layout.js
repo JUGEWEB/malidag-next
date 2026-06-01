@@ -66,7 +66,17 @@ export default function MainLayout({ children, lang }) {
   const [languageReady, setLanguageReady] = useState(false);
   const [appReady, setAppReady] = useState(false);
   const [bootProduct, setBootProduct] = useState(null);
-const [country, setCountry] = useState(null);
+
+const [country, setCountryState] = useState(null);
+
+const setCountry = (nextCountry) => {
+  if (!nextCountry?.code) return;
+
+  setCountryState(nextCountry);
+  localStorage.setItem("selectedCountry", JSON.stringify(nextCountry));
+  window.dispatchEvent(new Event("countryChanged"));
+};
+
   const { address, isConnected, chain } = useAccount();
   const { connectors, connect, pendingConnector } = useConnect();
   const { disconnect } = useDisconnect();
@@ -94,7 +104,7 @@ const [country, setCountry] = useState(null);
     try {
       const savedCountry = localStorage.getItem("selectedCountry");
       if (savedCountry) {
-        setCountry(JSON.parse(savedCountry));
+       setCountry(JSON.parse(savedCountry));
         return;
       }
 
@@ -110,7 +120,6 @@ const [country, setCountry] = useState(null);
         };
 
         setCountry(detectedCountry);
-        localStorage.setItem("selectedCountry", JSON.stringify(detectedCountry));
       }
     } catch (err) {
       console.error("Country detection failed", err);
@@ -122,7 +131,6 @@ const [country, setCountry] = useState(null);
       };
 
       setCountry(fallbackCountry);
-      localStorage.setItem("selectedCountry", JSON.stringify(fallbackCountry));
     }
   };
 
@@ -130,11 +138,28 @@ const [country, setCountry] = useState(null);
 }, []);
 
 useEffect(() => {
-  if (country && typeof window !== "undefined") {
-    localStorage.setItem("selectedCountry", JSON.stringify(country));
-    window.dispatchEvent(new Event("countryChanged"));
-  }
-}, [country]);
+  const syncCountry = () => {
+    const savedCountry = localStorage.getItem("selectedCountry");
+    if (!savedCountry) return;
+
+    try {
+      const parsed = JSON.parse(savedCountry);
+      if (parsed?.code) {
+        setCountryState(parsed);
+      }
+    } catch (err) {
+      console.error("Invalid selectedCountry", err);
+    }
+  };
+
+  syncCountry();
+
+  window.addEventListener("countryChanged", syncCountry);
+
+  return () => {
+    window.removeEventListener("countryChanged", syncCountry);
+  };
+}, []);
 
   useEffect(() => {
     const fetchBasketItems = async () => {

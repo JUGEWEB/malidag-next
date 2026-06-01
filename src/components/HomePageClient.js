@@ -11,22 +11,25 @@ const AVAILABLE_COUNTRIES = [
   {
     name: "France",
     code: "fr",
-    flag: "🇫🇷",
+    flag: "https://flagcdn.com/w320/fr.png",
   },
-
-  // future
-  // { name: "Germany", code: "de", flag: "🇩🇪" },
-   { name: "United Kingdom", code: "gb", flag: "🇬🇧" },
+  {
+    name: "United Kingdom",
+    code: "gb",
+    flag: "https://flagcdn.com/w320/gb.png",
+  },
 ];
 
-export default function CountrySelectorPage() {
+export default function HomePageClient() {
   const [detectedCountry, setDetectedCountry] = useState(null);
 
   const SELECTED_COUNTRY_KEY = "selectedCountry";
 
 const saveDeliveryCountry = (country) => {
   localStorage.setItem(SELECTED_COUNTRY_KEY, JSON.stringify(country));
+  window.dispatchEvent(new Event("countryChanged"));
 };
+
 
   useEffect(() => {
     const detectCountry = async () => {

@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import ReviewPage from "@/components/reviewPage";
-import { getReviewsForProductId } from "../../../../../lib/reviews";
-import clientPromise from "../../../../../lib/mongodb.js";
+import { getReviewsForProductId } from "../../../../../../lib/reviews";
+import clientPromise from "../../../../../../lib/mongodb.js";
 import { notFound } from "next/navigation";
 
 export const revalidate = 60;

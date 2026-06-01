@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import "./malidag.css";
 import "./malidagPresentItem.css";
 import "slick-carousel/slick/slick.css";
@@ -27,7 +27,7 @@ import MalidagCategories3 from "./malidagCategory3";
 import ThemeForKidsFashion from "./themeForKidFashion";
 import ThemeForKidToy from "./themeForKidsToy";
 import Browsing from "./basedbrowsing";
-
+import { AppContext } from "./appContext";
 import ItemFashionPage from "./fashionForAllPage";
 import TopItem from "./topItem";
 import MalidagNews from "./malidagNews";
@@ -66,18 +66,8 @@ const Malidag = ({
   view = "home",
   auth,
   user,
-  basketItems,
-  connectors,
-  connect,
-  address,
-  disconnect,
-  isConnected,
-  pendingConnector,
-  allCountries,
-  country,
-  setCountry,
 }) => {
-  const [selectedSymbol] = useState("BTC");
+  const { country } = useContext(AppContext);
   const [suggestedItemsCount, setSuggestedItemsCount] = useState(0);
 
   const { t } = useTranslation();
@@ -107,7 +97,7 @@ const Malidag = ({
 if (view === "topitem") return <TopItem user={user} country={country} />;
 if (view === "browsing") return <Browsing user={user} country={country} />;
 
-  const countryCode = country?.code || "fr";
+  const countryCode = country?.code;
 
 const withCountry = (path) => {
   if (!path) return `/${countryCode}`;

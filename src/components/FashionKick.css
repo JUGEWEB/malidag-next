@@ -1144,3 +1144,54 @@ button {
     font-size: 20px;
   }
 }
+
+.fashionkick-empty-country {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.fashionkick-empty-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+}
+
+.fashionkick-empty-country h1 {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.fashionkick-empty-country p {
+  max-width: 600px;
+  line-height: 1.7;
+  opacity: 0.8;
+}
+
+.fashionkick-loading-state {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px;
+}
+
+.fashionkick-loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255,255,255,.15);
+  border-top: 4px solid #fff;
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

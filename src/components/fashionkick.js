@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, useContext } from "react";
 import axios from "axios";
 import "./FashionKick.css";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import ShoeRecommended from "./shoeRecomended";
+import { AppContext } from "./appContext";
 
 const BASE_URL = "https://api.malidag.com";
 
@@ -129,6 +130,8 @@ function StarRating({ rating = 0 }) {
 }
 
 function FashionKick({ initialMTypes = [], initialTypes = {} }) {
+  const { country } = useContext(AppContext);
+const countryCode = country?.code;
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -142,6 +145,16 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
   const reviewRequestsRef = useRef(new Set());
 
   const currentLang = i18n.language || "en";
+
+  const withCountry = useCallback(
+  (path) => {
+    if (!countryCode) return path;
+    return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+  },
+  [countryCode]
+);
+
+const countryName = countryCode?.toUpperCase() || "your country";
 
   const hasCachedContent = useMemo(() => {
     return mtypes.length > 0 || Object.keys(types).length > 0;
@@ -162,6 +175,9 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
       .flatMap((genreMap) => Object.values(genreMap))
       .flatMap((genreObj) => genreObj.items || []);
   }, [types]);
+
+  const hasProducts = allItems.length > 0;
+const hasCategories = mtypes.length > 0;
 
   const getTranslatedName = useCallback(
     (item, itemId) => {
@@ -306,13 +322,17 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
       try {
         const [categoriesRes, itemsRes] = await Promise.all([
           axios.get(`${BASE_URL}/categories/FashionKick`),
-          axios.get(`${BASE_URL}/items`),
+         axios.get(`${BASE_URL}/items?country=${encodeURIComponent(countryCode)}`)
         ]);
 
         if (cancelled) return;
 
         const categories = Array.isArray(categoriesRes.data) ? categoriesRes.data : [];
-        const items = Array.isArray(itemsRes.data) ? itemsRes.data : [];
+              const items = Array.isArray(itemsRes.data?.items)
+          ? itemsRes.data.items
+          : Array.isArray(itemsRes.data)
+          ? itemsRes.data
+          : [];
         const groupedData = formatGroupedItems(items);
 
         setMTypes(categories);
@@ -338,7 +358,7 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
     return () => {
       cancelled = true;
     };
-  }, [currentLang, hydrateProductMeta]);
+  }, [countryCode, currentLang, hydrateProductMeta]);
 
   useEffect(() => {
     if (!Object.keys(types).length) return;
@@ -353,14 +373,38 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
   }, [types, currentLang, fetchTranslation]);
 
   const handleItemClick = (id) => {
-    if (id) router.push(`/product/${id}`);
+    if (id)router.push(withCountry(`/product/${id}`));
   };
 
   const handleCategoryClick = (category) => {
     if (!category) return;
     const formattedCategory = category.toLowerCase().replace(/\s+/g, "-");
-    router.push(`/itemOfShoes/${encodeURIComponent(formattedCategory)}`);
+   router.push(
+  withCountry(`/itemOfShoes/${encodeURIComponent(formattedCategory)}`)
+);
   };
+
+  if (loading && !hasCachedContent) {
+  return (
+    <div className="fashionkick-loading-state">
+      <div className="fashionkick-loading-spinner" />
+
+      <h2>Finding the best footwear for {countryName}</h2>
+
+      <p>
+        We're checking availability, trends, and best-selling collections
+        available in your region.
+      </p>
+
+      <div className="fashionkick-loading-skeleton-grid">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <ProductSkeleton key={index} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
  if (loading && !hasCachedContent) {
   return (
@@ -422,6 +466,36 @@ function FashionKick({ initialMTypes = [], initialTypes = {} }) {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+if (!loading && !hasProducts) {
+  return (
+    <div className="fashionkick-empty-country">
+      <div className="fashionkick-empty-icon">👟</div>
+
+      <h1>No Fashion Kick products available</h1>
+
+      <p>
+        We couldn't find sneakers or boots currently available for delivery to{" "}
+        <strong>{countryName}</strong>.
+      </p>
+
+      <p>
+        New collections are added regularly. Try another country or check back
+        soon.
+      </p>
+
+      <div className="fashionkick-empty-actions">
+        <button
+          type="button"
+          className="fashionkick-primary-btn"
+          onClick={() => router.push(withCountry("/"))}
+        >
+          Browse Homepage
+        </button>
+      </div>
     </div>
   );
 }
@@ -569,7 +643,9 @@ return (
                     className="fashionkick-topic-vertical-item"
                     onClick={() =>
                       router.push(
-                        `/shoesTopTopic/${encodeURIComponent(type)}/${encodeURIComponent(genre)}`
+                        withCountry(
+                          `/shoesTopTopic/${encodeURIComponent(type)}/${encodeURIComponent(genre)}`
+                        )
                       )
                     }
                   >

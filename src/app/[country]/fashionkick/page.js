@@ -5,25 +5,15 @@ import { headers } from "next/headers";
 const BASE_URLs = "https://api.malidag.com";
 const BASE_URL = "https://api.malidag.com";
 
-// SEO
-export async function generateMetadata() {
+export async function generateMetadata({ params }) {
+  const { country } = await params;
+  const countryCode = country;
+
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
-
-  let categories = [];
-  try {
-    const categoriesRes = await fetch(`${BASE_URLs}/categories/FashionKick`, {
-      cache: "no-store",
-    });
-    if (categoriesRes.ok) {
-      categories = await categoriesRes.json();
-    }
-  } catch (err) {
-    console.warn("Category fetch failed:", err);
-  }
 
   const title = i18n.t("fashionkick_title") || "Top Fashion Items | Malidag";
   const description =
@@ -36,11 +26,13 @@ export async function generateMetadata() {
     keywords: i18n.t("fashionkick_keywords", {
       defaultValue: "fashion, sneakers, boots, shoes, buy online",
     }),
-    alternates: { canonical: `https://www.malidag.com/fashionkick` },
+    alternates: {
+      canonical: `https://www.malidag.com/${countryCode}/fashionkick`,
+    },
     openGraph: {
       title,
       description,
-      url: `https://www.malidag.com/fashionkick`,
+      url: `https://www.malidag.com/${countryCode}/fashionkick`,
       siteName: "Malidag",
       images: [
         {
@@ -62,17 +54,17 @@ export async function generateMetadata() {
   };
 }
 
-// Page
-export default async function Page() {
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+export default async function Page({ params }) {
+  const { country } = await params;
+  const countryCode = country || "fr";
 
   let mtypes = [];
+
   try {
     const categoriesRes = await fetch(`${BASE_URLs}/categories/FashionKick`, {
       cache: "no-store",
     });
+
     if (categoriesRes.ok) {
       mtypes = await categoriesRes.json();
     }
@@ -81,26 +73,45 @@ export default async function Page() {
   }
 
   let types = {};
+
   try {
-    const itemsRes = await fetch(`${BASE_URL}/items`, { cache: "no-store" });
+    const itemsRes = await fetch(
+      `${BASE_URL}/items?country=${encodeURIComponent(countryCode)}`,
+      { cache: "no-store" }
+    );
+
     if (itemsRes.ok) {
       const data = await itemsRes.json();
-      const filteredData = data.items.filter(
-        (item) => item.category === "Shoes" && item.item.sold >= 100
-      );
+
+      const items = Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(data)
+        ? data
+        : [];
+
+      const filteredData = items.filter((item) => {
+        const category = (item?.category || "").toLowerCase();
+        const sold = Number(item?.item?.sold || 0);
+
+        return category === "shoes" && sold >= 100;
+      });
 
       types = filteredData.reduce((acc, item) => {
-        const type = item.item.type || "Other";
-        const genre = item.item.genre || "General";
+        const type = item?.item?.type || "Other";
+        const genre = item?.item?.genre || "General";
 
         if (!acc[type]) acc[type] = {};
-        if (!acc[type][genre]) acc[type][genre] = { genre, items: [] };
+        if (!acc[type][genre]) {
+          acc[type][genre] = { genre, items: [] };
+        }
 
-        acc[type][genre].items.push({
-          id: item.id,
-          itemId: item.itemId,
-          item: item.item,
-        });
+        if (acc[type][genre].items.length < 10) {
+          acc[type][genre].items.push({
+            id: item.id,
+            itemId: item.itemId,
+            item: item.item,
+          });
+        }
 
         return acc;
       }, {});

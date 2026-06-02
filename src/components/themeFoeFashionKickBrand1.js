@@ -1,12 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import useScreenSize from "./useIsMobile";
 import Link from "next/link";
+import { AppContext } from "./appContext";
 
 const ThemeForFashionKickBrand1 = () => {
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } = useScreenSize();
   const [loadedImages, setLoadedImages] = useState({});
+   const { country } = useContext(AppContext);
+
+   const countryCode = country?.code;
+
+  const withCountry = useCallback(
+    (path) => {
+      if (!countryCode) return path;
+      return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+    },
+    [countryCode]
+  );
 
   const theme = {
     id: 1,
@@ -31,7 +43,7 @@ return (
       position: "relative",
     }}
   >
-    <Link href="/fashionkick">
+     <Link href={withCountry("/fashionkick")}>
       <div
         style={{
           position: "relative",

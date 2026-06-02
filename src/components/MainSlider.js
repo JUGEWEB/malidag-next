@@ -115,9 +115,9 @@ const withCountry = useCallback(
 
   const routeMap = useMemo(
     () => ({
-      '2': '/brand/theme1/jackjones',
+      //'3': '/brand/theme1/jackjones',
      // '2': '/product/9e0da5b9-f4b3-42d0-8024-211ea47d0abd',
-      '3': '/save-big',
+      '2': '/save-big',
     }),
     []
   );

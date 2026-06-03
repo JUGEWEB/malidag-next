@@ -12,7 +12,7 @@ const BASE_URL = "https://api.malidag.com";
 
 const BASKET_API = "https://api.malidag.com/add-to-basket";
 
-function SaveBig() {
+function SaveBig({ countryCode }) {
   const router = useRouter();
   const setItemData = useCheckoutStore((state) => state.setItemData);
 const [reviews, setReviews] = useState({});
@@ -22,11 +22,18 @@ const [reviews, setReviews] = useState({});
   const [bestSellerId, setBestSellerId] = useState(null);
   const [basketItems, setBasketItems] = useState([]);
 
+  const withCountry = (path) => {
+  const code = countryCode;
+  if (!path) return `/${code}`;
+  return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
   useEffect(() => {
     const fetchFilteredItems = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/items`);
-        const data = response.data || [];
+        const response = await axios.get(`${BASE_URL}/items?country=${encodeURIComponent(countryCode)}`);
+        const raw = response.data;
+const data = Array.isArray(raw) ? raw : raw?.items || [];
 
        const filteredData = data.filter((item) => {
   const usdPrice = parseFloat(item?.item?.usdPrice || 0);
@@ -71,7 +78,7 @@ setBestSellerId(bestSeller?.id || null);
     };
 
     fetchFilteredItems();
-  }, []);
+  },  [countryCode]);
 
   const allItems = useMemo(() => Object.values(types).flat(), [types]);
 
@@ -89,25 +96,25 @@ setBestSellerId(bestSeller?.id || null);
       ["clothes", "toys", "accessories", "gear", "toy"].includes(category) &&
       ["boy", "girl", "babies", "babyboy", "babygirl", "kids", "kid"].includes(gender)
     ) {
-      router.push(`/itemOfKids/${gender}/${formattedType}`);
+      router.push(withCountry(`/itemOfKids/${gender}/${formattedType}`));
     } else if (category === "beauty") {
-      router.push(`/itemOfItems/${formattedType}`);
+      router.push(withCountry(`/itemOfItems/${formattedType}`));
     } else if (category === "shoes") {
-      router.push(`/itemOfShoes/${gender}-${formattedType}`);
+      router.push(withCountry(`/itemOfShoes/${gender}-${formattedType}`));
     } else if (category === "clothes" && gender === "women") {
-      router.push(`/item-of-women/${formattedType}`);
+      router.push(withCountry(`/item-of-women/${formattedType}`));
     } else if (category === "clothes" && gender === "men") {
-      router.push(`/item-of-men/${formattedType}`);
+      router.push(withCountry(`/item-of-men/${formattedType}`));
     } else if (category === "electronic") {
-      router.push(`/itemOfElectronic/${formattedType}`);
+      router.push(withCountry(`/itemOfElectronic/${formattedType}`));
     } else if (category === "home_kitchen") {
-      router.push(`/itemOfHome/${formattedType}`);
+      router.push(withCountry(`/itemOfHome/${formattedType}`));
     } else if (category === "pet_care") {
-      router.push(`/petCare/${gender}/${formattedType}`);
+      router.push(withCountry(`/petCare/${gender}/${formattedType}`));
     }  else if (
   category === "jewelry"
 ) {
-  router.push(`/jewelry/${formattedType}`);
+  router.push(withCountry(`/jewelry/${formattedType}`));
 } else {
       console.warn("No route matched for:", { type, category, gender });
     }
@@ -180,7 +187,7 @@ const isItemInBasket = (itemId) => {
 };
 
   const handleItemClick = (id) => {
-    router.push(`/product/${id}`);
+   router.push(withCountry(`/product/${id}`));
   };
 
   const handleColorSelect = (itemId, color, e) => {
@@ -257,7 +264,9 @@ const getColorSwatch = (colorName = "") => {
   const currentUser = auth?.currentUser;
 
   if (!currentUser) {
-    router.push(`/auth?redirect=${encodeURIComponent("/save-big")}`);
+    router.push(
+  withCountry(`/auth?redirect=${encodeURIComponent(`/${countryCode}/save-big`)}`)
+);
     return;
   }
 
@@ -414,7 +423,7 @@ useEffect(() => {
   className="bbe-item-rating"
   onClick={(e) => {
     e.stopPropagation();
-    router.push(`/product/${id}/review`);
+   router.push(withCountry(`/product/${id}/review`));
   }}
   title="View reviews"
 >
@@ -500,7 +509,7 @@ useEffect(() => {
     className="bbe-added-basket-btn"
     onClick={(e) => {
       e.stopPropagation();
-      router.push("/basket");
+     router.push(withCountry("/basket"));
     }}
   >
     <span className="bbe-cart-icon">🛒</span>

@@ -1,12 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
+import { AppContext } from "./appContext";
 import useScreenSize from "./useIsMobile";
 import Link from "next/link";
 
 const ThemeForFashionKick = () => {
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } = useScreenSize();
   const [loadedImages, setLoadedImages] = useState({});
+
+  const { country } = useContext(AppContext);
+const countryCode = country?.code;
+
+const withCountry = useCallback(
+  (path) => {
+    if (!countryCode) return path;
+    return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+  },
+  [countryCode]
+);
 
   const theme = {
     id: 1,
@@ -48,7 +60,7 @@ const ThemeForFashionKick = () => {
       </div>
 
       {/* Wrap image with Link */}
-      <Link href="/fashionkick">
+      <Link href={withCountry("/fashionkick")}>
         <div
           style={{
             width: isSmallMobile || isVerySmall ? "150px" : "100%",
@@ -77,7 +89,7 @@ const ThemeForFashionKick = () => {
       {/* Discover Now link */}
       {(isDesktop || isTablet || isMobile) && (
         <Link
-          href="/fashionkick"
+          href={withCountry("/fashionkick")}
           style={{
             color: "blue",
             marginTop: "1rem",

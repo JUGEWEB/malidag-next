@@ -1,11 +1,29 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  useCallback,
+} from "react";
+
+import { AppContext } from "./appContext";
 import axios from 'axios';
 import useScreenSize from './useIsMobile';
 import { useRouter, useSearchParams } from "next/navigation";
 
 const ThemeForMenFashion = () => {
+  const { country } = useContext(AppContext);
+
+const countryCode = country?.code;
+
+const withCountry = useCallback(
+  (path) => {
+    if (!countryCode) return path;
+    return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+  },
+  [countryCode]
+);
   const router = useRouter();
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } = useScreenSize();
     const [loadedImages, setLoadedImages] = useState({});
@@ -29,8 +47,8 @@ const ThemeForMenFashion = () => {
   if (!theme) return null;
 
   const handleDiscoverClick = () => {
-    router.push("/men-fashion");
-  };
+  router.push(withCountry("/men-fashion"));
+};
 
   return (
     <div style={{

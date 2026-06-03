@@ -124,11 +124,14 @@ const withCountry = (path) => {
         </Block>
       )}
 
+      {/*
+
       {isSmallPhone && (
         <CenteredBlock>
           <ThemeForPersonnalCare country={country} />
         </CenteredBlock>
       )}
+        */}
 
       {isMobileLike && (
         <Block className="malidag-block malidag-block--flush" background="white">
@@ -158,11 +161,16 @@ const withCountry = (path) => {
         </Block>
       )}
 
+      {/*
+
       {isSmallPhone && (
         <CenteredBlock>
           <ThemeForHomeAndKitchen country={country} />
         </CenteredBlock>
       )}
+
+       */}
+       
 
       {isDesktopLike && (
         <Block className="malidag-block malidag-block--flush">
@@ -170,7 +178,7 @@ const withCountry = (path) => {
         </Block>
       )}
       
-
+{/*
       {isSmallPhone && (
         <CenteredBlock>
           <ThemeForKidsFashion country={country} />
@@ -182,6 +190,7 @@ const withCountry = (path) => {
           <ThemeForKidToy country={country} />
         </CenteredBlock>
       )}
+        */}
 
       {/*
 

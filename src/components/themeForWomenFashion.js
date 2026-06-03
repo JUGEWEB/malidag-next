@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useContext, useCallback } from "react";
 import useScreenSize from "./useIsMobile";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AppContext } from "./appContext";
 
 const theme = {
   id: 456,
@@ -17,10 +18,22 @@ const ThemeForWomenFashion = () => {
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } =
     useScreenSize();
 
-  const handleDiscoverClick = () => {
-    router.push("/women-fashion");
-    window.scrollTo(0, 0);
-  };
+    const { country } = useContext(AppContext);
+
+const countryCode = country?.code;
+
+const withCountry = useCallback(
+  (path) => {
+    if (!countryCode) return path;
+    return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+  },
+  [countryCode]
+);
+
+ const handleDiscoverClick = () => {
+  router.push(withCountry("/women-fashion"));
+  window.scrollTo(0, 0);
+};
 
   return (
     <div
@@ -57,7 +70,7 @@ const ThemeForWomenFashion = () => {
           backgroundColor: "#ddd5",
         }}
       >
-        <Link href="/women-fashion" onClick={() => window.scrollTo(0, 0)}>
+        <Link href={withCountry("/women-fashion")} onClick={() => window.scrollTo(0, 0)}>
           <img
             src={theme.image}
             alt={theme.theme}

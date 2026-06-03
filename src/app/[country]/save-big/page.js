@@ -5,7 +5,9 @@ import SaveBig from "@/components/saveBig";
 export const dynamic = "force-dynamic";
 
 // ✅ SEO Metadata
-export async function generateMetadata() {
+export async function generateMetadata({ params }) {
+  const { country } = await params;
+  const countryCode = country;
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
@@ -16,7 +18,7 @@ export async function generateMetadata() {
   const title = `${t("crypto_discount_title")} | Malidag`;
   const description = t("crypto_discount_description");
   const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/save-big`;
+   const url = `${baseUrl}/${countryCode}/save-big`;
   const ogImage = `${baseUrl}/og/discount-crypto.jpg`;
 
   return {
@@ -42,17 +44,20 @@ export async function generateMetadata() {
 }
 
 // ✅ Page with structured data
-export default async function SaveBigPage() {
+export default async function SaveBigPage({ params }) {
+
+  const { country } = await params;
+  const countryCode = country;
   const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/save-big`;
+  const url = `${baseUrl}/${countryCode}/save-big`;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "Save Big with Crypto | Malidag",
+    name: "Save Big | Malidag",
     url,
     description:
-      "Exclusive discounts on Malidag when paying with crypto. Save big with BTC, ETH, BNB, and more.",
+      "Exclusive discounts on Malidag . Save big and more.",
     breadcrumb: {
       "@type": "BreadcrumbList",
       itemListElement: [
@@ -81,7 +86,7 @@ export default async function SaveBigPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <SaveBig />
+      <SaveBig countryCode={countryCode}/>
     </>
   );
 }

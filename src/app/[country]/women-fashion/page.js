@@ -6,7 +6,9 @@ import WoFashion from "@/components/woFashion";
 export const dynamic = "force-dynamic";
 
 // ✅ SEO Metadata with translations
-export async function generateMetadata() {
+export async function generateMetadata({ params }) {
+  const { country } = await params;
+  const countryCode = country;
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
@@ -21,7 +23,7 @@ export async function generateMetadata() {
   });
 
   const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/women-fashion`;
+  const url = `${baseUrl}/${countryCode}/women-fashion`;
   const ogImage = "https://api.malidag.com/images/1752764163519-steptodown.com980265.webp";
 
   const keywordsCsv =
@@ -69,9 +71,12 @@ export async function generateMetadata() {
 }
 
 // ✅ Page
-export default function Page() {
+export default async function Page({ params }) {
+
+   const { country } = await params;
+  const countryCode = country;
   const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/women-fashion`;
+  const url = `${baseUrl}/${countryCode}/women-fashion`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -94,7 +99,7 @@ export default function Page() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <WoFashion />
+      <WoFashion countryCode={countryCode} />
     </>
   );
 }

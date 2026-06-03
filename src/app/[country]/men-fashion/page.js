@@ -7,7 +7,9 @@ const BASE_URL = "https://api.malidag.com";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata() {
+export async function generateMetadata({params}) {
+   const { country } = await params;
+  const countryCode = country;
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
@@ -25,7 +27,7 @@ export async function generateMetadata() {
   });
 
   const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/men-fashion`;
+   const url = `${baseUrl}/${countryCode}/men-fashion`;
   const ogImage = `${baseUrl}/og/menFashion.jpg`;
 
   const keywordsCsv =
@@ -77,12 +79,13 @@ async function safeJson(response) {
   }
 }
 
-async function getData() {
+async function getData(countryCode) {
+
   const [categoriesRes, itemsRes] = await Promise.allSettled([
     fetch(`${BASE_URL}/categories/MenFashion`, {
       cache: "no-store",
     }),
-    fetch(`${BASE_URL}/items`, {
+   fetch(`${BASE_URL}/items?country=${encodeURIComponent(countryCode)}`, {
       cache: "no-store",
     }),
   ]);
@@ -143,11 +146,13 @@ async function getData() {
   };
 }
 
-export default async function Page() {
-  const { mtypes, groupedTypes } = await getData();
+export default async function Page({ params }) {
+  const { country } = await params;
+  const countryCode = country;
+  const { mtypes, groupedTypes } = await getData(countryCode);
 
   const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/men-fashion`;
+  const url = `${baseUrl}/${countryCode}/men-fashion`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -184,6 +189,7 @@ export default async function Page() {
       <MenFashion
         mtypes={mtypes}
         groupedTypes={groupedTypes}
+        countryCode={countryCode}
       />
     </>
   );

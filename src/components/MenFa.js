@@ -70,7 +70,7 @@ const sortImages = (images = []) => {
   });
 };
 
-function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
+function MenFashion({ mtypes, groupedTypes, countryCode }) {
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
@@ -79,10 +79,19 @@ function MenFashion({ mtypes, groupedTypes, cryptoPrices = {} }) {
 const [messageApi, contextHolder] = message.useMessage();
 const [basketItems, setBasketItems] = useState([]);
 
+const withCountry = (path) => {
+  const code = countryCode || "fr";
+  if (!path) return `/${code}`;
+  return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
   const allItems = useMemo(
     () => Object.values(groupedTypes || {}).flat(),
     [groupedTypes]
   );
+
+  const countryName = countryCode?.toUpperCase() || "your country";
+const hasItems = allItems.length > 0;
 
   const getBrandKey = (product) => {
     return String(
@@ -259,7 +268,7 @@ const isItemInBasket = (itemId) => {
         ? window.location.pathname
         : "/men-fashion";
 
-    router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+    router.push(withCountry(`/auth?redirect=${encodeURIComponent(currentPath)}`));
     return;
   }
 
@@ -305,6 +314,41 @@ const isItemInBasket = (itemId) => {
   }
 };
 
+if (!hasItems) {
+  return (
+    <div className="men-fashion-page">
+      <section className="men-empty-state">
+        <div className="men-empty-icon">🧥</div>
+
+        <span className="men-empty-badge">Men's Fashion</span>
+
+        <h1>No men&apos;s fashion items available</h1>
+
+        <p>
+          We couldn&apos;t find men&apos;s fashion products currently available
+          for delivery to <strong>{countryName}</strong>.
+        </p>
+
+        <p>
+          New styles are added regularly. Try another country or check back soon.
+        </p>
+
+        <button
+          type="button"
+          className="men-empty-btn"
+          onClick={() => router.push(withCountry("/"))}
+        >
+          Browse Homepage
+        </button>
+      </section>
+
+      <section className="recommended-section">
+        <RecommendedItem />
+      </section>
+    </div>
+  );
+}
+
   return (
     <div className="men-fashion-page">
       {contextHolder}
@@ -332,7 +376,7 @@ const isItemInBasket = (itemId) => {
           {Object.keys(groupedTypes || {}).map((type, idx) => (
             <a
               key={idx}
-              href={`/item-of-men/${type.toLowerCase()}`}
+              href={withCountry(`/item-of-men/${type.toLowerCase()}`)}
               target="_blank"
               rel="noopener noreferrer"
               className="type-chip"
@@ -368,7 +412,7 @@ const isItemInBasket = (itemId) => {
             return (
               <a
                 key={id}
-                href={`/product/${id}`}
+               href={withCountry(`/product/${id}`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="product-card"
@@ -486,7 +530,7 @@ const isItemInBasket = (itemId) => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    router.push("/basket");
+                   router.push(withCountry("/basket"));
                   }}
                 >
                   🛒 {getBasketQuantity(product.itemId)}

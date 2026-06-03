@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useContext, useCallback } from "react";
+import { AppContext } from "./appContext";
 import useScreenSize from "./useIsMobile";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,10 +18,22 @@ const ThemeForWomenFashionBrand1 = () => {
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } =
     useScreenSize();
 
-  const handleDiscoverClick = () => {
-    router.push("/women-fashion");
-    window.scrollTo(0, 0);
-  };
+    const { country } = useContext(AppContext);
+
+const countryCode = country?.code;
+
+const withCountry = useCallback(
+  (path) => {
+    if (!countryCode) return path;
+    return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+  },
+  [countryCode]
+);
+
+ const handleDiscoverClick = () => {
+  router.push(withCountry("/women-fashion"));
+  window.scrollTo(0, 0);
+};
 
 return (
   <div
@@ -34,7 +47,10 @@ return (
       marginBottom: isSmallMobile || isVerySmall ? "0rem" : "1rem",
     }}
   >
-    <Link href="/women-fashion" onClick={() => window.scrollTo(0, 0)}>
+   <Link
+  href={withCountry("/women-fashion")}
+  onClick={() => window.scrollTo(0, 0)}
+>
       <div
         style={{
           position: "relative",

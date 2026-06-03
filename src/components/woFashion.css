@@ -675,3 +675,60 @@
     border-radius: 14px;
   }
 }
+
+.women-empty-country {
+  min-height: 420px;
+  width: 100%;
+  padding: 70px 22px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top, rgba(255, 120, 180, 0.16), transparent 38%),
+    linear-gradient(180deg, #fff, #faf5f8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.women-empty-icon {
+  font-size: 70px;
+  margin-bottom: 16px;
+}
+
+.women-empty-badge {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #111;
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 18px;
+}
+
+.women-empty-country h2 {
+  font-size: clamp(28px, 4vw, 46px);
+  margin: 0 0 14px;
+  line-height: 1.08;
+}
+
+.women-empty-country p {
+  max-width: 620px;
+  margin: 6px 0;
+  color: #5f5f5f;
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+.women-empty-btn {
+  margin-top: 28px;
+  padding: 14px 32px;
+  border-radius: 999px;
+  border: none;
+  background: #111;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}

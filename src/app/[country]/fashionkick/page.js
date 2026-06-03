@@ -56,7 +56,7 @@ export async function generateMetadata({ params }) {
 
 export default async function Page({ params }) {
   const { country } = await params;
-  const countryCode = country || "fr";
+  const countryCode = country;
 
   let mtypes = [];
 

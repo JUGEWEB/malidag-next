@@ -11,7 +11,7 @@ const BASE_URLs = "https://api.malidag.com";
 const BASE_URL = "https://api.malidag.com";
 const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
 
-function WoFashion() {
+function WoFashion({ countryCode }) {
   const router = useRouter();
   const [types, setTypes] = useState({});
   const [mtypes, setMTypes] = useState({});
@@ -19,6 +19,12 @@ function WoFashion() {
   const [cryptoPrices, setCryptoPrices] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadingTypes, setLoadingTypes] = useState(true);
+
+  const withCountry = (path) => {
+  const code = countryCode || "fr";
+  if (!path) return `/${code}`;
+  return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
   useEffect(() => {
     const fetchWomenTypes = async () => {
@@ -40,7 +46,7 @@ function WoFashion() {
   useEffect(() => {
     const fetchWomenItems = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/items`);
+        const response = await axios.get(`${BASE_URL}/items?country=${encodeURIComponent(countryCode)}`);
         const raw = response.data;
         const data = Array.isArray(raw) ? raw : raw?.items || [];
 
@@ -80,11 +86,11 @@ function WoFashion() {
     fetchCryptoPrices();
     const intervalId = setInterval(fetchCryptoPrices, 5000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [countryCode]);
 
   const handleItemClick = (id) => {
     if (id) {
-      router.push(`/product/${id}`);
+      router.push(withCountry(`/product/${id}`));
     }
   };
 
@@ -96,11 +102,14 @@ function WoFashion() {
         formattedCategory = "shirt";
       }
 
-      router.push(`/item-of-women/${encodeURIComponent(formattedCategory)}`);
+      router.push(withCountry(`/item-of-women/${encodeURIComponent(formattedCategory)}`));
     }
   };
 
   const allItems = Object.values(types || {}).flat();
+
+  const countryName = countryCode?.toUpperCase() || "your country";
+const hasItems = allItems.length > 0;
 
   const sliderSettings = {
     dots: true,
@@ -120,6 +129,51 @@ function WoFashion() {
       },
     ],
   };
+
+  if (!loadingTypes && !hasItems) {
+  return (
+    <div className="women-fashion-page">
+      <section className="women-fashion-header">
+        <div className="women-fashion-header-content">
+          <span className="women-fashion-badge">Women’s Fashion</span>
+          <h1>Elegant Looks, Everyday Confidence</h1>
+          <p>
+            Discover fashion-forward styles, trending pieces, and beautiful essentials.
+          </p>
+        </div>
+      </section>
+
+      <section className="women-empty-country">
+        <div className="women-empty-icon">👗</div>
+
+        <span className="women-empty-badge">Women’s Fashion</span>
+
+        <h2>No women’s fashion items available</h2>
+
+        <p>
+          We couldn’t find women’s fashion products currently available for delivery to{" "}
+          <strong>{countryName}</strong>.
+        </p>
+
+        <p>
+          New styles are added regularly. Try another country or check back soon.
+        </p>
+
+        <button
+          type="button"
+          className="women-empty-btn"
+          onClick={() => router.push(withCountry("/"))}
+        >
+          Browse Homepage
+        </button>
+      </section>
+
+      <section className="women-recommended-section">
+        <RecommendedItem />
+      </section>
+    </div>
+  );
+}
 
   return (
     <div className="women-fashion-page">
@@ -202,7 +256,7 @@ function WoFashion() {
             <button
               key={index}
               className="topics-center-item"
-              onClick={() => router.push(`/women-toptopic/${type.toLowerCase()}`)}
+              onClick={() => router.push(withCountry(`/women-toptopic/${type.toLowerCase()}`))}
             >
               Top {type}
             </button>

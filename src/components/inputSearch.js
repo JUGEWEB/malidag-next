@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useContext } from "react";
+import { AppContext } from "./appContext";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
@@ -19,6 +20,8 @@ const LANG_KEYWORDS_MAP = {
 const SUPPORTED_LANGS = ["en", "fr"];
 
 function InputSearch({ isBasketVisible, basketItems, user }) {
+  const { country } = useContext(AppContext);
+  const countryCode = country?.code || "fr";
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
@@ -26,6 +29,12 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
   const { isMobile, isSmallMobile, isVerySmall, isVeryVerySmall } = useScreenSize();
   const { t } = useTranslation();
   const router = useRouter();
+
+  const withCountry = (path) => {
+  const code = countryCode || "fr";
+  if (!path) return `/${code}`;
+  return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
   const normalize = (str = "") =>
     String(str)
@@ -98,7 +107,9 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
       console.error("Error saving search:", err);
     }
 
-    router.push(`/itemPage/${translatedKey}?q=${encodeURIComponent(trimmed)}`);
+   router.push(
+  withCountry(`/itemPage/${translatedKey}?q=${encodeURIComponent(trimmed)}`)
+);
   };
 
   const updateSuggestions = (term) => {

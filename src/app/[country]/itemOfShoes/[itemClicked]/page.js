@@ -10,14 +10,16 @@ export async function generateMetadata({ params }) {
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
-  const { itemClicked } = await params;
+  const { country, itemClicked } = await params;
+
+   const countryCode = country;
 
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
 
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
-  const url = `https://www.malidag.com/itemOfShoes/${encodeURIComponent(itemClicked)}`;
+ const url = `https://www.malidag.com/${countryCode}/itemOfShoes/${encodeURIComponent(itemClicked)}`;
   const ogImage = "https://www.malidag.com/images/og/shoes-default.jpg";
 
   return {
@@ -68,6 +70,6 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function Page({ params }) {
-  const { itemClicked } = await params;
-  return <ItemOfShoes itemClicked={itemClicked} />;
+ const { country, itemClicked } = await params;
+  return <ItemOfShoes countryCode={country} itemClicked={itemClicked} />;
 }

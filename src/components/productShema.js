@@ -8,6 +8,14 @@ const ProductSchema = ({ productId }) => {
   const [reviews, setReviews] = useState([]);
   const [finalRating, setFinalRating] = useState(null);
 
+  const safeIsoDate = (value) => {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? new Date().toISOString()
+    : date.toISOString();
+};
+
   useEffect(() => {
     if (!productId) return;
 
@@ -75,7 +83,7 @@ const ProductSchema = ({ productId }) => {
         name: r.name || "Anonymous",
       },
       reviewBody: r.comment,
-      datePublished: new Date(r.date).toISOString(),
+     datePublished: safeIsoDate(r.date),
     })),
   };
 

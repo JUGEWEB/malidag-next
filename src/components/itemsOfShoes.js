@@ -13,7 +13,12 @@ import { message } from "antd";
 const BASE_URL = "https://api.malidag.com";
 const BASKET_API = "https://api.malidag.com/add-to-basket";
 
-function ItemOfShoes({ itemClicked }) {
+function ItemOfShoes({  itemClicked, countryCode  }) {
+  const withCountry = (path) => {
+  const code = countryCode;
+  if (!path) return `/${code}`;
+  return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+};
   const router = useRouter();
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
@@ -105,11 +110,20 @@ const colors = useMemo(() => {
 
       try {
         const response = await axios.get(`${BASE_URL}/shoes/images`);
-        const filteredImages = Array.isArray(response.data)
-          ? response.data.filter(
-              (image) => image.type?.toLowerCase() === itemClicked.toLowerCase()
-            )
-          : [];
+        const normalizedType = itemClicked
+  .toLowerCase()
+  .trim()
+  .replaceAll("_", "-");
+
+const filteredImages = Array.isArray(response.data)
+  ? response.data.filter(
+      (image) =>
+        image?.type
+          ?.toLowerCase()
+          ?.trim()
+          ?.replaceAll("_", "-") === normalizedType
+    )
+  : [];
 
         setBeautyImages(filteredImages);
       } catch (error) {
@@ -131,10 +145,16 @@ const colors = useMemo(() => {
       setLoading(true);
 
       try {
-        const [gender, ...typeParts] = itemClicked.split("-");
-        const type = typeParts.join("-");
+       const normalizedItemClicked = itemClicked
+  .toLowerCase()
+  .trim()
+  .replaceAll("_", "-");
 
-        const response = await axios.get(`${BASE_URL}/items/${type}`);
+const [gender, ...typeParts] = normalizedItemClicked.split("-");
+const type = typeParts.join("-");
+       
+
+        const response = await axios.get(`${BASE_URL}/items/${type}?country=${encodeURIComponent(countryCode)}`);
         const fetchedItems = response?.data?.items || [];
 
         const filteredItems = fetchedItems.filter((entry) => {
@@ -160,7 +180,7 @@ const colors = useMemo(() => {
     };
 
     fetchItems();
-  }, [itemClicked]);
+  },[itemClicked, countryCode]);
 
   const getAllSizes = (itemsList) => {
     const allSizes = itemsList.map((entry) => {
@@ -305,7 +325,7 @@ const handleImageArrow = (itemData, direction, e) => {
   };
 
   const handleNavigate = (id) => {
-    router.push(`/product/${id}`);
+   router.push(withCountry(`/product/${id}`));
   };
 
   const handleBrandNavigate = (brandName) => {
@@ -316,12 +336,12 @@ const handleImageArrow = (itemData, direction, e) => {
       .trim()
       .replace(/\s+/g, "-");
 
-    router.push(`/brand/theme1/${brandSlug}`);
+    router.push(withCountry(`/brand/theme1/${brandSlug}`));
   };
 
   const handleReviewNavigate = (itemData) => {
     setItemData(itemData);
-    router.push("/reviewPage");
+    router.push(withCountry(`/product/${itemData.id}/review`));
   };
 
   const fetchUserBasket = async () => {
@@ -365,7 +385,7 @@ const handleAddToBasket = async (itemData, e) => {
     const currentPath =
       typeof window !== "undefined" ? window.location.pathname : "/";
 
-    router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+    router.push(withCountry(`/auth?redirect=${encodeURIComponent(currentPath)}`));
     return;
   }
 
@@ -418,9 +438,15 @@ const handleAddToBasket = async (itemData, e) => {
   }
 };
 
-  const pageTitle = itemClicked
-    ? `Malidag ${itemClicked.replace(/-/g, " ")}`
-    : "Malidag Shoes";
+ const normalizedTitle = itemClicked?.replaceAll("_", "-");
+
+ const normalizedItemClicked = itemClicked
+  ?.replaceAll("_", "-")
+  ?.trim();
+
+const pageTitle = normalizedTitle
+  ? `Malidag ${normalizedTitle.replace(/-/g, " ")}`
+  : "Malidag Shoes";
 
  if (loading) {
   return (
@@ -441,6 +467,37 @@ const handleAddToBasket = async (itemData, e) => {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+if (!loading && items.length === 0) {
+  return (
+    <div className="shoe-empty-country">
+      <div className="shoe-empty-icon">👟</div>
+
+      <div className="shoe-empty-badge">
+        {countryCode?.toUpperCase()}
+      </div>
+
+      <h2>No footwear available</h2>
+
+      <p>
+        We couldn't find any shoes currently available for delivery to{" "}
+        <strong>{countryCode?.toUpperCase()}</strong>.
+      </p>
+
+      <p>
+        New collections are added regularly. Try another country or check back
+        soon.
+      </p>
+
+      <button
+        className="shoe-empty-btn"
+        onClick={() => router.push(withCountry("/"))}
+      >
+        Continue Shopping
+      </button>
     </div>
   );
 }
@@ -484,7 +541,7 @@ return (
           <div className="shoe-hero-visual">
             <img
               src={beautyImages[0].imageUrl}
-              alt={itemClicked || "Shoes collection"}
+              alt={normalizedItemClicked || "Shoes collection"}
               className="shoe-hero-image"
             />
             <div className="shoe-hero-gradient" />
@@ -495,7 +552,9 @@ return (
                   ? `${t("selected") || "Selected"}: ${selectedSize}`
                   : t("footwear_collection") || "Footwear Collection"}
               </span>
-              <strong>{itemClicked?.replace(/-/g, " ") || "Shoes"}</strong>
+             <strong>
+              {normalizedItemClicked?.replace(/-/g, " ") || "Shoes"}
+            </strong>
             </div>
           </div>
         ) : (
@@ -514,7 +573,7 @@ return (
             <div key={index} className="shoe-gallery-card">
               <img
                 src={img.imageUrl}
-                alt={`${itemClicked}-${index}`}
+                alt={`${normalizedItemClicked}-${index}`}
                 className="shoe-gallery-image"
               />
             </div>
@@ -894,7 +953,7 @@ return (
     className="shoe-added-cart-btn"
     onClick={(e) => {
       e.stopPropagation();
-      router.push("/basket");
+      router.push(withCountry("/basket"));
     }}
   >
     🛒 {getBasketQuantity(itemId)}

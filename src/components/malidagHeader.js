@@ -184,7 +184,7 @@ const isCheckoutPage =
       <div style={{width: "100%", marginRight: "5px"}}>
 
       {(isDesktop) && (
-        <InputSearch user={user}/>
+        <InputSearch user={user} country={country} />
       )}
 
       </div>

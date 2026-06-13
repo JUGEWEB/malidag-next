@@ -82,6 +82,9 @@ setBestSellerId(bestSeller?.id || null);
 
   const allItems = useMemo(() => Object.values(types).flat(), [types]);
 
+  const countryName = countryCode?.toUpperCase() || "your country";
+const hasItems = allItems.length > 0;
+
   const formatTypeForUrl = (type) =>
     encodeURIComponent(String(type || "").toLowerCase().replace(/\s+/g, "-"));
 
@@ -333,13 +336,58 @@ useEffect(() => {
   return () => unsubscribe();
 }, []);
 
-  if (loading) {
-    return (
-      <div className="item-spinner-wrapper">
-        <div className="loader" />
+ if (loading) {
+  return (
+    <div className="bbe-loading-wrapper">
+      <div className="bbe-loading-header">
+        <div className="bbe-skeleton bbe-skeleton-title" />
+        <div className="bbe-skeleton bbe-skeleton-subtitle" />
       </div>
-    );
-  }
+
+      <div className="bbe-loading-grid">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="bbe-loading-card">
+            <div className="bbe-skeleton bbe-skeleton-image" />
+            <div className="bbe-skeleton bbe-skeleton-line" />
+            <div className="bbe-skeleton bbe-skeleton-line short" />
+            <div className="bbe-skeleton bbe-skeleton-button" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+if (!loading && !hasItems) {
+  return (
+    <div className="bbe-empty-country">
+      <div className="bbe-empty-icon">💸</div>
+
+      <span className="bbe-empty-badge">
+        Save Big Deals
+      </span>
+
+      <h2>No discounted products available</h2>
+
+      <p>
+        We couldn't find any discounted products currently available for
+        delivery to <strong>{countryName}</strong>.
+      </p>
+
+      <p>
+        New deals are added every day. Try another country or check back soon.
+      </p>
+
+      <button
+        type="button"
+        className="bbe-empty-btn"
+        onClick={() => router.push(withCountry("/"))}
+      >
+        Browse Homepage
+      </button>
+    </div>
+  );
+}
 
   return (
     <div className="bbe-container">

@@ -17,7 +17,10 @@ function ReviewPage({ productId, product, reviews, avg, count, auth }) {
 const { itemData, authState = false, ratingFilter = null } = useCheckoutStore();
 const [selectedRating, setSelectedRating] = useState(ratingFilter);
 const {isMobile, isTablet, isSmallMobile, isDesktop, isVerySmall} = useScreenSize()
-const likedCount = parseInt(localStorage.getItem("likedCount") || "0", 10);
+const likedCount =
+  typeof window !== "undefined"
+    ? parseInt(localStorage.getItem("likedCount") || "0", 10)
+    : 0;
 
 
    

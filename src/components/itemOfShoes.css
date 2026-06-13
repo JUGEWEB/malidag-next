@@ -1235,3 +1235,50 @@ button {
   outline: 2px solid rgba(21, 107, 69, 0.28);
   outline-offset: 3px;
 }
+
+.shoe-empty-country {
+  min-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.shoe-empty-icon {
+  font-size: 80px;
+  margin-bottom: 18px;
+}
+
+.shoe-empty-badge {
+  background: #111;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.shoe-empty-country h2 {
+  font-size: 38px;
+  margin-bottom: 12px;
+}
+
+.shoe-empty-country p {
+  max-width: 650px;
+  color: #666;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.shoe-empty-btn {
+  margin-top: 24px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 999px;
+  background: #111;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -3,7 +3,8 @@ import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
 
 export async function generateMetadata({ params }) {
-  const { itemClicked } = params;
+  const { country, itemClicked } = params;
+  const countryCode = country || "fr";
 
   // ✅ detect language from request
   const h = await headers();
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }) {
 
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
-  const url = `https://www.malidag.com/item-of-women/${encodeURIComponent(itemClicked)}`;
+  const url = `https://www.malidag.com/${countryCode}/item-of-women/${encodeURIComponent(itemClicked)}`;
   const ogImage = "https://web.malidag.com/og/womenFashion.jpg";
 
   return {
@@ -54,6 +55,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default function Page({ params }) {
-  return <ItemOfWomen itemClicked={params.itemClicked} />;
+export default async function Page({ params }) {
+    const { country, itemClicked } = await params;
+  const countryCode = country;
+  return <ItemOfWomen countryCode={countryCode} itemClicked={itemClicked} />;
 }

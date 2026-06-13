@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import colorSwatches from "../../lib/colors.json";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import "./itemOfItems.css";
@@ -8,10 +9,17 @@ import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
 
-function Item() {
+function Item( { countryCode, itemClicked: itemClickedProp }) {
   const params = useParams();
   const router = useRouter();
-  const itemClicked = params?.itemClicked;
+
+  const itemClicked = itemClickedProp || params?.itemClicked;
+
+  const withCountry = (path) => {
+    const code = countryCode || params?.country || "fr";
+    if (!path) return `/${code}`;
+    return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+  };
 
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -29,16 +37,15 @@ function Item() {
     isVeryVerySmall,
   } = useScreenSize();
 
+  const [selectedColor, setSelectedColor] = useState("all");
+const [selectedSize, setSelectedSize] = useState(null);
+const [selectedColorByItem, setSelectedColorByItem] = useState({});
+const [filterOpen, setFilterOpen] = useState(false);
+
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [bestSellersByCategory, setBestSellersByCategory] = useState({});
-
-  const stablecoinIcons = {
-    usdt: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
-    usdc: "https://api.malidag.com/learn/videos/1769909942070-0xaf88d065e77c8cc2239327c5edb3a432268e5831.png",
-    busd: "https://api.malidag.com/learn/videos/1773502639247-BUSD.png",
-  };
 
   const fetchReviews = async (productId) => {
     try {
@@ -88,8 +95,13 @@ function Item() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await axios.get(`https://api.malidag.com/items/${itemClicked}`);
-        const fetchedItems = response.data.items || [];
+       const currentCountry = countryCode || params?.country || "fr";
+
+const response = await axios.get(
+  `https://api.malidag.com/items/${itemClicked}?country=${encodeURIComponent(currentCountry)}`
+);
+
+const fetchedItems = response.data.items || [];
 
         setItems(fetchedItems);
 
@@ -125,7 +137,43 @@ setBestSellersByCategory(bestSellerMap);
     };
 
     fetchItems();
-  }, [itemClicked]);
+  },[itemClicked, countryCode, params?.country]);
+
+  const formatTypeForUrl = (type) =>
+  encodeURIComponent(String(type || "").toLowerCase().replace(/\s+/g, "-"));
+
+const handleNavigateByType = (itemData) => {
+  const type = itemData?.item?.type || "";
+  const category = String(itemData?.category || "").toLowerCase();
+  const gender = String(itemData?.item?.genre || "").toLowerCase();
+
+  const formattedType = formatTypeForUrl(type);
+
+  if (
+    ["clothes", "toys", "accessories", "gear", "toy"].includes(category) &&
+    ["boy", "girl", "babies", "babyboy", "babygirl", "kids", "kid"].includes(gender)
+  ) {
+    router.push(withCountry(`/itemOfKids/${gender}/${formattedType}`));
+  } else if (category === "beauty") {
+    router.push(withCountry(`/itemOfItems/${formattedType}`));
+  } else if (category === "shoes") {
+    router.push(withCountry(`/itemOfShoes/${gender}-${formattedType}`));
+  } else if (category === "clothes" && gender === "women") {
+    router.push(withCountry(`/item-of-women/${formattedType}`));
+  } else if (category === "clothes" && gender === "men") {
+    router.push(withCountry(`/item-of-men/${formattedType}`));
+  } else if (category === "electronic") {
+    router.push(withCountry(`/itemOfElectronic/${formattedType}`));
+  } else if (category === "home_kitchen") {
+    router.push(withCountry(`/itemOfHome/${formattedType}`));
+  } else if (category === "pet_care") {
+    router.push(withCountry(`/petCare/${gender}/${formattedType}`));
+  } else if (category === "jewelry") {
+    router.push(withCountry(`/jewelry/${formattedType}`));
+  } else {
+    router.push(withCountry(`/itemOfItems/${formattedType}`));
+  }
+};
 
   const toggleDropdown = (category) => {
     setDropdownOpen((prev) => ({
@@ -151,152 +199,363 @@ setBestSellersByCategory(bestSellerMap);
     setActiveVideoId(null);
   };
 
-  const handleNavigate = (id) => {
-    router.push(`/product/${id}`);
-  };
+ const handleNavigate = (id) => {
+  router.push(withCountry(`/product/${id}`));
+};
 
-  const getStablecoinIcon = (crypto) => {
-    if (!crypto) return stablecoinIcons.usdt;
-    return stablecoinIcons[crypto.toLowerCase()] || stablecoinIcons.usdt;
-  };
-
-  const getStablecoinPrice = (usdPrice) => {
-    return Number(usdPrice).toFixed(2);
-  };
-
-  const gridClassName = isVeryVerySmall
-    ? "items-grid items-grid-1"
-    : isVerySmall
+ const gridClassName =
+  isVeryVerySmall || isVerySmall || isSmallMobile || isMobile
     ? "items-grid items-grid-2"
-    : isSmallMobile
-    ? "items-grid items-grid-2"
-    : isMobile
-    ? "items-grid items-grid-3"
-    : isTablet
-    ? "items-grid items-grid-3"
-    : "items-grid items-grid-3";
+    : "items-grid items-grid-4";
 
-  if (loading) {
-    return <div className="loading-message">{t("loading")}</div>;
+
+    const getColorSwatch = (colorName = "") => {
+  const color = colorName.trim().toLowerCase();
+  return colorSwatches[color] || null;
+};
+
+const getImageUrl = (imageEntry) => {
+  if (!imageEntry) return "";
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry === "object" && imageEntry.url) return imageEntry.url;
+  return "";
+};
+
+const sortImages = (images = []) => {
+  return [...images].sort((a, b) => {
+    const posA =
+      typeof a === "object" && typeof a?.position === "number"
+        ? a.position
+        : 999999;
+
+    const posB =
+      typeof b === "object" && typeof b?.position === "number"
+        ? b.position
+        : 999999;
+
+    return posA - posB;
+  });
+};
+
+const getColorOptions = (itemData) => {
+  return Object.keys(itemData?.item?.imagesVariants || {});
+};
+
+const getDisplayImage = (itemData) => {
+  const selectedColorForItem = selectedColorByItem[itemData.id];
+  const variants = itemData?.item?.imagesVariants || {};
+
+  if (
+    selectedColorForItem &&
+    Array.isArray(variants[selectedColorForItem])
+  ) {
+    return (
+      getImageUrl(sortImages(variants[selectedColorForItem])?.[0]) ||
+      "/fallback.png"
+    );
   }
 
+  const firstColor = Object.keys(variants)[0];
+
+  if (firstColor && Array.isArray(variants[firstColor])) {
+    return getImageUrl(sortImages(variants[firstColor])?.[0]) || "/fallback.png";
+  }
+
+  return getImageUrl(itemData?.item?.images?.[0]) || "/fallback.png";
+};
+
+const handleColorSelect = (itemId, color, e) => {
+  e.stopPropagation();
+
+  setSelectedColorByItem((prev) => ({
+    ...prev,
+    [itemId]: color,
+  }));
+};
+
+const getAllSizes = () => {
+  const allSizes = items.flatMap((itemData) => {
+    const sizes = Object.values(itemData?.item?.size || {});
+    return sizes
+      .flat()
+      .flatMap((size) => String(size).split(",").map((x) => x.trim()));
+  });
+
+  return [...new Set(allSizes.filter(Boolean))];
+};
+
+const colors = useMemo(() => {
+  const allColors = [];
+
+  items.forEach((itemData) => {
+    Object.keys(itemData?.item?.imagesVariants || {}).forEach((color) => {
+      allColors.push(color);
+    });
+  });
+
+  return [...new Set(allColors)];
+}, [items]);
+
+const displayedItems = useMemo(() => {
+  return items.filter((itemData) => {
+    const item = itemData?.item || {};
+
+    const matchesColor =
+      selectedColor === "all" ||
+      Object.keys(item?.imagesVariants || {}).includes(selectedColor);
+
+    const availableSizes = Object.values(item?.size || {})
+      .flat()
+      .flatMap((size) => String(size).split(",").map((x) => x.trim()));
+
+    const matchesSize =
+      !selectedSize || availableSizes.includes(selectedSize);
+
+    return matchesColor && matchesSize;
+  });
+}, [items, selectedColor, selectedSize]);
+
+ if (loading) {
   return (
-    <div className="item-page">
-      <div className="item-page-inner">
-        <div className="items-topbar">
-          <div className="items-topbar-inner">
-            <div className="items-brand-title">Malidag {itemClicked}.</div>
+    <div className="items-page-loading">
+      <div className="items-loading-header">
+        <div className="items-skeleton items-skeleton-title" />
+        <div className="items-skeleton items-skeleton-subtitle" />
+      </div>
 
-            <div className="items-related-label">{t("related_categories")}</div>
-
-            <div className="items-categories">
-              {categories.map((category, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  className="items-category-btn"
-                  onClick={() => toggleDropdown(category)}
-                >
-                  <span>{category}</span>
-                  <span
-                    className={`dropdown-arrow ${
-                      dropdownOpen[category] ? "arrow-open" : "arrow-closed"
-                    }`}
-                  >
-                    ▼
-                  </span>
-                </button>
-              ))}
-            </div>
+      <div className="items-loading-grid">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="items-loading-card">
+            <div className="items-skeleton items-skeleton-image" />
+            <div className="items-skeleton items-skeleton-line" />
+            <div className="items-skeleton items-skeleton-line short" />
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+  const countryName = countryCode?.toUpperCase() || "your country";
+
+if (!loading && items.length === 0) {
+  return (
+    <div className="items-empty-country">
+      <div className="items-empty-icon">📦</div>
+
+      <span className="items-empty-badge">
+        {String(itemClicked).replaceAll("_", " ")}
+      </span>
+
+      <h2>No products available</h2>
+
+      <p>
+        We couldn't find any{" "}
+        <strong>{String(itemClicked).replaceAll("_", " ")}</strong>{" "}
+        products currently available for delivery to{" "}
+        <strong>{countryName}</strong>.
+      </p>
+
+      <p>New arrivals are added regularly. Try another country or check back soon.</p>
+
+      <button
+        type="button"
+        className="items-empty-btn"
+        onClick={() => router.push(withCountry("/"))}
+      >
+        Continue Shopping
+      </button>
+    </div>
+  );
+}
+
+ return (
+  <div className="item-page">
+    <div className="item-page-inner">
+
+      <div className="beauty-images-container">
+        {beautyImages.length > 0 ? (
+          beautyImages.map((img, index) => (
+            <img
+              key={index}
+              src={img.imageUrl}
+              alt={itemClicked}
+              className="beauty-image"
+            />
+          ))
+        ) : (
+          <p className="empty-beauty-images" />
+        )}
+      </div>
+
+      <div className="items-main-layout">
+       <aside className="items-related-sidebar">
+  <div className="items-related-title">
+    {t("related_categories")}
+  </div>
+
+  {categories.map((category) => (
+    <div key={category} className="items-related-group">
+      <button
+        type="button"
+        className="items-related-category"
+        onClick={() => toggleDropdown(category)}
+      >
+        <span>{category}</span>
+        <span className="items-dropdown-arrow">
+          {dropdownOpen[category] ? "▲" : "▼"}
+        </span>
+      </button>
+
+      <div
+        className={`items-related-types ${
+          dropdownOpen[category] ? "open" : ""
+        }`}
+      >
+        {categorizedItems[category]
+          ?.filter(
+            (item, idx, arr) =>
+              arr.findIndex(
+                (x) =>
+                  x.item?.type === item.item?.type &&
+                  x.item?.genre === item.item?.genre
+              ) === idx
+          )
+          .map((item) => (
+            <button
+              key={`${item.item?.genre || "all"}-${item.item?.type}`}
+              type="button"
+              className="items-related-type"
+              onClick={() => handleNavigateByType(item)}
+            >
+              {item.item?.genre
+                ? `${item.item.genre} ${item.item.type}`
+                : item.item?.type}
+            </button>
+          ))}
+      </div>
+    </div>
+  ))}
+
+  <div className="items-mobile-filter-shell">
+  <button
+    type="button"
+    className="items-filter-toggle"
+    onClick={() => setFilterOpen((prev) => !prev)}
+  >
+    <span>Filters</span>
+    <span>{filterOpen ? "▲" : "▼"}</span>
+  </button>
+
+  <div className={`items-filter-dropdown ${filterOpen ? "open" : ""}`}>
+    <div className="items-filter-section">
+      <h3>Colors</h3>
+
+      <div className="items-color-options">
+        <button
+          type="button"
+          className={`items-color-circle all ${
+            selectedColor === "all" ? "active" : ""
+          }`}
+          onClick={() => setSelectedColor("all")}
+        >
+          All
+        </button>
+
+        {colors.map((color) => {
+          const swatchColor = getColorSwatch(color);
+
+          return (
+            <button
+              key={color}
+              type="button"
+              className={`items-color-circle ${
+                selectedColor === color ? "active" : ""
+              }`}
+              title={color}
+              style={swatchColor ? { background: swatchColor } : {}}
+              onClick={() => setSelectedColor(color)}
+            />
+          );
+        })}
+      </div>
+    </div>
+
+    {getAllSizes().length > 0 && (
+      <div className="items-filter-section">
+        <h3>Sizes</h3>
+
+        <div className="items-size-options">
+          {getAllSizes().map((size) => (
+            <button
+              key={size}
+              type="button"
+              className={`items-size-btn ${
+                selectedSize === size ? "active" : ""
+              }`}
+              onClick={() => setSelectedSize(size)}
+            >
+              {size}
+            </button>
+          ))}
         </div>
+      </div>
+    )}
 
-        <div className="items-dropdown-wrap">
-          {categories.map((category) =>
-            dropdownOpen[category] ? (
-              <div key={category} className="items-dropdown-panel">
-                <div className="items-dropdown-grid">
-                  <div className="stable-catgory-types">
-                    <strong>Malidag {category}</strong>
-
-                    {categorizedItems[category]
-                      ?.map((item) => item.item.type)
-                      .filter((type, idx, arr) => arr.indexOf(type) === idx)
-                      .map((type, idx) => (
-                        <div key={idx} className="stable-tpe-item">
-                          {type}
-                        </div>
-                      ))}
-                  </div>
-
-                  <div className="items-hot-side">
-                    <div className="items-hot-title">{t("hot_label")}</div>
-
-                    <div className="items-hot-grid">
-                      {getHotItems(categorizedItems[category] || []).map((hotItem, idx) => (
-                        <div
-                          key={idx}
-                          className="items-hot-card"
-                          onClick={() => handleNavigate(hotItem.id)}
-                        >
-                          <img
-                            src={hotItem.item.images[0]}
-                            alt={hotItem.item.name}
-                            className="stable-ht-item-image"
-                          />
-                          <div className="stable-ht-item-name">{hotItem.item.name}</div>
-                          <div className="stable-ht-item-sold">
-                            {hotItem.item.sold} {t("sold")}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null
-          )}
-        </div>
-
-        <div className="beauty-images-container">
-          {beautyImages.length > 0 ? (
-            beautyImages.map((img, index) => (
-              <img
-                key={index}
-                src={img.imageUrl}
-                alt={itemClicked}
-                className="beauty-image"
-              />
-            ))
-          ) : (
-            <p className="empty-beauty-images" />
-          )}
-        </div>
+    {(selectedColor !== "all" || selectedSize) && (
+      <button
+        type="button"
+        className="items-clear-filter"
+        onClick={() => {
+          setSelectedColor("all");
+          setSelectedSize(null);
+        }}
+      >
+        Clear filters
+      </button>
+    )}
+  </div>
+</div>
+</aside>
 
         <div className="item-pge-container">
           <div className={gridClassName}>
-            {items.map((itemData) => {
+           {displayedItems.map((itemData) => {
               const { itemId, id, item } = itemData;
-              const isBestSeller = id === bestSellersByCategory[itemData.category];
-              const { name, usdPrice, originalPrice, cryptocurrency, sold, videos } = item;
+              const isBestSeller =
+                id === bestSellersByCategory[itemData.category];
 
-              const crypto = String(cryptocurrency || "USDT").toUpperCase();
+              const {
+                name,
+                usdPrice,
+                originalPrice,
+                sold,
+                videos,
+              } = item;
+
               const reviewsData = reviews[itemId] || {};
               const finalRating = reviewsData?.averageRating;
 
-              const itemPriceInStablecoin = getStablecoinPrice(usdPrice);
+              const normalizedVideos = Array.isArray(videos)
+                ? videos
+                : [videos];
 
-              const normalizedVideos = Array.isArray(videos) ? videos : [videos];
               const firstVideoUrl = normalizedVideos.find(
-                (video) => typeof video === "string" && video.endsWith(".mp4")
+                (video) =>
+                  typeof video === "string" && video.endsWith(".mp4")
               );
 
               return (
                 <div key={id} className="itm-card">
                   <div className="item-media-wrap">
-                    <div className={`item-badge ${isBestSeller ? "item-badge-best" : "item-badge-top"}`}>
+                    <div
+                      className={`item-badge ${
+                        isBestSeller ? "item-badge-best" : "item-badge-top"
+                      }`}
+                    >
                       {isBestSeller ? t("best_seller") : t("topIt")}
                     </div>
+
                     {activeVideoId === id && firstVideoUrl ? (
                       <video
                         src={firstVideoUrl}
@@ -309,7 +568,11 @@ setBestSellersByCategory(bestSellerMap);
                       <>
                         <img
                           className="item-imageof"
-                          src={item.images[0]}
+                          src={getDisplayImage(itemData)}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = "/fallback.png";
+                          }}
                           alt={name}
                           onClick={() => handleNavigate(id)}
                         />
@@ -328,33 +591,73 @@ setBestSellersByCategory(bestSellerMap);
                     )}
                   </div>
 
-                  <div className="item-details" onClick={() => handleNavigate(id)}>
-                    <div className="item-name" title={name}>
-                      {name.length > 70 ? `${name.substring(0, 70)}...` : name}
-                    </div>
+                  <div
+                    className="item-details"
+                    onClick={() => handleNavigate(id)}
+                  >
+                   <div className="item-brand-name">
+                    <strong>{item?.brand || itemData?.details?.brand || "Malidag"}</strong>
+                    <span>
+                      {name?.length > 70 ? `${name.substring(0, 70)}...` : name}
+                    </span>
+                  </div>
+
+                  {getColorOptions(itemData).length > 1 && (
+                      <div className="items-card-colors" onClick={(e) => e.stopPropagation()}>
+                        {getColorOptions(itemData).slice(0, 3).map((color) => {
+                          const swatchColor = getColorSwatch(color);
+                          const firstImage = getImageUrl(
+                            sortImages(item?.imagesVariants?.[color] || [])?.[0]
+                          );
+
+                          return (
+                            <button
+                              key={color}
+                              type="button"
+                              className={`items-card-color-circle ${
+                                selectedColorByItem[id] === color ? "active" : ""
+                              }`}
+                              title={color}
+                              style={
+                                swatchColor
+                                  ? { background: swatchColor }
+                                  : { backgroundImage: `url("${firstImage}")` }
+                              }
+                              onClick={(e) => handleColorSelect(id, color, e)}
+                            />
+                          );
+                        })}
+
+                        {getColorOptions(itemData).length > 3 && (
+                          <button
+                            type="button"
+                            className="items-more-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNavigate(id);
+                            }}
+                          >
+                            +{getColorOptions(itemData).length - 3} more
+                          </button>
+                        )}
+                      </div>
+                    )}
 
                     <div className="item-prices">
                       <div className="item-price-row">
                         <span className="item-price">${usdPrice}</span>
 
                         {originalPrice > 0 && (
-                          <span className="item-original-price">${originalPrice}</span>
+                          <span className="item-original-price">
+                            ${originalPrice}
+                          </span>
                         )}
 
                         <span className="item-sold">
                           <span>{sold}</span>
-                          <span className="item-sold-label">{t("sold")}</span>
-                        </span>
-                      </div>
-
-                      <div className="item-crypto">
-                        <img
-                          src={getStablecoinIcon(crypto)}
-                          alt={crypto}
-                          className="crypto-icon"
-                        />
-                        <span className="item-crypto-price">
-                          {itemPriceInStablecoin} {crypto}
+                          <span className="item-sold-label">
+                            {t("sold")}
+                          </span>
                         </span>
                       </div>
                     </div>
@@ -365,7 +668,9 @@ setBestSellersByCategory(bestSellerMap);
                       onClick={(e) => {
                         e.stopPropagation();
                         setItemData(itemData);
-                        router.push("/reviewPage");
+                        router.push(
+                          withCountry(`/product/${itemData.id}/review`)
+                        );
                       }}
                       title={t("view_reviews")}
                     >
@@ -382,7 +687,8 @@ setBestSellersByCategory(bestSellerMap);
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default Item;

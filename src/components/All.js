@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useContext, useCallback } from "react";
+import { AppContext } from "./appContext";
 import { Button, Spin } from "antd";
 import { DownOutlined, UpOutlined, MenuOutlined } from "@ant-design/icons";
 import axios from "axios";
@@ -60,6 +61,23 @@ const All = () => {
   const { isDesktop, isTablet } = useScreenSize();
   const { t } = useTranslation();
 
+  const { country } = useContext(AppContext);
+const countryCode = country?.code;
+
+const withCountry = useCallback(
+  (path) => {
+    if (!countryCode) return path;
+    return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+  },
+  [countryCode]
+);
+
+useEffect(() => {
+  setModalData(null);
+  setExpandedCategories({});
+  setImageIndexes({});
+}, [countryCode]);
+
   const openModal = async () => {
     setIsModalOpen(true);
 
@@ -68,7 +86,9 @@ const All = () => {
     setIsLoading(true);
 
     try {
-      const { data } = await axios.get(`${BASE_URL}/items`);
+     const { data } = await axios.get(
+  `${BASE_URL}/items?country=${encodeURIComponent(countryCode)}`
+);
       const groupedData = normalizeItems(data);
 
       setModalData(groupedData);
@@ -140,6 +160,11 @@ const All = () => {
     console.log("Language changed:", i18n.language);
   }, [i18n.language]);
 
+  const handleTypeClick = (type) => {
+  closeModal();
+  router.push(withCountry(`/itemOfItems/${type}`));
+};
+
   return (
     <div className="all-wrapper">
       {(isDesktop || isTablet) ? (
@@ -205,9 +230,9 @@ const All = () => {
 
                           return (
                             <div key={type} className="type-container">
-                              <div
+                             <div
                                 className="type-header"
-                                onClick={() => router.push(`/itemOfItems/${type}`)}
+                                onClick={() => handleTypeClick(type)}
                               >
                                 {t(type)}
                               </div>
@@ -215,7 +240,7 @@ const All = () => {
                               {currentItem?.item?.images?.length > 0 ? (
                                 <div
                                   className="type-image"
-                                  onClick={() => router.push(`/itemOfItems/${type}`)}
+                                  onClick={() => handleTypeClick(type)}
                                 >
                                   <img
                                     src={currentItem.item.images[0]}

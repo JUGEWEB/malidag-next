@@ -21,7 +21,7 @@ const normalizeText = (value) =>
     .replaceAll("-", "_")
     .replaceAll(" ", "_");
 
-function ItemOfWomen() {
+function ItemOfWomen({ countryCode }) {
   const router = useRouter();
   const params = useParams();
   const { itemClicked } = params;
@@ -43,6 +43,12 @@ const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const { isMobile, isDesktop, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall } =
     useScreenSize();
+
+    const withCountry = (path) => {
+  const code = countryCode || "fr";
+  if (!path) return `/${code}`;
+  return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
@@ -95,9 +101,17 @@ const [messageApi, contextHolder] = message.useMessage();
   useEffect(() => {
     const fetchItems = async () => {
       try {
-       const response = await axios.get(`${BASE_URL}/items`);
+      const response = await axios.get(
+  `${BASE_URL}/items?country=${encodeURIComponent(countryCode || "fr")}`
+);
 
-const allItems = Array.isArray(response.data) ? response.data : [];
+const raw = response.data;
+
+const allItems = Array.isArray(raw)
+  ? raw
+  : Array.isArray(raw?.items)
+  ? raw.items
+  : [];
 
 const filteredItems = allItems.filter((itemData) => {
   const item = itemData?.item || {};
@@ -124,7 +138,7 @@ setItems(filteredItems);
     };
 
     fetchItems();
-  }, [itemClicked]);
+  },  [itemClicked, countryCode]);
 
   const brands = useMemo(() => {
   return [
@@ -349,7 +363,7 @@ const handleImageArrow = (itemData, direction, e) => {
   };
 
   const handleNavigate = (id) => {
-    router.push(`/product/${id}`);
+   router.push(withCountry(`/product/${id}`));
   };
 
   const handleAddToBasket = async (itemData, e) => {
@@ -361,7 +375,7 @@ const handleImageArrow = (itemData, direction, e) => {
     const currentPath =
       typeof window !== "undefined" ? window.location.pathname : "/";
 
-    router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+   router.push(withCountry(`/auth?redirect=${encodeURIComponent(currentPath)}`));
     return;
   }
 
@@ -413,7 +427,64 @@ const handleImageArrow = (itemData, direction, e) => {
     )
   : filteredItems;
 
-  if (loading) return <div className="item-loading">{t("loading")}</div>;
+  const countryName = countryCode?.toUpperCase() || "your country";
+const hasItems = displayedItems.length > 0;
+
+ if (loading) {
+  return (
+    <div className="women-item-loading">
+      <div className="women-loading-header">
+        <div className="women-skeleton women-skeleton-title" />
+        <div className="women-skeleton women-skeleton-subtitle" />
+      </div>
+
+      <div className="women-loading-grid">
+        {Array.from({ length: 9 }).map((_, index) => (
+          <div key={index} className="women-loading-card">
+            <div className="women-skeleton women-skeleton-image" />
+            <div className="women-skeleton women-skeleton-line" />
+            <div className="women-skeleton women-skeleton-line short" />
+            <div className="women-skeleton women-skeleton-button" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+if (!loading && !hasItems) {
+  return (
+    <div className="women-empty-country">
+      <div className="women-empty-icon">👗</div>
+
+      <span className="women-empty-badge">
+        {String(itemClicked).replaceAll("_", " ")}
+      </span>
+
+      <h2>No products available</h2>
+
+      <p>
+        We couldn't find any{" "}
+        <strong>{String(itemClicked).replaceAll("_", " ")}</strong>
+        {" "}products currently available for delivery to{" "}
+        <strong>{countryName}</strong>.
+      </p>
+
+      <p>
+        New arrivals are added regularly. Try another country or check back
+        soon.
+      </p>
+
+      <button
+        type="button"
+        className="women-empty-btn"
+        onClick={() => router.push(withCountry("/women-fashion"))}
+      >
+        Browse Women's Fashion
+      </button>
+    </div>
+  );
+}
 
   return (
     <div className="women-item-page">
@@ -480,7 +551,7 @@ const handleImageArrow = (itemData, direction, e) => {
               if (!themeRoute || !brand?.brandName) return;
 
               setSelectedBrandName(brand.brandName);
-              router.push(`/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`);
+             router.push(withCountry(`/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`));
             }}
           >
             <img src={brand.logo} alt={`${brand.brandName} logo`} />
@@ -811,7 +882,7 @@ const handleImageArrow = (itemData, direction, e) => {
                         className="women-added-cart-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push("/basket");
+                         router.push(withCountry("/basket"));
                         }}
                       >
                         🛒 {getBasketQuantity(itemId)}
@@ -831,7 +902,7 @@ const handleImageArrow = (itemData, direction, e) => {
                       onClick={(e) => {
                         e.stopPropagation();
                         setItemData(itemData);
-                        router.push("/reviewPage");
+                       router.push(withCountry(`/product/${id}/review`));
                       }}
                       title={t("view_reviews")}
                     >

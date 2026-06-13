@@ -6,22 +6,22 @@ import { headers } from "next/headers";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
+  const { country, itemClicked = "electronics" } = await params;
+   const countryCode = country || "fr";
   const h = await headers();
   const acceptLanguage = h.get("accept-language") || "en";
   const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
 
   const i18n = await initI18n(lang);
   const t = i18n.t.bind(i18n);
-
-  const itemClicked = params.itemClicked || "electronics";
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
-  const url = `https://www.malidag.com/itemOfItems/${encodeURIComponent(itemClicked)}`;
+ const url = `https://www.malidag.com/${countryCode}/itemOfItems/${encodeURIComponent(itemClicked)}`;
   const ogImage = `https://www.malidag.com/images/og/beauty-cover.webp`;
 
   return {
-    title: `${t("malidag")} ${translatedItem} - ${t("shop_with_crypto")}`,
-    description: `${t("browse_high_quality")} ${translatedItem} ${t("crypto_pricing_description")}`,
+    title: `${t("malidag")} ${translatedItem} - `,
+    description: `${t("browse_high_quality")} ${translatedItem}`,
     keywords: [
       translatedItem,
       "crypto shopping",
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }) {
     twitter: {
       card: "summary_large_image",
       title: `${t("malidag")} - ${translatedItem}`,
-      description: `${t("top_items")} ${translatedItem} ${t("crypto_payments")}`,
+      description: `${t("top_items")} ${translatedItem}`,
       images: [ogImage],
     },
     robots: {
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default function Page({ params }) {
-  const { itemClicked = "electronics" } = params;
-  return <Item itemClicked={itemClicked} />;
+export default async function Page({ params }) {
+ const { country, itemClicked = "electronics" } = await params;
+  return <Item countryCode={country} itemClicked={itemClicked} />;
 }

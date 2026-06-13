@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import { AppContext } from "./appContext";
 import axios from "axios";
 import "./itemPage.css";
 import { useRouter } from "next/navigation";
@@ -13,6 +14,13 @@ import { message } from "antd";
 
 function ItemPage({ searchTerm }) {
   const router = useRouter();
+  const { country } = useContext(AppContext);
+const countryCode = country?.code || "fr";
+
+const withCountry = (path) => {
+  if (!countryCode) return path;
+  return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+};
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState(null);
@@ -103,9 +111,9 @@ const isItemInBasket = (itemId) => {
       setLoading(true);
 
       try {
-        const response = await axios.get(
-          `https://api.malidag.com/items/${encodeURIComponent(searchTerm)}`
-        );
+       const response = await axios.get(
+  `https://api.malidag.com/items/${encodeURIComponent(searchTerm)}?country=${encodeURIComponent(countryCode)}`
+);
        const matchedItems = response.data.items || [];
 setItems(matchedItems);
 
@@ -135,7 +143,7 @@ matchedItems.forEach((item) => fetchReviews(item.itemId));
     };
 
     fetchItems();
-  }, [searchTerm]);
+  }, [searchTerm, countryCode]);
 
   const handleAddToBasket = async (itemData, e) => {
   e.stopPropagation();
@@ -146,7 +154,7 @@ matchedItems.forEach((item) => fetchReviews(item.itemId));
     const currentPath =
       typeof window !== "undefined" ? window.location.pathname : "/";
 
-    router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+   router.push(withCountry(`/auth?redirect=${encodeURIComponent(currentPath)}`));
     return;
   }
 
@@ -228,7 +236,7 @@ const categoryTypes = Array.from(
 
   const handleItemClick = (id) => {
     if (id) {
-      router.push(`/product/${id}`);
+     router.push(withCountry(`/product/${id}`));
     }
   };
 
@@ -269,23 +277,23 @@ const handleNavigateByType = (firstItem) => {
     ["clothes", "toys", "accessories", "gear", "toy"].includes(category) &&
     ["boy", "girl", "babies", "babyboy", "babygirl", "kids", "kid"].includes(gender)
   ) {
-    router.push(`/itemOfKids/${gender}/${formattedType}`);
+   router.push(withCountry(`/itemOfKids/${gender}/${formattedType}`));
   } else if (category === "beauty") {
-    router.push(`/itemOfItems/${formattedType}`);
+   router.push(withCountry(`/itemOfItems/${formattedType}`));
   } else if (category === "shoes") {
-    router.push(`/itemOfShoes/${gender}-${formattedType}`);
+    router.push(withCountry(`/itemOfShoes/${gender}-${formattedType}`));
   } else if (category === "clothes" && gender === "women") {
-    router.push(`/item-of-women/${formattedType}`);
+    router.push(withCountry(`/item-of-women/${formattedType}`));
   } else if (category === "clothes" && gender === "men") {
-    router.push(`/item-of-men/${formattedType}`);
+    router.push(withCountry(`/item-of-men/${formattedType}`));
   } else if (category === "electronic") {
-    router.push(`/itemOfElectronic/${formattedType}`);
+    router.push(withCountry(`/itemOfElectronic/${formattedType}`));
   } else if (category === "home_kitchen") {
-    router.push(`/itemOfHome/${formattedType}`);
+    router.push(withCountry(`/itemOfHome/${formattedType}`));
   } else if (category === "pet_care") {
-    router.push(`/petCare/${gender}/${formattedType}`);
+    router.push(withCountry(`/petCare/${gender}/${formattedType}`));
   } else if (category === "jewelry") {
-    router.push(`/jewelry/${formattedType}`);
+    router.push(withCountry(`/jewelry/${formattedType}`));
   } else {
     console.warn("No route matched for:", { type, category, gender });
   }
@@ -301,7 +309,7 @@ const handleLinkClick = (label, value, sourceItem = null) => {
 
   if (label === "brand") {
     const theme = getBrandTheme(value);
-    router.push(`/brand/${theme}/${encodeURIComponent(value)}`);
+   router.push(withCountry(`/brand/${theme}/${encodeURIComponent(value)}`));
     return;
   }
 
@@ -828,7 +836,7 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
     onClick={(e) => {
       e.stopPropagation();
       setItemData(itemData);
-      router.push("/reviewPage");
+     router.push(withCountry(`/product/${id}/review`));
     }}
     title={t("view_reviews")}
   >
@@ -844,7 +852,7 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
     className="added-to-basket-btn-cc"
     onClick={(e) => {
       e.stopPropagation();
-      router.push("/basket");
+      router.push(withCountry("/basket"));
     }}
   >
     🛒 {getBasketQuantity(itemId)}

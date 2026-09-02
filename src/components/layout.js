@@ -9,7 +9,7 @@ import { auth } from "@/components/firebaseConfig";
 import i18n from "i18next";
 import AppHeader from "@/components/appHeader";
 import MalidagFooter from "@/components/malidagFooter";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ConfigProvider, App as AntdApp } from "antd";
 
 const BASE_URLs = "https://api.malidag.com";
@@ -66,6 +66,8 @@ export default function MainLayout({ children, lang }) {
   const [languageReady, setLanguageReady] = useState(false);
   const [appReady, setAppReady] = useState(false);
   const [bootProduct, setBootProduct] = useState(null);
+  const [countryChanging, setCountryChanging] = useState(false);
+  const router = useRouter();
 
 const [country, setCountryState] = useState(null);
 
@@ -98,6 +100,50 @@ const setCountry = (nextCountry) => {
     initLanguage();
   }, [lang]);
 
+  useEffect(() => {
+  setCountryChanging(false);
+}, [pathname]);
+
+useEffect(() => {
+  const segments = pathname.split("/").filter(Boolean);
+  const routeCountryCode = segments[0];
+
+  if (!routeCountryCode) return;
+
+  const isSupportedRouteCountry = SUPPORTED_COUNTRIES.some(
+    (c) => c.code === routeCountryCode
+  );
+
+  if (!isSupportedRouteCountry) {
+    localStorage.removeItem("selectedCountry");
+    setCountryState(null);
+    setCountryChanging(true);
+    router.replace("/");
+  }
+}, [pathname, router]);
+
+
+useEffect(() => {
+  if (!country?.code) return;
+
+  const segments = pathname.split("/").filter(Boolean);
+  const routeCountryCode = segments[0];
+
+  const supportedCodes = SUPPORTED_COUNTRIES.map((c) => c.code);
+
+  if (!routeCountryCode || !supportedCodes.includes(routeCountryCode)) {
+    return;
+  }
+
+  if (routeCountryCode === country.code) {
+    return;
+  }
+
+  setCountryChanging(true);
+
+  segments[0] = country.code;
+  router.replace(`/${segments.join("/")}`);
+}, [country?.code, pathname, router]);
 
   useEffect(() => {
   const detectCountry = async () => {
@@ -112,54 +158,28 @@ const setCountry = (nextCountry) => {
       const detectedCode = res.data?.country_code?.toLowerCase();
       const detectedName = res.data?.country_name;
 
-      if (detectedCode && detectedName) {
-        const detectedCountry = {
-          name: detectedName,
-          code: detectedCode,
-          flag: `https://flagcdn.com/w320/${detectedCode}.png`,
-        };
+     if (detectedCode && detectedName) {
+        const supportedCountry = SUPPORTED_COUNTRIES.find(
+          (c) => c.code === detectedCode
+        );
 
-        setCountry(detectedCountry);
+        if (!supportedCountry) {
+          router.replace("/");
+          return;
+        }
+
+        setCountry(supportedCountry);
       }
     } catch (err) {
       console.error("Country detection failed", err);
 
-      const fallbackCountry = {
-        name: "United States",
-        code: "us",
-        flag: "https://flagcdn.com/w320/us.png",
-      };
-
-      setCountry(fallbackCountry);
+     router.replace("/");
     }
   };
 
   detectCountry();
 }, []);
 
-useEffect(() => {
-  const syncCountry = () => {
-    const savedCountry = localStorage.getItem("selectedCountry");
-    if (!savedCountry) return;
-
-    try {
-      const parsed = JSON.parse(savedCountry);
-      if (parsed?.code) {
-        setCountryState(parsed);
-      }
-    } catch (err) {
-      console.error("Invalid selectedCountry", err);
-    }
-  };
-
-  syncCountry();
-
-  window.addEventListener("countryChanged", syncCountry);
-
-  return () => {
-    window.removeEventListener("countryChanged", syncCountry);
-  };
-}, []);
 
   useEffect(() => {
     const fetchBasketItems = async () => {
@@ -242,7 +262,7 @@ useEffect(() => {
         }}
       >
         <img
-          src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FGemini_Generated_Image_8tsm718tsm718tsm-removebg-preview.png?alt=media&token=265d1922-0c07-4658-9955-58660103c88e"
+          src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_09_22%20AM.png?alt=media&token=19d4b065-b842-4e9a-81be-028450001cad"
           alt="Malidag"
           style={{
             width: "120px",
@@ -310,9 +330,47 @@ useEffect(() => {
             allCountries,
             country,
             setCountry,
+            countryChanging,
+            setCountryChanging,
             chain,
           }}
         >
+
+          {countryChanging && (
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 999999,
+                  background: "#ffffff",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "16px",
+                }}
+              >
+                <img
+                  src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_09_22%20AM.png?alt=media&token=19d4b065-b842-4e9a-81be-028450001cad"
+                  alt="Malidag"
+                  style={{
+                    width: "110px",
+                    height: "110px",
+                    objectFit: "contain",
+                  }}
+                />
+
+                <div
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: 800,
+                    color: "#111827",
+                  }}
+                >
+                  Updating delivery country...
+                </div>
+              </div>
+            )}
           <AppHeader
             {...{
               basketItems,

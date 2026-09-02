@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import { AppContext } from "./appContext";
 import useScreenSize from "./useIsMobile";
 import { Dropdown } from "antd";
 import { DownOutlined } from "@ant-design/icons";
@@ -9,6 +10,9 @@ import { useTranslation } from "react-i18next";
 import { usePathname, useRouter } from "next/navigation";
 
 function Location({ country, allCountries = [], setCountry }) {
+   const {
+    setCountryChanging,
+  } = useContext(AppContext);
   const [isOpen, setIsOpen] = useState(false);
   const { isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall } = useScreenSize();
   const { t } = useTranslation();
@@ -28,16 +32,6 @@ React.useEffect(() => {
       if (parsedCountry.code === country?.code) return;
 
       setCountry(parsedCountry);
-
-      const segments = pathname.split("/").filter(Boolean);
-
-      if (segments.length === 0) {
-        router.replace(`/${parsedCountry.code}`);
-        return;
-      }
-
-      segments[0] = parsedCountry.code;
-      router.replace(`/${segments.join("/")}`);
     } catch (err) {
       console.error("Invalid selectedCountry:", err);
     }
@@ -50,20 +44,29 @@ React.useEffect(() => {
   return () => {
     window.removeEventListener("countryChanged", syncFromStorage);
   };
-}, [pathname, country?.code, router, setCountry]);
+}, [country?.code, setCountry]);
 
-const handleCountryChange = (nextCountry) => {
-  setCountry(nextCountry);
-
+const buildCountryPath = (nextCode) => {
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length === 0) {
-   router.replace(`/${nextCountry.code}`);
-    return;
+    return `/${nextCode}`;
   }
 
-  segments[0] = nextCountry.code;
- router.replace(`/${segments.join("/")}`);
+  segments[0] = nextCode;
+
+  return `/${segments.join("/")}`;
+};
+
+const handleCountryChange = (nextCountry) => {
+  if (!nextCountry?.code || nextCountry.code === country?.code) return;
+
+  setCountryChanging?.(true);
+  setIsOpen(false);
+
+  setCountry(nextCountry);
+
+  router.replace(buildCountryPath(nextCountry.code));
 };
 
   if (!country || !country.code || !country.name) {

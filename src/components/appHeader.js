@@ -19,7 +19,7 @@ function AppHeader(props) {
     const {isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall} = useScreenSize()
      const {
     basketItems, user, connectors, connect, address, disconnect,
-    isConnected, pendingConnector, allCountries, country, setCountry
+    isConnected, pendingConnector, allCountries, country, setCountry,
   } = props;
 
   const pathSegments = pathname.split("/").filter(Boolean);

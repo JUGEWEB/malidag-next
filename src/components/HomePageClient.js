@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 
 const BASE_URLs = "https://api.malidag.com";
@@ -20,23 +19,33 @@ const AVAILABLE_COUNTRIES = [
   },
 ];
 
+const LOGO =
+  "https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_09_22%20AM.png?alt=media&token=19d4b065-b842-4e9a-81be-028450001cad";
+
 export default function HomePageClient() {
+  const router = useRouter();
+
   const [detectedCountry, setDetectedCountry] = useState(null);
+  const [detecting, setDetecting] = useState(true);
+  const [navigatingCode, setNavigatingCode] = useState(null);
 
   const SELECTED_COUNTRY_KEY = "selectedCountry";
 
-const saveDeliveryCountry = (country) => {
-  localStorage.setItem(SELECTED_COUNTRY_KEY, JSON.stringify(country));
-  window.dispatchEvent(new Event("countryChanged"));
-};
+  const saveDeliveryCountry = (country) => {
+    localStorage.setItem(SELECTED_COUNTRY_KEY, JSON.stringify(country));
+    window.dispatchEvent(new Event("countryChanged"));
+  };
 
+  const handleCountrySelect = (country) => {
+    setNavigatingCode(country.code);
+    saveDeliveryCountry(country);
+    router.push(`/${country.code}`);
+  };
 
   useEffect(() => {
     const detectCountry = async () => {
       try {
-        const ipRes = await axios.get(
-          "https://api.ipify.org?format=json"
-        );
+        const ipRes = await axios.get("https://api.ipify.org?format=json");
 
         const { data } = await axios.get(
           `${BASE_URLs}/api/country/${ipRes.data.ip}`
@@ -47,7 +56,9 @@ const saveDeliveryCountry = (country) => {
           code: data.countryCode?.toLowerCase(),
         });
       } catch (err) {
-        console.error(err);
+        console.error("Country detection failed:", err);
+      } finally {
+        setDetecting(false);
       }
     };
 
@@ -55,128 +66,270 @@ const saveDeliveryCountry = (country) => {
   }, []);
 
   const supportedDetectedCountry = AVAILABLE_COUNTRIES.find(
-    (c) => c.code === detectedCountry?.code
+    (country) => country.code === detectedCountry?.code
   );
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        padding: "40px 20px",
-        background: "#fff",
+        background:
+          "radial-gradient(circle at top left, #fff7ed 0, transparent 32%), linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+        padding: "32px 18px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      <div
+      <section
         style={{
-          maxWidth: "700px",
-          margin: "0 auto",
+          width: "100%",
+          maxWidth: "780px",
+          background: "rgba(255,255,255,0.92)",
+          border: "1px solid #e5e7eb",
+          borderRadius: "28px",
+          boxShadow: "0 24px 70px rgba(15,23,42,0.10)",
+          padding: "34px 24px",
         }}
       >
-        <h1
-          style={{
-            fontSize: "32px",
-            fontWeight: "700",
-            marginBottom: "10px",
-          }}
-        >
-          Choose delivery country
-        </h1>
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <img
+            src={LOGO}
+            alt="Malidag"
+            style={{
+              width: "86px",
+              height: "86px",
+              objectFit: "contain",
+              marginBottom: "14px",
+            }}
+          />
 
-        <p
-          style={{
-            color: "#666",
-            marginBottom: "40px",
-          }}
-        >
-          Malidag is expanding country by country to respect
-          local regulations, taxes, and delivery requirements.
-        </p>
-
-        {detectedCountry && supportedDetectedCountry && (
           <div
             style={{
-              padding: "20px",
-              border: "1px solid #ddd",
-              borderRadius: "16px",
-              marginBottom: "30px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "7px 12px",
+              borderRadius: "999px",
+              background: "#111827",
+              color: "#fff",
+              fontSize: "12px",
+              fontWeight: 900,
+              marginBottom: "16px",
             }}
           >
-            <p
-              style={{
-                marginBottom: "15px",
-              }}
-            >
-              We detected your location:
-            </p>
+            Delivery country required
+          </div>
 
-           <Link
-              href={`/${supportedDetectedCountry.code}`}
-              onClick={() => saveDeliveryCountry(supportedDetectedCountry)}
-            >
-              Continue to {supportedDetectedCountry.name} →
-            </Link>
+          <h1
+            style={{
+              fontSize: "clamp(30px, 5vw, 52px)",
+              lineHeight: 1,
+              fontWeight: 950,
+              letterSpacing: "-0.06em",
+              color: "#111827",
+              margin: "0 0 14px",
+            }}
+          >
+            Choose your delivery country
+          </h1>
+
+          <p
+            style={{
+              maxWidth: "560px",
+              margin: "0 auto",
+              color: "#64748b",
+              fontSize: "15px",
+              lineHeight: 1.7,
+            }}
+          >
+            We’ll personalize products, availability, delivery information, and
+            shopping experience based on your selected country.
+          </p>
+        </div>
+
+        {detecting && (
+          <div
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: "20px",
+              padding: "18px",
+              marginBottom: "20px",
+              background: "#fff",
+              color: "#64748b",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Detecting your location...
           </div>
         )}
 
-        {detectedCountry && !supportedDetectedCountry && (
+        {!detecting && detectedCountry && supportedDetectedCountry && (
           <div
             style={{
+              border: "1px solid #fed7aa",
+              background: "#fff7ed",
+              borderRadius: "22px",
               padding: "20px",
-              border: "1px solid #eee",
-              borderRadius: "16px",
-              marginBottom: "30px",
-              background: "#fafafa",
+              marginBottom: "22px",
+              display: "flex",
+              gap: "16px",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
             }}
           >
-            <p>
+            <div>
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 900,
+                  color: "#9a3412",
+                  marginBottom: "6px",
+                }}
+              >
+                We detected your location
+              </div>
+
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: 950,
+                  color: "#111827",
+                }}
+              >
+                {supportedDetectedCountry.name}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleCountrySelect(supportedDetectedCountry)}
+              disabled={navigatingCode === supportedDetectedCountry.code}
+              style={{
+                border: "none",
+                borderRadius: "999px",
+                background: "#f97316",
+                color: "#fff",
+                padding: "13px 18px",
+                fontWeight: 950,
+                cursor: "pointer",
+              }}
+            >
+              {navigatingCode === supportedDetectedCountry.code
+                ? "Opening shop..."
+                : `Continue to ${supportedDetectedCountry.name} →`}
+            </button>
+          </div>
+        )}
+
+        {!detecting && detectedCountry && !supportedDetectedCountry && (
+          <div
+            style={{
+              border: "1px solid #e5e7eb",
+              background: "#f8fafc",
+              borderRadius: "22px",
+              padding: "20px",
+              marginBottom: "22px",
+            }}
+          >
+            <p style={{ margin: 0, color: "#111827", fontWeight: 800 }}>
               We do not currently deliver directly to{" "}
               <strong>{detectedCountry.name}</strong>.
             </p>
 
             <p
               style={{
-                marginTop: "10px",
-                color: "#666",
+                margin: "8px 0 0",
+                color: "#64748b",
+                lineHeight: 1.6,
               }}
             >
-              You can still select one of our available
-              delivery countries below.
+              You can still choose one of our available delivery countries below.
             </p>
           </div>
         )}
 
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "15px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: "14px",
           }}
         >
           {AVAILABLE_COUNTRIES.map((country) => (
-           <Link
+            <button
               key={country.code}
-              href={`/${country.code}/`}
-              onClick={() => saveDeliveryCountry(country)}
+              type="button"
+              onClick={() => handleCountrySelect(country)}
+              disabled={Boolean(navigatingCode)}
               style={{
-                border: "1px solid #ddd",
-                borderRadius: "16px",
-                padding: "20px",
-                textDecoration: "none",
-                color: "#000",
+                border: "1px solid #e5e7eb",
+                borderRadius: "22px",
+                padding: "18px",
+                background: "#fff",
+                color: "#111827",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                cursor: navigatingCode ? "wait" : "pointer",
+                boxShadow: "0 10px 30px rgba(15,23,42,0.05)",
+                textAlign: "left",
               }}
             >
-              <span>
-                {country.flag} {country.name}
+              <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <img
+                  src={country.flag}
+                  alt={country.name}
+                  style={{
+                    width: "34px",
+                    height: "24px",
+                    objectFit: "cover",
+                    borderRadius: "5px",
+                    boxShadow: "0 0 0 1px rgba(0,0,0,0.08)",
+                  }}
+                />
+
+                <span>
+                  <strong style={{ display: "block", fontSize: "16px" }}>
+                    {country.name}
+                  </strong>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: "12px",
+                      color: "#64748b",
+                      marginTop: "3px",
+                      textTransform: "uppercase",
+                      fontWeight: 900,
+                    }}
+                  >
+                    {country.code}
+                  </span>
+                </span>
               </span>
 
-              <span>Enter shop →</span>
-            </Link>
+              <span style={{ fontWeight: 950, color: "#f97316" }}>
+                {navigatingCode === country.code ? "..." : "→"}
+              </span>
+            </button>
           ))}
         </div>
-      </div>
+
+        <p
+          style={{
+            margin: "24px 0 0",
+            textAlign: "center",
+            fontSize: "12px",
+            color: "#94a3b8",
+            lineHeight: 1.6,
+          }}
+        >
+          Your country selection helps us show accurate product availability,
+          delivery options, and localized shopping information.
+        </p>
+      </section>
     </main>
   );
 }

@@ -9,9 +9,7 @@ import i18n from "@/i18n";
 const languages = [
   { code: "en", label: "English", flag: "https://flagcdn.com/gb.svg" },
   { code: "fr", label: "Français", flag: "https://flagcdn.com/fr.svg" },
-  { code: "ar", label: "العربية", flag: "https://flagcdn.com/sa.svg" },
-  { code: "pt", label: "Português", flag: "https://flagcdn.com/pt.svg" },
-  { code: "pt-BR", label: "Português (Brasil)", flag: "https://flagcdn.com/br.svg" },
+  { code: "br", label: "Brazil", flag: "https://flagcdn.com/br.svg" },
 ];
 
 const LanguageSelector = () => {

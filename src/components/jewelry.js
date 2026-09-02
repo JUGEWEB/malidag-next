@@ -20,6 +20,21 @@ function Jewelry() {
   const isDesktopLike = isDesktop || isTablet;
   const isSmallScreen = isMobile || isSmallMobile || isVerySmall;
 
+  const getSavedCountryCode = () => {
+  try {
+    const savedCountry = localStorage.getItem("selectedCountry");
+
+    if (!savedCountry) return null;
+
+    const parsedCountry = JSON.parse(savedCountry);
+
+    return parsedCountry?.code || null;
+  } catch (err) {
+    console.error("Invalid selectedCountry:", err);
+    return null;
+  }
+};
+
   useEffect(() => {
     const fetchWatches = async () => {
       try {
@@ -68,13 +83,21 @@ function Jewelry() {
   if (shouldHide) return null;
 
   const handleWatchesClick = () => {
-   router.push('/jewelry/watches');
-  };
+  const countryCode = getSavedCountryCode();
 
-  const handleWatchItemClick = (id) => {
-  if (id) {
-    router.push(`/product/${id}`);
-  }
+  if (!countryCode) return;
+
+  router.push(`/${countryCode}/jewelry/watches`);
+};
+
+const handleWatchItemClick = (id) => {
+  if (!id) return;
+
+  const countryCode = getSavedCountryCode();
+
+  if (!countryCode) return;
+
+  router.push(`/${countryCode}/product/${id}`);
 };
 
   const getWatchImage = (itemData) => {

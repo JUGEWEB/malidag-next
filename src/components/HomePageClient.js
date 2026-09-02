@@ -3,19 +3,29 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import LanguageSelector from "./LanguageSelector";
+import { useTranslation } from "react-i18next";
 
 const BASE_URLs = "https://api.malidag.com";
 
 const AVAILABLE_COUNTRIES = [
   {
     name: "France",
+    nameKey: "country_france",
     code: "fr",
     flag: "https://flagcdn.com/w320/fr.png",
   },
   {
     name: "United Kingdom",
+    nameKey: "country_united_kingdom",
     code: "gb",
     flag: "https://flagcdn.com/w320/gb.png",
+  },
+  {
+    name: "Brazil",
+    nameKey: "country_brazil",
+    code: "br",
+    flag: "https://flagcdn.com/w320/br.png",
   },
 ];
 
@@ -24,6 +34,7 @@ const LOGO =
 
 export default function HomePageClient() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [detectedCountry, setDetectedCountry] = useState(null);
   const [detecting, setDetecting] = useState(true);
@@ -92,34 +103,54 @@ export default function HomePageClient() {
           padding: "34px 24px",
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: "30px" }}>
-          <img
-            src={LOGO}
-            alt="Malidag"
-            style={{
-              width: "86px",
-              height: "86px",
-              objectFit: "contain",
-              marginBottom: "14px",
-            }}
-          />
+      
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "16px",
+      marginBottom: "18px",
+    }}
+  >
+    <img
+      src={LOGO}
+      alt="Malidag"
+      style={{
+        width: "86px",
+        height: "86px",
+        objectFit: "contain",
+      }}
+    />
 
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "7px 12px",
-              borderRadius: "999px",
-              background: "#111827",
-              color: "#fff",
-              fontSize: "12px",
-              fontWeight: 900,
-              marginBottom: "16px",
-            }}
-          >
-            Delivery country required
-          </div>
+    <div
+      style={{
+        background: "#111827",
+        borderRadius: "999px",
+        padding: "6px 8px",
+      }}
+    >
+      <LanguageSelector />
+    </div>
+  </div>
+
+  <div style={{ textAlign: "center" }}>
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "8px",
+        padding: "7px 12px",
+        borderRadius: "999px",
+        background: "#111827",
+        color: "#fff",
+        fontSize: "12px",
+        fontWeight: 900,
+        marginBottom: "16px",
+      }}
+    >
+     {t("country_delivery_required")}
+    </div>
 
           <h1
             style={{
@@ -131,7 +162,7 @@ export default function HomePageClient() {
               margin: "0 0 14px",
             }}
           >
-            Choose your delivery country
+           {t("country_choose_delivery")}
           </h1>
 
           <p
@@ -143,8 +174,7 @@ export default function HomePageClient() {
               lineHeight: 1.7,
             }}
           >
-            We’ll personalize products, availability, delivery information, and
-            shopping experience based on your selected country.
+          {t("country_personalize_message")}
           </p>
         </div>
 
@@ -161,7 +191,7 @@ export default function HomePageClient() {
               textAlign: "center",
             }}
           >
-            Detecting your location...
+          {t("country_detecting_location")}
           </div>
         )}
 
@@ -189,7 +219,7 @@ export default function HomePageClient() {
                   marginBottom: "6px",
                 }}
               >
-                We detected your location
+               {t("country_detected_location")}
               </div>
 
               <div
@@ -199,7 +229,7 @@ export default function HomePageClient() {
                   color: "#111827",
                 }}
               >
-                {supportedDetectedCountry.name}
+              {t(supportedDetectedCountry.nameKey)}
               </div>
             </div>
 
@@ -217,9 +247,11 @@ export default function HomePageClient() {
                 cursor: "pointer",
               }}
             >
-              {navigatingCode === supportedDetectedCountry.code
-                ? "Opening shop..."
-                : `Continue to ${supportedDetectedCountry.name} →`}
+             {navigatingCode === supportedDetectedCountry.code
+            ? t("country_opening_shop")
+            : t("country_continue_to", {
+                country: t(supportedDetectedCountry.nameKey),
+              })}
             </button>
           </div>
         )}
@@ -235,19 +267,20 @@ export default function HomePageClient() {
             }}
           >
             <p style={{ margin: 0, color: "#111827", fontWeight: 800 }}>
-              We do not currently deliver directly to{" "}
-              <strong>{detectedCountry.name}</strong>.
+              {t("country_not_deliver_directly", {
+                country: detectedCountry.name,
+              })}
             </p>
 
-            <p
-              style={{
-                margin: "8px 0 0",
-                color: "#64748b",
-                lineHeight: 1.6,
-              }}
-            >
-              You can still choose one of our available delivery countries below.
-            </p>
+           <p
+            style={{
+              margin: "8px 0 0",
+              color: "#64748b",
+              lineHeight: 1.6,
+            }}
+          >
+            {t("country_choose_available_below")}
+          </p>
           </div>
         )}
 
@@ -293,7 +326,7 @@ export default function HomePageClient() {
 
                 <span>
                   <strong style={{ display: "block", fontSize: "16px" }}>
-                    {country.name}
+                   {t(country.nameKey)}
                   </strong>
                   <span
                     style={{
@@ -326,8 +359,7 @@ export default function HomePageClient() {
             lineHeight: 1.6,
           }}
         >
-          Your country selection helps us show accurate product availability,
-          delivery options, and localized shopping information.
+         {t("country_selection_explanation")}
         </p>
       </section>
     </main>

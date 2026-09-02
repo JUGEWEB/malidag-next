@@ -1,0 +1,16 @@
+{
+"country_delivery_required": "País de entrega obrigatório",
+"country_choose_delivery": "Escolha seu país de entrega",
+"country_personalize_message": "Vamos personalizar os produtos, a disponibilidade, as informações de entrega e sua experiência de compra com base no país selecionado.",
+"country_detecting_location": "Detectando sua localização...",
+"country_detected_location": "Detectamos sua localização",
+"country_opening_shop": "Abrindo a loja...",
+"country_continue_to": "Continuar para {{country}} →",
+"country_not_deliver_directly": "No momento, não fazemos entregas diretas para {{country}}.",
+"country_choose_available_below": "Você ainda pode escolher um dos países de entrega disponíveis abaixo.",
+"country_selection_explanation": "A seleção do país nos ajuda a mostrar a disponibilidade correta dos produtos, opções de entrega e informações de compra localizadas.",
+
+"country_france": "França",
+"country_united_kingdom": "Reino Unido",
+"country_brazil": "Brasil"
+}

@@ -363,5 +363,19 @@
   "basket_remove_item": "Supprimer l'élément",
   "color": "Couleur",
   "size": "Taille",
-  "coin_error_loading": "Échec du chargement des données de pièces. Veuillez réessayer ultérieurement."
+  "coin_error_loading": "Échec du chargement des données de pièces. Veuillez réessayer ultérieurement.",
+  "country_delivery_required": "Pays de livraison requis",
+"country_choose_delivery": "Choisissez votre pays de livraison",
+"country_personalize_message": "Nous personnaliserons les produits, leur disponibilité, les informations de livraison et votre expérience d’achat en fonction du pays sélectionné.",
+"country_detecting_location": "Détection de votre localisation...",
+"country_detected_location": "Nous avons détecté votre localisation",
+"country_opening_shop": "Ouverture de la boutique...",
+"country_continue_to": "Continuer vers {{country}} →",
+"country_not_deliver_directly": "Nous ne livrons pas encore directement vers {{country}}.",
+"country_choose_available_below": "Vous pouvez toujours choisir l’un de nos pays de livraison disponibles ci-dessous.",
+"country_selection_explanation": "Votre choix de pays nous aide à afficher la disponibilité correcte des produits, les options de livraison et les informations d’achat localisées.",
+
+"country_france": "France",
+"country_united_kingdom": "Royaume-Uni",
+"country_brazil": "Brésil"
 }

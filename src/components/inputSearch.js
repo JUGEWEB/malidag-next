@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useContext } from "react";
 import { AppContext } from "./appContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
 import useScreenSize from "./useIsMobile";
@@ -29,6 +29,7 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
   const { isMobile, isSmallMobile, isVerySmall, isVeryVerySmall } = useScreenSize();
   const { t } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
 
   const withCountry = (path) => {
   const code = countryCode || "fr";
@@ -137,6 +138,10 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
   useEffect(() => {
     updateSuggestions(searchTerm);
   }, [searchTerm, detectedLang]);
+
+  if (pathname === "/") {
+  return null;
+}
 
   return (
     <div

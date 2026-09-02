@@ -64,10 +64,26 @@ const handleCountryChange = (nextCountry) => {
   setCountryChanging?.(true);
   setIsOpen(false);
 
+  // Save selected country
+  localStorage.setItem(
+    "selectedCountry",
+    JSON.stringify(nextCountry)
+  );
+
+  // Update React state
   setCountry(nextCountry);
 
+  // Notify other components
+  window.dispatchEvent(new Event("countryChanged"));
+
+  // Keep the same page, but change country prefix
   router.replace(buildCountryPath(nextCountry.code));
 };
+
+// Hide Location only on the main landing page "/"
+if (pathname === "/") {
+  return null;
+}
 
   if (!country || !country.code || !country.name) {
     return null; // or a loading spinner

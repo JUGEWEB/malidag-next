@@ -77,7 +77,7 @@ if (isCheckoutPage || isItemsOfWomenPage || (isItemTypeRoute && beautyTypes.has(
     <div className="headtx" style={{  display: "flex", alignItems: "center", gap: "0px", background: "#333", marginTop: "-5px",  marginRight: isBasketVisible && isDesktop && basketItems.length > 0 ? "150px" : "0", }}>
       <All />
       <Type />
-      <Jewelry />
+    {/* <Jewelry /> */}
     </div>
   );
 };

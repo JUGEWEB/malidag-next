@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+ {/*
+
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter, usePathname } from 'next/navigation';
 import './Jewelry.css';
@@ -76,11 +78,22 @@ function Jewelry() {
     fetchWatches();
   }, []);
 
-  const shouldHide = useMemo(() => {
-    return isSmallScreen && pathname !== '/';
-  }, [isSmallScreen, pathname]);
+ const countryCode = getSavedCountryCode();
 
-  if (shouldHide) return null;
+const isCountryHome =
+  countryCode &&
+  (pathname === `/${countryCode}` ||
+    pathname === `/${countryCode}/`);
+
+// Hide completely on the main landing page
+if (pathname === "/") {
+  return null;
+}
+
+// On small screens, show only on the country homepage
+if (isSmallScreen && !isCountryHome) {
+  return null;
+}
 
   const handleWatchesClick = () => {
   const countryCode = getSavedCountryCode();
@@ -167,7 +180,9 @@ const handleWatchItemClick = (id) => {
         </button>
       ) : (
         <>
+       
           <div className="coin-strip__header">
+            
             <div className="coin-strip__eyebrow">
               Jewelry store
             </div>
@@ -222,12 +237,23 @@ const handleWatchItemClick = (id) => {
                 </span>
               </button>
             ))}
+              
           </div>
+         
+         
         </>
       )}
     </div>
   </section>
 );
+}
+
+export default Jewelry;
+
+  */}
+
+  function Jewelry() {
+  return null;
 }
 
 export default Jewelry;

@@ -29,6 +29,30 @@ function MalidagHeader({ user, isConnected, connect, address, disconnect, pendin
   const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
    const router = useRouter();
    const pathname = usePathname();
+
+   const getSavedCountryCode = () => {
+  try {
+    const savedCountry = localStorage.getItem("selectedCountry");
+
+    if (!savedCountry) return null;
+
+    const parsedCountry = JSON.parse(savedCountry);
+
+    return parsedCountry?.code || null;
+  } catch (err) {
+    console.error("Invalid selectedCountry:", err);
+    return null;
+  }
+};
+
+const withCountry = (path) => {
+  const countryCode = getSavedCountryCode();
+
+  if (!countryCode) return;
+
+  return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
    const isCountrySelectorPage = pathname === "/";
   const { isLoading, connectors, } = useConnect(); // Destructure wagmi's useConnect
   const [showDisconnect, setShowDisconnect] = useState(false);
@@ -46,14 +70,21 @@ const isCheckoutPage =
   const showModal = () => setIsModalVisible(true); // Function to show the modal
   const handleCancel = () => setIsModalVisible(false); // Function to hide the modal
 
-  const openAuthWindow = () => {
-    const authWindow = window.open(
-      "/auth",
-      "_blank",
-      "width=400,height=600,resizable,scrollbars"
-    );
+ const openAuthWindow = () => {
+  const authPath = withCountry("/auth");
+
+  if (!authPath) return;
+
+  const authWindow = window.open(
+    authPath,
+    "_blank",
+    "width=400,height=600,resizable,scrollbars"
+  );
+
+  if (authWindow) {
     authWindow.document.title = "Login / Sign Up";
-  };
+  }
+};
 
    useEffect(() => {
   if (pathname.includes('product/') || pathname === "/checkout" || pathname === "/paypalCheckout" || pathname === "/cardCheckout") {
@@ -65,8 +96,14 @@ const isCheckoutPage =
   
 
  const home = () => {
-  router.push(`/${country?.code}`);
+  const countryCode = getSavedCountryCode();
+
+  if (!countryCode) return;
+
+  router.push(`/${countryCode}`);
 };
+
+const savedCountryCode = getSavedCountryCode();
 
 
     const truncateAddress = (address, startLength = 6, endLength = 4) => {
@@ -232,7 +269,7 @@ const isCheckoutPage =
       <div>
         {user ? (
           <span
-            onClick={() => router.push("/profile")}
+           onClick={() => router.push(withCountry("/profile"))}
             style={{
               cursor: "pointer",
               fontSize: "27px",
@@ -242,7 +279,10 @@ const isCheckoutPage =
             <FaUser style={{ color: "white" }} />
           </span>
         ) : (
-          <div className="buttonlog" onClick={() => router.push("/auth")}>
+          <div
+              className="buttonlog"
+              onClick={() => router.push(withCountry("/auth"))}
+            >
            <div>Login</div> <div>-</div> <div>&gt;</div> <div style={{ cursor: "pointer",
               fontSize: (isTablet || isDesktop) ? "27px" : "15px",
               filter: "hue-rotate(100deg) saturate(350%) brightness(1.2)", color: "white"}}> <FaUser style={{ color: "white" }} /></div>
@@ -309,9 +349,13 @@ const isCheckoutPage =
 )}
 
 
-{basketItems?.length > 0 && (
-          <div style={{backgroundColor: (isTablet || isDesktop) ? "black" : "#333",}}>
-         <Link href={`/${country?.code}/basket`}>
+{basketItems?.length > 0 && savedCountryCode && (
+          <div
+    style={{
+      backgroundColor: isTablet || isDesktop ? "black" : "#333",
+    }}
+  >
+    <Link href={`/${savedCountryCode}/basket`}>
         <div
           style={{
             cursor: "pointer",

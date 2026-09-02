@@ -1,44 +1,96 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useRouter, usePathname } from "next/navigation";
-import axios from "axios";
 import useScreenSize from "./useIsMobile";
 import "./type.css";
 
 const Type = () => {
-   const router = useRouter();
-   const pathname = usePathname()
-  const {isMobile, isDesktop, isTablet, isSmallMobile, isVerySmall} = useScreenSize()
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // Handle navigation when a type is clicked
-  const handleTypeClick = () => {
-    router.push(`/type-page`);
+  const {
+    isMobile,
+    isDesktop,
+    isTablet,
+    isSmallMobile,
+    isVerySmall,
+  } = useScreenSize();
+
+  const getSavedCountryCode = () => {
+    try {
+      const savedCountry = localStorage.getItem("selectedCountry");
+
+      if (!savedCountry) return null;
+
+      const parsedCountry = JSON.parse(savedCountry);
+
+      return parsedCountry?.code || null;
+    } catch (err) {
+      console.error("Invalid selectedCountry:", err);
+      return null;
+    }
   };
 
-   // ✅ Hide if mobile/small/verySmall and route is not home
- if (
+  const handleTypeClick = () => {
+    const countryCode = getSavedCountryCode();
+
+    if (!countryCode) return;
+
+    router.push(`/${countryCode}/type-page`);
+  };
+
+  const handleNewsClick = () => {
+  const countryCode = getSavedCountryCode();
+
+  if (!countryCode) return;
+
+  router.push(`/${countryCode}/malidag-news`);
+};
+
+const countryCode = getSavedCountryCode();
+
+const isCountryHome =
+  countryCode &&
+  (pathname === `/${countryCode}` ||
+    pathname === `/${countryCode}/`);
+
+// "/" is the landing/country-selection page
+if (pathname === "/") {
+  return null;
+}
+
+// Mobile: hide on inner pages, but NOT /fr, /br, /gb
+if (
   (isMobile || isSmallMobile || isVerySmall) &&
-  pathname !== "/"
+  !isCountryHome
 ) {
   return null;
 }
 
   return (
-    <div className="type-scroll-container"style={{marginLeft: (isDesktop || isTablet) ? "0px" : "20px", width: (isDesktop || isTablet) ? "60%" : "100%", color: "white"}}>
+    <div
+      className="type-scroll-container"
+      style={{
+        marginLeft: isDesktop || isTablet ? "0px" : "20px",
+        width: isDesktop || isTablet ? "60%" : "100%",
+        color: "white",
+      }}
+    >
       <div className="type-scroll">
-          <div
+        <div
           className="type-item"
           onClick={handleTypeClick}
-          >
-            New
-          </div>
-          <div
+        >
+          New
+        </div>
+
+        <div
           className="type-itemT"
-          onClick={() => router.push("/malidag-news")}
-          >
-            Madix News
-          </div>
+          onClick={handleNewsClick}
+        >
+          Madix News
+        </div>
       </div>
     </div>
   );

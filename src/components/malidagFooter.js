@@ -1,25 +1,24 @@
-'use client';
+"use client";
 
 import React from "react";
 import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram } from "react-icons/fa";
+import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 import "./malidagFooter.css";
-import { useTranslation } from "react-i18next";
 
 function MalidagFooter() {
   const { t } = useTranslation();
+  const pathname = usePathname();
+
+  // Hide footer only on the main landing page "/"
+  if (pathname === "/") {
+    return null;
+  }
 
   return (
     <footer className="malidag-footer">
       <div className="footer-container">
-
-        {/* Partnerships Section */}
-        <div className="footer-section">
-          <h3>Upcoming project</h3>
-          <ul>
-            <li><a href="/the-crypto-shop" target="_blank" rel="noopener noreferrer">{t("binege")}</a></li>
-          </ul>
-        </div>
 
 
         {/* Contact Us Section */}

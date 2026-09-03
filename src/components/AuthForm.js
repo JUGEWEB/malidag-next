@@ -19,6 +19,7 @@ const AuthForm = ({ auth, user }) => {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,11 +42,40 @@ const AuthForm = ({ auth, user }) => {
     if (user) router.push(redirectTo);
   }, [user, router, redirectTo]);
 
+  const passwordChecks = {
+  length: password.length >= 10,
+  uppercase: /[A-Z]/.test(password),
+  lowercase: /[a-z]/.test(password),
+  number: /[0-9]/.test(password),
+  special: /[^A-Za-z0-9]/.test(password),
+};
+
+const isStrongPassword = Object.values(passwordChecks).every(Boolean);
+
+const passwordsMatch =
+  password.length > 0 &&
+  confirmPassword.length > 0 &&
+  password === confirmPassword;
+
   const handleAuth = async (e) => {
     e.preventDefault();
     try {
-      if (isSignUp) {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+       if (isSignUp) {
+  if (!isStrongPassword) {
+    messageApi.error(t("password_not_strong"));
+    return;
+  }
+
+  if (!passwordsMatch) {
+    messageApi.error(t("passwords_do_not_match"));
+    return;
+  }
+
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
         const user = userCredential.user;
         await sendEmailVerification(user);
         setEmailSent(true);
@@ -167,7 +197,37 @@ const AuthForm = ({ auth, user }) => {
           </span>
         </div>
 
-        <button type="submit" className="auth-submit">
+        {isSignUp && (
+  <>
+    <input
+      type={showPassword ? "text" : "password"}
+      placeholder={t("confirm_password")}
+      value={confirmPassword}
+      onChange={(e) => setConfirmPassword(e.target.value)}
+      required
+    />
+
+    {confirmPassword && (
+      <div
+        className={
+          passwordsMatch
+            ? "password-match valid"
+            : "password-match invalid"
+        }
+      >
+        {passwordsMatch
+          ? `✓ ${t("passwords_match")}`
+          : `✕ ${t("passwords_do_not_match")}`}
+      </div>
+    )}
+  </>
+)}
+
+       <button
+  type="submit"
+  className="auth-submit"
+  disabled={isSignUp && (!isStrongPassword || !passwordsMatch)}
+>
           {isSignUp ? t("sign_up") : t("login")}
         </button>
       </form>
@@ -178,6 +238,30 @@ const AuthForm = ({ auth, user }) => {
           {isSignUp ? t("login") : t("sign_up")}
         </button>
       </p>
+
+      {isSignUp && password && (
+  <div className="password-requirements">
+    <div className={passwordChecks.length ? "valid" : "invalid"}>
+      {passwordChecks.length ? "✓" : "✕"} {t("password_min_10")}
+    </div>
+
+    <div className={passwordChecks.uppercase ? "valid" : "invalid"}>
+      {passwordChecks.uppercase ? "✓" : "✕"} {t("password_uppercase")}
+    </div>
+
+    <div className={passwordChecks.lowercase ? "valid" : "invalid"}>
+      {passwordChecks.lowercase ? "✓" : "✕"} {t("password_lowercase")}
+    </div>
+
+    <div className={passwordChecks.number ? "valid" : "invalid"}>
+      {passwordChecks.number ? "✓" : "✕"} {t("password_number")}
+    </div>
+
+    <div className={passwordChecks.special ? "valid" : "invalid"}>
+      {passwordChecks.special ? "✓" : "✕"} {t("password_special")}
+    </div>
+  </div>
+)}
 
       {!isSignUp && (
         <p style={{ marginTop: "10px" }}>

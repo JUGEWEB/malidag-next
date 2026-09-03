@@ -510,5 +510,18 @@
 
 "country_france": "France",
 "country_united_kingdom": "United Kingdom",
-"country_brazil": "Brazil"
+"country_brazil": "Brazil",
+"password_not_strong": "Your password does not meet all security requirements.",
+  "password_min_10": "At least 10 characters",
+  "password_uppercase": "At least one uppercase letter",
+  "password_lowercase": "At least one lowercase letter",
+  "password_number": "At least one number",
+  "password_special": "At least one special character",
+  "confirm_password": "Confirm password",
+  "passwords_match": "Passwords match",
+  "passwords_do_not_match": "Passwords do not match",
+   "header_checkout": "Checkout",
+  "header_trust_info": "Trust Info",
+  "header_trust_message": "We value your trust! Your payment is 100% secure, and we guarantee safe and timely delivery of your products.",
+  "header_login_signup": "Login / Sign Up"
 }

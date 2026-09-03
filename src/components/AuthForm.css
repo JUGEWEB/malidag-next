@@ -122,4 +122,38 @@
       padding: 12px 18px;
     }
   }
+
+  .auth-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.password-requirements {
+  text-align: left;
+  margin: 0 0 12px 3px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.password-requirements .valid,
+.password-match.valid {
+  color: #198754;
+}
+
+.password-requirements .invalid,
+.password-match.invalid {
+  color: #dc3545;
+}
+
+.password-match {
+  text-align: left;
+  margin: -5px 0 12px 3px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.auth-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
   

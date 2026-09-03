@@ -53,28 +53,56 @@ export default function HomePageClient() {
     router.push(`/${country.code}`);
   };
 
-  useEffect(() => {
-    const detectCountry = async () => {
-      try {
-        const ipRes = await axios.get("https://api.ipify.org?format=json");
+ useEffect(() => {
+  const initializeCountry = async () => {
+    // 1. Check previously selected delivery country first
+    try {
+      const savedCountry = localStorage.getItem(SELECTED_COUNTRY_KEY);
 
-        const { data } = await axios.get(
-          `${BASE_URLs}/api/country/${ipRes.data.ip}`
+      if (savedCountry) {
+        const parsedCountry = JSON.parse(savedCountry);
+
+        const validCountry = AVAILABLE_COUNTRIES.find(
+          (country) => country.code === parsedCountry?.code
         );
 
-        setDetectedCountry({
-          name: data.countryName,
-          code: data.countryCode?.toLowerCase(),
-        });
-      } catch (err) {
-        console.error("Country detection failed:", err);
-      } finally {
-        setDetecting(false);
-      }
-    };
+        if (validCountry) {
+          setNavigatingCode(validCountry.code);
+          router.replace(`/${validCountry.code}`);
+          return;
+        }
 
-    detectCountry();
-  }, []);
+        // Remove invalid/old saved country
+        localStorage.removeItem(SELECTED_COUNTRY_KEY);
+      }
+    } catch (err) {
+      console.error("Invalid selectedCountry:", err);
+      localStorage.removeItem(SELECTED_COUNTRY_KEY);
+    }
+
+    // 2. No saved country -> detect location normally
+    try {
+      const ipRes = await axios.get(
+        "https://api.ipify.org?format=json"
+      );
+
+      const { data } = await axios.get(
+        `${BASE_URLs}/api/country/${ipRes.data.ip}`
+      );
+
+      setDetectedCountry({
+        name: data.countryName,
+        code: data.countryCode?.toLowerCase(),
+      });
+    } catch (err) {
+      console.error("Country detection failed:", err);
+    } finally {
+      setDetecting(false);
+    }
+  };
+
+  initializeCountry();
+}, [router]);
 
   const supportedDetectedCountry = AVAILABLE_COUNTRIES.find(
     (country) => country.code === detectedCountry?.code

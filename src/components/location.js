@@ -105,7 +105,7 @@ if (pathname === "/") {
   }));
 
   return (
-    <div style={{ margin: isMobile || isSmallMobile || isVerySmall ? "0px" : "10px" }}>
+    <div style={{ margin: isMobile || isSmallMobile || isVerySmall ? "0px" : "10px", cursor: "pointer" }}>
       <Dropdown
         menu={{ items: menuItems }}
         placement="bottomLeft"

@@ -1,16 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import "./malidagHeader.css";
-import { useConnect } from 'wagmi'; // Import wagmi's useConnect hook
 import Link from "next/link"; // Correct
 import { useRouter } from 'next/navigation';
-import { Dropdown, Button, Menu, Modal } from "antd";
+import { Dropdown, Button, Menu } from "antd";
 import { DownOutlined } from "@ant-design/icons";
-import ProductDetails from "./itemLastPage";
 import Location from "./location";
-import {Connector} from "wagmi"
 import useScreenSize from "./useIsMobile";
 import InputSearch from "./inputSearch";
 import All from "./All";
@@ -18,17 +14,20 @@ import { FaUser } from "react-icons/fa"; // ✅ Import user icon
 import "./themeSkeleton.css";
 import LanguageSelector from "./LanguageSelector";
 import { usePathname } from 'next/navigation';
+import { useTranslation } from "react-i18next";
 
 
+function MalidagHeader({
+  user,
+  country,
+  allCountries,
+  basketItems,
+  setCountry
+})  {
 
-
-
-
-function MalidagHeader({ user, isConnected, connect, address, disconnect, pendingConnector, country, allCountries, basketItems, setCountry  }) {
-
-  const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
    const router = useRouter();
    const pathname = usePathname();
+   const { t } = useTranslation();
 
    const getSavedCountryCode = () => {
   try {
@@ -54,8 +53,6 @@ const withCountry = (path) => {
 };
 
    const isCountrySelectorPage = pathname === "/";
-  const { isLoading, connectors, } = useConnect(); // Destructure wagmi's useConnect
-  const [showDisconnect, setShowDisconnect] = useState(false);
   const [isBasketVisible, setIsBasketVisible] = useState(false);
   const {isSmallMobile , isMobile, isTablet, isVerySmall, isDesktop} = useScreenSize()
   const [logoLoaded, setLogoLoaded] = useState(false); // ✨ Logo loading state
@@ -66,9 +63,6 @@ const isCheckoutPage =
   pathname === "/paypalCheckout" ||
   pathname === "/cardCheckout";
 
-
-  const showModal = () => setIsModalVisible(true); // Function to show the modal
-  const handleCancel = () => setIsModalVisible(false); // Function to hide the modal
 
  const openAuthWindow = () => {
   const authPath = withCountry("/auth");
@@ -82,7 +76,7 @@ const isCheckoutPage =
   );
 
   if (authWindow) {
-    authWindow.document.title = "Login / Sign Up";
+   authWindow.document.title = t("header_login_signup");
   }
 };
 
@@ -106,11 +100,6 @@ const isCheckoutPage =
 const savedCountryCode = getSavedCountryCode();
 
 
-    const truncateAddress = (address, startLength = 6, endLength = 4) => {
-      if (!address) return '';
-      return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
-    };
-
     const trustMessage = (
       <Menu
         items={[
@@ -128,7 +117,7 @@ const savedCountryCode = getSavedCountryCode();
                   boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
                 }}
               >
-                ✅ **We value your trust!** Your payment is **100% secure**, and we guarantee **safe and timely delivery** of your products.
+               ✅ {t("header_trust_message")}
               </div>
             ),
           },
@@ -171,7 +160,7 @@ const savedCountryCode = getSavedCountryCode();
         onClick={home}
         style={{ display: "flex", alignItems: "center", cursor: "pointer", width: "auto", fontWeight: "bold", color: "white" }}
       >
-       MADIX
+       MALIDAG
       </div>
         
       )}
@@ -226,44 +215,43 @@ const savedCountryCode = getSavedCountryCode();
 
       </div>
 
-      {isCheckoutPage ? (
-         isConnected ? (
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            {/* Checkout Header */}
-            <div
-              style={{
-                color: "white",
-                fontSize: "22px",
-                fontWeight: "bold",
-                textAlign: "center",
-                flexGrow: 1,
-                display: "flex",
-               
-              }}
-            >
-              Checkout
-              <Dropdown overlay={trustMessage} placement="bottom" trigger={["click"]}>
-          <Button
-            type="text"
-            style={{
-              marginLeft: "10px",
-              color: "white",
-              fontSize: "18px",
-            }}
-          >
-            Trust Info <DownOutlined />
-          </Button>
-        </Dropdown>
-      </div>
-      
-          </div>
-        ) : null
+     {isCheckoutPage ? (
+  <div style={{ display: "flex", justifyContent: "center" }}>
+    <div
+      style={{
+        color: "white",
+        fontSize: "22px",
+        fontWeight: "bold",
+        textAlign: "center",
+        flexGrow: 1,
+        display: "flex",
+      }}
+    >
+     {t("header_checkout")}
 
-          ) : (
+      <Dropdown
+        overlay={trustMessage}
+        placement="bottom"
+        trigger={["click"]}
+      >
+        <Button
+          type="text"
+          style={{
+            marginLeft: "10px",
+            color: "white",
+            fontSize: "18px",
+          }}
+        >
+         {t("header_trust_info")} <DownOutlined />
+        </Button>
+      </Dropdown>
+    </div>
+  </div>
+) : (
 
             <>
 
-            <div style={{display: "flex", alignItems: "center"}}>
+            <div style={{display: "flex", alignItems: "center", width: "100%", justifyContent: "flex-end", gap: "10px"}}>
 
       {/* User Section */}
       <div>
@@ -283,7 +271,7 @@ const savedCountryCode = getSavedCountryCode();
               className="buttonlog"
               onClick={() => router.push(withCountry("/auth"))}
             >
-           <div>Login</div> <div>-</div> <div>&gt;</div> <div style={{ cursor: "pointer",
+           <div>{t("header_login_signup")}</div> <div>-</div> <div>&gt;</div> <div style={{ cursor: "pointer",
               fontSize: (isTablet || isDesktop) ? "27px" : "15px",
               filter: "hue-rotate(100deg) saturate(350%) brightness(1.2)", color: "white"}}> <FaUser style={{ color: "white" }} /></div>
           </div>
@@ -292,61 +280,6 @@ const savedCountryCode = getSavedCountryCode();
 
      {/* Connect Button */}
      <LanguageSelector />
-    
-{!isConnected ? (
-  <div className="connectBttt" onClick={showModal} style={{marginRight: "5px", marginLeft: "10px", fontSize: "11px", padding: "5px", cursor: "pointer", color: "white"}}>
-    Connect Wallet
-  </div>
-) : (
-  <div style={{ display: 'flex', alignItems: 'center', height: "auto" }}>
-    <p
-      style={{
-        color: 'black',
-        backgroundColor: 'white',
-        border: '2px solid black',
-        fontSize: '14px',
-        borderRadius: '20px',
-        padding: '5px',
-      }}
-    >
-      {truncateAddress(address)}
-    </p>
-    <div style={{ position: 'relative' }}>
-      {/* Three dots button */}
-      <div
-        type="text"
-        style={{
-          fontSize: '24px',
-          lineHeight: '1',
-          background: 'none',
-         
-          cursor: 'pointer',
-          color: "white",
-          marginRight: "10px"
-        }}
-        onClick={() => setShowDisconnect(!showDisconnect)}
-      >
-        ⋮
-      </div>
-      {/* Disconnect button */}
-      {showDisconnect && (
-        <Button
-          type="primary"
-          danger
-          onClick={disconnect}
-          style={{
-            position: 'absolute',
-            top: '40px',
-            right: '0',
-            zIndex: '10',
-          }}
-        >
-          Disconnect
-        </Button>
-      )}
-    </div>
-  </div>
-)}
 
 
 {basketItems?.length > 0 && savedCountryCode && (
@@ -393,25 +326,6 @@ const savedCountryCode = getSavedCountryCode();
          </div>
       )}
 </div>
-
-{/* Modal */}
-<Modal
-  title="Connect Wallet"
-  open={isModalVisible}
-  onCancel={handleCancel}
-  footer={null} // No footer buttons
->
-  {connectors.map((connector) => (
-    <Button
-      key={connector.uid}
-      connector={connector}
-      onClick={() => connect({ connector })}
-      style={{ display: 'block', marginBottom: '10px' }}
-    >
-      {connector.name}
-    </Button>
-  ))}
-</Modal>
     
       </>
           )}

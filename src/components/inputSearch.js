@@ -11,13 +11,15 @@ import i18n from "i18next";
 
 import en from "../keywords.json";
 import fr from "../locales/fr/keywords.json";
+import br from "../locales/br/keywords.json";
 
 const LANG_KEYWORDS_MAP = {
   en,
-  fr
+  fr,
+  br,
 };
 
-const SUPPORTED_LANGS = ["en", "fr"];
+const SUPPORTED_LANGS = ["en", "fr", "br"];
 
 function InputSearch({ isBasketVisible, basketItems, user }) {
   const { country } = useContext(AppContext);

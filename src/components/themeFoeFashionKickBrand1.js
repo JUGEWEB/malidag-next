@@ -4,11 +4,13 @@ import React, { useEffect, useState, useContext, useCallback } from "react";
 import useScreenSize from "./useIsMobile";
 import Link from "next/link";
 import { AppContext } from "./appContext";
+import { useTranslation } from "react-i18next";
 
 const ThemeForFashionKickBrand1 = () => {
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } = useScreenSize();
   const [loadedImages, setLoadedImages] = useState({});
    const { country } = useContext(AppContext);
+   const { t } = useTranslation();
 
    const countryCode = country?.code;
 
@@ -106,7 +108,7 @@ return (
               textTransform: "uppercase",
             }}
           >
-            Fashion Kick
+           {t("fashion_kick")}
           </h1>
 
           <p
@@ -118,7 +120,7 @@ return (
               opacity: 0.95,
             }}
           >
-            Elevate your style this season ✨
+           {t("fashion_kick_subtitle")}
           </p>
 
           <button
@@ -137,7 +139,7 @@ return (
               boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
             }}
           >
-            Discover Now
+           {t("discover_now")}
           </button>
         </div>
       </div>

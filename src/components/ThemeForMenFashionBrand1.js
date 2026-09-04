@@ -5,11 +5,13 @@ import axios from 'axios';
 import useScreenSize from './useIsMobile';
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppContext } from "./appContext";
+import { useTranslation } from "react-i18next";
 
 const ThemeForMenFashionBrand1 = () => {
   const router = useRouter();
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } = useScreenSize();
     const [loadedImages, setLoadedImages] = useState({});
+    const { t } = useTranslation();
     const { country } = useContext(AppContext);
 const countryCode = country?.code;
 
@@ -116,7 +118,7 @@ return (
             textTransform: "uppercase",
           }}
         >
-          Men Fashion
+           {t("men_fashion")}
         </h1>
 
         <p
@@ -128,7 +130,7 @@ return (
             opacity: 0.95,
           }}
         >
-          Discover premium essentials for modern style ✨
+         {t("men_fashion_subtitle")}
         </p>
 
         <button
@@ -147,7 +149,7 @@ return (
             boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
           }}
         >
-          Discover Now
+          {t("discover_now")}
         </button>
       </div>
     </div>

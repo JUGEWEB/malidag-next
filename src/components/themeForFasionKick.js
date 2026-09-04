@@ -4,10 +4,12 @@ import React, { useEffect, useState, useContext, useCallback } from "react";
 import { AppContext } from "./appContext";
 import useScreenSize from "./useIsMobile";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 const ThemeForFashionKick = () => {
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } = useScreenSize();
   const [loadedImages, setLoadedImages] = useState({});
+  const { t } = useTranslation();
 
   const { country } = useContext(AppContext);
 const countryCode = country?.code;
@@ -56,7 +58,7 @@ const withCountry = useCallback(
           borderBottom: "1px solid #eee",
         }}
       >
-        Fashion Kick
+        {t("fashion_kick")}
       </div>
 
       {/* Wrap image with Link */}
@@ -100,7 +102,7 @@ const withCountry = useCallback(
             display: "inline-block",
           }}
         >
-          discover now
+         {t("explore_now")}
         </Link>
       )}
     </div>

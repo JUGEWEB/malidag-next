@@ -11,10 +11,11 @@ import { AppContext } from "./appContext";
 import axios from 'axios';
 import useScreenSize from './useIsMobile';
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 const ThemeForMenFashion = () => {
   const { country } = useContext(AppContext);
-
+const { t } = useTranslation();
 const countryCode = country?.code;
 
 const withCountry = useCallback(
@@ -68,7 +69,7 @@ const withCountry = useCallback(
         textAlign: 'center',
         borderBottom: '1px solid #eee',
       }}>
-        Men fashion
+       {t("men_fashion")}
       </div>
 
       <div style={{ width:(isSmallMobile || isVerySmall) ? "150px" : '100%', height:(isSmallMobile || isVerySmall) ? "170px" : 'auto', backgroundColor: "#ddd5"}}>
@@ -90,7 +91,7 @@ const withCountry = useCallback(
       </div>
         {(isDesktop || isMobile || isTablet) && (
      
-      <div onClick={handleDiscoverClick} style={{ cursor: "pointer", color: "blue", marginTop: "4rem", fontSize: "0.8rem", textDecoration: "underline", marginLeft: "1rem"}}>discover now</div>
+      <div onClick={handleDiscoverClick} style={{ cursor: "pointer", color: "blue", marginTop: "4rem", fontSize: "0.8rem", textDecoration: "underline", marginLeft: "1rem"}}>{t("explore_now")}</div>
              
     )}
     </div>

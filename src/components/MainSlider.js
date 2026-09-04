@@ -23,7 +23,11 @@ const SLIDE_STORAGE_KEY = 'malidag_home_current_slide';
 const MainSlider = ({ user, country }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
+  ? i18n.language
+  : "en";
   const { isMobile, isDesktop, isTablet } = useScreenSize();
 
   const sliderRef = useRef(null);
@@ -48,6 +52,17 @@ const withCountry = useCallback(
   },
   [selectedCountryPrefix]
 );
+
+const getSliderLanguage = () => {
+  const lang = i18n.language?.toLowerCase();
+
+  if (lang?.startsWith("fr")) return "fr";
+  if (lang === "br") return "br";
+
+  return "en";
+};
+
+const sliderLanguage = getSliderLanguage();
 
 {/*
   const slides = useMemo(
@@ -122,20 +137,50 @@ const withCountry = useCallback(
       content: "video",
       cover: "https://cdn.malidag.com/themes/1775517425727-e79e4283-6b2a-4a70-a6ba-271053176df0.webp",
       router: "/itemPage/shoes?q=shoes",
-      headerKey: "slider_sneakers_title",
-      paragraphKey: "slider_sneakers_text",
-      buttonKey: "view_page",
+
+      text: {
+        en: {
+          header: "Discover sneakers made for your style",
+          paragraph: "Explore footwear selected for customers in France.",
+          button: "View page",
+        },
+        fr: {
+          header: "Découvrez des baskets adaptées à votre style",
+          paragraph: "Explorez une sélection pensée pour nos clients en France.",
+          button: "Voir la page",
+        },
+        br: {
+          header: "Descubra tênis que combinam com seu estilo",
+          paragraph: "Explore uma seleção preparada para clientes na França.",
+          button: "Ver página",
+        },
+      },
     },
     {
       id: "2",
       url: "https://cdn.malidag.com/themes/1788482740227-c989a9ea-b273-41ae-822f-bdfe1a23c058.webp",
       type: "#f3dcd8",
       content: "image",
-      textPosition: "center",
-      headlineKey: "slider_save_big",
-      subKey: "slider_join_deals",
-      buttonKey: "view_page",
+      textPosition: "left",
       router: "/save-big",
+
+      text: {
+    en: {
+      headline: "Save Big",
+      sub: "Discover special offers selected for shoppers in France.",
+      button: "View deals",
+    },
+    fr: {
+      headline: "Faites de belles économies",
+      sub: "Découvrez des offres spéciales sélectionnées pour les clients en France.",
+      button: "Voir les offres",
+    },
+    br: {
+      headline: "Economize muito",
+      sub: "Descubra ofertas especiais selecionadas para clientes na França.",
+      button: "Ver ofertas",
+    },
+  },
     },
   ],
 
@@ -147,9 +192,24 @@ const withCountry = useCallback(
       content: "video",
       cover: "https://cdn.malidag.com/themes/1779235151790-63f824f3-c32f-4859-8210-1539b0c19598.webp",
       router: "/itemPage/shoes?q=shoes",
-      headerKey: "slider_sneakers_title",
-      paragraphKey: "slider_sneakers_text",
-      buttonKey: "view_page",
+
+      text: {
+        en: {
+          header: "Fresh styles for the UK",
+          paragraph: "Discover footwear and fashion selected for the UK.",
+          button: "Explore",
+        },
+        fr: {
+          header: "De nouveaux styles pour le Royaume-Uni",
+          paragraph: "Découvrez une sélection de mode pour le Royaume-Uni.",
+          button: "Explorer",
+        },
+        br: {
+          header: "Novos estilos para o Reino Unido",
+          paragraph: "Descubra moda e calçados selecionados para o Reino Unido.",
+          button: "Explorar",
+        },
+      },
     },
     {
       id: "2",
@@ -157,10 +217,25 @@ const withCountry = useCallback(
       type: "#024163",
       content: "image",
       textPosition: "center",
-      headlineKey: "slider_save_big",
-      subKey: "slider_join_deals",
-      buttonKey: "view_page",
       router: "/save-big",
+
+       text: {
+    en: {
+      headline: "Save Big",
+      sub: "Explore deals and special offers selected for the UK.",
+      button: "View deals",
+    },
+    fr: {
+      headline: "Faites de belles économies",
+      sub: "Découvrez des offres sélectionnées pour le Royaume-Uni.",
+      button: "Voir les offres",
+    },
+    br: {
+      headline: "Economize muito",
+      sub: "Explore ofertas selecionadas para o Reino Unido.",
+      button: "Ver ofertas",
+    },
+  },
     },
   ],
 
@@ -172,13 +247,26 @@ const withCountry = useCallback(
         type: '#ff9a00',
         content: 'image',
          textPosition: 'right',
-         headline: 'Jack & Jones',
           router: "/itemPage/shoes?q=shoes",
-         sub: 'Elevate your style this season ✨',
-        buttonText: 'Explore Brand',
-         headlineKey: "slider_save_big",
-      subKey: "slider_join_deals",
       buttonKey: "view_page",
+
+       text: {
+        en: {
+          headline: "Style selected for Brazil",
+          sub: "Discover products and offers made relevant to your location.",
+          button: "Explore now",
+        },
+        fr: {
+          headline: "Une sélection pensée pour le Brésil",
+          sub: "Découvrez des produits et offres adaptés à votre localisation.",
+          button: "Découvrir",
+        },
+        br: {
+          headline: "Estilo selecionado para o Brasil",
+          sub: "Descubra produtos e ofertas pensados para sua localização.",
+          button: "Explorar agora",
+        },
+      },
       },
       /*
     {
@@ -195,14 +283,32 @@ const withCountry = useCallback(
     */
     {
       id: "2",
-      url: "https://cdn.malidag.com/themes/1788484847994-691c2f02-e2e0-4c57-8e2e-a1e5b5b34d27.webp",
+      url: "https://cdn.malidag.com/themes/1788524538925-34921113-fa42-4dc8-837d-d11f60312c71.webp",
       type: "#024163",
       content: "image",
-      textPosition: "center",
+      textPosition: "left",
       headlineKey: "slider_save_big",
       subKey: "slider_join_deals",
       buttonKey: "view_page",
       router: "/save-big",
+
+       text: {
+    en: {
+      headline: "Big Savings for Brazil",
+      sub: "Discover deals and offers selected for shoppers in Brazil.",
+      button: "View deals",
+    },
+    fr: {
+      headline: "De belles économies pour le Brésil",
+      sub: "Découvrez des offres sélectionnées pour les clients au Brésil.",
+      button: "Voir les offres",
+    },
+    br: {
+      headline: "Grandes ofertas para o Brasil",
+      sub: "Descubra promoções e ofertas selecionadas para clientes no Brasil.",
+      button: "Ver ofertas",
+    },
+  },
     },
   ],
 };
@@ -210,6 +316,7 @@ const withCountry = useCallback(
 const slides = useMemo(() => {
   return COUNTRY_SLIDES[selectedCountryCode] || COUNTRY_SLIDES.fr;
 }, [selectedCountryCode]);
+
 
   const routeMap = useMemo(
     () => ({
@@ -372,7 +479,15 @@ const slides = useMemo(() => {
           >
             {mounted && sliderReady && (
               <Slider key={`home-slider-${initialSlideIndex}`} ref={sliderRef} {...settings}>
-                {slides.map((slide, index) => (
+
+               {slides.map((slide, index) => {
+
+                 const slideText =
+                  slide.text?.[sliderLanguage] ||
+                  slide.text?.en ||
+                  {};
+
+                    return (
                   <div key={slide.id} className="main-slider__slide">
                     <div
                       className={`main-slider__top ${
@@ -407,7 +522,7 @@ const slides = useMemo(() => {
                                     : 'main-slider__video-title--compact'
                                 }`}
                               >
-                               {t(slide.headerKey)}
+                              {slideText.header}
                               </h2>
                               <p
                                 className={`main-slider__video-text ${
@@ -416,13 +531,13 @@ const slides = useMemo(() => {
                                     : 'main-slider__video-text--compact'
                                 }`}
                               >
-                               {t(slide.paragraphKey)}
+                              {slideText.paragraph}
                               </p>
                               <button
                                 onClick={() => goToRoute(slide.router)}
                                 className="main-slider__cta"
                               >
-                               {t(slide.buttonKey)}
+                              {slideText.button}
                               </button>
                             </div>
                           }
@@ -449,12 +564,12 @@ const slides = useMemo(() => {
                           </picture>
 
                           <SlideOverlay
-                              position={slide.textPosition}
-                              headline={t(slide.headlineKey)}
-                              sub={t(slide.subKey)}
-                              buttonText={slide.buttonKey ? t(slide.buttonKey) : undefined}
-                              onClick={() => handleNavigation(slide.id)}
-                            />
+                            position={slide.textPosition}
+                            headline={slideText.headline}
+                            sub={slideText.sub}
+                            buttonText={slideText.button}
+                            onClick={() => goToRoute(slide.router)}
+                          />
                         </div>
                       )}
 
@@ -479,7 +594,8 @@ const slides = useMemo(() => {
                       }}
                     />
                   </div>
-                ))}
+               )
+                  })}
               </Slider>
             )}
           </div>

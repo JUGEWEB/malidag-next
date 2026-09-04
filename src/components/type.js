@@ -3,11 +3,13 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import useScreenSize from "./useIsMobile";
+import { useTranslation } from "react-i18next";
 import "./type.css";
 
 const Type = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const {
     isMobile,
@@ -82,14 +84,14 @@ if (
           className="type-item"
           onClick={handleTypeClick}
         >
-          New
+         {t("type_new")}
         </div>
 
         <div
           className="type-itemT"
           onClick={handleNewsClick}
         >
-          Madix News
+         {t("madix_news")}
         </div>
       </div>
     </div>

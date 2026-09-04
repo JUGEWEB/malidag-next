@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { AppContext } from "./appContext";
 import { onAuthStateChanged } from "firebase/auth";
 import axios from "axios";
@@ -11,6 +10,7 @@ import AppHeader from "@/components/appHeader";
 import MalidagFooter from "@/components/malidagFooter";
 import { usePathname, useRouter } from "next/navigation";
 import { ConfigProvider, App as AntdApp } from "antd";
+import { useTranslation } from "react-i18next";
 
 const BASE_URLs = "https://api.malidag.com";
 
@@ -23,53 +23,40 @@ const REQUIRED_CACHE_KEYS = [
 
 const SUPPORTED_COUNTRIES = [
   {
-    name: "United States",
-    code: "us",
-    flag: "https://flagcdn.com/w320/us.png",
-  },
-  {
-    name: "United Kingdom",
-    code: "gb",
-    flag: "https://flagcdn.com/w320/gb.png",
-  },
-  {
     name: "France",
+    nameKey: "country_france",
     code: "fr",
     flag: "https://flagcdn.com/w320/fr.png",
   },
   {
-    name: "Germany",
-    code: "de",
-    flag: "https://flagcdn.com/w320/de.png",
+    name: "United Kingdom",
+    nameKey: "country_united_kingdom",
+    code: "gb",
+    flag: "https://flagcdn.com/w320/gb.png",
   },
   {
-    name: "Ireland",
-    code: "ie",
-    flag: "https://flagcdn.com/w320/ie.png",
+    name: "Brazil",
+    nameKey: "country_brazil",
+    code: "br",
+    flag: "https://flagcdn.com/w320/br.png",
   },
-  {
-    name: "Australia",
-    code: "au",
-    flag: "https://flagcdn.com/w320/au.png",
-  },
-  {
-  name: "Belgium",
-  code: "be",
-  flag: "https://flagcdn.com/w320/be.png",
-},
 ];
 
 export default function MainLayout({ children, lang }) {
   const [user, setUser] = useState(null);
   const [basketItems, setBasketItems] = useState([]);
-  const [allCountries] = useState(SUPPORTED_COUNTRIES);
+const [country, setCountryState] = useState(null);
+const { t } = useTranslation();
+   const translatedCountries = SUPPORTED_COUNTRIES.map((country) => ({
+  ...country,
+  translatedName: t(country.nameKey),
+}));
+  const allCountries = translatedCountries;
   const [languageReady, setLanguageReady] = useState(false);
   const [appReady, setAppReady] = useState(false);
   const [bootProduct, setBootProduct] = useState(null);
   const [countryChanging, setCountryChanging] = useState(false);
   const router = useRouter();
-
-const [country, setCountryState] = useState(null);
 
 const setCountry = (nextCountry) => {
   if (!nextCountry?.code) return;
@@ -79,9 +66,6 @@ const setCountry = (nextCountry) => {
   window.dispatchEvent(new Event("countryChanged"));
 };
 
-  const { address, isConnected, chain } = useAccount();
-  const { connectors, connect, pendingConnector } = useConnect();
-  const { disconnect } = useDisconnect();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -248,6 +232,7 @@ useEffect(() => {
     bootApp();
   }, [languageReady]);
 
+
   if (!languageReady || !appReady) {
     return (
       <div
@@ -294,7 +279,7 @@ useEffect(() => {
             marginBottom: "8px",
           }}
         >
-          Loading Malidag...
+         {t("loading_malidag")}
         </div>
 
         {bootProduct?.item?.name && (
@@ -320,19 +305,11 @@ useEffect(() => {
           value={{
             basketItems,
             user,
-            connectors,
-            connect,
-            address,
-            disconnect,
-            isConnected,
-            chainId: chain?.id || null,
-            pendingConnector,
             allCountries,
             country,
             setCountry,
             countryChanging,
             setCountryChanging,
-            chain,
           }}
         >
 
@@ -367,7 +344,7 @@ useEffect(() => {
                     color: "#111827",
                   }}
                 >
-                  Updating delivery country...
+                 {t("updating_delivery_country")}
                 </div>
               </div>
             )}
@@ -375,12 +352,6 @@ useEffect(() => {
             {...{
               basketItems,
               user,
-              connectors,
-              connect,
-              address,
-              disconnect,
-              isConnected,
-              pendingConnector,
               allCountries,
               country,
               setCountry,

@@ -49,7 +49,7 @@ const withCountry = useCallback(
   [selectedCountryPrefix]
 );
 
-
+{/*
   const slides = useMemo(
     () => [
       /*{
@@ -73,7 +73,7 @@ const withCountry = useCallback(
         headerText: 'Snow Boots Winter Plush Warm Ankle...',
         paragText: 'Get it now',
         buttonText: 'Buy now',
-      },*/
+      },
 
        {
         id: '1',
@@ -87,7 +87,6 @@ const withCountry = useCallback(
         buttonText: 'View page',
       },
 
-      /*
 
        {
         id: '2',
@@ -99,7 +98,7 @@ const withCountry = useCallback(
          sub: 'Elevate your style this season ✨',
         buttonText: 'Explore Brand',
       },
-      */
+      
       {
         id: '2',
         url: 'https://cdn.malidag.com/public/header/3/malidag-all-header.webp',
@@ -112,6 +111,105 @@ const withCountry = useCallback(
     ],
     []
   );
+   */}
+
+  const COUNTRY_SLIDES = {
+  fr: [
+    {
+      id: "1",
+      url: "https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FINTERSPORT%20France%20intersportfr%20Instagram%20reel.mp4?alt=media&token=1ee47354-068f-45e7-9cd9-3150677e119d",
+      type: "#eeeeee",
+      content: "video",
+      cover: "https://cdn.malidag.com/themes/1775517425727-e79e4283-6b2a-4a70-a6ba-271053176df0.webp",
+      router: "/itemPage/shoes?q=shoes",
+      headerKey: "slider_sneakers_title",
+      paragraphKey: "slider_sneakers_text",
+      buttonKey: "view_page",
+    },
+    {
+      id: "2",
+      url: "https://cdn.malidag.com/themes/1788482740227-c989a9ea-b273-41ae-822f-bdfe1a23c058.webp",
+      type: "#f3dcd8",
+      content: "image",
+      textPosition: "center",
+      headlineKey: "slider_save_big",
+      subKey: "slider_join_deals",
+      buttonKey: "view_page",
+      router: "/save-big",
+    },
+  ],
+
+  gb: [
+    {
+      id: "1",
+      url: "https://cdn.malidag.com/public/header/2341/Jack%20&%20Jones%20x%20Kubilay%20Aka%20_%20Tarz%C3%84%C2%B1n%20Seni%20Konu%C3%85%C2%9Fsun_1080p.mp4",
+      type: "black",
+      content: "video",
+      cover: "https://cdn.malidag.com/themes/1779235151790-63f824f3-c32f-4859-8210-1539b0c19598.webp",
+      router: "/itemPage/shoes?q=shoes",
+      headerKey: "slider_sneakers_title",
+      paragraphKey: "slider_sneakers_text",
+      buttonKey: "view_page",
+    },
+    {
+      id: "2",
+      url: "https://cdn.malidag.com/public/header/3/malidag-all-header.webp",
+      type: "#024163",
+      content: "image",
+      textPosition: "center",
+      headlineKey: "slider_save_big",
+      subKey: "slider_join_deals",
+      buttonKey: "view_page",
+      router: "/save-big",
+    },
+  ],
+
+  br: [
+
+     {
+        id: '1',
+        url: 'https://cdn.malidag.com/themes/1775519689314-b9c85daf-7c62-4ba1-8078-c775bb83dc1b.webp',
+        type: '#ff9a00',
+        content: 'image',
+         textPosition: 'right',
+         headline: 'Jack & Jones',
+          router: "/itemPage/shoes?q=shoes",
+         sub: 'Elevate your style this season ✨',
+        buttonText: 'Explore Brand',
+         headlineKey: "slider_save_big",
+      subKey: "slider_join_deals",
+      buttonKey: "view_page",
+      },
+      /*
+    {
+      id: "1",
+      url: "BRAZIL_VIDEO_OR_IMAGE_URL",
+      type: "black",
+      content: "video",
+      cover: "BRAZIL_COVER_URL",
+      router: "/itemPage/shoes?q=shoes",
+      headerKey: "slider_sneakers_title",
+      paragraphKey: "slider_sneakers_text",
+      buttonKey: "view_page",
+    },
+    */
+    {
+      id: "2",
+      url: "https://cdn.malidag.com/themes/1788484847994-691c2f02-e2e0-4c57-8e2e-a1e5b5b34d27.webp",
+      type: "#024163",
+      content: "image",
+      textPosition: "center",
+      headlineKey: "slider_save_big",
+      subKey: "slider_join_deals",
+      buttonKey: "view_page",
+      router: "/save-big",
+    },
+  ],
+};
+
+const slides = useMemo(() => {
+  return COUNTRY_SLIDES[selectedCountryCode] || COUNTRY_SLIDES.fr;
+}, [selectedCountryCode]);
 
   const routeMap = useMemo(
     () => ({
@@ -309,7 +407,7 @@ const withCountry = useCallback(
                                     : 'main-slider__video-title--compact'
                                 }`}
                               >
-                                {slide.headerText}
+                               {t(slide.headerKey)}
                               </h2>
                               <p
                                 className={`main-slider__video-text ${
@@ -318,13 +416,13 @@ const withCountry = useCallback(
                                     : 'main-slider__video-text--compact'
                                 }`}
                               >
-                                {slide.paragText}
+                               {t(slide.paragraphKey)}
                               </p>
                               <button
                                 onClick={() => goToRoute(slide.router)}
                                 className="main-slider__cta"
                               >
-                                {slide.buttonText}
+                               {t(slide.buttonKey)}
                               </button>
                             </div>
                           }
@@ -351,12 +449,12 @@ const withCountry = useCallback(
                           </picture>
 
                           <SlideOverlay
-                            position={slide.textPosition}
-                            headline={slide.headline}
-                            sub={slide.sub}
-                            buttonText={slide.buttonText}
-                            onClick={() => handleNavigation(slide.id)}
-                          />
+                              position={slide.textPosition}
+                              headline={t(slide.headlineKey)}
+                              sub={t(slide.subKey)}
+                              buttonText={slide.buttonKey ? t(slide.buttonKey) : undefined}
+                              onClick={() => handleNavigation(slide.id)}
+                            />
                         </div>
                       )}
 

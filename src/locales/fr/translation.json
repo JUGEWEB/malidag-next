@@ -390,5 +390,18 @@
   "header_checkout": "Paiement",
   "header_trust_info": "Informations de confiance",
   "header_trust_message": "Votre confiance est importante pour nous ! Votre paiement est 100 % sécurisé et nous garantissons une livraison sûre et dans les délais.",
-  "header_login_signup": "Connexion / Inscription"
+  "header_login_signup": "Connexion / Inscription",
+  "loading_malidag": "Chargement de Malidag...",
+"loading_product": "Chargement du produit",
+"updating_delivery_country": "Mise à jour du pays de livraison...",
+"type_new": "Nouveautés",
+"madix_news": "Actualités Madix",
+"t-shirt": "T-shirt",
+"sweat-shirt": "Sweat-shirt",
+"sweatshirt": "Sweat-shirt",
+"slider_sneakers_title": "Découvrez des collections de baskets adaptées à votre style",
+"slider_sneakers_text": "Découvrez les dernières tendances et trouvez la paire idéale.",
+"slider_save_big": "Faites de belles économies",
+"slider_join_deals": "Profitez de nos offres",
+"view_page": "Voir la page"
 }

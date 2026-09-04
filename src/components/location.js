@@ -80,6 +80,24 @@ const handleCountryChange = (nextCountry) => {
   router.replace(buildCountryPath(nextCountry.code));
 };
 
+const getCountryLabel = (countryItem) => {
+  if (!countryItem?.code) return "";
+
+  const matchedCountry = allCountries.find(
+    (c) => c.code === countryItem.code
+  );
+
+  if (matchedCountry?.nameKey) {
+    return t(matchedCountry.nameKey);
+  }
+
+  if (countryItem?.nameKey) {
+    return t(countryItem.nameKey);
+  }
+
+  return countryItem?.name || "";
+};
+
 // Hide Location only on the main landing page "/"
 if (pathname === "/") {
   return null;
@@ -99,7 +117,7 @@ if (pathname === "/") {
       style={{ display: "flex", alignItems: "center" }}
     >
         <img src={c.flag} alt={c.name} style={{ width: 20, marginRight: 10 }} />
-        {c.name}
+        {getCountryLabel(c)}
       </div>
     ),
   }));
@@ -134,13 +152,13 @@ if (pathname === "/") {
             <span>
               {(isTablet || isDesktop) && (
                 <>
-                  <img src={flagUrl} alt={country.name} style={{ width: "20px", marginRight: "10px" }} />
+                  <img src={flagUrl} alt={getCountryLabel(country)} style={{ width: "20px", marginRight: "10px" }} />
                   {country.code}
                 </>
               )}
             </span>
             {(isMobile || isSmallMobile || isVerySmall) && (
-              <span style={{ fontSize: "12px", fontWeight: "bold" }}>{country.name}</span>
+              <span style={{ fontSize: "12px", fontWeight: "bold" }}>{getCountryLabel(country)}</span>
             )}
           </span>
           <DownOutlined style={{ fontSize: "10px", marginLeft: "6px" }} />

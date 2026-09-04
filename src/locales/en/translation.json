@@ -523,5 +523,18 @@
    "header_checkout": "Checkout",
   "header_trust_info": "Trust Info",
   "header_trust_message": "We value your trust! Your payment is 100% secure, and we guarantee safe and timely delivery of your products.",
-  "header_login_signup": "Login / Sign Up"
+  "header_login_signup": "Login / Sign Up",
+  "loading_malidag": "Loading Malidag...",
+"loading_product": "Loading product",
+"updating_delivery_country": "Updating delivery country...",
+"type_new": "New",
+"madix_news": "Madix News",
+"t-shirt": "T-Shirt",
+"sweat-shirt": "Sweatshirt",
+"sweatshirt": "Sweatshirt",
+"slider_sneakers_title": "Explore sneaker collections that fit your style",
+"slider_sneakers_text": "Discover the latest sneaker trends and find your perfect pair.",
+"slider_save_big": "Save Big",
+"slider_join_deals": "Join our deals",
+"view_page": "View page"
 }

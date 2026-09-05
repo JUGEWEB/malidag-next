@@ -5,6 +5,7 @@ import useScreenSize from "./useIsMobile";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppContext } from "./appContext";
+import { useTranslation } from "react-i18next";
 
 const theme = {
   id: 456,
@@ -15,6 +16,7 @@ const theme = {
 
 const ThemeForWomenFashion = () => {
   const router = useRouter();
+   const { t } = useTranslation();
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } =
     useScreenSize();
 
@@ -60,7 +62,7 @@ const withCountry = useCallback(
           borderBottom: "1px solid #eee",
         }}
       >
-        Women fashion
+       {t("women_fashion")}
       </div>
 
       <div
@@ -99,7 +101,7 @@ const withCountry = useCallback(
             cursor: "pointer",
           }}
         >
-          discover now
+         {t("discover_now")}
         </div>
       )}
     </div>

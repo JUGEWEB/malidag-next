@@ -5,6 +5,7 @@ import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import './fashionForAll.css';
 import useScreenSize from './useIsMobile';
 import Link from 'next/link';
+import { useTranslation } from "react-i18next";
 
 const BASE_URL = 'https://api.malidag.com';
 const MAX_ITEMS = 17;
@@ -15,9 +16,9 @@ const CACHE_TTL = 1000 * 60 * 30;
 const FALLBACK_IMAGE = '/placeholder-image.png';
 
 function FashionForAll({
-  title = 'Fashion for all',
-  eyebrow = 'Curated collection',
-  viewMoreLabel = 'View more',
+  title ,
+  eyebrow ,
+  viewMoreLabel ,
   sectionRoute = '/fashionPage',
   productRouteBase = '/product',
   category = 'clothes',
@@ -31,10 +32,13 @@ function FashionForAll({
   const [hasError, setHasError] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
+  const { t, i18n } = useTranslation();
   const scrollRef = useRef(null);
   const { isMobile, isSmallMobile, isVerySmall, isTablet } = useScreenSize();
-
+  const displayTitle = title || t("fashion_for_all");
+const displayEyebrow = eyebrow || t("curated_collection");
+const displayViewMore = viewMoreLabel || t("view_more");
+const [itemTranslations, setItemTranslations] = useState({});
   const itemsPerRowClass = useMemo(() => {
     if (isSmallMobile || isVerySmall) return 'items-2';
     if (isTablet || isMobile) return 'items-3';
@@ -68,8 +72,8 @@ const withCountry = (path) => {
     try {
       if (typeof window === 'undefined') return null;
 
-      const cacheKey = `${CACHE_KEY}_${category}`;
-      const cacheTimeKey = `${CACHE_TIME_KEY}_${category}`;
+    const cacheKey = `${CACHE_KEY}_${countryCode}_${category}`;
+const cacheTimeKey = `${CACHE_TIME_KEY}_${countryCode}_${category}`;
 
       const cachedItems = localStorage.getItem(cacheKey);
       const cachedTime = localStorage.getItem(cacheTimeKey);
@@ -97,8 +101,8 @@ const withCountry = (path) => {
       try {
         if (typeof window === 'undefined') return;
 
-        const cacheKey = `${CACHE_KEY}_${category}`;
-        const cacheTimeKey = `${CACHE_TIME_KEY}_${category}`;
+       const cacheKey = `${CACHE_KEY}_${countryCode}_${category}`;
+const cacheTimeKey = `${CACHE_TIME_KEY}_${countryCode}_${category}`;
 
         const firstItems = fashionItems.slice(0, CACHED_ITEMS_COUNT);
         localStorage.setItem(cacheKey, JSON.stringify(firstItems));
@@ -107,46 +111,128 @@ const withCountry = (path) => {
         console.error('Error writing fashion carousel cache:', error);
       }
     },
-    [category]
+    [category, countryCode]
   );
 
   const fetchFashionItems = useCallback(async () => {
-    try {
-      setIsFetchingFreshData(true);
-      setHasError(false);
+  try {
+    setIsFetchingFreshData(true);
+    setHasError(false);
 
-      const response = await fetch(`https://api.malidag.com/items/category/clothes`, {
-        method: 'GET',
+    if (!countryCode) {
+      setItems([]);
+      return;
+    }
+
+    const response = await fetch(
+      `${BASE_URL}/items/category/clothes?country=${encodeURIComponent(countryCode)}`,
+      {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        cache: 'no-store',
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch items: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    const fashionItems = (
+      Array.isArray(data) ? data : data?.items || []
+    ).slice(0, MAX_ITEMS);
+
+    setItems(fashionItems);
+    writeCache(fashionItems);
+  } catch (error) {
+    console.error("Error fetching fashion items:", error);
+    setHasError(true);
+  } finally {
+    setIsFetchingFreshData(false);
+    setIsLoading(false);
+  }
+}, [category, countryCode, writeCache]);
+
+useEffect(() => {
+  if (!items.length || !i18n.language) return;
+
+  let cancelled = false;
+
+  const fetchTranslations = async () => {
+    const lang = ["en", "fr", "br"].includes(i18n.language)
+      ? i18n.language
+      : "en";
+
+    // English is the original product language.
+    if (lang === "en") {
+      if (!cancelled) {
+        setItemTranslations({});
+      }
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        items.map(async (item) => {
+          const productId = item?.itemId;
+
+          if (!productId) return null;
+
+          try {
+            const response = await fetch(
+              `${BASE_URL}/translate/product/translate/${encodeURIComponent(
+                productId
+              )}/${encodeURIComponent(lang)}`
+            );
+
+            if (!response.ok) return null;
+
+            const data = await response.json();
+
+            return [
+              productId,
+              data?.translation || null,
+            ];
+          } catch (error) {
+            console.error(
+              `Translation fetch failed for ${productId}:`,
+              error
+            );
+
+            return null;
+          }
+        })
+      );
+
+      if (cancelled) return;
+
+      const translationMap = {};
+
+      results.forEach((result) => {
+        if (!result) return;
+
+        const [productId, translation] = result;
+
+        if (translation) {
+          translationMap[productId] = translation;
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch items: ${response.status}`);
-      }
-
-      const data = await response.json();
-console.log('raw data:', data);
-console.log('raw data.items:', data?.items);
-      const fashionItems = (data?.items || data || []).slice(0, MAX_ITEMS);
-      console.log('Fetched fashion items:', fashionItems);
-
-      if (!Array.isArray(fashionItems)) {
-        throw new Error('Invalid items response format');
-      }
-
-      setItems(fashionItems);
-      writeCache(fashionItems);
+      setItemTranslations(translationMap);
     } catch (error) {
-      console.error('Error fetching fashion items:', error);
-      setHasError(true);
-    } finally {
-      setIsFetchingFreshData(false);
-      setIsLoading(false);
+      console.error("Error fetching product translations:", error);
     }
-  }, [category, writeCache]);
+  };
+
+  fetchTranslations();
+
+  return () => {
+    cancelled = true;
+  };
+}, [items, i18n.language]);
 
   useEffect(() => {
     const cachedItems = readCache();
@@ -194,11 +280,18 @@ console.log('raw data.items:', data?.items);
 
     const imageUrl = rawItem?.images?.[0] || item?.image_url || '';
 
-    const itemName =
-      rawItem?.name ||
-      details?.itemName ||
-      item?.name ||
-      'Fashion Item';
+   const originalName =
+  rawItem?.name ||
+  details?.itemName ||
+  item?.name ||
+  t("fashion_item");
+
+const translatedProduct = itemTranslations[item?.itemId];
+
+const itemName =
+  translatedProduct?.name ||
+  translatedProduct?.itemName ||
+  originalName;
 
     const currentPriceValue = Number(
       rawItem?.usdPrice ?? details?.usdText ?? rawItem?.price ?? 0
@@ -224,7 +317,7 @@ console.log('raw data.items:', data?.items);
       originalPriceValue,
       discountPercentage,
     };
-  }, []);
+  }, [itemTranslations, t]);
 
   const renderPrice = (value) => {
     const numericValue = Number(value || 0).toFixed(2);
@@ -249,7 +342,7 @@ console.log('raw data.items:', data?.items);
             className="fashion-carousel__retry-button"
             onClick={fetchFashionItems}
           >
-            Try again
+           {t("try_again")}
           </button>
         )}
       </div>
@@ -258,16 +351,16 @@ console.log('raw data.items:', data?.items);
 
   const renderContent = () => {
     if (isLoading && items.length === 0) {
-      return renderState('Loading products...', 'loading');
-    }
+  return renderState(t("loading_products"), "loading");
+}
 
-    if (!isLoading && items.length === 0 && hasError) {
-      return renderState('Unable to load products right now.', 'error');
-    }
+if (!isLoading && items.length === 0 && hasError) {
+  return renderState(t("unable_load_products"), "error");
+}
 
-    if (!isLoading && items.length === 0) {
-      return renderState('No products found.', 'empty');
-    }
+if (!isLoading && items.length === 0) {
+  return renderState(t("no_products_found"), "empty");
+}
 
     return (
       <div className="fashion-carousel__viewport">
@@ -280,7 +373,7 @@ console.log('raw data.items:', data?.items);
               type="button"
               onClick={() => scrollCarousel('left')}
               className="fashion-carousel__nav fashion-carousel__nav--left"
-              aria-label="Scroll left"
+              aria-label={t("scroll_left")}
               disabled={!canScrollLeft}
             >
               <LeftOutlined />
@@ -290,7 +383,7 @@ console.log('raw data.items:', data?.items);
               type="button"
               onClick={() => scrollCarousel('right')}
               className="fashion-carousel__nav fashion-carousel__nav--right"
-              aria-label="Scroll right"
+              aria-label={t("scroll_right")}
               disabled={!canScrollRight}
             >
               <RightOutlined />
@@ -328,7 +421,7 @@ console.log('raw data.items:', data?.items);
                   <div className="carousel-card__media">
                     {discountPercentage > 0 && (
                       <div className="carousel-card__badge">
-                        -{discountPercentage}% OFF
+                       -{discountPercentage}% {t("off")}
                       </div>
                     )}
 
@@ -345,7 +438,7 @@ console.log('raw data.items:', data?.items);
                       />
                     ) : (
                       <div className="carousel-image carousel-image--placeholder">
-                        <span>No image available</span>
+                        <span>{t("no_image_available")}</span>
                       </div>
                     )}
                   </div>
@@ -362,7 +455,7 @@ console.log('raw data.items:', data?.items);
                         <span className="carousel-card__price">
                           {currentPriceValue > 0
                             ? renderPrice(currentPriceValue)
-                            : 'View product'}
+                            : t("view_product")}
                         </span>
 
                         {originalPriceValue > 0 && (
@@ -372,7 +465,7 @@ console.log('raw data.items:', data?.items);
                         )}
                       </div>
 
-                      <span className="carousel-card__cta">View Product</span>
+                      <span className="carousel-card__cta">{t("view_product")}</span>
                     </div>
                   </div>
                 </Link>
@@ -389,8 +482,8 @@ console.log('raw data.items:', data?.items);
       {showHeader && (
         <div className="fashion-carousel__header">
           <div className="fashion-carousel__heading-wrap">
-            <span className="fashion-carousel__eyebrow">{eyebrow}</span>
-            <h2 className="fashion-carousel__title">{title}</h2>
+            <span className="fashion-carousel__eyebrow">{displayEyebrow}</span>
+            <h2 className="fashion-carousel__title">{displayTitle}</h2>
           </div>
 
           {showViewMore && sectionRoute && (
@@ -401,7 +494,7 @@ console.log('raw data.items:', data?.items);
               target="_blank"
               rel="noopener noreferrer"
             >
-              {viewMoreLabel}
+              {displayViewMore}
             </a>
           )}
         </div>
@@ -411,7 +504,7 @@ console.log('raw data.items:', data?.items);
 
       {isFetchingFreshData && items.length > 0 && (
         <div className="fashion-carousel__refreshing" aria-live="polite">
-          <span>Refreshing...</span>
+          <span>{t("refreshing")}</span>
         </div>
       )}
     </section>

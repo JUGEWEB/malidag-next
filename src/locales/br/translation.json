@@ -121,5 +121,20 @@
 "men_fashion": "Moda Masculina",
 "fashion_kick_subtitle": "Eleve seu estilo nesta temporada ✨",
 "discover_now": "Descubra agora",
-"men_fashion_subtitle": "Descubra itens essenciais premium para um estilo moderno ✨"
+"men_fashion_subtitle": "Descubra itens essenciais premium para um estilo moderno ✨",
+"women_fashion": "Moda Feminina",
+"women_fashion_subtitle": "Explore looks elegantes pensados para todos os momentos ✨",
+"view_more": "Ver mais",
+"fashion_for_all": "Moda para Todos",
+"curated_collection": "Coleção selecionada",
+"try_again": "Tentar novamente",
+"loading_products": "Carregando produtos...",
+"unable_load_products": "Não foi possível carregar os produtos no momento.",
+"no_products_found": "Nenhum produto encontrado.",
+"scroll_left": "Rolar para a esquerda",
+"scroll_right": "Rolar para a direita",
+"off": "DE DESCONTO",
+"no_image_available": "Nenhuma imagem disponível",
+"view_product": "Ver produto",
+"refreshing": "Atualizando..."
 }

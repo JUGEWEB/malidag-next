@@ -541,5 +541,21 @@
 "men_fashion": "Men's Fashion",
 "fashion_kick_subtitle": "Elevate your style this season ✨",
 "discover_now": "Discover Now",
-"men_fashion_subtitle": "Discover premium essentials for modern style ✨"
+"men_fashion_subtitle": "Discover premium essentials for modern style ✨",
+"women_fashion": "Women's Fashion",
+"women_fashion_subtitle": "Explore elegant looks designed for every moment ✨",
+"discover_now": "Discover Now",
+"fashion_for_all": "Fashion for All",
+"curated_collection": "Curated collection",
+"view_more": "View more",
+"try_again": "Try again",
+"loading_products": "Loading products...",
+"unable_load_products": "Unable to load products right now.",
+"no_products_found": "No products found.",
+"scroll_left": "Scroll left",
+"scroll_right": "Scroll right",
+"off": "OFF",
+"no_image_available": "No image available",
+"view_product": "View Product",
+"refreshing": "Refreshing..."
 }

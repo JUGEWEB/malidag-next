@@ -5,6 +5,7 @@ import { AppContext } from "./appContext";
 import useScreenSize from "./useIsMobile";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 const theme = {
   id: 456,
@@ -17,6 +18,7 @@ const ThemeForWomenFashionBrand1 = () => {
   const router = useRouter();
   const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } =
     useScreenSize();
+    const { t } = useTranslation();
 
     const { country } = useContext(AppContext);
 
@@ -114,7 +116,7 @@ return (
               textTransform: "uppercase",
             }}
           >
-            Women Fashion
+            {t("women_fashion")}
           </h1>
 
           <p
@@ -126,7 +128,7 @@ return (
               opacity: 0.95,
             }}
           >
-            Explore elegant looks designed for every moment ✨
+            {t("women_fashion_subtitle")}
           </p>
 
           <button
@@ -145,7 +147,7 @@ return (
               boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
             }}
           >
-            Discover Now
+            {t("discover_now")}
           </button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import './fashionForAll.css';
 import useScreenSize from './useIsMobile';
 import Link from 'next/link';
 import { useTranslation } from "react-i18next";
+import { getCountryConfig } from "./countryUtils";
 
 const BASE_URL = 'https://api.malidag.com';
 const MAX_ITEMS = 17;
@@ -32,6 +33,7 @@ function FashionForAll({
   const [hasError, setHasError] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [rates, setRates] = useState(null);
   const { t, i18n } = useTranslation();
   const scrollRef = useRef(null);
   const { isMobile, isSmallMobile, isVerySmall, isTablet } = useScreenSize();
@@ -49,10 +51,18 @@ const [itemTranslations, setItemTranslations] = useState({});
 
   const countryCode = country?.code?.toLowerCase() || "fr";
 
+  const countryCurrencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
 const withCountry = (path) => {
   if (!path) return `/${countryCode}`;
 
-  const cleanPath = path.replace(/^\/(fr|gb|us|de|ie|au|be)(\/|$)/, "/");
+ const cleanPath = path.replace(
+  /^\/(fr|gb|br|us|de|ie|au|be)(\/|$)/,
+  "/"
+);
 
   return `/${countryCode}${cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`}`;
 };
@@ -155,6 +165,49 @@ const cacheTimeKey = `${CACHE_TIME_KEY}_${countryCode}_${category}`;
     setIsLoading(false);
   }
 }, [category, countryCode, writeCache]);
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/prices/rates`, {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch rates: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setRates(data?.rates || {});
+    } catch (error) {
+      console.error("Error fetching exchange rates:", error);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const convertUsdToLocal = useCallback(
+  (usdValue) => {
+    const usdPrice = Number(usdValue || 0);
+    const currency = countryCurrencyConfig?.currency || "USD";
+
+    if (!usdPrice) return 0;
+
+    if (currency === "USD") {
+      return usdPrice;
+    }
+
+    const rate = Number(rates?.[currency]);
+
+    if (!rate) {
+      return null;
+    }
+
+    return usdPrice * rate;
+  },
+  [rates, countryCurrencyConfig?.currency]
+);
 
 useEffect(() => {
   if (!items.length || !i18n.language) return;
@@ -319,17 +372,26 @@ const itemName =
     };
   }, [itemTranslations, t]);
 
-  const renderPrice = (value) => {
-    const numericValue = Number(value || 0).toFixed(2);
-    const [whole, decimal] = numericValue.split('.');
+ const renderPrice = (usdValue) => {
+  const localizedValue = convertUsdToLocal(usdValue);
 
-    return (
-      <>
-        ${whole}
-        <sup className="carousel-card__price-decimal">{decimal}</sup>
-      </>
-    );
-  };
+  if (localizedValue === null) {
+    return "...";
+  }
+
+  const numericValue = localizedValue.toFixed(2);
+  const [whole, decimal] = numericValue.split(".");
+  const symbol = countryCurrencyConfig?.symbol || "$";
+
+  return (
+    <>
+      {symbol}{whole}
+      <sup className="carousel-card__price-decimal">
+        {decimal}
+      </sup>
+    </>
+  );
+};
 
   const renderState = (message, type = 'default') => (
     <div className={`fashion-carousel__state fashion-carousel__state--${type}`}>
@@ -460,8 +522,8 @@ if (!isLoading && items.length === 0) {
 
                         {originalPriceValue > 0 && (
                           <span className="carousel-card__original-price">
-                            ${originalPriceValue.toFixed(2)}
-                          </span>
+                        {renderPrice(originalPriceValue)}
+                      </span>
                         )}
                       </div>
 

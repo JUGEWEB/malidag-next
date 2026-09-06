@@ -34,7 +34,7 @@ function TopTopic({
   const router = useRouter();
   const scrollRef = useRef(null);
 
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [topItems, setTopItems] = useState([]);
   const [reviews, setReviews] = useState({});
@@ -589,7 +589,7 @@ const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
                       )
                     );
                   }}
-                  title="View reviews of this item"
+                  title={t("view_reviews_of_item")}
                 >
                   {averageRating
                     ? "★".repeat(
@@ -603,7 +603,7 @@ const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
                             averageRating
                           )
                       )
-                    : "No rating"}
+                    :t("no_rating")}
                 </div>
 
                 <div

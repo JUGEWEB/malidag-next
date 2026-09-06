@@ -560,5 +560,41 @@
 "refreshing": "Refreshing...",
 "top_items": "Top items",
 "popular_now": "Popular now",
-"explore_now": "Explore now"
+"explore_now": "Explore now",
+"view_reviews_of_item": "View reviews of this item",
+"no_rating": "No rating",
+"recommended_products": "Recommended Products",
+"recommended_item": "Recommended item",
+"reviews": "reviews",
+"only_left_in_stock": "Only {{count}} left in stock",
+"sold_count": "{{count}}+ sold",
+"support_email_message": "You can reach us at any time through our support email:",
+"about_title": "About Malidag",
+"about_intro": "Malidag is an online shopping platform offering a selection of products across categories including fashion, electronics, beauty, home and lifestyle. Our goal is to provide customers with a simple, reliable and convenient way to shop online.",
+
+"about_what_we_do_title": "What We Do",
+"about_what_we_do_1": "We make products available to customers through our online store and provide product information, pricing, payment options and delivery information throughout the shopping and checkout process.",
+"about_what_we_do_2": "Product availability, pricing and delivery options may vary depending on the customer's delivery country. Relevant information is displayed before an order is completed.",
+
+"about_mission_title": "Our Mission",
+"about_mission_1": "Our mission is to make online shopping straightforward and accessible by providing a clear shopping experience, convenient payment options and dependable customer support.",
+"about_mission_2": "We continue to improve our platform, expand our product selection and develop services that make it easier for customers to discover and purchase products online.",
+
+"about_payments_title": "Payments",
+"about_payments_1": "Malidag supports available payment methods presented during checkout. Depending on the customer's location and the order, these may include credit or debit cards and other supported payment options.",
+"about_payments_2": "Payment information and available payment methods are shown during checkout before the customer completes their purchase.",
+
+"about_delivery_title": "Delivery",
+"about_delivery_1": "We offer delivery to supported destinations. Available products, shipping options, delivery estimates and applicable shipping charges may vary by destination and order.",
+"about_delivery_2": "Customers can review the applicable delivery information during the shopping and checkout process.",
+
+"about_returns_title": "Returns and Refunds",
+"about_returns_1": "We want customers to have clear information about their purchases. Eligibility for returns, cancellations and refunds is governed by our published return and refund policies and any applicable consumer protection laws.",
+
+"about_support_title": "Customer Support",
+"about_support_1": "If you have a question about a product, payment, delivery, return or order, our support team is available to assist you.",
+
+"about_business_title": "Business Information",
+"about_business_1": "Malidag operates the Malidag online shopping platform and provides customer support for purchases made through the website.",
+"about_business_2": "For additional information about using Malidag, please review our Terms and Conditions, Privacy Policy, shipping information, and return and refund policies."
 }

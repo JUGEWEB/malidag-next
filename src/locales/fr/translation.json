@@ -422,5 +422,51 @@
 "no_image_available": "Aucune image disponible",
 "view_product": "Voir le produit",
 "refreshing": "Actualisation...",
-"popular_now": "Populaire en ce moment"
+"popular_now": "Populaire en ce moment",
+"view_reviews_of_item": "Voir les avis sur cet article",
+"recommended_products": "Produits recommandés",
+"recommended_item": "Article recommandé",
+"reviews": "avis",
+"only_left_in_stock": "Plus que {{count}} en stock",
+"sold_count": "{{count}}+ vendus",
+"contact_us": "Contactez-nous",
+"support_email_message": "Vous pouvez nous contacter à tout moment via notre adresse e-mail d’assistance :",
+"quick_links": "Liens rapides",
+"about_us": "À propos de nous",
+"terms_and_conditions": "Conditions générales",
+"privacy_policy": "Politique de confidentialité",
+"follow_us": "Suivez-nous",
+"facebook": "Facebook",
+"twitter": "Twitter",
+"linkedin": "LinkedIn",
+"instagram": "Instagram",
+"all_rights_reserved": "Tous droits réservés.",
+"about_title": "À propos de Malidag",
+"about_intro": "Malidag est une plateforme d’achat en ligne proposant une sélection de produits dans différentes catégories, notamment la mode, l’électronique, la beauté, la maison et le quotidien. Notre objectif est d’offrir à nos clients un moyen simple, fiable et pratique d’effectuer leurs achats en ligne.",
+
+"about_what_we_do_title": "Ce que nous faisons",
+"about_what_we_do_1": "Nous proposons des produits à nos clients par l’intermédiaire de notre boutique en ligne et fournissons des informations sur les produits, les prix, les options de paiement et la livraison tout au long du processus d’achat et de paiement.",
+"about_what_we_do_2": "La disponibilité des produits, les prix et les options de livraison peuvent varier en fonction du pays de livraison du client. Les informations pertinentes sont affichées avant la finalisation de la commande.",
+
+"about_mission_title": "Notre mission",
+"about_mission_1": "Notre mission est de rendre les achats en ligne simples et accessibles en offrant une expérience d’achat claire, des options de paiement pratiques et un service client fiable.",
+"about_mission_2": "Nous continuons à améliorer notre plateforme, à élargir notre sélection de produits et à développer des services permettant aux clients de découvrir et d’acheter plus facilement des produits en ligne.",
+
+"about_payments_title": "Paiements",
+"about_payments_1": "Malidag prend en charge les moyens de paiement disponibles présentés lors du paiement. Selon la localisation du client et la commande, ceux-ci peuvent inclure les cartes de crédit ou de débit ainsi que d’autres options de paiement prises en charge.",
+"about_payments_2": "Les informations de paiement et les moyens de paiement disponibles sont affichés lors du paiement avant que le client ne finalise son achat.",
+
+"about_delivery_title": "Livraison",
+"about_delivery_1": "Nous proposons la livraison vers les destinations prises en charge. Les produits disponibles, les options d’expédition, les délais de livraison estimés et les frais d’expédition applicables peuvent varier selon la destination et la commande.",
+"about_delivery_2": "Les clients peuvent consulter les informations de livraison applicables pendant le processus d’achat et de paiement.",
+
+"about_returns_title": "Retours et remboursements",
+"about_returns_1": "Nous souhaitons fournir à nos clients des informations claires concernant leurs achats. L’éligibilité aux retours, aux annulations et aux remboursements est régie par nos politiques publiées en matière de retours et de remboursements ainsi que par les lois applicables en matière de protection des consommateurs.",
+
+"about_support_title": "Service client",
+"about_support_1": "Si vous avez une question concernant un produit, un paiement, une livraison, un retour ou une commande, notre équipe d’assistance est disponible pour vous aider.",
+
+"about_business_title": "Informations sur l’entreprise",
+"about_business_1": "Malidag exploite la plateforme d’achat en ligne Malidag et fournit un service client pour les achats effectués sur le site.",
+"about_business_2": "Pour plus d’informations sur l’utilisation de Malidag, veuillez consulter nos Conditions générales, notre Politique de confidentialité, nos informations relatives à la livraison ainsi que nos politiques de retour et de remboursement."
 }

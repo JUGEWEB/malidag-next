@@ -138,5 +138,52 @@
 "view_product": "Ver produto",
 "refreshing": "Atualizando...",
 "top_items": "Itens populares",
-"popular_now": "Popular agora"
+"popular_now": "Popular agora",
+"view_reviews_of_item": "Ver avaliações deste item",
+"no_rating": "Sem avaliação",
+"recommended_products": "Produtos recomendados",
+"recommended_item": "Item recomendado",
+"reviews": "avaliações",
+"only_left_in_stock": "Apenas {{count}} restantes em estoque",
+"sold_count": "{{count}}+ vendidos",
+"contact_us": "Fale conosco",
+"support_email_message": "Você pode entrar em contato conosco a qualquer momento pelo nosso e-mail de suporte:",
+"quick_links": "Links rápidos",
+"about_us": "Sobre nós",
+"terms_and_conditions": "Termos e condições",
+"privacy_policy": "Política de privacidade",
+"follow_us": "Siga-nos",
+"facebook": "Facebook",
+"twitter": "Twitter",
+"linkedin": "LinkedIn",
+"instagram": "Instagram",
+"all_rights_reserved": "Todos os direitos reservados.",
+"about_title": "Sobre a Malidag",
+"about_intro": "A Malidag é uma plataforma de compras online que oferece uma seleção de produtos em diversas categorias, incluindo moda, eletrônicos, beleza, casa e estilo de vida. Nosso objetivo é oferecer aos clientes uma maneira simples, confiável e conveniente de comprar online.",
+
+"about_what_we_do_title": "O que fazemos",
+"about_what_we_do_1": "Disponibilizamos produtos aos clientes por meio da nossa loja online e fornecemos informações sobre produtos, preços, opções de pagamento e entrega durante todo o processo de compra e finalização do pedido.",
+"about_what_we_do_2": "A disponibilidade dos produtos, os preços e as opções de entrega podem variar de acordo com o país de entrega do cliente. As informações relevantes são apresentadas antes da conclusão do pedido.",
+
+"about_mission_title": "Nossa missão",
+"about_mission_1": "Nossa missão é tornar as compras online simples e acessíveis, oferecendo uma experiência de compra clara, opções de pagamento convenientes e um atendimento ao cliente confiável.",
+"about_mission_2": "Continuamos aprimorando nossa plataforma, ampliando nossa seleção de produtos e desenvolvendo serviços que facilitam a descoberta e a compra de produtos online.",
+
+"about_payments_title": "Pagamentos",
+"about_payments_1": "A Malidag aceita os métodos de pagamento disponíveis apresentados durante a finalização da compra. Dependendo da localização do cliente e do pedido, eles podem incluir cartões de crédito ou débito e outras opções de pagamento disponíveis.",
+"about_payments_2": "As informações de pagamento e os métodos de pagamento disponíveis são apresentados durante a finalização da compra antes que o cliente conclua a compra.",
+
+"about_delivery_title": "Entrega",
+"about_delivery_1": "Oferecemos entrega para destinos atendidos. Os produtos disponíveis, as opções de envio, as estimativas de entrega e os custos de envio aplicáveis podem variar de acordo com o destino e o pedido.",
+"about_delivery_2": "Os clientes podem consultar as informações de entrega aplicáveis durante o processo de compra e finalização do pedido.",
+
+"about_returns_title": "Devoluções e reembolsos",
+"about_returns_1": "Queremos que nossos clientes tenham informações claras sobre suas compras. A elegibilidade para devoluções, cancelamentos e reembolsos é regida por nossas políticas publicadas de devolução e reembolso e pelas leis de proteção ao consumidor aplicáveis.",
+
+"about_support_title": "Atendimento ao cliente",
+"about_support_1": "Se você tiver alguma dúvida sobre um produto, pagamento, entrega, devolução ou pedido, nossa equipe de atendimento está disponível para ajudar.",
+
+"about_business_title": "Informações comerciais",
+"about_business_1": "A Malidag opera a plataforma de compras online Malidag e oferece atendimento ao cliente para compras realizadas por meio do site.",
+"about_business_2": "Para obter mais informações sobre o uso da Malidag, consulte nossos Termos e Condições, Política de Privacidade, informações de envio e políticas de devolução e reembolso."
 }

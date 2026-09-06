@@ -557,5 +557,8 @@
 "off": "OFF",
 "no_image_available": "No image available",
 "view_product": "View Product",
-"refreshing": "Refreshing..."
+"refreshing": "Refreshing...",
+"top_items": "Top items",
+"popular_now": "Popular now",
+"explore_now": "Explore now"
 }

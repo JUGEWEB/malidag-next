@@ -154,6 +154,7 @@ const withCountry = (path) => {
         <Block className="malidag-block malidag-block--flush" background="white">
          <TopTopic
           title={t("top_items")}
+           eyebrow={t("popular_now")}
           viewMoreLabel={t("explore_now")}
           sectionRoute={withCountry("/topitem")}
           country={country}
@@ -241,6 +242,7 @@ const withCountry = (path) => {
         <Block className="malidag-block malidag-block--flush" background="white">
           <TopTopic
             title={t("top_items")}
+             eyebrow={t("popular_now")}
             viewMoreLabel={t("explore_now")}
             sectionRoute={withCountry("/topitem")}
             country={country}

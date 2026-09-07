@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React from "react";
 import {
   FaFacebook,
   FaTwitter,
@@ -17,46 +17,32 @@ function MalidagFooter() {
   const { t } = useTranslation();
   const pathname = usePathname();
 
-  // Hide footer only on the country-selection landing page "/"
+  const countryCode = pathname.split("/")[1];
+
+  const withCountry = (path) =>
+    `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+
   if (pathname === "/") {
     return null;
   }
 
-  // Country is already validated by the app/router.
-  const countryCode = pathname.split("/")[1];
-
-  const withCountry = useCallback(
-    (path) => {
-      if (!path) {
-        return `/${countryCode}`;
-      }
-
-      const cleanPath = path.replace(
-        /^\/(fr|gb|br|ir|us|de|ie|au|be)(\/|$)/,
-        "/"
-      );
-
-      return `/${countryCode}${
-        cleanPath.startsWith("/")
-          ? cleanPath
-          : `/${cleanPath}`
-      }`;
-    },
-    [countryCode]
-  );
-
   return (
     <footer className="malidag-footer">
       <div className="footer-container">
-
         {/* Contact Us */}
         <div className="footer-section">
           <h3>{t("contact_us")}</h3>
 
-          {t("support_email_message")}
+          <p>{t("support_email_message")}</p>
 
-          <p >
-            <a style={{ color: "blue", textDecoration: "underline" }} href="mailto:support@malidag.com">
+          <p>
+            <a
+              style={{
+                color: "blue",
+                textDecoration: "underline",
+              }}
+              href="mailto:support@malidag.com"
+            >
               support@malidag.com
             </a>
           </p>
@@ -68,13 +54,13 @@ function MalidagFooter() {
 
           <ul>
             <li>
-              <Link href={withCountry("/about")}>
+              <Link href={withCountry("/about-us")}>
                 {t("about_us")}
               </Link>
             </li>
 
             <li>
-              <Link href={withCountry("/terms")}>
+              <Link href={withCountry("/terms-and-conditions")}>
                 {t("terms_and_conditions")}
               </Link>
             </li>
@@ -82,6 +68,18 @@ function MalidagFooter() {
             <li>
               <Link href={withCountry("/privacy")}>
                 {t("privacy_policy")}
+              </Link>
+            </li>
+
+            <li>
+              <Link href={withCountry("/refund-policy")}>
+                {t("refund_policy")}
+              </Link>
+            </li>
+
+            <li>
+              <Link href={withCountry("/faq")}>
+                {t("faq")}
               </Link>
             </li>
           </ul>
@@ -102,24 +100,6 @@ function MalidagFooter() {
             </a>
 
             <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t("twitter")}
-            >
-              <FaTwitter size={24} />
-            </a>
-
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t("linkedin")}
-            >
-              <FaLinkedin size={24} />
-            </a>
-
-            <a
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
@@ -131,12 +111,6 @@ function MalidagFooter() {
         </div>
       </div>
 
-      {/* Footer Bottom */}
-      <div className="footer-bottom">
-        <p>
-          &copy; Malidag. {t("all_rights_reserved")}
-        </p>
-      </div>
     </footer>
   );
 }

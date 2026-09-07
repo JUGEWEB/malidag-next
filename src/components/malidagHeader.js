@@ -267,14 +267,19 @@ const savedCountryCode = getSavedCountryCode();
             <FaUser style={{ color: "white" }} />
           </span>
         ) : (
-          <div
-              className="buttonlog"
-              onClick={() => router.push(withCountry("/auth"))}
-            >
-           <div>{t("header_login_signup")}</div> <div>-</div> <div>&gt;</div> <div style={{ cursor: "pointer",
-              fontSize: (isTablet || isDesktop) ? "27px" : "15px",
-              filter: "hue-rotate(100deg) saturate(350%) brightness(1.2)", color: "white"}}> <FaUser style={{ color: "white" }} /></div>
-          </div>
+         <div
+  className="buttonlog"
+  onClick={() => router.push(withCountry("/auth"))}
+>
+  <span className="buttonlog__label">
+    {t("header_login_signup")}
+  </span>
+
+  <span className="buttonlog__icon">
+    <span className="buttonlog__arrow">›</span>
+    <FaUser />
+  </span>
+</div>
         )}
       </div>
 

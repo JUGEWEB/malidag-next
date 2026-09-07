@@ -468,5 +468,274 @@
 
 "about_business_title": "Informations sur l’entreprise",
 "about_business_1": "Malidag exploite la plateforme d’achat en ligne Malidag et fournit un service client pour les achats effectués sur le site.",
-"about_business_2": "Pour plus d’informations sur l’utilisation de Malidag, veuillez consulter nos Conditions générales, notre Politique de confidentialité, nos informations relatives à la livraison ainsi que nos politiques de retour et de remboursement."
+"about_business_2": "Pour plus d’informations sur l’utilisation de Malidag, veuillez consulter nos Conditions générales, notre Politique de confidentialité, nos informations relatives à la livraison ainsi que nos politiques de retour et de remboursement.",
+
+"terms_title": "Conditions générales",
+"terms_intro": "Les présentes Conditions générales régissent votre utilisation du site Malidag ainsi que l’achat de produits par l’intermédiaire de notre boutique en ligne. En utilisant Malidag, en créant un compte ou en passant une commande, vous acceptez les présentes Conditions générales.",
+
+"terms_use_title": "1. Utilisation de Malidag",
+"terms_use_1": "Vous ne pouvez utiliser Malidag qu’à des fins légales et conformément aux présentes Conditions. Vous ne devez pas utiliser le site d’une manière susceptible de perturber son fonctionnement, de compromettre sa sécurité, d’enfreindre la législation applicable ou de porter atteinte aux droits d’une autre personne ou entreprise.",
+
+"terms_accounts_title": "2. Comptes clients",
+"terms_accounts_1": "Certaines fonctionnalités peuvent nécessiter la création d’un compte. Vous êtes responsable de l’exactitude des informations fournies ainsi que de la confidentialité de vos identifiants de connexion.",
+"terms_accounts_2": "Vous êtes responsable des activités effectuées par l’intermédiaire de votre compte, sauf lorsque celles-ci résultent de circonstances dont vous n’êtes pas responsable. Si vous pensez que votre compte a été utilisé sans autorisation, veuillez nous contacter rapidement.",
+
+"terms_product_info_title": "3. Informations sur les produits",
+"terms_product_info_1": "Nous nous efforçons de fournir des descriptions, images, prix, informations de disponibilité et autres renseignements exacts concernant les produits. Toutefois, les informations relatives aux produits peuvent occasionnellement contenir des erreurs ou être modifiées sans préavis.",
+"terms_product_info_2": "Les couleurs et l’apparence des produits peuvent varier selon l’appareil ou l’écran utilisé pour consulter le site.",
+
+"terms_pricing_title": "4. Prix",
+"terms_pricing_1": "Les prix des produits sont affichés sur le site avant le paiement. Les prix, frais de livraison, taxes, droits de douane et autres frais applicables peuvent varier selon le pays de livraison du client, la commande et les exigences applicables.",
+"terms_pricing_2": "Si un produit est affiché à un prix incorrect en raison d’une erreur, nous pouvons corriger cette erreur avant l’acceptation de la commande. Si un paiement a déjà été encaissé pour une commande qui ne peut pas être exécutée au prix affiché, le montant concerné sera remboursé lorsque cela est requis.",
+
+"terms_orders_title": "5. Commandes et acceptation des commandes",
+"terms_orders_1": "Le fait de passer une commande constitue une offre d’achat des produits sélectionnés. Une commande n’est considérée comme acceptée qu’après avoir été confirmée ou traitée par Malidag.",
+"terms_orders_2": "Nous pouvons refuser ou annuler une commande lorsque cela est raisonnablement nécessaire, notamment en cas d’indisponibilité d’un produit, de suspicion de fraude, de problème de paiement, de prix incorrect, de restrictions de livraison ou de violation des présentes Conditions.",
+
+"terms_payments_title": "6. Paiements",
+"terms_payments_1": "Les moyens de paiement disponibles sont présentés lors du paiement. Selon la localisation du client et la commande, les options peuvent inclure les cartes de crédit, les cartes de débit et d’autres moyens de paiement pris en charge.",
+"terms_payments_2": "En fournissant des informations de paiement, vous confirmez que vous êtes autorisé à utiliser le moyen de paiement sélectionné et que les informations fournies sont exactes.",
+"terms_payments_3": "Les paiements peuvent être traités par des prestataires de services de paiement tiers. Leurs services peuvent également être soumis à leurs propres conditions, politiques de confidentialité et procédures de sécurité.",
+
+"terms_shipping_title": "7. Expédition et livraison",
+"terms_shipping_1": "La disponibilité de la livraison, les méthodes d’expédition, les délais de livraison estimés et les frais d’expédition dépendent de la destination, du produit et de la commande. Les informations pertinentes concernant la livraison sont fournies au cours du processus d’achat ou de paiement lorsqu’elles sont disponibles.",
+"terms_shipping_2": "Les délais de livraison indiqués sont uniquement des estimations et peuvent être affectés par les transporteurs, les procédures douanières, les conditions locales, les jours fériés ou d’autres circonstances échappant raisonnablement à notre contrôle.",
+
+"terms_returns_title": "8. Annulations, retours et remboursements",
+"terms_returns_1": "L’éligibilité aux annulations de commande, retours, échanges et remboursements est régie par nos politiques publiées en matière de retours et de remboursements ainsi que par les droits obligatoires des consommateurs applicables à l’achat.",
+"terms_returns_2": "Les clients doivent consulter les informations applicables concernant les retours et remboursements avant de finaliser une commande.",
+
+"terms_customs_title": "9. Douanes, droits et taxes",
+"terms_customs_1": "Les commandes internationales peuvent être soumises à des droits de douane, taxes d’importation, frais ou autres charges imposés par les autorités locales. La responsabilité de ces frais est déterminée par la législation applicable et les informations fournies lors du paiement ou de la livraison.",
+
+"terms_ip_title": "10. Propriété intellectuelle",
+"terms_ip_1": "Le nom Malidag, la conception du site, les contenus originaux, les éléments graphiques, les logos et les autres éléments appartenant à Malidag sont protégés par les lois applicables en matière de propriété intellectuelle.",
+"terms_ip_2": "Vous ne pouvez pas copier, reproduire, distribuer, modifier ou exploiter commercialement les contenus appartenant à Malidag sans autorisation, sauf lorsque la loi le permet.",
+
+"terms_third_party_title": "11. Services et liens de tiers",
+"terms_third_party_1": "Malidag peut utiliser des services tiers ou proposer des liens vers ceux-ci, notamment des prestataires de paiement, de livraison, d’analyse, d’authentification ou d’autres services. Nous ne sommes pas responsables du contenu, des politiques ou des services indépendants proposés par des sites ou prestataires tiers.",
+
+"terms_liability_title": "12. Limitation de responsabilité",
+"terms_liability_1": "Dans la mesure permise par la législation applicable, Malidag ne pourra être tenu responsable des pertes indirectes, accessoires, spéciales ou consécutives résultant de l’utilisation du site ou des services.",
+"terms_liability_2": "Aucune disposition des présentes Conditions n’exclut ni ne limite une responsabilité ou un droit du consommateur qui ne peut légalement être exclu ou limité.",
+
+"terms_privacy_title": "13. Confidentialité",
+"terms_privacy_1": "La collecte et l’utilisation de vos informations personnelles sont décrites dans notre Politique de confidentialité. En utilisant Malidag, vous reconnaissez que vos informations personnelles peuvent être traitées conformément à cette politique.",
+
+"terms_changes_title": "14. Modifications des présentes Conditions",
+"terms_changes_1": "Nous pouvons mettre à jour les présentes Conditions générales périodiquement afin de refléter les modifications apportées à nos services, à nos pratiques commerciales ou aux exigences légales.",
+"terms_changes_2": "Les Conditions mises à jour seront publiées sur cette page. Lorsque la législation applicable l’exige, une notification supplémentaire sera fournie.",
+
+"terms_law_title": "15. Droit applicable",
+"terms_law_1": "Les présentes Conditions sont régies par les lois applicables à l’entreprise exploitant Malidag, sous réserve de tout droit obligatoire de protection des consommateurs applicable dans le pays de résidence du client.",
+
+"terms_contact_title": "16. Nous contacter",
+"terms_contact_1": "Si vous avez des questions concernant les présentes Conditions générales, une commande ou votre utilisation de Malidag, veuillez nous contacter.",
+"privacy_title": "Politique de confidentialité",
+"privacy_intro_1": "La présente Politique de confidentialité explique comment Malidag collecte, utilise, partage et protège les informations personnelles lorsque vous visitez notre site, créez un compte, passez une commande, contactez le service client ou utilisez autrement nos services.",
+"privacy_intro_2": "En utilisant Malidag, vous reconnaissez les pratiques décrites dans la présente Politique de confidentialité.",
+
+"privacy_collect_title": "1. Informations que nous collectons",
+"privacy_collect_intro": "Nous pouvons collecter les informations que vous nous fournissez directement, notamment :",
+"privacy_collect_name_contact": "Nom et coordonnées",
+"privacy_collect_email_phone": "Adresse e-mail et numéro de téléphone",
+"privacy_collect_addresses": "Adresses de facturation et de livraison",
+"privacy_collect_account": "Informations de compte et de connexion",
+"privacy_collect_orders": "Informations relatives aux commandes et aux achats",
+"privacy_collect_support": "Communications avec le service client",
+"privacy_collect_preferences": "Préférences et autres informations que vous choisissez de fournir",
+"privacy_collect_technical": "Nous pouvons également collecter automatiquement certaines informations techniques lorsque vous utilisez le site, telles que votre adresse IP, le type d’appareil, le type de navigateur, le système d’exploitation, les pages consultées, les informations de provenance et votre activité sur le site.",
+
+"privacy_payment_title": "2. Informations de paiement",
+"privacy_payment_1": "Lorsque vous effectuez un achat, les informations de paiement peuvent être collectées et traitées par des prestataires de services de paiement tiers utilisés par Malidag. Selon le moyen de paiement utilisé, ces prestataires peuvent collecter des informations telles que les données de carte, les informations de facturation et les informations relatives à la transaction.",
+"privacy_payment_2": "Malidag peut recevoir de ces prestataires des informations limitées relatives au paiement, telles que le statut du paiement, les identifiants de transaction, le type de moyen de paiement et les informations nécessaires au traitement ou à l’assistance d’une commande.",
+
+"privacy_use_title": "3. Comment nous utilisons les informations personnelles",
+"privacy_use_intro": "Nous pouvons utiliser les informations personnelles afin de :",
+"privacy_use_services": "Fournir et exploiter le site et les services Malidag",
+"privacy_use_accounts": "Créer et gérer les comptes clients",
+"privacy_use_orders": "Traiter et gérer les commandes et les paiements",
+"privacy_use_shipping": "Organiser l’expédition et la livraison",
+"privacy_use_support": "Fournir un service client",
+"privacy_use_returns": "Traiter les retours, annulations et remboursements",
+"privacy_use_communications": "Communiquer des informations importantes concernant les commandes ou les comptes",
+"privacy_use_improve": "Améliorer nos produits, nos services, notre site et l’expérience client",
+"privacy_use_fraud": "Détecter, examiner et prévenir la fraude, les abus et les incidents de sécurité",
+"privacy_use_legal": "Respecter les obligations légales, fiscales, comptables et réglementaires applicables",
+"privacy_use_marketing": "Envoyer des communications marketing lorsque cela est autorisé et, lorsque cela est requis, avec votre consentement",
+
+"privacy_share_title": "4. Comment nous partageons les informations personnelles",
+"privacy_share_1": "Nous ne vendons pas les informations personnelles au sens courant de la vente de données clients contre rémunération.",
+"privacy_share_2": "Nous pouvons partager des informations personnelles avec des prestataires de services et d’autres parties lorsque cela est nécessaire au fonctionnement de Malidag et à l’exécution des commandes des clients, notamment :",
+"privacy_share_payments": "Prestataires et processeurs de paiement",
+"privacy_share_shipping": "Prestataires d’expédition, de logistique et de livraison",
+"privacy_share_hosting": "Prestataires d’hébergement et d’infrastructure",
+"privacy_share_auth": "Prestataires d’authentification et de services de compte",
+"privacy_share_analytics": "Prestataires d’analyse et de performance du site",
+"privacy_share_support": "Prestataires de service client et de communication",
+"privacy_share_security": "Prestataires de prévention de la fraude et de sécurité",
+"privacy_share_advisers": "Conseillers professionnels lorsque cela est raisonnablement nécessaire",
+"privacy_share_3": "Nous pouvons également divulguer des informations lorsque la loi, un règlement, une procédure judiciaire ou une demande valide d’une autorité compétente l’exige, ou lorsque cela est raisonnablement nécessaire pour protéger les droits, la sécurité ou les biens de Malidag, de nos clients ou d’autres personnes.",
+
+"privacy_cookies_title": "5. Cookies et technologies similaires",
+"privacy_cookies_1": "Malidag peut utiliser des cookies, le stockage local et des technologies similaires afin d’exploiter le site, de mémoriser les préférences, de maintenir les sessions, de comprendre l’utilisation du site, d’améliorer les performances et de fournir les fonctionnalités nécessaires.",
+"privacy_cookies_2": "Certains cookies ou technologies similaires peuvent être fournis par des prestataires de services tiers. Lorsque la législation applicable l’exige, nous demanderons votre consentement avant d’utiliser des cookies non essentiels ou des technologies similaires.",
+
+"privacy_security_title": "6. Sécurité des données",
+"privacy_security_1": "Nous mettons en œuvre des mesures administratives, techniques et organisationnelles raisonnables conçues pour protéger les informations personnelles contre tout accès non autorisé, perte, utilisation abusive, modification ou divulgation.",
+"privacy_security_2": "Toutefois, aucune méthode de transmission sur Internet ni aucun système de stockage électronique ne peut être garanti comme totalement sécurisé.",
+
+"privacy_retention_title": "7. Conservation des données",
+"privacy_retention_1": "Nous conservons les informations personnelles aussi longtemps que cela est raisonnablement nécessaire pour fournir nos services, conserver les documents commerciaux et transactionnels, résoudre les litiges, faire respecter nos accords, prévenir la fraude et respecter les obligations légales, comptables, fiscales et réglementaires applicables.",
+"privacy_retention_2": "Les durées de conservation peuvent varier selon le type d’information et la finalité pour laquelle elle est traitée.",
+
+"privacy_international_title": "8. Traitement international",
+"privacy_international_1": "Malidag et les prestataires de services que nous utilisons peuvent traiter des informations dans des pays autres que celui dans lequel vous résidez. Lorsque la législation applicable l’exige, des garanties appropriées seront mises en place pour les transferts internationaux d’informations personnelles.",
+
+"privacy_rights_title": "9. Vos droits en matière de confidentialité",
+"privacy_rights_1": "Selon votre lieu de résidence, vous pouvez disposer de droits concernant vos informations personnelles, notamment le droit de demander l’accès, la rectification, la suppression, la limitation ou la portabilité de certaines informations, ou de vous opposer à certains traitements.",
+"privacy_rights_2": "Vous pouvez également retirer votre consentement lorsque le traitement repose sur celui-ci et vous désabonner à tout moment des communications marketing. Ces droits peuvent être soumis à des exceptions ou limitations prévues par la législation applicable.",
+
+"privacy_account_title": "10. Informations de compte",
+"privacy_account_1": "Les clients sont responsables de l’exactitude des informations de leur compte et de la sécurité de leurs identifiants de connexion. Si vous pensez que votre compte a été utilisé sans autorisation, veuillez nous contacter rapidement.",
+
+"privacy_children_title": "11. Confidentialité des enfants",
+"privacy_children_1": "Malidag n’est pas destiné aux enfants qui ne sont pas légalement autorisés à conclure des transactions d’achat en ligne dans leur juridiction sans l’intervention appropriée d’un parent ou d’un tuteur.",
+"privacy_children_2": "Si nous apprenons que des informations personnelles ont été collectées d’une manière qui ne respecte pas les exigences applicables concernant les enfants, nous prendrons les mesures appropriées pour remédier à la situation.",
+
+"privacy_third_party_title": "12. Sites et services tiers",
+"privacy_third_party_1": "Le site Malidag peut contenir des liens vers des services exploités par des tiers ou intégrer de tels services. Le traitement des informations personnelles par ces tiers est régi par leurs propres politiques de confidentialité et pratiques.",
+
+"privacy_changes_title": "13. Modifications de la présente Politique de confidentialité",
+"privacy_changes_1": "Nous pouvons mettre à jour la présente Politique de confidentialité périodiquement afin de refléter les modifications apportées à nos services, technologies, pratiques commerciales ou exigences légales.",
+"privacy_changes_2": "Les versions mises à jour seront publiées sur cette page. Lorsque la législation applicable l’exige, nous fournirons une notification supplémentaire concernant les modifications importantes.",
+
+"privacy_contact_title": "14. Nous contacter",
+"privacy_contact_1": "Si vous avez des questions concernant la présente Politique de confidentialité ou souhaitez effectuer une demande relative à vos données personnelles, veuillez nous contacter.",
+"refund_policy": "Politique de retour et de remboursement",
+
+"refund_title": "Politique de retour et de remboursement",
+"refund_intro_1": "La présente Politique de retour et de remboursement explique les conditions dans lesquelles les clients peuvent demander l’annulation d’une commande, un retour, un remplacement ou un remboursement pour les achats effectués par l’intermédiaire de Malidag.",
+"refund_intro_2": "Nous souhaitons que nos clients disposent d’informations claires sur les options qui leur sont offertes lorsqu’une commande n’arrive pas comme prévu ou lorsqu’un produit doit être retourné.",
+
+"refund_eligibility_title": "1. Éligibilité au retour",
+"refund_eligibility_1": "Un produit peut être éligible à un retour si la demande est effectuée dans le délai de retour applicable et si le produit respecte les conditions décrites dans la présente politique.",
+"refund_eligibility_2": "Sauf indication contraire sur la page du produit ou disposition contraire prévue par la législation applicable, les clients doivent nous contacter dans les 14 jours suivant la réception de leur commande s’ils souhaitent demander un retour.",
+
+"refund_condition_title": "2. État des produits retournés",
+"refund_condition_1": "Pour être éligibles à un retour, les produits doivent généralement être inutilisés, non portés et se trouver dans un état sensiblement identique à celui dans lequel ils ont été reçus, y compris dans leur emballage d’origine lorsque cela est raisonnablement applicable.",
+"refund_condition_2": "Nous pouvons demander des photographies ou d’autres informations lorsque cela est nécessaire afin de vérifier l’état d’un produit ou le motif du retour.",
+
+"refund_non_returnable_title": "3. Produits non retournables",
+"refund_non_returnable_1": "Certains produits peuvent ne pas être éligibles au retour pour des raisons d’hygiène, de sécurité, de personnalisation, de périssabilité ou pour d’autres motifs légaux. Toute restriction propre à un produit doit être indiquée sur la page du produit concerné lorsqu’elle est applicable.",
+"refund_non_returnable_2": "Aucune disposition de la présente section ne limite les droits obligatoires des consommateurs qui ne peuvent légalement être exclus.",
+
+"refund_damaged_title": "4. Produits endommagés, défectueux ou incorrects",
+"refund_damaged_1": "Si vous recevez un produit endommagé, défectueux, sensiblement différent de sa description ou différent du produit commandé, veuillez nous contacter dès que raisonnablement possible.",
+"refund_damaged_2": "Nous pouvons vous demander de fournir des photographies, les détails de la commande ou d’autres informations nécessaires à l’examen du problème. Selon les circonstances, nous pouvons proposer un remplacement, un retour, un remboursement partiel ou un remboursement intégral.",
+
+"refund_cancellation_title": "5. Annulation des commandes",
+"refund_cancellation_1": "Les clients peuvent demander l’annulation d’une commande avant qu’elle ne soit traitée ou expédiée. Nous ferons des efforts raisonnables pour annuler une commande lorsque cela est possible, mais l’annulation ne peut être garantie une fois le traitement ou l’exécution de la commande commencé.",
+"refund_cancellation_2": "Si une commande ne peut pas être annulée avant son expédition, le client peut être amené à suivre la procédure de retour applicable après avoir reçu la commande.",
+
+"refund_request_title": "6. Comment demander un retour ou un remboursement",
+"refund_request_1": "Pour demander une annulation, un retour, un remplacement ou un remboursement, contactez notre service client et fournissez les informations nécessaires pour identifier la commande et examiner la demande.",
+"refund_request_2": "Veuillez indiquer votre numéro de commande, l’adresse e-mail utilisée pour la commande, le produit concerné ainsi qu’une brève description du problème.",
+"refund_request_3": "Lorsqu’un retour est nécessaire, les clients doivent suivre les instructions de retour fournies par Malidag. Aucun produit ne doit être retourné à une adresse avant que des instructions de retour aient été fournies.",
+
+"refund_shipping_title": "7. Frais d’expédition des retours",
+"refund_shipping_1": "La responsabilité des frais d’expédition liés au retour dépend du motif du retour, des conditions applicables au produit et des droits obligatoires des consommateurs.",
+"refund_shipping_2": "Lorsqu’un retour résulte d’un produit incorrect, endommagé ou défectueux dont Malidag est responsable, les frais de retour applicables peuvent être pris en charge ou remboursés lorsque cela est requis.",
+"refund_shipping_3": "Pour les autres retours éligibles, les frais de retour peuvent être à la charge du client, sauf indication contraire ou lorsque la législation applicable en dispose autrement.",
+
+"refund_processing_title": "8. Traitement des remboursements",
+"refund_processing_1": "Une fois la demande de remboursement approuvée, le remboursement sera généralement effectué sur le moyen de paiement initialement utilisé pour l’achat, sauf si une autre méthode est requise ou convenue.",
+"refund_processing_2": "Nous nous efforçons d’initier les remboursements approuvés dans un délai de 5 à 10 jours ouvrables après leur approbation ou, lorsqu’un produit retourné doit d’abord être reçu et inspecté, après l’achèvement de ce processus.",
+"refund_processing_3": "Après l’émission d’un remboursement, un délai de traitement supplémentaire peut être nécessaire pour que la banque, l’émetteur de la carte ou le prestataire de services de paiement du client crédite les fonds sur son compte.",
+
+"refund_partial_title": "9. Remboursements partiels",
+"refund_partial_1": "Dans certaines circonstances appropriées, un remboursement partiel peut être proposé à la place d’un remboursement intégral, notamment lorsque seule une partie de la commande est concernée ou lorsque le client accepte de conserver un produit présentant un problème documenté.",
+
+"refund_not_received_title": "10. Commandes non reçues",
+"refund_not_received_1": "Si une commande n’est pas arrivée dans le délai de livraison prévu, veuillez contacter notre service client afin que nous puissions vérifier l’état de l’expédition.",
+"refund_not_received_2": "Selon les circonstances, notamment les informations fournies par le transporteur et le résultat de l’examen de la livraison, une solution appropriée peut inclure une assistance supplémentaire concernant la livraison, un remplacement ou un remboursement.",
+
+"refund_unfulfilled_title": "11. Remboursements des commandes annulées ou non exécutées",
+"refund_unfulfilled_1": "Si Malidag annule une commande après encaissement du paiement parce que la commande ne peut pas être exécutée, le montant payé pour la commande ou le produit concerné sera remboursé.",
+
+"refund_late_title": "12. Remboursements tardifs ou manquants",
+"refund_late_1": "Si vous avez été informé qu’un remboursement a été effectué mais que vous ne l’avez pas encore reçu, veuillez d’abord laisser à votre banque ou à votre prestataire de services de paiement le temps nécessaire pour terminer son traitement.",
+"refund_late_2": "Si le remboursement n’apparaît toujours pas après un délai de traitement raisonnable, veuillez nous contacter afin que nous puissions examiner la transaction.",
+
+"refund_rights_title": "13. Droits des consommateurs",
+"refund_rights_1": "La présente politique ne limite aucun droit ni recours dont les clients peuvent bénéficier en vertu des lois obligatoires de protection des consommateurs applicables à leur achat.",
+
+"refund_contact_title": "14. Nous contacter",
+"refund_contact_1": "Si vous avez des questions concernant une annulation, un retour, un remplacement ou un remboursement, veuillez contacter notre service client.",
+
+"faq_title": "Questions fréquentes",
+"faq_intro": "Trouvez les réponses aux questions courantes concernant les achats sur Malidag, les paiements, les commandes, la livraison, les retours, les remboursements et le service client.",
+
+"faq_what_is_malidag_title": "1. Qu’est-ce que Malidag ?",
+"faq_what_is_malidag_1": "Malidag est une plateforme d’achat en ligne proposant des produits dans différentes catégories, notamment la mode, l’électronique, la beauté, la maison et le lifestyle. La disponibilité des produits peut varier selon le pays de livraison du client.",
+
+"faq_account_title": "2. Ai-je besoin d’un compte pour passer une commande ?",
+"faq_account_1": "Certaines fonctionnalités peuvent nécessiter un compte client. Lorsque la création d’un compte est requise, il vous sera demandé de fournir les informations nécessaires à la création et à la gestion de votre compte.",
+
+"faq_payment_methods_title": "3. Quels moyens de paiement sont acceptés ?",
+"faq_payment_methods_1": "Les moyens de paiement disponibles sont affichés lors du paiement. Selon votre localisation et la commande, les options disponibles peuvent inclure les cartes de crédit, les cartes de débit et d’autres moyens de paiement pris en charge.",
+
+"faq_payment_security_title": "4. Mes informations de paiement sont-elles sécurisées ?",
+"faq_payment_security_1": "Les paiements peuvent être traités par des prestataires de services de paiement tiers. Ces prestataires utilisent leurs propres systèmes et procédures de sécurité pour traiter les informations de paiement.",
+"faq_payment_security_2": "Malidag peut recevoir des informations limitées liées au paiement, telles que le statut du paiement, les identifiants de transaction et les informations nécessaires au traitement ou à l’assistance d’une commande.",
+
+"faq_prices_country_title": "5. Les prix des produits peuvent-ils varier selon le pays ?",
+"faq_prices_country_1": "Oui. Les prix des produits, les produits disponibles, les frais de livraison, les taxes, les droits de douane et les autres frais applicables peuvent varier selon le pays de livraison et la commande.",
+
+"faq_order_success_title": "6. Comment savoir si ma commande a bien été passée ?",
+"faq_order_success_1": "Après avoir soumis votre commande avec succès, vous devriez recevoir une confirmation de commande ou voir une confirmation au cours du processus de commande Malidag. Conservez les informations relatives à votre commande pour référence ultérieure.",
+
+"faq_cancel_order_title": "7. Puis-je annuler ma commande ?",
+"faq_cancel_order_1": "Vous pouvez demander l’annulation de votre commande avant qu’elle ne soit traitée ou expédiée. Nous ferons des efforts raisonnables pour l’annuler lorsque cela est possible, mais l’annulation ne peut être garantie une fois que le traitement ou l’exécution de la commande a commencé.",
+
+"faq_delivery_locations_title": "8. Où Malidag livre-t-il ?",
+"faq_delivery_locations_1": "Malidag livre vers les destinations prises en charge. Les produits disponibles, les méthodes de livraison, les frais d’expédition et les délais de livraison estimés peuvent varier selon la destination et la commande.",
+
+"faq_delivery_time_title": "9. Combien de temps prend la livraison ?",
+"faq_delivery_time_1": "Les délais de livraison estimés dépendent de la destination, du produit, du processus d’exécution de la commande et du transporteur. Des estimations de livraison sont fournies lorsqu’elles sont disponibles au cours du processus d’achat ou de paiement.",
+"faq_delivery_time_2": "Les délais de livraison peuvent être affectés par les transporteurs, les procédures douanières, les jours fériés, les conditions locales ou d’autres circonstances échappant raisonnablement à notre contrôle.",
+
+"faq_tracking_title": "10. Comment puis-je suivre ma commande ?",
+"faq_tracking_1": "Si des informations de suivi sont disponibles pour votre envoi, elles peuvent être fournies après le traitement ou l’expédition de la commande. La disponibilité et le niveau de détail des informations de suivi peuvent dépendre du transporteur et de la destination.",
+
+"faq_order_not_arrived_title": "11. Que dois-je faire si ma commande n’est pas arrivée ?",
+"faq_order_not_arrived_1": "Si votre commande n’est pas arrivée dans le délai de livraison prévu, veuillez contacter le service client en fournissant les informations de votre commande afin que nous puissions vérifier l’état de l’expédition.",
+
+"faq_damaged_product_title": "12. Que dois-je faire si je reçois un produit endommagé ou incorrect ?",
+"faq_damaged_product_1": "Veuillez nous contacter dès que raisonnablement possible si un produit arrive endommagé, défectueux, sensiblement différent de sa description ou s’il ne correspond pas au produit que vous avez commandé.",
+"faq_damaged_product_2": "Nous pouvons demander des photographies, les détails de la commande ou d’autres informations nécessaires pour examiner le problème et déterminer la solution appropriée.",
+
+"faq_return_product_title": "13. Puis-je retourner un produit ?",
+"faq_return_product_1": "Les produits éligibles peuvent être retournés conformément à notre Politique de retour et de remboursement. Sauf indication contraire ou disposition prévue par la législation applicable, les clients doivent nous contacter dans les 14 jours suivant la réception de leur commande s’ils souhaitent demander un retour.",
+
+"faq_all_returnable_title": "14. Tous les produits peuvent-ils être retournés ?",
+"faq_all_returnable_1": "Non. Certains produits peuvent ne pas être éligibles au retour pour des raisons telles que l’hygiène, la sécurité, la personnalisation, la périssabilité ou d’autres restrictions légales. Toute restriction spécifique applicable à un produit doit être indiquée sur la page du produit lorsque cela est approprié.",
+
+"faq_refund_processing_title": "15. Comment les remboursements sont-ils traités ?",
+"faq_refund_processing_1": "Une fois qu’un remboursement a été approuvé, il sera généralement effectué sur le moyen de paiement initialement utilisé, sauf si une autre méthode est requise ou convenue.",
+"faq_refund_processing_2": "Nous nous efforçons d’initier les remboursements approuvés dans un délai de 5 à 10 jours ouvrables après leur approbation ou, lorsqu’un produit retourné doit d’abord être reçu et inspecté, après l’achèvement de ce processus.",
+
+"faq_refund_missing_title": "16. Pourquoi mon remboursement n’apparaît-il pas encore ?",
+"faq_refund_missing_1": "Après l’émission d’un remboursement, votre banque, l’émetteur de votre carte ou votre prestataire de services de paiement peut nécessiter un délai de traitement supplémentaire avant que les fonds n’apparaissent sur votre compte.",
+"faq_refund_missing_2": "Si le remboursement n’apparaît toujours pas après un délai de traitement raisonnable, veuillez nous contacter afin que nous puissions examiner la transaction.",
+
+"faq_customs_title": "17. Devrai-je payer des droits de douane ou des taxes d’importation ?",
+"faq_customs_1": "Les commandes internationales peuvent être soumises à des droits de douane, des taxes d’importation, des frais ou d’autres charges imposés par les autorités locales. Les responsabilités applicables dépendent de la législation locale et des informations fournies lors du paiement ou de la livraison.",
+
+"faq_unavailable_country_title": "18. Pourquoi un produit n’est-il pas disponible dans mon pays ?",
+"faq_unavailable_country_1": "La disponibilité des produits peut dépendre de la destination de livraison, des stocks, de la disponibilité auprès des fournisseurs, des restrictions d’expédition ou d’autres exigences opérationnelles.",
+
+"faq_contact_title": "19. Comment puis-je contacter Malidag ?",
+"faq_contact_1": "Si vous avez besoin d’aide concernant un produit, une commande, un paiement, une livraison, un retour, un remboursement ou un compte, veuillez contacter notre service client.",
+"faq": "FAQ"
 }

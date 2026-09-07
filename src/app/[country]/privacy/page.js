@@ -1,76 +1,220 @@
-// pages/privacyPolicy.js
+"use client";
+
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export default function PrivacyPolicy() {
+  const { t } = useTranslation();
+
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
+      <h1 className="text-3xl font-bold mb-6">
+        {t("privacy_title")}
+      </h1>
 
       <p className="mb-4">
-        At Malidag, your privacy is very important to us. This Privacy Policy
-        describes how we collect, use, and protect your personal information
-        when you use our website and services.
+        {t("privacy_intro_1")}
       </p>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">1. Information We Collect</h2>
       <p className="mb-4">
-        We may collect the following types of information:
+        {t("privacy_intro_2")}
       </p>
-      <ul className="list-disc list-inside mb-4">
-        <li>Personal details (name, email, phone number, address)</li>
-        <li>Account login details</li>
-        <li>Payment information when you make a purchase</li>
-        <li>Usage data such as IP address, browser type, and pages visited</li>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_collect_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_collect_intro")}
+      </p>
+
+      <ul className="list-disc list-inside mb-4 space-y-1">
+        <li>{t("privacy_collect_name_contact")}</li>
+        <li>{t("privacy_collect_email_phone")}</li>
+        <li>{t("privacy_collect_addresses")}</li>
+        <li>{t("privacy_collect_account")}</li>
+        <li>{t("privacy_collect_orders")}</li>
+        <li>{t("privacy_collect_support")}</li>
+        <li>{t("privacy_collect_preferences")}</li>
       </ul>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">2. How We Use Your Information</h2>
       <p className="mb-4">
-        We use your information to:
+        {t("privacy_collect_technical")}
       </p>
-      <ul className="list-disc list-inside mb-4">
-        <li>Provide and maintain our services</li>
-        <li>Process your transactions</li>
-        <li>Improve our website and customer experience</li>
-        <li>Send important updates and marketing (with your consent)</li>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_payment_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_payment_1")}
+      </p>
+
+      <p className="mb-4">
+        {t("privacy_payment_2")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_use_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_use_intro")}
+      </p>
+
+      <ul className="list-disc list-inside mb-4 space-y-1">
+        <li>{t("privacy_use_services")}</li>
+        <li>{t("privacy_use_accounts")}</li>
+        <li>{t("privacy_use_orders")}</li>
+        <li>{t("privacy_use_shipping")}</li>
+        <li>{t("privacy_use_support")}</li>
+        <li>{t("privacy_use_returns")}</li>
+        <li>{t("privacy_use_communications")}</li>
+        <li>{t("privacy_use_improve")}</li>
+        <li>{t("privacy_use_fraud")}</li>
+        <li>{t("privacy_use_legal")}</li>
+        <li>{t("privacy_use_marketing")}</li>
       </ul>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">3. Sharing of Information</h2>
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_share_title")}
+      </h2>
+
       <p className="mb-4">
-        We do not sell or rent your personal data. We may share it with trusted
-        third parties (like payment processors, shipping companies, or analytics
-        providers) to deliver our services.
+        {t("privacy_share_1")}
       </p>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">4. Cookies</h2>
       <p className="mb-4">
-        We use cookies and similar technologies to improve your experience,
-        analyze site traffic, and deliver personalized content.
+        {t("privacy_share_2")}
       </p>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">5. Data Security</h2>
+      <ul className="list-disc list-inside mb-4 space-y-1">
+        <li>{t("privacy_share_payments")}</li>
+        <li>{t("privacy_share_shipping")}</li>
+        <li>{t("privacy_share_hosting")}</li>
+        <li>{t("privacy_share_auth")}</li>
+        <li>{t("privacy_share_analytics")}</li>
+        <li>{t("privacy_share_support")}</li>
+        <li>{t("privacy_share_security")}</li>
+        <li>{t("privacy_share_advisers")}</li>
+      </ul>
+
       <p className="mb-4">
-        We use reasonable measures to protect your personal information from
-        unauthorized access, disclosure, or misuse.
+        {t("privacy_share_3")}
       </p>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">6. Your Rights</h2>
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_cookies_title")}
+      </h2>
+
       <p className="mb-4">
-        You may request access to, correction of, or deletion of your personal
-        data. You may also opt out of marketing communications at any time.
+        {t("privacy_cookies_1")}
       </p>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">7. Changes to This Policy</h2>
       <p className="mb-4">
-        We may update this Privacy Policy from time to time. Any changes will be
-        posted on this page with the updated date.
+        {t("privacy_cookies_2")}
       </p>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">8. Contact Us</h2>
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_security_title")}
+      </h2>
+
       <p className="mb-4">
-        If you have any questions about this Privacy Policy, please contact us
-        at:
-        <br />
-        <strong>Email:</strong> support@malidag.com
+        {t("privacy_security_1")}
+      </p>
+
+      <p className="mb-4">
+        {t("privacy_security_2")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_retention_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_retention_1")}
+      </p>
+
+      <p className="mb-4">
+        {t("privacy_retention_2")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_international_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_international_1")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_rights_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_rights_1")}
+      </p>
+
+      <p className="mb-4">
+        {t("privacy_rights_2")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_account_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_account_1")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_children_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_children_1")}
+      </p>
+
+      <p className="mb-4">
+        {t("privacy_children_2")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_third_party_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_third_party_1")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_changes_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_changes_1")}
+      </p>
+
+      <p className="mb-4">
+        {t("privacy_changes_2")}
+      </p>
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">
+        {t("privacy_contact_title")}
+      </h2>
+
+      <p className="mb-4">
+        {t("privacy_contact_1")}
+      </p>
+
+      <p className="mb-4">
+        <strong>{t("email")}:</strong>{" "}
+        <a
+          href="mailto:support@malidag.com"
+          className="underline"
+        >
+          support@malidag.com
+        </a>
       </p>
     </div>
   );

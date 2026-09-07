@@ -4,28 +4,68 @@
     
  }
 
- .buttonlog{
-    color: white;
-   cursor: pointer;
-   height: auto;
-   margin-top: 0px;
-   display: flex;
-   width: 100%;
-   height: auto;
-   align-items: center;
-   margin-left: 5px;
-   margin-right: 5px;
-   font-size: 11px;
-   
- }
+ .buttonlog {
+  color: white;
+  cursor: pointer;
 
- .buttonlog:hover{
-   background-color: #333;
- }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  margin: 0 4px;
+
+  font-size: 11px;
+  line-height: 1.1;
+
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.buttonlog__label {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.buttonlog__icon {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.buttonlog__arrow {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.buttonlog:hover {
+  background-color: #333;
+}
+
 
  .connectBttt:hover{
   background-color: #333;
  }
+
+ @media (max-width: 380px) {
+  .buttonlog {
+    font-size: 9px;
+    gap: 3px;
+    margin: 0 2px;
+  }
+
+  .buttonlog__icon {
+    font-size: 13px;
+    gap: 2px;
+  }
+
+  .buttonlog__arrow {
+    font-size: 14px;
+  }
+}
  
 .search-input {
    width: 100%;

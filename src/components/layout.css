@@ -1,0 +1,32 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  overflow-x: auto;
+}
+
+.malidag-app {
+  width: 100%;
+  min-width: 480px;
+  max-width: 1300px;
+
+  min-height: 100vh;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  position: relative;
+}
+
+.malidag-main {
+  width: 100%;
+}

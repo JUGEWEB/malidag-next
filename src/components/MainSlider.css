@@ -234,9 +234,43 @@
   margin: 0;
 }
 
+.main-slider__shipping-notice {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  padding: 8px 16px;
+
+  font-size: 0.85rem;
+  line-height: 1.3;
+
+  background-color: #fff8e1;
+  border-left: 4px solid orange;
+
+  box-sizing: border-box;
+}
+
 .main-slider__shipping-link {
+  padding: 0;
+  margin: 0;
+
+  border: none;
+  background: none;
+
   color: blue;
-  margin-left: 5px;
   text-decoration: underline;
   cursor: pointer;
+
+  font: inherit;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .main-slider__shipping-notice {
+    font-size: 0.8rem;
+    padding: 7px 12px;
+    gap: 4px;
+  }
 }

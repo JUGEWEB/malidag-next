@@ -139,21 +139,21 @@ const sliderLanguage = getSliderLanguage();
       router: "/itemPage/shoes?q=shoes",
 
       text: {
-        en: {
-          header: "Discover sneakers made for your style",
-          paragraph: "Explore footwear selected for customers in France.",
-          button: "View page",
-        },
-        fr: {
-          header: "Découvrez des baskets adaptées à votre style",
-          paragraph: "Explorez une sélection pensée pour nos clients en France.",
-          button: "Voir la page",
-        },
-        br: {
-          header: "Descubra tênis que combinam com seu estilo",
-          paragraph: "Explore uma seleção preparada para clientes na França.",
-          button: "Ver página",
-        },
+       en: {
+    header: "Sneakers for France",
+    paragraph: "Find your next pair.",
+    button: "Shop now",
+  },
+  fr: {
+    header: "Baskets pour la France",
+    paragraph: "Trouvez votre prochaine paire.",
+    button: "Acheter",
+  },
+  br: {
+    header: "Tênis para a França",
+    paragraph: "Encontre seu próximo par.",
+    button: "Comprar",
+  },
       },
     },
     {
@@ -166,20 +166,20 @@ const sliderLanguage = getSliderLanguage();
 
       text: {
     en: {
-      headline: "Save Big",
-      sub: "Discover special offers selected for shoppers in France.",
-      button: "View deals",
-    },
-    fr: {
-      headline: "Faites de belles économies",
-      sub: "Découvrez des offres spéciales sélectionnées pour les clients en France.",
-      button: "Voir les offres",
-    },
-    br: {
-      headline: "Economize muito",
-      sub: "Descubra ofertas especiais selecionadas para clientes na França.",
-      button: "Ver ofertas",
-    },
+    headline: "Save Big",
+    sub: "Deals picked for France.",
+    button: "View deals",
+  },
+  fr: {
+    headline: "Économisez",
+    sub: "Offres pour la France.",
+    button: "Voir les offres",
+  },
+  br: {
+    headline: "Economize",
+    sub: "Ofertas para a França.",
+    button: "Ver ofertas",
+  },
   },
     },
   ],
@@ -195,20 +195,20 @@ const sliderLanguage = getSliderLanguage();
 
       text: {
         en: {
-          header: "Fresh styles for the UK",
-          paragraph: "Discover footwear and fashion selected for the UK.",
-          button: "Explore",
-        },
-        fr: {
-          header: "De nouveaux styles pour le Royaume-Uni",
-          paragraph: "Découvrez une sélection de mode pour le Royaume-Uni.",
-          button: "Explorer",
-        },
-        br: {
-          header: "Novos estilos para o Reino Unido",
-          paragraph: "Descubra moda e calçados selecionados para o Reino Unido.",
-          button: "Explorar",
-        },
+    header: "Fresh UK Styles",
+    paragraph: "Fashion made for you.",
+    button: "Explore",
+  },
+  fr: {
+    header: "Styles du Royaume-Uni",
+    paragraph: "Une sélection pour vous.",
+    button: "Explorer",
+  },
+  br: {
+    header: "Estilos do Reino Unido",
+    paragraph: "Moda escolhida para você.",
+    button: "Explorar",
+  },
       },
     },
     {
@@ -220,21 +220,21 @@ const sliderLanguage = getSliderLanguage();
       router: "/save-big",
 
        text: {
-    en: {
-      headline: "Save Big",
-      sub: "Explore deals and special offers selected for the UK.",
-      button: "View deals",
-    },
-    fr: {
-      headline: "Faites de belles économies",
-      sub: "Découvrez des offres sélectionnées pour le Royaume-Uni.",
-      button: "Voir les offres",
-    },
-    br: {
-      headline: "Economize muito",
-      sub: "Explore ofertas selecionadas para o Reino Unido.",
-      button: "Ver ofertas",
-    },
+     en: {
+    headline: "Save Big",
+    sub: "Top deals for the UK.",
+    button: "View deals",
+  },
+  fr: {
+    headline: "Économisez",
+    sub: "Offres pour le Royaume-Uni.",
+    button: "Voir les offres",
+  },
+  br: {
+    headline: "Economize",
+    sub: "Ofertas para o Reino Unido.",
+    button: "Ver ofertas",
+  },
   },
     },
   ],
@@ -252,20 +252,20 @@ const sliderLanguage = getSliderLanguage();
 
        text: {
         en: {
-          headline: "Style selected for Brazil",
-          sub: "Discover products and offers made relevant to your location.",
-          button: "Explore now",
-        },
-        fr: {
-          headline: "Une sélection pensée pour le Brésil",
-          sub: "Découvrez des produits et offres adaptés à votre localisation.",
-          button: "Découvrir",
-        },
-        br: {
-          headline: "Estilo selecionado para o Brasil",
-          sub: "Descubra produtos e ofertas pensados para sua localização.",
-          button: "Explorar agora",
-        },
+    headline: "Style for Brazil",
+    sub: "Picked for you.",
+    button: "Explore",
+  },
+  fr: {
+    headline: "Style pour le Brésil",
+    sub: "Choisi pour vous.",
+    button: "Découvrir",
+  },
+  br: {
+    headline: "Estilo para o Brasil",
+    sub: "Escolhido para você.",
+    button: "Explorar",
+  },
       },
       },
       /*
@@ -293,21 +293,21 @@ const sliderLanguage = getSliderLanguage();
       router: "/save-big",
 
        text: {
-    en: {
-      headline: "Big Savings for Brazil",
-      sub: "Discover deals and offers selected for shoppers in Brazil.",
-      button: "View deals",
-    },
-    fr: {
-      headline: "De belles économies pour le Brésil",
-      sub: "Découvrez des offres sélectionnées pour les clients au Brésil.",
-      button: "Voir les offres",
-    },
-    br: {
-      headline: "Grandes ofertas para o Brasil",
-      sub: "Descubra promoções e ofertas selecionadas para clientes no Brasil.",
-      button: "Ver ofertas",
-    },
+   en: {
+    headline: "Brazil Deals",
+    sub: "Save on selected items.",
+    button: "View deals",
+  },
+  fr: {
+    headline: "Offres au Brésil",
+    sub: "Économisez sur une sélection.",
+    button: "Voir les offres",
+  },
+  br: {
+    headline: "Ofertas no Brasil",
+    sub: "Economize em itens selecionados.",
+    button: "Ver ofertas",
+  },
   },
     },
   ],
@@ -602,31 +602,33 @@ const slides = useMemo(() => {
         </div>
 
         <div className="main-slider__footer">
-          {(isTablet || isDesktop) && (
-            <span className="span-warning">
-              {t('shipping_notice')}
-              <a
-               onClick={() => router.push(withCountry('/international-shipping'))}
-                className="main-slider__shipping-link"
-              >
-                {t('learn_about_shipping')}
-              </a>
-            </span>
-          )}
+  {(isTablet || isDesktop) && (
+    <div className="main-slider__shipping-notice">
+      <span>{t("shipping_notice")}</span>
 
-          <div className="main-slider__categories">
-            {!(isDesktop || isTablet || isMobile) ? (
-              <div>
-                <MalidagCategorySmall />
-              </div>
-            ) : (
-              
-              <div>
-                <MalidagCategory user={user} />
-              </div>
-              
-            )}
-          </div>
+      <button
+        type="button"
+        onClick={() =>
+          router.push(withCountry("/international-shipping"))
+        }
+        className="main-slider__shipping-link"
+      >
+        {t("learn_about_shipping")}
+      </button>
+    </div>
+  )}
+
+  <div className="main-slider__categories">
+    {!(isDesktop || isTablet || isMobile) ? (
+      <div>
+        <MalidagCategorySmall />
+      </div>
+    ) : (
+      <div>
+        <MalidagCategory user={user} />
+      </div>
+    )}
+  </div>
         </div>
       </div>
     </div>

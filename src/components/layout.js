@@ -11,6 +11,7 @@ import MalidagFooter from "@/components/malidagFooter";
 import { usePathname, useRouter } from "next/navigation";
 import { ConfigProvider, App as AntdApp } from "antd";
 import { useTranslation } from "react-i18next";
+import "./layout.css";
 
 const BASE_URLs = "https://api.malidag.com";
 
@@ -299,55 +300,56 @@ useEffect(() => {
   }
 
   return (
-    <ConfigProvider>
-      <AntdApp>
-        <AppContext.Provider
-          value={{
-            basketItems,
-            user,
-            allCountries,
-            country,
-            setCountry,
-            countryChanging,
-            setCountryChanging,
-          }}
-        >
+  <ConfigProvider>
+    <AntdApp>
+      <AppContext.Provider
+        value={{
+          basketItems,
+          user,
+          allCountries,
+          country,
+          setCountry,
+          countryChanging,
+          setCountryChanging,
+        }}
+      >
+        {countryChanging && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 999999,
+              background: "#ffffff",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "16px",
+            }}
+          >
+            <img
+              src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_09_22%20AM.png?alt=media&token=19d4b065-b842-4e9a-81be-028450001cad"
+              alt="Malidag"
+              style={{
+                width: "110px",
+                height: "110px",
+                objectFit: "contain",
+              }}
+            />
 
-          {countryChanging && (
-              <div
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  zIndex: 999999,
-                  background: "#ffffff",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "16px",
-                }}
-              >
-                <img
-                  src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_09_22%20AM.png?alt=media&token=19d4b065-b842-4e9a-81be-028450001cad"
-                  alt="Malidag"
-                  style={{
-                    width: "110px",
-                    height: "110px",
-                    objectFit: "contain",
-                  }}
-                />
+            <div
+              style={{
+                fontSize: "16px",
+                fontWeight: 800,
+                color: "#111827",
+              }}
+            >
+              {t("updating_delivery_country")}
+            </div>
+          </div>
+        )}
 
-                <div
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 800,
-                    color: "#111827",
-                  }}
-                >
-                 {t("updating_delivery_country")}
-                </div>
-              </div>
-            )}
+        <div className="malidag-app">
           <AppHeader
             {...{
               basketItems,
@@ -357,10 +359,15 @@ useEffect(() => {
               setCountry,
             }}
           />
-          <main>{children}</main>
+
+          <main className="malidag-main">
+            {children}
+          </main>
+
           <MalidagFooter />
-        </AppContext.Provider>
-      </AntdApp>
-    </ConfigProvider>
-  );
+        </div>
+      </AppContext.Provider>
+    </AntdApp>
+  </ConfigProvider>
+);
 }

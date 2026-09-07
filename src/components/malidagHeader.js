@@ -145,31 +145,49 @@ const savedCountryCode = getSavedCountryCode();
       }}
     >
 
-<div style={{marginTop: "2px"}}>
-       {(isMobile || isSmallMobile || isVerySmall) && (
-       <All  basketItems={basketItems} /> 
-      )}
-      </div>
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
+    flexShrink: 0,
+  }}
+>
+  {/* ALL */}
+  {(isMobile || isSmallMobile || isVerySmall) && (
+    <div style={{ marginTop: "2px" }}>
+      <All basketItems={basketItems} />
+    </div>
+  )}
 
-      <div style={{display: "flex", alignItems: "center"}}>
-      {/* Logo */}
-      {(isSmallMobile || isMobile || isTablet || isDesktop) && (
-      
-      <div
-        className="logoStyle"
-        onClick={home}
-        style={{ display: "flex", alignItems: "center", cursor: "pointer", width: "auto", fontWeight: "bold", color: "white" }}
-      >
-       MALIDAG
-      </div>
-        
-      )}
+  {/* MALIDAG text logo */}
+  {(isSmallMobile || isMobile || isTablet || isDesktop) && (
+    <div
+      className="logoStyle"
+      onClick={home}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        cursor: "pointer",
+        width: "auto",
+        fontWeight: "bold",
+        color: "white",
+      }}
+    >
+      MALIDAG
+    </div>
+  )}
 
-       {/* Image logo for Very Small Devices with Skeleton */}
+  {/* Image logo for very small devices */}
   {isVerySmall && (
-   
-    <div style={{ position: "relative", width: "30px", height: "30px" }}>
-      {/* Skeleton while loading */}
+    <div
+      style={{
+        position: "relative",
+        width: "30px",
+        height: "30px",
+        flexShrink: 0,
+      }}
+    >
       {!logoLoaded && (
         <div
           style={{
@@ -178,29 +196,30 @@ const savedCountryCode = getSavedCountryCode();
             height: "100%",
             borderRadius: "4px",
           }}
-        ></div>
+        />
       )}
+
       <img
         onClick={home}
         src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_07_42%20AM.png?alt=media&token=f7513811-116e-49bd-ae3d-594454fab30b"
-        alt="Madix Logo"
+        alt="Malidag Logo"
         style={{
           width: "30px",
           height: "30px",
           position: "absolute",
-          top: "0",
-          left: "0",
+          top: 0,
+          left: 0,
           objectFit: "cover",
-          display: logoLoaded ? "block" : "none", // Hide image until it's loaded
+          display: logoLoaded ? "block" : "none",
+          cursor: "pointer",
         }}
-        onLoad={() => setLogoLoaded(true)} // 💥 Set loaded true once image is ready
+        onLoad={() => setLogoLoaded(true)}
       />
     </div>
   )}
+</div>
 
-      </div>
 
-      
 
        {(isTablet || isDesktop) && (
   <Location country={country} allCountries={allCountries} setCountry={setCountry} />

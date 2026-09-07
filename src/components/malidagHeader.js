@@ -133,8 +133,8 @@ const savedCountryCode = getSavedCountryCode();
     <div
       style={{
         display: "flex",
-        justifyContent: "space-between",
         alignItems: "center",
+        justifyContent: "space-between",
         padding: "0px",
         marginLeft: "0px",
         marginTop: "0px",
@@ -198,22 +198,25 @@ const savedCountryCode = getSavedCountryCode();
     </div>
   )}
 
-
-     
-
       </div>
+
+      
 
        {(isTablet || isDesktop) && (
   <Location country={country} allCountries={allCountries} setCountry={setCountry} />
 )}
 
-      <div style={{width: "100%", marginRight: "5px"}}>
-
-      {(isDesktop) && (
-        <InputSearch user={user} country={country} />
-      )}
-
-      </div>
+     {isDesktop && (
+  <div
+    style={{
+      flex: 1,
+      minWidth: 0,
+      marginRight: "5px",
+    }}
+  >
+    <InputSearch user={user} country={country} />
+  </div>
+)}
 
      {isCheckoutPage ? (
   <div style={{ display: "flex", justifyContent: "center" }}>
@@ -251,7 +254,7 @@ const savedCountryCode = getSavedCountryCode();
 
             <>
 
-            <div style={{display: "flex", alignItems: "center", width: "100%", justifyContent: "flex-end", gap: "10px"}}>
+            <div style={{display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px"}}>
 
       {/* User Section */}
       <div>
@@ -298,11 +301,8 @@ const savedCountryCode = getSavedCountryCode();
           style={{
             cursor: "pointer",
             position: "relative",
-            top: "0px",
-            right: "25px",
             fontSize: "34px",
             display: "flex",
-            marginLeft:"20px",
             alignItems: "center",
             marginRight: isCheckoutPage ? "150px" : "0px", // Adjust marginRight for checkout page
           }}

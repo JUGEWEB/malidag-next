@@ -55,32 +55,43 @@ export default function HomePageClient() {
 
  useEffect(() => {
   const initializeCountry = async () => {
-    // 1. Check previously selected delivery country first
+    // 1. Existing selected delivery country
     try {
-      const savedCountry = localStorage.getItem(SELECTED_COUNTRY_KEY);
+      const savedCountry = localStorage.getItem(
+        SELECTED_COUNTRY_KEY
+      );
 
       if (savedCountry) {
         const parsedCountry = JSON.parse(savedCountry);
 
         const validCountry = AVAILABLE_COUNTRIES.find(
-          (country) => country.code === parsedCountry?.code
+          (country) =>
+            country.code === parsedCountry?.code
         );
 
         if (validCountry) {
           setNavigatingCode(validCountry.code);
+
           router.replace(`/${validCountry.code}`);
           return;
         }
 
-        // Remove invalid/old saved country
-        localStorage.removeItem(SELECTED_COUNTRY_KEY);
+        localStorage.removeItem(
+          SELECTED_COUNTRY_KEY
+        );
       }
     } catch (err) {
-      console.error("Invalid selectedCountry:", err);
-      localStorage.removeItem(SELECTED_COUNTRY_KEY);
+      console.error(
+        "Invalid selectedCountry:",
+        err
+      );
+
+      localStorage.removeItem(
+        SELECTED_COUNTRY_KEY
+      );
     }
 
-    // 2. No saved country -> detect location normally
+    // 2. No saved country -> detect location
     try {
       const ipRes = await axios.get(
         "https://api.ipify.org?format=json"
@@ -90,12 +101,44 @@ export default function HomePageClient() {
         `${BASE_URLs}/api/country/${ipRes.data.ip}`
       );
 
+      const detectedCode =
+        data.countryCode?.toLowerCase() || null;
+
+      const detectedName =
+        data.countryName || null;
+
       setDetectedCountry({
-        name: data.countryName,
-        code: data.countryCode?.toLowerCase(),
+        name: detectedName,
+        code: detectedCode,
       });
+
+      const supportedCountry =
+        AVAILABLE_COUNTRIES.find(
+          (country) =>
+            country.code === detectedCode
+        );
+
+      if (supportedCountry) {
+        saveDeliveryCountry(supportedCountry);
+
+        setNavigatingCode(
+          supportedCountry.code
+        );
+
+        router.replace(
+          `/${supportedCountry.code}`
+        );
+
+        return;
+      }
+
+      // Unsupported country:
+      // remain on "/" and let user choose
     } catch (err) {
-      console.error("Country detection failed:", err);
+      console.error(
+        "Country detection failed:",
+        err
+      );
     } finally {
       setDetecting(false);
     }

@@ -1,0 +1,172 @@
+.terms-banner {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  min-width: 300px;
+
+  z-index: 9999;
+
+  background: rgba(255, 255, 255, 0.98);
+
+  border-top: 1px solid #e5e7eb;
+
+  box-shadow:
+    0 -10px 30px rgba(0, 0, 0, 0.08),
+    0 -2px 8px rgba(0, 0, 0, 0.04);
+
+  /* Initial hidden position */
+  transform: translateY(110%);
+  opacity: 0;
+
+  transition:
+    transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 250ms ease;
+
+  will-change: transform, opacity;
+}
+
+/* Animate into the page */
+.terms-banner--visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.terms-banner__content {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+  padding: 16px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 24px;
+}
+
+.terms-banner__message {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  font-size: 14px;
+  line-height: 1.5;
+
+  color: #374151;
+}
+
+.terms-banner__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.terms-banner__link {
+  padding: 0;
+  margin: 0;
+
+  border: none;
+  background: transparent;
+
+  color: #2563eb;
+
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  cursor: pointer;
+  font: inherit;
+
+  transition: color 150ms ease;
+}
+
+.terms-banner__link:hover {
+  color: #1d4ed8;
+}
+
+.terms-banner__actions {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  flex-shrink: 0;
+}
+
+.terms-banner__button {
+  border: none;
+  border-radius: 8px;
+
+  padding: 10px 20px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.terms-banner__button:active {
+  transform: scale(0.97);
+}
+
+.terms-banner__button--accept {
+  background: #166534;
+  color: #ffffff;
+
+  box-shadow: 0 3px 8px rgba(22, 101, 52, 0.18);
+}
+
+.terms-banner__button--accept:hover {
+  background: #14532d;
+}
+
+.terms-banner__button--decline {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.terms-banner__button--decline:hover {
+  background: #e5e7eb;
+}
+
+@media (max-width: 600px) {
+  .terms-banner__content {
+    flex-direction: column;
+    align-items: stretch;
+
+    gap: 12px;
+
+    padding: 14px;
+  }
+
+  .terms-banner__message {
+    font-size: 13px;
+  }
+
+  .terms-banner__actions {
+    width: 100%;
+  }
+
+  .terms-banner__button {
+    flex: 1;
+    padding: 11px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terms-banner {
+    transition: none;
+  }
+
+  .terms-banner__button {
+    transition: none;
+  }
+}

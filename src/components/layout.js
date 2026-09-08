@@ -91,79 +91,40 @@ const setCountry = (nextCountry) => {
 
 useEffect(() => {
   const segments = pathname.split("/").filter(Boolean);
-  const routeCountryCode = segments[0];
+  const routeCountryCode = segments[0]?.toLowerCase();
 
-  if (!routeCountryCode) return;
+  // "/" is the country selection page
+  if (!routeCountryCode) {
+    setCountryState(null);
+    setCountryChanging(false);
+    return;
+  }
 
-  const isSupportedRouteCountry = SUPPORTED_COUNTRIES.some(
+  const routeCountry = SUPPORTED_COUNTRIES.find(
     (c) => c.code === routeCountryCode
   );
 
-  if (!isSupportedRouteCountry) {
+  // Unsupported country
+  if (!routeCountry) {
     localStorage.removeItem("selectedCountry");
     setCountryState(null);
     setCountryChanging(true);
     router.replace("/");
+    return;
   }
+
+  // URL country is authoritative
+  setCountryState(routeCountry);
+
+  localStorage.setItem(
+    "selectedCountry",
+    JSON.stringify(routeCountry)
+  );
+
+  window.dispatchEvent(new Event("countryChanged"));
+
+  setCountryChanging(false);
 }, [pathname, router]);
-
-
-useEffect(() => {
-  if (!country?.code) return;
-
-  const segments = pathname.split("/").filter(Boolean);
-  const routeCountryCode = segments[0];
-
-  const supportedCodes = SUPPORTED_COUNTRIES.map((c) => c.code);
-
-  if (!routeCountryCode || !supportedCodes.includes(routeCountryCode)) {
-    return;
-  }
-
-  if (routeCountryCode === country.code) {
-    return;
-  }
-
-  setCountryChanging(true);
-
-  segments[0] = country.code;
-  router.replace(`/${segments.join("/")}`);
-}, [country?.code, pathname, router]);
-
-  useEffect(() => {
-  const detectCountry = async () => {
-    try {
-      const savedCountry = localStorage.getItem("selectedCountry");
-      if (savedCountry) {
-       setCountry(JSON.parse(savedCountry));
-        return;
-      }
-
-      const res = await axios.get("https://ipapi.co/json/");
-      const detectedCode = res.data?.country_code?.toLowerCase();
-      const detectedName = res.data?.country_name;
-
-     if (detectedCode && detectedName) {
-        const supportedCountry = SUPPORTED_COUNTRIES.find(
-          (c) => c.code === detectedCode
-        );
-
-        if (!supportedCountry) {
-          router.replace("/");
-          return;
-        }
-
-        setCountry(supportedCountry);
-      }
-    } catch (err) {
-      console.error("Country detection failed", err);
-
-     router.replace("/");
-    }
-  };
-
-  detectCountry();
-}, []);
 
 
   useEffect(() => {
@@ -234,7 +195,13 @@ useEffect(() => {
   }, [languageReady]);
 
 
-  if (!languageReady || !appReady) {
+  const isCountrySelectionPage = pathname === "/";
+
+if (
+  !languageReady ||
+  !appReady ||
+  (!isCountrySelectionPage && !country?.code)
+) {
     return (
       <div
         style={{

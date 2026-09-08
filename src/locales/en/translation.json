@@ -85,7 +85,6 @@
   "reviews": "Reviews",
   "compare_prices_reviews": "Compare prices, reviews, and availability.",
   "explore": "Explore",
-  "on_malidag": "on Malidag",
   "crypto_payments": "items now available with crypto payments",
   "home_kitchen_discover": "products, prices in crypto, and real user reviews.",
   "home_kitchen": "Home & Kitchen",
@@ -865,5 +864,13 @@
 
 "faq_contact_title": "19. How can I contact Malidag?",
 "faq_contact_1": "If you need help with a product, order, payment, delivery, return, refund, or account, please contact our customer support team.",
-"faq": "FAQ"
+"faq": "FAQ",
+  "terms_banner_title": "Terms and Conditions",
+  "terms_banner_message": "Please review and accept our Terms and Conditions to continue using Malidag.",
+  "terms_banner_link": "View Terms and Conditions",
+  "terms_banner_accept": "Accept",
+  "terms_banner_decline": "Decline",
+  "home_title": "Online Shopping | Malidag",
+"home_description": "Discover fashion, electronics, beauty, home essentials, and more from top brands. Shop securely and easily with Malidag.",
+"home_keywords": "online shopping, fashion, electronics, beauty, home essentials, secure shopping, Malidag"
 }

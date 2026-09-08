@@ -737,5 +737,13 @@
 
 "faq_contact_title": "19. Comment puis-je contacter Malidag ?",
 "faq_contact_1": "Si vous avez besoin d’aide concernant un produit, une commande, un paiement, une livraison, un retour, un remboursement ou un compte, veuillez contacter notre service client.",
-"faq": "FAQ"
+"faq": "FAQ",
+"terms_banner_title": "Conditions générales",
+  "terms_banner_message": "Veuillez consulter et accepter nos Conditions générales pour continuer à utiliser Malidag.",
+  "terms_banner_link": "Voir les Conditions générales",
+  "terms_banner_accept": "Accepter",
+  "terms_banner_decline": "Refuser",
+  "home_title": "Shopping en ligne | Malidag",
+"home_description": "Découvrez la mode, l’électronique, la beauté, les essentiels pour la maison et bien plus encore parmi de grandes marques. Achetez facilement et en toute sécurité avec Malidag.",
+"home_keywords": "shopping en ligne, mode, électronique, beauté, maison, achats sécurisés, Malidag"
 }

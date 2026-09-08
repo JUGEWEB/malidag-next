@@ -43,23 +43,27 @@ function YouMayLike() {
   const [translations, setTranslations] = useState({});
   const [rates, setRates] = useState({});
 
-  const countryCode = country.code.toLowerCase();
-  const countryName = country.name;
+  const countryCode = country?.code?.toLowerCase() || null;
+  const countryName = country?.name || null;
 
   const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
     ? i18n.language
     : "en";
 
-  const countryCurrencyConfig = useMemo(
-    () => getCountryConfig(countryName),
-    [countryName]
-  );
+  const countryCurrencyConfig = useMemo(() => {
+  if (!countryName) return null;
 
-  const withCountry = useCallback(
-    (path) =>
-      `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`,
-    [countryCode]
-  );
+  return getCountryConfig(countryName);
+}, [countryName]);
+
+ const withCountry = useCallback(
+  (path) => {
+    if (!countryCode) return null;
+
+    return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+  },
+  [countryCode]
+);
 
   const itemsPerSlide =
     isMobile || isSmallMobile || isVerySmall ? 2 : 6;
@@ -404,9 +408,13 @@ function YouMayLike() {
     router.push(withCountry(`/product/${id}`));
   };
 
-  if (!user || !userSearchHistory.length) {
-    return null;
-  }
+  if (!countryCode || !countryName) {
+  return null;
+}
+
+if (!user || !userSearchHistory.length) {
+  return null;
+}
 
   return (
     <div className="you-may-like-carous">

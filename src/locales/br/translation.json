@@ -454,5 +454,20 @@
 "faq_contact_title": "19. Como posso entrar em contato com a Malidag?",
 "faq_contact_1": "Se você precisar de ajuda com um produto, pedido, pagamento, entrega, devolução, reembolso ou conta, entre em contato com nossa equipe de atendimento ao cliente.",
 "faq": "Perguntas frequentes",
-"based_on_browsing_history": "Com base no seu histórico de navegação"
+"based_on_browsing_history": "Com base no seu histórico de navegação",
+"terms_banner_title": "Termos e condições",
+  "terms_banner_message": "Leia e aceite nossos Termos e condições para continuar usando a Malidag.",
+  "terms_banner_link": "Ver Termos e condições",
+  "terms_banner_accept": "Aceitar",
+  "terms_banner_decline": "Recusar",
+  "home_title": "Compras online | Malidag",
+"home_description": "Descubra moda, eletrônicos, beleza, itens para casa e muito mais de grandes marcas. Compre com facilidade e segurança na Malidag.",
+"home_keywords": "compras online, moda, eletrônicos, beleza, itens para casa, compras seguras, Malidag",
+"language_info_link": "O que acontece quando você muda o idioma?",
+"language_change_title": "Alteração de idioma",
+"language_change_body_1": "Ao mudar o idioma, todas as partes do aplicativo, incluindo nomes de produtos, avaliações e conteúdo, serão exibidas no idioma selecionado.",
+"language_change_body_2": "O idioma original deste aplicativo é o inglês.",
+"language_change_body_3": "Se você não estiver conectado, sua seleção não será lembrada.",
+"language_change_body_4": "Faça login para garantir que sua preferência de idioma seja salva em todas as sessões.",
+"got_it": "Entendi"
 }

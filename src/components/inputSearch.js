@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useContext,
+  useRef,
+} from "react";
 import { AppContext } from "./appContext";
 import { useRouter, usePathname } from "next/navigation";
 import axios from "axios";
@@ -32,7 +38,7 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
-
+ const inputRef = useRef(null);
   const withCountry = (path) => {
   const code = countryCode || "fr";
   if (!path) return `/${code}`;
@@ -177,6 +183,7 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
         }}
       >
         <input
+        ref={inputRef}
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -184,11 +191,17 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           placeholder={t("search_placeholder")}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && searchTerm.trim()) {
-              handleSearch(searchTerm);
-              setIsFocused(false);
-            }
-          }}
+              if (e.key === "Enter" && searchTerm.trim()) {
+                e.preventDefault();
+
+                handleSearch(searchTerm);
+
+                setIsFocused(false);
+                setSuggestions([]);
+
+                inputRef.current?.blur();
+              }
+            }}
           style={{
             flex: 1,
             height: "45px",
@@ -247,6 +260,8 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
                 setSuggestions([]);
                 setIsFocused(false);
                 handleSearch(suggestion.value);
+
+                inputRef.current?.blur();
               }}
               style={{
                 padding: "10px",

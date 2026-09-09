@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLang } from "./LanguageContext";
-import { auth } from "./firebaseConfig";
 import i18n from "@/i18n";
 
 const languages = [
@@ -20,23 +19,12 @@ const LanguageSelector = () => {
 
   const selectedLang = languages.find((l) => l.code === lang) || languages[0];
 
-  const handleChangeLanguage = async (newLang) => {
+
+ const handleChangeLanguage = async (newLang) => {
     await i18n.changeLanguage(newLang);
+
     setLang(newLang);
     localStorage.setItem("lang", newLang);
-
-    const user = auth?.currentUser;
-    if (user?.uid) {
-      try {
-        await fetch("https://api.malidag.com/api/lang", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.uid, lang: newLang }),
-        });
-      } catch (err) {
-        console.error("Failed to sync language:", err);
-      }
-    }
 
     setIsOpen(false);
   };

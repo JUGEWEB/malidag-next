@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useMemo } from "react";
 import { AppContext } from "./appContext";
 import axios from "axios";
 import "./itemPage.css";
@@ -11,16 +11,22 @@ import { useCheckoutStore } from "./checkoutStore";
 import colors from "../../lib/colors.json";
 import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
+import { getCountryConfig } from "./countryUtils";
 
 function ItemPage({ searchTerm }) {
   const router = useRouter();
   const { country } = useContext(AppContext);
-const countryCode = country?.code || "fr";
+
+const countryCode = country?.code?.toLowerCase() || null;
 
 const withCountry = (path) => {
-  if (!countryCode) return path;
+  if (!countryCode) return "/";
+
+  if (!path) return `/${countryCode}`;
+
   return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
 };
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState(null);
@@ -28,7 +34,8 @@ const withCountry = (path) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const { isMobile, isTablet, isVerySmall, isSmallMobile } = useScreenSize();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [translations, setTranslations] = useState({});
   const setItemData = useCheckoutStore((state) => state.setItemData);
   const [bestSellerId, setBestSellerId] = useState(null);
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
@@ -37,10 +44,103 @@ const [selectedBrandType, setSelectedBrandType] = useState("all");
 const [selectedType, setSelectedType] = useState("all");
 const [selectedSize, setSelectedSize] = useState("all");
 const [selectedColor, setSelectedColor] = useState("all");
-const [priceRange, setPriceRange] = useState([1, 10000]);
+const [priceRange, setPriceRange] = useState([0, 10000]);
 const [brandThemes, setBrandThemes] = useState([]);
 const [messageApi, contextHolder] = message.useMessage();
 const [basketItems, setBasketItems] = useState([]);
+const [rates, setRates] = useState(null);
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
+const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
+  ? i18n.language
+  : "en";
+
+  const translateTaxonomy = (value) => {
+  if (!value) return "";
+
+  const raw = String(value).trim();
+
+  const normalizedKey = raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_");
+
+  // Try normalized locale key first
+  if (i18n.exists(normalizedKey)) {
+    return t(normalizedKey);
+  }
+
+  // Try original DB value as a key
+  if (i18n.exists(raw)) {
+    return t(raw);
+  }
+
+  // If no translation exists, keep original DB text
+  return raw;
+};
+
+const translateColor = (color) => {
+  if (!color) return "";
+
+  const raw = String(color).trim();
+
+  const key = `color_${raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")}`;
+
+  return i18n.exists(key)
+    ? t(key)
+    : raw;
+};
+
+const translateTaxonomyPhrase = (gender, type) => {
+  const rawGender = String(gender || "").trim();
+  const rawType = String(type || "").trim();
+
+  if (!rawGender && !rawType) return "";
+
+  const normalizeKey = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, "_and_")
+      .replace(/[-\s]+/g, "_")
+      .replace(/_+/g, "_");
+
+  const genderKey = normalizeKey(rawGender);
+  const typeKey = normalizeKey(rawType);
+
+  const joinedKey = [genderKey, typeKey]
+    .filter(Boolean)
+    .join("_");
+
+  // Priority 1: use complete phrase translation
+  if (joinedKey && i18n.exists(joinedKey)) {
+    return t(joinedKey);
+  }
+
+  // Priority 2: translate each part separately
+  const translatedGender = translateTaxonomy(rawGender);
+  const translatedType = translateTaxonomy(rawType);
+
+  return [translatedGender, translatedType]
+    .filter(Boolean)
+    .join(" ");
+};
+
+ const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
 
 
 const BASE_URL = "https://api.malidag.com";
@@ -145,6 +245,133 @@ matchedItems.forEach((item) => fetchReviews(item.itemId));
     fetchItems();
   }, [searchTerm, countryCode]);
 
+  useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/prices/rates`);
+
+      setRates(response.data?.rates || response.data || null);
+    } catch (error) {
+      console.error("Failed to fetch currency rates:", error);
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const categoryTypes = Array.from(
+  new Map(
+    items
+      .filter(
+        (itemData) =>
+          itemData?.item?.type &&
+          itemData?.item?.genre
+      )
+      .map((itemData) => [
+        `${normalizeText(itemData.item.genre)}_${normalizeText(
+          itemData.item.type
+        )}`,
+        itemData,
+      ])
+  ).values()
+);
+
+const getCurrencyRate = () => {
+  if (!currencyConfig || !rates) return null;
+
+  if (currencyConfig.currency === "USD") {
+    return 1;
+  }
+
+  const rate = Number(rates?.[currencyConfig.currency]);
+
+  return Number.isFinite(rate) && rate > 0
+    ? rate
+    : null;
+};
+
+const convertUsd = (usdAmount) => {
+  const amount = Number(usdAmount);
+
+  if (!Number.isFinite(amount)) return null;
+
+  const rate = getCurrencyRate();
+
+  if (!rate) return null;
+
+  return amount * rate;
+};
+
+const formatPrice = (usdAmount) => {
+  const converted = convertUsd(usdAmount);
+
+  if (converted === null || !currencyConfig) {
+    return t("price_unavailable");
+  }
+
+  return `${currencyConfig.symbol}${converted.toFixed(2)}`;
+};
+
+  useEffect(() => {
+  const fetchTranslations = async () => {
+    if (!items.length) {
+      setTranslations({});
+      return;
+    }
+
+    // English uses the original database content.
+    if (currentLanguage === "en") {
+      setTranslations({});
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        items.map(async (itemData) => {
+          const productId = itemData?.itemId;
+
+          if (!productId) {
+            return null;
+          }
+
+          try {
+            const response = await axios.get(
+              `${BASE_URL}/translate/product/translate/${productId}/${currentLanguage}`
+            );
+
+            return {
+              productId,
+              translation: response.data?.translation || null,
+            };
+          } catch (error) {
+            console.error(
+              `Failed to translate product ${productId}:`,
+              error
+            );
+
+            return null;
+          }
+        })
+      );
+
+      const nextTranslations = {};
+
+      results.forEach((result) => {
+        if (result?.productId && result?.translation) {
+          nextTranslations[result.productId] = result.translation;
+        }
+      });
+
+      setTranslations(nextTranslations);
+    } catch (error) {
+      console.error("Failed to fetch product translations:", error);
+    }
+  };
+
+  fetchTranslations();
+}, [items, currentLanguage]);
+
   const handleAddToBasket = async (itemData, e) => {
   e.stopPropagation();
 
@@ -192,24 +419,13 @@ matchedItems.forEach((item) => fetchReviews(item.itemId));
       await fetchUserBasket();
       messageApi.success(`${item.name} added to cart`);
     } else {
-      messageApi.error("Failed to add to cart");
+     messageApi.error(t("basket_add_failed"));
     }
   } catch (error) {
     console.error("Error adding item to basket:", error);
-    messageApi.error("Error adding to cart");
+   messageApi.error(t("basket_add_error"));
   }
 };
-
-const categoryTypes = Array.from(
-  new Map(
-    items
-      .filter((itemData) => itemData?.item?.type && itemData?.item?.genre)
-      .map((itemData) => [
-        `${itemData.item.genre} ${itemData.item.type}`,
-        itemData,
-      ])
-  ).entries()
-);
 
   const brands = Array.from(
     new Set(items.map((item) => item?.item?.brand).filter(Boolean))
@@ -240,12 +456,6 @@ const categoryTypes = Array.from(
     }
   };
 
- const normalizeText = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase()
-    .replaceAll("-", "_")
-    .replaceAll(" ", "_");
 
 const formatRoute = (value) =>
   encodeURIComponent(
@@ -319,9 +529,13 @@ const handleLinkClick = (label, value, sourceItem = null) => {
 
     const theme = getBrandTheme(brand);
 
-    router.push(
-      `/brand/${theme}/${encodeURIComponent(brand)}?brandType=${encodeURIComponent(value)}`
-    );
+   router.push(
+  withCountry(
+    `/brand/${theme}/${encodeURIComponent(
+      brand
+    )}?brandType=${encodeURIComponent(value)}`
+  )
+);
   }
 };
 
@@ -454,16 +668,18 @@ const colorFilterOptions = Array.from(
   )
 );
 
-const maxPrice = Math.max(
-  1,
-  Math.ceil(
-    Math.max(...items.map((x) => Number(x?.item?.usdPrice || 0)), 100)
-  )
-);
+const convertedPrices = items
+  .map((x) => convertUsd(x?.item?.usdPrice))
+  .filter((price) => price !== null);
+
+const maxPrice =
+  convertedPrices.length > 0
+    ? Math.max(1, Math.ceil(Math.max(...convertedPrices)))
+    : 1;
 
 const filteredItems = items.filter((itemData) => {
   const item = itemData?.item || {};
-  const price = Number(item.usdPrice || 0);
+  const price = convertUsd(item.usdPrice);
 
  const itemSizes = getSizeOptionsForItem(itemData).map(normalizeText);
 
@@ -485,7 +701,9 @@ const filteredItems = items.filter((itemData) => {
     Object.keys(item.imagesVariants || {}).includes(selectedColor);
 
   const matchesPrice =
-    price >= Math.max(1, priceRange[0]) && price <= priceRange[1];
+  price !== null &&
+  price >= priceRange[0] &&
+  price <= priceRange[1];
 
   return (
     matchesType &&
@@ -509,9 +727,9 @@ const filteredItems = items.filter((itemData) => {
           <button
             className="mobile-menu-icon-button-cc"
             onClick={() => setMenuOpen((prev) => !prev)}
-            aria-label="Open menu"
+            aria-label={t("filters")}
           >
-             Filters
+            {t("filters")}
           </button>
         </div>
       )}
@@ -524,21 +742,33 @@ const filteredItems = items.filter((itemData) => {
         <div className="sidebar-block-cc">
           <div className="sidebar-title-cc">{t("related_types")}</div>
           <div className="sidebar-links-cc">
-           {categoryTypes.map(([type, firstItem], index) => (
-            <div
-              key={index}
-              className="sidebar-main-link-cc"
-              onClick={() => handleLinkClick("type", type, firstItem)}
-            >
-              {type}
-            </div>
-          ))}
+          {categoryTypes.map((firstItem, index) => {
+            const gender = firstItem?.item?.genre || "";
+            const type = firstItem?.item?.type || "";
+
+           const translatedLabel = translateTaxonomyPhrase(
+              gender,
+              type
+            );
+
+            return (
+              <div
+                key={`${gender}-${type}-${index}`}
+                className="sidebar-main-link-cc"
+                onClick={() =>
+                  handleLinkClick("type", type, firstItem)
+                }
+              >
+               {translatedLabel}
+              </div>
+            );
+          })}
           </div>
         </div>
 
         {brands.length > 0 && (
           <div className="sidebar-block-cc">
-            <div className="sidebar-title-cc">Related Brands</div>
+            <div className="sidebar-title-cc"> {t("related_brands")}</div>
             <div className="sidebar-links-cc">
               {brands.map((brand, index) => (
                 <div
@@ -555,28 +785,39 @@ const filteredItems = items.filter((itemData) => {
 
         {brandTypes.length > 0 && (
           <div className="sidebar-block-cc">
-            <div className="sidebar-title-cc">Brand Types</div>
+            <div className="sidebar-title-cc"> {t("brand_types")}</div>
             <div className="sidebar-links-cc">
-             {brandTypes.map(([label, sourceItem], index) => (
-  <div
-    key={index}
-    className="sidebar-main-link-cc"
-    onClick={() =>
-      handleLinkClick("brandType", sourceItem?.item?.brandType, sourceItem)
-    }
-  >
-    {label}
-  </div>
-))}
+            {brandTypes.map(([label, sourceItem], index) => {
+  const brandType = sourceItem?.item?.brandType || "";
+  const brand = sourceItem?.item?.brand || "";
+
+  const translatedBrandType = translateTaxonomy(brandType);
+
+  return (
+    <div
+      key={index}
+      className="sidebar-main-link-cc"
+      onClick={() =>
+        handleLinkClick(
+          "brandType",
+          brandType,
+          sourceItem
+        )
+      }
+    >
+      {translatedBrandType} {brand}
+    </div>
+  );
+})}
             </div>
           </div>
         )}
 
         <div className="sidebar-block-cc filter-section-cc">
-  <div className="sidebar-title-cc">Filters</div>
+  <div className="sidebar-title-cc">{t("filters")}</div>
 
   <select value={selectedSize} onChange={(e) => setSelectedSize(e.target.value)}>
-    <option value="all">All Sizes</option>
+    <option value="all"> {t("all_sizes")}</option>
     {sizes.map((size) => (
       <option key={size} value={normalizeText(size)}>
         {size}
@@ -591,9 +832,9 @@ const filteredItems = items.filter((itemData) => {
       selectedColor === "all" ? "active" : ""
     }`}
     onClick={() => setSelectedColor("all")}
-    title="All Colors"
+    title={t("all_colors")}
   >
-    All
+    {t("all")}
   </button>
 
   {colorFilterOptions.map((color) => {
@@ -607,7 +848,7 @@ const filteredItems = items.filter((itemData) => {
           selectedColor === color ? "active" : ""
         }`}
         onClick={() => setSelectedColor(color)}
-        title={color}
+       title={translateColor(color)}
         style={
           swatch
             ? { background: swatch }
@@ -627,14 +868,23 @@ const filteredItems = items.filter((itemData) => {
 </div>
 
   <input
-    type="range"
-    min="50"
-    max={maxPrice}
-    value={Math.min(priceRange[1], maxPrice)}
-    onChange={(e) => setPriceRange([1, Number(e.target.value)])}
-  />
+  type="range"
+  min="0"
+  max={maxPrice}
+  value={Math.min(priceRange[1], maxPrice)}
+  onChange={(e) =>
+    setPriceRange([0, Number(e.target.value)])
+  }
+/>
 
-  <span>Up to ${Math.min(priceRange[1], maxPrice)}</span>
+  <span>
+  {t("up_to_price", {
+    price: `${currencyConfig?.symbol || ""}${Math.min(
+      priceRange[1],
+      maxPrice
+    ).toFixed(2)}`,
+  })}
+</span>
 </div>
       </aside>
 
@@ -649,11 +899,19 @@ const filteredItems = items.filter((itemData) => {
          {filteredItems.map((itemData) => {
   const { itemId, id, item = {}, details = {} } = itemData;
 
+    const originalName =
+  item.name ||
+  details.itemName ||
+  itemData.name ||
+  t("unnamed_item");
+
+  const translatedName =
+  translations?.[itemId]?.name;
+
   const name =
-    item.name ||
-    details.itemName ||
-    itemData.name ||
-    "Unnamed item";
+  currentLanguage === "en"
+    ? originalName
+    : translatedName || originalName;
 
   const usdPrice = parseFloat(item.usdPrice || details.usdText || 0);
   const originalPrice = parseFloat(
@@ -673,7 +931,11 @@ const isBestSeller = id === bestSellerId;
   const reviewsData = reviews[itemId] || {};
   const finalRating = reviewsData?.averageRating || t("no_rating");
 
- const displayPrice = usdPrice ? usdPrice.toFixed(2) : "0.00";
+ const displayPrice = formatPrice(usdPrice);
+const displayOriginalPrice =
+  originalPrice > 0
+    ? formatPrice(originalPrice)
+    : null;
 
   const normalizedVideos = Array.isArray(item.videos)
     ? item.videos
@@ -730,7 +992,7 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
                 e.stopPropagation();
                 handleVideoPlay(id);
               }}
-              aria-label="Play product video"
+              aria-label={t("play_product_video")}
             >
               ▶
             </button>
@@ -744,7 +1006,7 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
       {colorOptions.length > 0 && (
   <div className="item-color-block-cc">
     <div className="item-color-label-cc">
-      {t("color")}: <span>{selectedColor}</span>
+     {t("color")}: <span>{translateColor(selectedColor)}</span>
     </div>
 
    <div className="item-color-options-cc">
@@ -759,8 +1021,10 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
         selectedColor === color ? "active" : ""
       }`}
       onClick={(e) => handleColorSelect(id, color, e)}
-      title={color}
-      aria-label={`Select ${color} color`}
+      title={translateColor(color)}
+      aria-label={t("select_color", {
+        color: translateColor(color),
+      })}
       style={
         swatch
           ? { background: swatch }
@@ -785,7 +1049,9 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
       handleItemClick(id);
     }}
   >
-    +{hiddenColorCount} colors more
+   {t("more_colors", {
+  count: hiddenColorCount,
+})}
   </button>
 )}
     </div>
@@ -797,28 +1063,32 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
 
  <div className="item-service-row-cc">
   {hasFreeDelivery && (
-    <span className="item-service-pill-cc">Free delivery</span>
+    <span className="item-service-pill-cc"> {t("free_delivery")}</span>
   )}
 
   <span className="item-service-pill-cc item-service-muted-cc">
-    Easy returns
+    {t("easy_returns")}
   </span>
 </div>
 
   <div className="item-prices-cc">
     <div className="item-price-row-cc">
-     <span className="item-price-cc">${displayPrice}</span>
+    <span className="item-price-cc">
+  {displayPrice}
+</span>
 
-      {originalPrice > 0 && (
-        <span className="item-original-price-cc">
-          ${originalPrice.toFixed(2)}
-        </span>
-      )}
+{originalPrice > 0 && displayOriginalPrice && (
+  <span className="item-original-price-cc">
+    {displayOriginalPrice}
+  </span>
+)}
 
       {reductionPercentage > 0 && (
         <span className="item-reduction-cc">
-          -{reductionPercentage}% off
-        </span>
+  {t("discount_off", {
+    percent: reductionPercentage,
+  })}
+</span>
       )}
     </div>
   </div>
@@ -863,7 +1133,7 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
     className="add-to-basket-btn-cc"
     onClick={(e) => handleAddToBasket(itemData, e)}
   >
-    Add to cart
+    {t("add_to_cart")}
   </button>
 )}
 </div>

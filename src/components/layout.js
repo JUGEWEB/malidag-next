@@ -106,7 +106,6 @@ useEffect(() => {
 
   // Unsupported country
   if (!routeCountry) {
-    localStorage.removeItem("selectedCountry");
     setCountryState(null);
     setCountryChanging(true);
     router.replace("/");

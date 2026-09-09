@@ -526,5 +526,33 @@
   "color_pastel_yellow": "Amarelo pastel",
   "color": "Cor",
   "men_sneakers": "Tênis masculino",
-  "women_sneakers": "Tênis feminino"
+  "women_sneakers": "Tênis feminino",
+
+  "shoes_no_footwear": "Nenhum calçado disponível",
+"shoes_no_footwear_delivery": "Não encontramos calçados disponíveis no momento para entrega em {{country}}.",
+"shoes_check_back": "Novas coleções são adicionadas regularmente. Tente outro país ou volte em breve.",
+"continue_shopping": "Continuar comprando",
+
+"malidag_footwear": "Calçados Malidag",
+"shoe_hero_description": "Explore tênis premium e calçados marcantes com estilo moderno, filtro por tamanho, seleção por marca e acesso rápido aos produtos.",
+"brands": "Marcas",
+"sizes": "Tamanhos",
+"products": "Produtos",
+"footwear_collection": "Coleção de calçados",
+"curated_footwear": "Seleção de calçados",
+
+"choose_size": "Escolha seu tamanho",
+"colors": "Cores",
+
+"shop_by_brand": "Comprar por marca",
+"results_count": "{{count}} resultados",
+"no_brands_found": "Nenhuma marca encontrada.",
+
+"curated_product_selection": "Seleção de produtos",
+"premium": "Premium",
+
+"delivery_in_days": "Receba em até {{days}} dias",
+"stock_low": "Apenas {{count}} itens restantes em estoque",
+"stock_available": "{{count}} itens em estoque",
+"fashion": "Moda"
 }

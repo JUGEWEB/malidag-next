@@ -20,7 +20,7 @@ export async function generateMetadata({ params }) {
   const translatedItem = t(itemClicked, { defaultValue: itemClicked });
 
  const url = `https://www.malidag.com/${countryCode}/itemOfShoes/${encodeURIComponent(itemClicked)}`;
-  const ogImage = "https://www.malidag.com/images/og/shoes-default.jpg";
+  const ogImage = `https://www.malidag.com/${countryCode}/images/og/shoes-default.jpg`;
 
   return {
     title: `${t("malidag")} ${translatedItem} - ${t("explore_trendy_shoes")}`,

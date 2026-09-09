@@ -928,5 +928,33 @@
   "color_bright_white": "Bright White",
   "color_bluing": "Bluing",
   "color_antique_white": "Antique White",
-  "color_pastel_yellow": "Pastel Yellow"
+  "color_pastel_yellow": "Pastel Yellow",
+  "shoes_no_footwear": "No footwear available",
+"shoes_no_footwear_delivery": "We couldn't find any shoes currently available for delivery to {{country}}.",
+"shoes_check_back": "New collections are added regularly. Try another country or check back soon.",
+"continue_shopping": "Continue Shopping",
+
+"malidag_footwear": "Malidag Footwear",
+"shoe_hero_description": "Explore premium sneakers and statement footwear with clean styling, size filtering, brand discovery, and fast product access.",
+"brands": "Brands",
+"sizes": "Sizes",
+"products": "Products",
+"footwear_collection": "Footwear Collection",
+"curated_footwear": "Curated Footwear",
+"shoes": "Shoes",
+
+"choose_size": "Choose your size",
+"colors": "Colors",
+
+"shop_by_brand": "Shop by brand",
+"results_count": "{{count}} results",
+"no_brands_found": "No brands found.",
+
+"curated_product_selection": "Curated product selection",
+"premium": "Premium",
+
+"delivery_in_days": "Get it by {{days}} days",
+"stock_low": "Only {{count}} items left in stock",
+"stock_available": "{{count}} items in stock",
+"fashion": "Fashion"
 }

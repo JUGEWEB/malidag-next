@@ -1,33 +1,5 @@
 {
   "countries": {
-    "germany": {
-      "code": "de",
-      "currency": "EUR",
-      "symbol": "€",
-      "priceField": "eurText",
-      "paypalSupported": true
-    },
-    "ireland": {
-      "code": "ie",
-      "currency": "EUR",
-      "symbol": "€",
-      "priceField": "eurText",
-      "paypalSupported": true
-    },
-    "belgium": {
-      "code": "be",
-      "currency": "EUR",
-      "symbol": "€",
-      "priceField": "eurText",
-      "paypalSupported": true
-    },
-    "portugal": {
-      "code": "pt",
-      "currency": "EUR",
-      "symbol": "€",
-      "priceField": "eurText",
-      "paypalSupported": true
-    },
     "france": {
       "code": "fr",
       "currency": "EUR",
@@ -48,34 +20,26 @@
       "symbol": "R$",
       "priceField": "brlText",
       "paypalSupported": true
+    }
+  },
+
+  "languages": {
+    "en": {
+      "label": "English",
+      "flag": "https://flagcdn.com/gb.svg"
     },
-    "turkey": {
-      "code": "tr",
-      "currency": "TRY",
-      "symbol": "₺",
-      "priceField": "tryText",
-      "paypalSupported": false
+    "fr": {
+      "label": "Français",
+      "flag": "https://flagcdn.com/fr.svg"
     },
-    "australia": {
-      "code": "au",
-      "currency": "AUD",
-      "symbol": "A$",
-      "priceField": "audText",
-      "paypalSupported": true
-    },
-    "saudi arabia": {
-      "code": "sa",
-      "currency": "SAR",
-      "symbol": "SAR ",
-      "priceField": "sarText",
-      "paypalSupported": true
+    "br": {
+      "label": "Brazil",
+      "flag": "https://flagcdn.com/br.svg"
     }
   },
 
   "aliases": {
-    "uk": "united kingdom",
-    "usa": "united states",
-    "us": "united states"
+    "uk": "united kingdom"
   },
 
   "fallback": {

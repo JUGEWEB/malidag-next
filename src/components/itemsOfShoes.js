@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+} from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import "./itemOfShoes.css";
@@ -9,6 +14,11 @@ import { useCheckoutStore } from "./checkoutStore";
 import colorSwatches from "../../lib/colors.json";
 import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
+import { AppContext } from "./appContext";
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
 
 const BASE_URL = "https://api.malidag.com";
 const BASKET_API = "https://api.malidag.com/add-to-basket";
@@ -20,7 +30,21 @@ function ItemOfShoes({  itemClicked, countryCode  }) {
   return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
 };
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+const { country } = useContext(AppContext);
+const [translations, setTranslations] = useState({});
+const [rates, setRates] = useState(null);
+
+const currentLanguage =
+  isSupportedLanguage(i18n.language)
+    ? i18n.language
+    : "en";
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [items, setItems] = useState([]);
@@ -135,6 +159,31 @@ const filteredImages = Array.isArray(response.data)
   }, [itemClicked]);
 
   useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/prices/rates`
+      );
+
+      setRates(
+        response.data?.rates ||
+        response.data ||
+        null
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch currency rates:",
+        error
+      );
+
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+  useEffect(() => {
     const fetchItems = async () => {
       if (!itemClicked || typeof itemClicked !== "string") {
         setItems([]);
@@ -181,6 +230,111 @@ const type = typeParts.join("-");
 
     fetchItems();
   },[itemClicked, countryCode]);
+
+  useEffect(() => {
+  const fetchTranslations = async () => {
+    if (!items.length) {
+      setTranslations({});
+      return;
+    }
+
+    if (currentLanguage === "en") {
+      setTranslations({});
+      return;
+    }
+
+    const results = await Promise.all(
+      items.map(async (itemData) => {
+        const productId = itemData?.itemId;
+
+        if (!productId) return null;
+
+        try {
+          const response = await axios.get(
+            `${BASE_URL}/translate/product/translate/${productId}/${currentLanguage}`
+          );
+
+          return {
+            productId,
+            translation:
+              response.data?.translation ||
+              null,
+          };
+        } catch (error) {
+          console.error(
+            `Failed product translation ${productId}:`,
+            error
+          );
+
+          return null;
+        }
+      })
+    );
+
+    const nextTranslations = {};
+
+    results.forEach((result) => {
+      if (
+        result?.productId &&
+        result?.translation
+      ) {
+        nextTranslations[result.productId] =
+          result.translation;
+      }
+    });
+
+    setTranslations(nextTranslations);
+  };
+
+  fetchTranslations();
+}, [items, currentLanguage]);
+
+  const getCurrencyRate = () => {
+  if (!currencyConfig || !rates) {
+    return null;
+  }
+
+  if (currencyConfig.currency === "USD") {
+    return 1;
+  }
+
+  const rate = Number(
+    rates?.[currencyConfig.currency]
+  );
+
+  return Number.isFinite(rate) && rate > 0
+    ? rate
+    : null;
+};
+
+const convertUsd = (usdAmount) => {
+  const amount = Number(usdAmount);
+
+  if (!Number.isFinite(amount)) {
+    return null;
+  }
+
+  const rate = getCurrencyRate();
+
+  if (rate === null) {
+    return null;
+  }
+
+  return amount * rate;
+};
+
+const formatPrice = (usdAmount) => {
+  const converted = convertUsd(usdAmount);
+
+  if (
+    converted === null ||
+    !currencyConfig
+  ) {
+    return t("price_unavailable");
+  }
+
+  return `${currencyConfig.symbol}${converted.toFixed(2)}`;
+};
 
   const getAllSizes = (itemsList) => {
     const allSizes = itemsList.map((entry) => {
@@ -230,8 +384,65 @@ const getImageUrl = (imageEntry) => {
   return "";
 };
 
+const normalizeTaxonomyKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_");
+
+const translateTaxonomy = (value) => {
+  if (!value) return "";
+
+  const raw = String(value).trim();
+  const key = normalizeTaxonomyKey(raw);
+
+  const namespace =
+    i18n.options?.defaultNS || "translation";
+
+  const translated = i18n.getResource(
+    currentLanguage,
+    namespace,
+    key
+  );
+
+  return typeof translated === "string" &&
+    translated.trim()
+    ? translated
+    : raw.replace(/[-_]+/g, " ");
+};
+
 const getColorOptions = (itemData) =>
   Object.keys(itemData?.item?.imagesVariants || {});
+
+const translateColor = (color) => {
+  if (!color) return "";
+
+  const raw = String(color).trim();
+
+  const key = `color_${raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")}`;
+
+  const namespace =
+    i18n.options?.defaultNS ||
+    "translation";
+
+  const translated =
+    i18n.getResource(
+      currentLanguage,
+      namespace,
+      key
+    );
+
+  return typeof translated === "string" &&
+    translated.trim()
+    ? translated
+    : raw;
+};
 
 const getCurrentImages = (itemData) => {
   const variants = itemData?.item?.imagesVariants || {};
@@ -383,9 +594,16 @@ const handleAddToBasket = async (itemData, e) => {
 
   if (!currentUser) {
     const currentPath =
-      typeof window !== "undefined" ? window.location.pathname : "/";
+      typeof window !== "undefined"
+        ? window.location.pathname
+        : "/";
 
-    router.push(withCountry(`/auth?redirect=${encodeURIComponent(currentPath)}`));
+    router.push(
+      withCountry(
+        `/auth?redirect=${encodeURIComponent(currentPath)}`
+      )
+    );
+
     return;
   }
 
@@ -394,9 +612,12 @@ const handleAddToBasket = async (itemData, e) => {
     const colorOptions = getColorOptions(itemData);
 
     const selectedColorForBasket =
-      selectedColorByItem[itemData.id] || colorOptions?.[0] || null;
+      selectedColorByItem[itemData.id] ||
+      colorOptions?.[0] ||
+      null;
 
-    const variantImages = item?.imagesVariants?.[selectedColorForBasket] || [];
+    const variantImages =
+      item?.imagesVariants?.[selectedColorForBasket] || [];
 
     const basketImage =
       getImageUrl(sortImages(variantImages)?.[0]) ||
@@ -407,8 +628,11 @@ const handleAddToBasket = async (itemData, e) => {
       item: {
         id: itemData.id,
         itemId: itemData.itemId,
+
+        // keep canonical DB values in basket
         name: item.name,
         price: Number(item.usdPrice || 0),
+
         color: selectedColorForBasket,
         size: selectedSize || null,
         image: basketImage,
@@ -418,35 +642,62 @@ const handleAddToBasket = async (itemData, e) => {
       },
     };
 
-    const response = await axios.post(BASKET_API, basketItem);
+    // translated name only for visible UI message
+    const productName =
+      currentLanguage === "en"
+        ? item.name
+        : translations?.[itemData.itemId]?.name ||
+          item.name;
 
-    if (response.status === 200 || response.status === 201) {
+    const response = await axios.post(
+      BASKET_API,
+      basketItem
+    );
+
+    if (
+      response.status === 200 ||
+      response.status === 201
+    ) {
       await fetchUserBasket();
-     setTimeout(() => {
-  messageApi.success(`${item.name} added to cart`);
-}, 0);
+
+      setTimeout(() => {
+        messageApi.success(
+          t("basket_add_success", {
+            product: productName,
+          })
+        );
+      }, 0);
     } else {
-     setTimeout(() => {
-  messageApi.error("Failed to add to cart");
-}, 0);
+      setTimeout(() => {
+        messageApi.error(
+          t("basket_add_failed")
+        );
+      }, 0);
     }
   } catch (error) {
-    console.error("Error adding item to basket:", error);
-   setTimeout(() => {
-  messageApi.error("Error adding to cart");
-}, 0);
+    console.error(
+      "Error adding item to basket:",
+      error
+    );
+
+    setTimeout(() => {
+      messageApi.error(
+        t("basket_add_error")
+      );
+    }, 0);
   }
 };
 
- const normalizedTitle = itemClicked?.replaceAll("_", "-");
-
- const normalizedItemClicked = itemClicked
+const normalizedItemClicked = itemClicked
   ?.replaceAll("_", "-")
   ?.trim();
 
-const pageTitle = normalizedTitle
-  ? `Malidag ${normalizedTitle.replace(/-/g, " ")}`
-  : "Malidag Shoes";
+const translatedPageType =
+  translateTaxonomy(normalizedItemClicked);
+
+const pageTitle = translatedPageType
+  ? `Malidag ${translatedPageType}`
+  : `Malidag ${t("shoes")}`;
 
  if (loading) {
   return (
@@ -480,23 +731,23 @@ if (!loading && items.length === 0) {
         {countryCode?.toUpperCase()}
       </div>
 
-      <h2>No footwear available</h2>
+      <h2>{t("shoes_no_footwear")}</h2>
 
       <p>
-        We couldn't find any shoes currently available for delivery to{" "}
-        <strong>{countryCode?.toUpperCase()}</strong>.
+        {t("shoes_no_footwear_delivery", {
+          country: countryCode?.toUpperCase(),
+        })}
       </p>
 
       <p>
-        New collections are added regularly. Try another country or check back
-        soon.
+        {t("shoes_check_back")}
       </p>
 
       <button
         className="shoe-empty-btn"
         onClick={() => router.push(withCountry("/"))}
       >
-        Continue Shopping
+        {t("continue_shopping")}
       </button>
     </div>
   );
@@ -508,32 +759,33 @@ return (
       <section className="shoe-hero">
         <div className="shoe-hero-copy">
           <div className="shoe-hero-topline">
-            <span className="shoe-kicker">Malidag Footwear</span>
+            <span className="shoe-kicker"> {t("malidag_footwear")}</span>
             <span className="shoe-kicker-muted">
-              {displayedItems.length} {t("items") || "items"}
+             {displayedItems.length} {t("items")}
             </span>
           </div>
 
           <h1 className="shoe-hero-title">{pageTitle}</h1>
 
           <p className="shoe-hero-text">
-            Explore premium sneakers and statement footwear with clean styling,
-            size filtering, brand discovery, stable coin pricing, and fast product access.
+            {t("shoe_hero_description")}
           </p>
 
           <div className="shoe-hero-stats">
-            <div className="shoe-stat">
-              <span className="shoe-stat-value">{brands.length}</span>
-              <span className="shoe-stat-label">{t("brands") || "Brands"}</span>
-            </div>
-            <div className="shoe-stat">
-              <span className="shoe-stat-value">{allSizes.length}</span>
-              <span className="shoe-stat-label">{t("sizes") || "Sizes"}</span>
-            </div>
-            <div className="shoe-stat">
-              <span className="shoe-stat-value">{items.length}</span>
-              <span className="shoe-stat-label">{t("products") || "Products"}</span>
-            </div>
+           <div className="shoe-stat">
+            <span className="shoe-stat-value">{brands.length}</span>
+            <span className="shoe-stat-label">{t("brands")}</span>
+          </div>
+
+          <div className="shoe-stat">
+            <span className="shoe-stat-value">{allSizes.length}</span>
+            <span className="shoe-stat-label">{t("sizes")}</span>
+          </div>
+
+          <div className="shoe-stat">
+            <span className="shoe-stat-value">{items.length}</span>
+            <span className="shoe-stat-label">{t("products")}</span>
+          </div>
           </div>
         </div>
 
@@ -541,27 +793,28 @@ return (
           <div className="shoe-hero-visual">
             <img
               src={beautyImages[0].imageUrl}
-              alt={normalizedItemClicked || "Shoes collection"}
+              alt={normalizedItemClicked || t("shoes")}
               className="shoe-hero-image"
             />
             <div className="shoe-hero-gradient" />
 
             <div className="shoe-hero-floating-panel">
-              <span className="shoe-floating-label">
-                {selectedSize
-                  ? `${t("selected") || "Selected"}: ${selectedSize}`
-                  : t("footwear_collection") || "Footwear Collection"}
-              </span>
-             <strong>
-              {normalizedItemClicked?.replace(/-/g, " ") || "Shoes"}
-            </strong>
+             <span className="shoe-floating-label">
+            {selectedSize
+              ? `${t("selected")}: ${selectedSize}`
+              : t("footwear_collection")}
+          </span>
+
+          <strong>
+           {translatedPageType || t("shoes")}
+          </strong>
             </div>
           </div>
         ) : (
           <div className="shoe-hero-placeholder">
             <div className="shoe-hero-placeholder-inner">
               <span className="shoe-placeholder-kicker">Malidag</span>
-              <strong>Curated Footwear</strong>
+             <strong>{t("curated_footwear")}</strong>
             </div>
           </div>
         )}
@@ -582,22 +835,23 @@ return (
       )}
 
       <section className={`shoe-toolbar ${filtersOpen ? "open" : ""}`}>
-  <button
-    type="button"
-    className="shoe-filter-toggle"
-    onClick={() => setFiltersOpen((prev) => !prev)}
-  >
-    Filters
-    {(selectedSize || selectedColor !== "all") && (
-      <span className="shoe-filter-active-dot" />
-    )}
-  </button>
+ <button
+  type="button"
+  className="shoe-filter-toggle"
+  onClick={() => setFiltersOpen((prev) => !prev)}
+>
+  {t("filters")}
+
+  {(selectedSize || selectedColor !== "all") && (
+    <span className="shoe-filter-active-dot" />
+  )}
+</button>
 
   <div className="shoe-filter-content">
     <div className="shoe-toolbar-main">
       <div className="shoe-section-heading">
         <span className="shoe-section-kicker">{t("filter_by_size")}</span>
-        <h2>{t("choose_size") || "Choose your size"}</h2>
+       <h2>{t("choose_size")}</h2>
       </div>
 
       <div className="shoe-size-list">
@@ -615,7 +869,9 @@ return (
     </div>
 
     <div className="shoe-color-filter">
-      <span className="shoe-section-kicker">Colors</span>
+      <span className="shoe-section-kicker">
+        {t("colors")}
+      </span>
 
       <div className="shoe-color-list">
         <button
@@ -625,7 +881,7 @@ return (
           }`}
           onClick={() => setSelectedColor("all")}
         >
-          All
+           {t("all")}
         </button>
 
         {colors.map((color) => (
@@ -635,7 +891,7 @@ return (
             className={`shoe-color-chip ${
               selectedColor === color ? "active" : ""
             }`}
-            title={color}
+           title={translateColor(color)}
             style={{ background: getColorSwatch(color) }}
             onClick={() => setSelectedColor(color)}
           />
@@ -653,7 +909,7 @@ return (
             setSelectedColor("all");
           }}
         >
-          {t("clear_filter") || "Clear filter"}
+          {t("clear_filter")}
         </button>
       )}
     </div>
@@ -663,16 +919,20 @@ return (
       <section className="shoe-brand-section">
         <div className="shoe-section-heading shoe-section-heading-row">
           <div>
-            <span className="shoe-section-kicker">{t("brands") || "Brands"}</span>
-            <h2>Shop by brand</h2>
+            <span className="shoe-section-kicker">{t("brands")}</span>
+            <h2>{t("shop_by_brand")}</h2>
           </div>
-          <span className="shoe-section-meta">{brands.length} results</span>
+         <span className="shoe-section-meta">
+          {t("results_count", {
+            count: brands.length,
+          })}
+          </span>
+        </div>
+          {brands.length === 0 ? (
+        <div className="shoe-empty-card">
+          {t("no_brands_found")}
         </div>
 
-        {brands.length === 0 ? (
-          <div className="shoe-empty-card">
-            {t("no_brands_found") || "No brands found."}
-          </div>
         ) : (
           <div className="shoe-brand-grid">
             {brands.map((brandName) => {
@@ -703,8 +963,8 @@ return (
                   <div className="shoe-brand-tile-bottom">
                     <span className="shoe-brand-label">{brandName}</span>
                     <span className="shoe-brand-link">
-                      {t("view_more") || "Explore"}
-                    </span>
+                    {t("view_more")}
+                  </span>
                   </div>
                 </button>
               );
@@ -716,23 +976,28 @@ return (
       <section className="shoe-products-section">
         <div className="shoe-section-heading shoe-section-heading-row">
           <div>
-            <span className="shoe-section-kicker">{t("hot_label") || "Products"}</span>
-            <h2>Curated product selection</h2>
+            <span className="shoe-section-kicker">
+            {t("hot_label")}
+          </span>
+           <h2>{t("curated_product_selection")}</h2>
           </div>
-          <span className="shoe-section-meta">{displayedItems.length} results</span>
+         <span className="shoe-section-meta">
+          {t("results_count", {
+            count: displayedItems.length,
+          })}
+        </span>
         </div>
 
         {displayedItems.length === 0 ? (
           <div className="shoe-empty-card">
-            {t("no_products_found") || "No products found."}
+            {t("no_products_found")}
           </div>
         ) : (
           <div className="shoe-product-grid">
             {displayedItems.map((itemData) => {
               const { itemId, id, item } = itemData;
               const {
-                name,
-                usdPrice,
+               usdPrice,
                 originalPrice,
                 sold,
                 videos,
@@ -740,6 +1005,18 @@ return (
                 type,
                 brand,
               } = item;
+
+              const originalName =
+              item?.name ||
+              t("unnamed_item");
+
+            const translatedName =
+              translations?.[itemId]?.name;
+
+            const name =
+              currentLanguage === "en"
+                ? originalName
+                : translatedName || originalName;
 
               const reviewsData = reviews[itemId] || {};
               const finalRating = reviewsData?.averageRating;
@@ -813,9 +1090,9 @@ return (
                         />
 
                         <div className="shoe-card-badges">
-                          <span className="shoe-card-badge shoe-card-badge-dark">
-                            { "Premium"}
-                          </span>
+                         <span className="shoe-card-badge shoe-card-badge-dark">
+                          {t("premium")}
+                        </span>
                          
                         </div>
 
@@ -824,7 +1101,7 @@ return (
                             type="button"
                             className="shoe-video-btn"
                             onClick={() => handleVideoPlay(id)}
-                            aria-label="Play product video"
+                            aria-label={t("play_product_video")}
                           >
                             ▶
                           </button>
@@ -859,7 +1136,7 @@ return (
                           className={`shoe-card-color-circle ${
                             selectedColorForItem === color ? "active" : ""
                           }`}
-                          title={color}
+                         title={translateColor(color)}
                           onClick={(e) => handleColorSelect(id, color, e)}
                           style={
                             swatchColor
@@ -879,7 +1156,9 @@ return (
                           handleNavigate(id);
                         }}
                       >
-                        +{hiddenColorCount} more
+                       {t("more_colors", {
+                        count: hiddenColorCount,
+                      })}
                       </button>
                     )}
                   </div>
@@ -896,49 +1175,56 @@ return (
                               : "☆☆☆☆☆"}
                           </span>
                           <span className="shoe-rating-value">
-                            {finalRating || t("no_rating") || "No rating"}
+                            {finalRating || t("no_rating")}
                           </span>
                         </div>
                       </div>
 
                       <div className="shoe-card-price-row">
-                        <div className="shoe-card-price-main">
-                          ${Number(usdPrice || 0).toFixed(2)}
+                       <div className="shoe-card-price-main">
+                          {formatPrice(usdPrice)}
                         </div>
 
-                        {Number(originalPrice) > 0 && (
-                          <div className="shoe-card-price-old">
-                            ${Number(originalPrice).toFixed(2)}
-                          </div>
-                        )}
+                        {Number(originalPrice) > 0 &&
+                          convertUsd(originalPrice) !== null && (
+                            <div className="shoe-card-price-old">
+                              {formatPrice(originalPrice)}
+                            </div>
+                          )}
                       </div>
 
                      <div className="shoe-delivery-info">
                       {brandDelivery?.isFree && (
-                        <span className="shoe-free-delivery">Free delivery</span>
+                        <span className="shoe-free-delivery"> {t("free_delivery")}</span>
                       )}
 
-                      <span className="shoe-delivery-date">
-                        Get it by {brandDelivery?.estimatedDaysMax || 7} days
+                       <span className="shoe-delivery-date">
+                        {t("delivery_in_days", {
+                          days: brandDelivery?.estimatedDaysMax || 7,
+                        })}
                       </span>
                     </div>
 
-                        {Number(item.numberOfItems || 0) > 0 && (
-                          <div
-                            className={
-                              Number(item.numberOfItems) <= 23
-                                ? "shoe-stock-badge low"
-                                : "shoe-stock-badge"
-                            }
-                          >
-                            {Number(item.numberOfItems) <= 23
-                              ? `Only ${item.numberOfItems} items left in stock`
-                              : `${item.numberOfItems} items in stock`}
-                          </div>
-                        )}
+                      {Number(item.numberOfItems || 0) > 0 && (
+                        <div
+                          className={
+                            Number(item.numberOfItems) <= 23
+                              ? "shoe-stock-badge low"
+                              : "shoe-stock-badge"
+                          }
+                        >
+                          {Number(item.numberOfItems) <= 23
+                            ? t("stock_low", {
+                                count: item.numberOfItems,
+                              })
+                            : t("stock_available", {
+                                count: item.numberOfItems,
+                              })}
+                        </div>
+                      )}
 
                       <div className="shoe-card-meta">
-                        <span>{genre || "Fashion"}</span>
+                       <span>{translateTaxonomy(genre) || t("fashion")}</span>
                         <span>
                           {Number(sold || 0)} {t("sold")}
                         </span>
@@ -964,7 +1250,7 @@ return (
     className="shoe-primary-btn"
     onClick={(e) => handleAddToBasket(itemData, e)}
   >
-    Add to cart
+   {t("add_to_cart")}
   </button>
 )}
                     </div>

@@ -11,7 +11,10 @@ import { useCheckoutStore } from "./checkoutStore";
 import colors from "../../lib/colors.json";
 import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
-import { getCountryConfig } from "./countryUtils";
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
 
 function ItemPage({ searchTerm }) {
   const router = useRouter();
@@ -55,7 +58,7 @@ const currencyConfig = useMemo(
   [country?.name]
 );
 
-const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
+const currentLanguage = isSupportedLanguage(i18n.language)
   ? i18n.language
   : "en";
 

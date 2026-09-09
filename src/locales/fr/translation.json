@@ -793,5 +793,32 @@
   "color_bright_white": "Blanc éclatant",
   "color_bluing": "Bleu très clair",
   "color_antique_white": "Blanc antique",
-  "color_pastel_yellow": "Jaune pastel"
+  "color_pastel_yellow": "Jaune pastel",
+  "shoes_no_footwear": "Aucune chaussure disponible",
+"shoes_no_footwear_delivery": "Nous n'avons trouvé aucune chaussure actuellement disponible pour une livraison vers {{country}}.",
+"shoes_check_back": "De nouvelles collections sont ajoutées régulièrement. Essayez un autre pays ou revenez bientôt.",
+"continue_shopping": "Continuer mes achats",
+
+"malidag_footwear": "Chaussures Malidag",
+"shoe_hero_description": "Découvrez des baskets haut de gamme et des chaussures tendance avec un style soigné, un filtrage par taille, une sélection par marque et un accès rapide aux produits.",
+"brands": "Marques",
+"sizes": "Tailles",
+"products": "Produits",
+"footwear_collection": "Collection de chaussures",
+"curated_footwear": "Sélection de chaussures",
+
+"choose_size": "Choisissez votre taille",
+"colors": "Couleurs",
+
+"shop_by_brand": "Acheter par marque",
+"results_count": "{{count}} résultats",
+"no_brands_found": "Aucune marque trouvée.",
+
+"curated_product_selection": "Sélection de produits",
+"premium": "Premium",
+
+"delivery_in_days": "Livraison sous {{days}} jours",
+"stock_low": "Plus que {{count}} articles en stock",
+"stock_available": "{{count}} articles en stock",
+"fashion": "Mode"
 }

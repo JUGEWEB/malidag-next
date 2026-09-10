@@ -960,5 +960,9 @@
 "top": "Top",
 "best_seller": "Best Seller",
 "video_not_supported": "Your browser does not support video playback.",
-"back": "Back"
+"back": "Back",
+"items_count": "{{count}} items",
+"get_it_by": "Get it by {{date}}",
+"items_in_stock": "{{count}} items in stock",
+"browse_by_brand": "Browse by brand"
 }

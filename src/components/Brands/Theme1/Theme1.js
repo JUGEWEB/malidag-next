@@ -362,17 +362,36 @@ const isItemInBasket = (itemId) =>
     fetchBrandDetails();
   }, [brandName]);
 
-  useEffect(() => {
-    fetch(`https://api.malidag.com/api/brands/${brandName}`)
-      .then((response) => response.json())
-      .then((data) =>
-        setDepartments(Array.isArray(data?.departments) ? data.departments : [])
-      )
-      .catch((error) => {
-        console.error("Error fetching departments:", error);
-        setDepartments([]);
-      });
-  }, [brandName]);
+ useEffect(() => {
+  if (!brandName || !countryCode) {
+    setDepartments([]);
+    return;
+  }
+
+  fetch(
+    `${BASE_URL}/api/brands/${encodeURIComponent(
+      brandName
+    )}?country=${encodeURIComponent(
+      countryCode
+    )}`
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      setDepartments(
+        Array.isArray(data?.departments)
+          ? data.departments
+          : []
+      );
+    })
+    .catch((error) => {
+      console.error(
+        "Error fetching departments:",
+        error
+      );
+
+      setDepartments([]);
+    });
+}, [brandName, countryCode]);
 
   useEffect(() => {
   if (

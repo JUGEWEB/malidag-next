@@ -559,5 +559,9 @@
 "top": "Destaque",
 "best_seller": "Mais vendido",
 "video_not_supported": "Seu navegador não oferece suporte à reprodução de vídeo.",
-"back": "Voltar"
+"back": "Voltar",
+"items_count": "{{count}} itens",
+"get_it_by": "Receba até {{date}}",
+"items_in_stock": "{{count}} itens em estoque",
+"browse_by_brand": "Explorar por marca"
 }

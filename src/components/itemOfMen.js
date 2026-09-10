@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
@@ -9,6 +15,12 @@ import { auth } from "@/components/firebaseConfig";
 import colorSwatches from "../../lib/colors.json";
 import { message } from "antd";
 import "./itemOfmen.css";
+import { AppContext } from "./appContext";
+
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
 
 const BASE_URL = "https://api.malidag.com";
 const BASKET_API = "https://api.malidag.com/add-to-basket";
@@ -51,7 +63,6 @@ const getFirstVideoUrl = (videos) => {
   );
 };
 
-const formatPrice = (price) => `$${Number(price || 0).toFixed(2)}`;
 
 const getImageUrl = (imageEntry) => {
   if (!imageEntry) return "";
@@ -93,7 +104,6 @@ const getRatingView = (averageRating) => {
 function ItemOfMen() {
   const router = useRouter();
   const params = useParams();
-  const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const itemClicked =
@@ -112,9 +122,42 @@ function ItemOfMen() {
 const [basketItems, setBasketItems] = useState([]);
 const [brandThemes, setBrandThemes] = useState([]);
 
-  const pageTitle = useMemo(() => {
-    return itemClicked ? itemClicked.replace(/-/g, " ") : "Menswear";
-  }, [itemClicked]);
+const { country } = useContext(AppContext);
+
+const countryCode =
+  country?.code?.toLowerCase() || null;
+
+const { t, i18n } = useTranslation();
+
+const currentLanguage =
+  isSupportedLanguage(i18n.language)
+    ? i18n.language
+    : "en";
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
+const [translations, setTranslations] =
+  useState({});
+
+const [rates, setRates] =
+  useState(null);
+
+  const withCountry = (path) => {
+  if (!countryCode) return "/";
+
+  if (!path) {
+    return `/${countryCode}`;
+  }
+
+  return `/${countryCode}${
+    path.startsWith("/")
+      ? path
+      : `/${path}`
+  }`;
+};
 
   const fetchUserBasket = async () => {
   const currentUser = auth?.currentUser;
@@ -156,7 +199,13 @@ const handleAddToBasket = async (itemData, e) => {
     const currentPath =
       typeof window !== "undefined" ? window.location.pathname : "/men";
 
-    router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+   router.push(
+  withCountry(
+    `/auth?redirect=${encodeURIComponent(
+      currentPath
+    )}`
+  )
+);
     return;
   }
 
@@ -193,13 +242,27 @@ const handleAddToBasket = async (itemData, e) => {
 
     if (response.status === 200 || response.status === 201) {
       await fetchUserBasket();
-      messageApi.success(`${basketItem.item.name} added to cart`);
+      const productName =
+  getTranslatedName(
+    item,
+    itemData.itemId,
+    itemData?.details
+  );
+     messageApi.success(
+  t("basket_add_success", {
+    product: productName,
+  })
+);
     } else {
-      messageApi.error("Failed to add to cart");
+     messageApi.error(
+  t("basket_add_failed")
+);
     }
   } catch (error) {
     console.error("Error adding item to basket:", error);
-    messageApi.error("Error adding to cart");
+   messageApi.error(
+  t("basket_add_error")
+);
   }
 };
 
@@ -267,19 +330,25 @@ const handleAddToBasket = async (itemData, e) => {
     let isMounted = true;
 
     const loadPageData = async () => {
-      if (!itemClicked) {
-        setItems([]);
-        setBeautyImages([]);
-        setReviews({});
-        setIsLoading(false);
-        return;
-      }
+      if (!itemClicked || !countryCode) {
+  setItems([]);
+  setBeautyImages([]);
+  setReviews({});
+  setIsLoading(false);
+  return;
+}
 
       setIsLoading(true);
 
       try {
         const [itemsResponse, imagesResponse] = await Promise.allSettled([
-          axios.get(`${BASE_URL}/items/${itemClicked}`),
+         axios.get(
+  `${BASE_URL}/items/${encodeURIComponent(
+    itemClicked
+  )}?country=${encodeURIComponent(
+    countryCode
+  )}`
+),
           axios.get(`${BASE_URL}/men/images`),
         ]);
 
@@ -331,7 +400,164 @@ const handleAddToBasket = async (itemData, e) => {
     return () => {
       isMounted = false;
     };
-  }, [itemClicked, fetchReviews]);
+  }, [itemClicked, fetchReviews,  countryCode]);
+
+  useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response =
+        await axios.get(
+          `${BASE_URL}/prices/rates`
+        );
+
+      setRates(
+        response.data?.rates ||
+        response.data ||
+        null
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch currency rates:",
+        error
+      );
+
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const getCurrencyRate = () => {
+  if (!currencyConfig || !rates) {
+    return null;
+  }
+
+  if (
+    currencyConfig.currency === "USD"
+  ) {
+    return 1;
+  }
+
+  const rate = Number(
+    rates?.[currencyConfig.currency]
+  );
+
+  return Number.isFinite(rate) &&
+    rate > 0
+    ? rate
+    : null;
+};
+
+const convertUsd = (usdAmount) => {
+  const amount =
+    Number(usdAmount);
+
+  if (!Number.isFinite(amount)) {
+    return null;
+  }
+
+  const rate = getCurrencyRate();
+
+  if (rate === null) {
+    return null;
+  }
+
+  return amount * rate;
+};
+
+const formatPrice = (usdAmount) => {
+  const converted =
+    convertUsd(usdAmount);
+
+  if (
+    converted === null ||
+    !currencyConfig
+  ) {
+    return t("price_unavailable");
+  }
+
+  return `${currencyConfig.symbol}${converted.toFixed(
+    2
+  )}`;
+};
+
+const fetchTranslation = async (
+  productId,
+  lang
+) => {
+  if (
+    !productId ||
+    translations?.[productId]?.[lang]
+  ) {
+    return;
+  }
+
+  try {
+    const response =
+      await axios.get(
+        `${BASE_URL}/translate/product/translate/${productId}/${lang}`
+      );
+
+    setTranslations((prev) => ({
+      ...prev,
+
+      [productId]: {
+        ...(prev[productId] || {}),
+
+        [lang]:
+          response.data?.translation ||
+          {},
+      },
+    }));
+  } catch (error) {
+    console.error(
+      `Failed to translate product ${productId}:`,
+      error
+    );
+  }
+};
+
+useEffect(() => {
+  if (
+    currentLanguage === "en"
+  ) {
+    return;
+  }
+
+  items.forEach((itemData) => {
+    if (itemData?.itemId) {
+      fetchTranslation(
+        itemData.itemId,
+        currentLanguage
+      );
+    }
+  });
+}, [items, currentLanguage]);
+
+const getTranslatedName = (
+  item,
+  itemId,
+  details
+) => {
+  const originalName =
+    item?.name ||
+    details?.itemName ||
+    t("unnamed_item");
+
+  if (
+    currentLanguage === "en"
+  ) {
+    return originalName;
+  }
+
+  return (
+    translations?.[itemId]?.[
+      currentLanguage
+    ]?.name ||
+    originalName
+  );
+};
 
   useEffect(() => {
     const initialColors = {};
@@ -410,7 +636,9 @@ useEffect(() => {
   const handleNavigate = useCallback(
     (id) => {
       if (!id) return;
-      router.push(`/product/${id}`);
+     router.push(
+  withCountry(`/product/${id}`)
+);
     },
     [router]
   );
@@ -420,7 +648,9 @@ useEffect(() => {
       event.preventDefault();
       event.stopPropagation();
       if (!id) return;
-      router.push(`/product/${id}/review`);
+     router.push(
+  withCountry(`/product/${id}/review`)
+);
     },
     [router]
   );
@@ -434,6 +664,73 @@ useEffect(() => {
       [itemId]: color,
     }));
   }, []);
+
+  const translateTaxonomy = (value) => {
+  if (!value) return "";
+
+  const raw =
+    String(value).trim();
+
+  const key = raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_");
+
+  const namespace =
+    i18n.options?.defaultNS ||
+    "translation";
+
+  const translated =
+    i18n.getResource(
+      currentLanguage,
+      namespace,
+      key
+    );
+
+  return typeof translated === "string" &&
+    translated.trim()
+    ? translated
+    : raw.replace(/[-_]/g, " ");
+};
+
+const translateColor = (color) => {
+  if (!color) return "";
+
+  const raw =
+    String(color).trim();
+
+  const key = `color_${raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")}`;
+
+  const namespace =
+    i18n.options?.defaultNS ||
+    "translation";
+
+  const translated =
+    i18n.getResource(
+      currentLanguage,
+      namespace,
+      key
+    );
+
+  return typeof translated === "string" &&
+    translated.trim()
+    ? translated
+    : raw;
+};
+
+const pageTitle = useMemo(() => {
+  return itemClicked
+    ? translateTaxonomy(itemClicked)
+    : t("menswear");
+}, [
+  itemClicked,
+  currentLanguage,
+]);
 
   const getCurrentImages = useCallback(
     (entry) => {
@@ -476,7 +773,11 @@ useEffect(() => {
   const handleBrandNavigate = useCallback(
     (brandName) => {
       if (!brandName) return;
-      router.push(`/brand/theme1/${slugify(brandName)}`);
+    router.push(
+  withCountry(
+    `/brand/theme1/${slugify(brandName)}`
+  )
+);
     },
     [router]
   );
@@ -522,7 +823,7 @@ useEffect(() => {
          <div className="men-topbar-left">
             <h1 className="men-page-title">{pageTitle}</h1>
             <span className="men-page-count">
-              {displayedItems.length} {t("products") || "products"}
+              {displayedItems.length} {t("products")}
             </span>
           </div>
         <header className="men-topbar">
@@ -536,8 +837,10 @@ useEffect(() => {
               {selectedSize || selectedColor !== "all"
                 ? `${selectedSize ? `${t("size") || "Size"}: ${selectedSize}` : ""}${
                     selectedSize && selectedColor !== "all" ? " · " : ""
-                  }${selectedColor !== "all" ? `Color: ${selectedColor}` : ""}`
-                : t("filters") || "Filter"}
+                  }${selectedColor !== "all" ? `${t("color")}: ${translateColor(
+              selectedColor
+            )}` : ""}`
+               : t("filters")}
             </button>
 
             {(selectedSize || selectedColor !== "all") && (
@@ -546,7 +849,7 @@ useEffect(() => {
                 className="men-clear-btn"
                 onClick={clearFilter}
               >
-                {t("clear_filter") || "Clear"}
+                {t("clear_filter")}
               </button>
             )}
           </div>
@@ -570,7 +873,7 @@ useEffect(() => {
           <section className="men-brand-section">
             <div className="men-section-head">
               <h2 className="men-section-title">
-                {t("browse_by_brand") || "Browse by brand"}
+                {t("browse_by_brand")}
               </h2>
             </div>
 
@@ -609,13 +912,13 @@ useEffect(() => {
 
         {displayedItems.length === 0 ? (
           <div className="men-empty-card">
-            {t("no_products_found") || "No products found."}
+            {t("no_products_found")}
           </div>
         ) : (
           <section className="men-products-wrap">
             <div className="men-section-head">
               <h2 className="men-section-title">
-                {t("products") || "Products"}
+                {t("products")}
               </h2>
             </div>
 
@@ -645,7 +948,12 @@ useEffect(() => {
                   usdPrice,
                   originalPrice
                 );
-                const productName = name || details?.itemName || "Product";
+                const productName =
+                getTranslatedName(
+                  item,
+                  itemId,
+                  details
+                );
                 const productBrand = brand || details?.brand;
 
                 const brandDelivery =
@@ -706,7 +1014,7 @@ useEffect(() => {
                     </div>
 
                     <div className="men-list-details">
-                      <button
+                      <div
                         type="button"
                         className="men-list-content men-reset-button"
                         onClick={() => handleNavigate(id)}
@@ -722,12 +1030,20 @@ useEffect(() => {
                             <div className="men-list-color-top">
                               {discountPercentage > 0 && (
                                 <span className="men-list-discount">
-                                  -{discountPercentage}% off
+                                 {t("discount_off", {
+                                    percent: discountPercentage,
+                                  })}
                                 </span>
                               )}
 
                               <div className="men-list-color-label">
-                                Color: <span>{selectedColorForItem || colorOptions[0]}</span>
+                               {t("color")}:{" "}
+                                <span>
+                                  {translateColor(
+                                    selectedColorForItem ||
+                                      colorOptions[0]
+                                  )}
+                                </span>
                               </div>
                             </div>
 
@@ -742,8 +1058,10 @@ useEffect(() => {
                                     className={`men-list-color-circle ${
                                       selectedColorForItem === color ? "active" : ""
                                     }`}
-                                    title={color}
-                                    aria-label={`Select ${color}`}
+                                   title={translateColor(color)}
+                                    aria-label={t("select_color", {
+                                      color: translateColor(color),
+                                    })}
                                     style={
                                       previewImage
                                         ? { backgroundImage: `url("${previewImage}")` }
@@ -760,7 +1078,9 @@ useEffect(() => {
                         {colorOptions.length === 0 && discountPercentage > 0 && (
                           <div className="men-list-color-top">
                             <span className="men-list-discount">
-                              -{discountPercentage}% off
+                             {t("discount_off", {
+                                  percent: discountPercentage,
+                                })}
                             </span>
                           </div>
                         )}
@@ -785,37 +1105,52 @@ useEffect(() => {
                           <span
                             className="men-rating-inline"
                             onClick={(event) => handleReviewNavigate(id, event)}
-                            title={t("view_reviews") || "View reviews"}
+                            title={t("view_reviews")}
                           >
                             {ratingData.value || "—"} · {ratingData.stars}
                             {reviewCount > 0 ? ` (${reviewCount})` : ""}
                           </span>
                           <span>
-                            {Number(sold || 0)} {t("sold") || "sold"}
+                            {Number(sold || 0)} {t("sold")}
                           </span>
                         </div>
 
                         {Number(numberOfItems || 0) > 0 && (
                           <div className="men-list-meta">
-                            <span>{numberOfItems} items in stock</span>
+                            <span>{t("items_in_stock", {
+                              count: numberOfItems,
+                            })}</span>
                           </div>
                         )}
-                      </button>
+                      </div>
 
                       <div className="men-delivery-info">
-                          {brandDelivery?.isFree && <span>Free delivery</span>}
+                          {brandDelivery?.isFree && <span>{t("free_delivery")}</span>}
 
                           <span>
-                            Get it by{" "}
-                            {(() => {
-                              const date = new Date();
-                              date.setDate(date.getDate() + (brandDelivery?.estimatedDaysMin || 7));
-                              return date.toLocaleDateString("en-US", {
-                                weekday: "long",
-                                day: "numeric",
-                              });
-                            })()}
-                          </span>
+                        {t("get_it_by", {
+                          date: (() => {
+                            const date = new Date();
+
+                            date.setDate(
+                              date.getDate() +
+                                (brandDelivery?.estimatedDaysMin || 7)
+                            );
+
+                            const locale =
+                              currentLanguage === "fr"
+                                ? "fr-FR"
+                                : currentLanguage === "br"
+                                ? "pt-BR"
+                                : "en-GB";
+
+                            return date.toLocaleDateString(locale, {
+                              weekday: "long",
+                              day: "numeric",
+                            });
+                          })(),
+                        })}
+                      </span>
                         </div>
 
                         {isItemInBasket(itemId) ? (
@@ -825,7 +1160,9 @@ useEffect(() => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              router.push("/basket");
+                             router.push(
+                                withCountry("/basket")
+                              );
                             }}
                           >
                             🛒 {getBasketQuantity(itemId)}
@@ -836,7 +1173,7 @@ useEffect(() => {
                            className="men-cart-action-btn"
                             onClick={(e) => handleAddToBasket(itemData, e)}
                           >
-                            Add to cart
+                           {t("add_to_cart")}
                           </button>
                         )}
                     </div>
@@ -853,7 +1190,7 @@ useEffect(() => {
 
         <aside className="men-filter-drawer" aria-label="Product filter drawer">
           <div className="men-filter-head">
-            <h3>{t("filters") || "Filters"}</h3>
+            <h3>{t("filters")}</h3>
 
             <button
               type="button"
@@ -866,13 +1203,13 @@ useEffect(() => {
           </div>
 
           <div className="men-section-head">
-            <h2 className="men-section-title">{t("choose_size") || "Choose size"}</h2>
+            <h2 className="men-section-title">{t("choose_size")}</h2>
           </div>
 
           <div className="men-filter-sizes">
             {allSizes.length === 0 ? (
               <div className="men-empty-card">
-                {t("no_sizes_found") || "No sizes found."}
+                {t("no_sizes_found")}
               </div>
             ) : (
               allSizes.map((size) => (
@@ -893,7 +1230,7 @@ useEffect(() => {
           {allColors.length > 0 && (
             <>
               <div className="men-section-head" style={{ marginTop: 20 }}>
-                <h2 className="men-section-title">Colors</h2>
+                <h2 className="men-section-title"> {t("colors")}</h2>
               </div>
 
               <div className="men-list-color-options">
@@ -911,8 +1248,10 @@ useEffect(() => {
                     key={color}
                     type="button"
                     className={`men-list-color-circle ${selectedColor === color ? "active" : ""}`}
-                    title={color}
-                    aria-label={`Filter ${color}`}
+                   title={translateColor(color)}
+                    aria-label={t("select_color", {
+                      color: translateColor(color),
+                    })}
                     style={{ background: getColorSwatch(color) }}
                     onClick={() => handleSelectColorFilter(color)}
                   />
@@ -928,7 +1267,7 @@ useEffect(() => {
                 className="men-clear-btn"
                 onClick={clearFilter}
               >
-                {t("clear_filter") || "Clear filter"}
+                {t("clear_filter")}
               </button>
             </div>
           )}

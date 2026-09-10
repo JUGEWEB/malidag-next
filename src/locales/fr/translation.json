@@ -822,5 +822,9 @@
 "stock_available": "{{count}} articles en stock",
 "fashion": "Mode",
 "video_not_supported": "Votre navigateur ne prend pas en charge la lecture vidéo.",
-"back": "Retour"
+"back": "Retour",
+"items_count": "{{count}} articles",
+"get_it_by": "Livraison prévue le {{date}}",
+"items_in_stock": "{{count}} articles en stock",
+"browse_by_brand": "Parcourir par marque"
 }

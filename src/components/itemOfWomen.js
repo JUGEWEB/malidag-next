@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+} from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import "./itemOfWomen.css";
@@ -10,6 +15,13 @@ import { useCheckoutStore } from "./checkoutStore";
 import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
 import colorSwatches from "../../lib/colors.json";
+
+import { AppContext } from "./appContext";
+
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
 
 const BASE_URL = "https://api.malidag.com";
 const BASKET_API = "https://api.malidag.com/add-to-basket";
@@ -21,10 +33,16 @@ const normalizeText = (value) =>
     .replaceAll("-", "_")
     .replaceAll(" ", "_");
 
-function ItemOfWomen({ countryCode }) {
+function ItemOfWomen({ countryCode: routeCountryCode }) {
   const router = useRouter();
   const params = useParams();
   const { itemClicked } = params;
+  const { country } = useContext(AppContext);
+
+  const countryCode =
+    country?.code?.toLowerCase() ||
+    routeCountryCode?.toLowerCase() ||
+    null;
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,17 +58,41 @@ const [brandThemes, setBrandThemes] = useState([]);
 const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
 const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+const { t, i18n } = useTranslation();
+
+const currentLanguage =
+  isSupportedLanguage(i18n.language)
+    ? i18n.language
+    : "en";
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
+const [translations, setTranslations] =
+  useState({});
+
+const [rates, setRates] =
+  useState(null);
 
   const { isMobile, isDesktop, isTablet, isSmallMobile, isVerySmall, isVeryVerySmall } =
     useScreenSize();
 
-    const withCountry = (path) => {
-  const code = countryCode || "fr";
-  if (!path) return `/${code}`;
-  return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
+   const withCountry = (path) => {
+  if (!countryCode) return "/";
+
+  if (!path) {
+    return `/${countryCode}`;
+  }
+
+  return `/${countryCode}${
+    path.startsWith("/")
+      ? path
+      : `/${path}`
+  }`;
 };
 
-  const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const setSelectedBrandName = useCheckoutStore(
@@ -99,46 +141,76 @@ const [messageApi, contextHolder] = message.useMessage();
   }, [itemClicked]);
 
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
+  const fetchItems = async () => {
+    if (!countryCode || !itemClicked) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
       const response = await axios.get(
-  `${BASE_URL}/items?country=${encodeURIComponent(countryCode || "fr")}`
-);
+        `${BASE_URL}/items?country=${encodeURIComponent(
+          countryCode
+        )}`
+      );
 
-const raw = response.data;
+      const raw = response.data;
 
-const allItems = Array.isArray(raw)
-  ? raw
-  : Array.isArray(raw?.items)
-  ? raw.items
-  : [];
+      const allItems = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.items)
+        ? raw.items
+        : [];
 
-const filteredItems = allItems.filter((itemData) => {
-  const item = itemData?.item || {};
-  const details = itemData?.details || {};
+      const filteredItems =
+        allItems.filter((itemData) => {
+          const item =
+            itemData?.item || {};
 
-  const genre = normalizeText(item.genre || details.genre);
-  const type = normalizeText(
-    item.type || item.brandType || details.type || details.brandType
-  );
+          const details =
+            itemData?.details || {};
 
-  return genre === "women" && type === normalizeText(itemClicked);
-});
+          const genre = normalizeText(
+            item.genre ||
+            details.genre
+          );
 
-setItems(filteredItems);
+          const type = normalizeText(
+            item.type ||
+            item.brandType ||
+            details.type ||
+            details.brandType
+          );
 
-        filteredItems.forEach((item) => {
-          fetchReviews(item.itemId);
+          return (
+            genre === "women" &&
+            type ===
+              normalizeText(itemClicked)
+          );
         });
-      } catch (error) {
-        console.error("Error fetching items:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchItems();
-  },  [itemClicked, countryCode]);
+      setItems(filteredItems);
+
+      filteredItems.forEach((item) => {
+        fetchReviews(item.itemId);
+      });
+    } catch (error) {
+      console.error(
+        "Error fetching items:",
+        error
+      );
+
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchItems();
+}, [itemClicked, countryCode]);
 
   const brands = useMemo(() => {
   return [
@@ -174,6 +246,32 @@ const getColorSwatch = (colorName = "") => {
 };
 
 useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response =
+        await axios.get(
+          `${BASE_URL}/prices/rates`
+        );
+
+      setRates(
+        response.data?.rates ||
+        response.data ||
+        null
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch currency rates:",
+        error
+      );
+
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+useEffect(() => {
   const fetchBrandThemes = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/brands/themes`);
@@ -185,6 +283,61 @@ useEffect(() => {
 
   fetchBrandThemes();
 }, []);
+
+const getCurrencyRate = () => {
+  if (!currencyConfig || !rates) {
+    return null;
+  }
+
+  if (
+    currencyConfig.currency === "USD"
+  ) {
+    return 1;
+  }
+
+  const rate = Number(
+    rates?.[currencyConfig.currency]
+  );
+
+  return Number.isFinite(rate) &&
+    rate > 0
+    ? rate
+    : null;
+};
+
+const convertUsd = (usdAmount) => {
+  const amount =
+    Number(usdAmount);
+
+  if (!Number.isFinite(amount)) {
+    return null;
+  }
+
+  const rate =
+    getCurrencyRate();
+
+  if (rate === null) {
+    return null;
+  }
+
+  return amount * rate;
+};
+
+const formatPrice = (usdAmount) => {
+  const converted =
+    convertUsd(usdAmount);
+
+  if (
+    converted === null ||
+    !currencyConfig
+  ) {
+    return t("price_unavailable");
+  }
+
+  return `${currencyConfig.symbol}${converted.toFixed(
+    2
+  )}`;
+};
 
   const getAllSizes = (items) => {
     const allSizes = items.map((item) => {
@@ -229,11 +382,34 @@ const getBasketQuantity = (itemId) => {
 
 const isItemInBasket = (itemId) => getBasketQuantity(itemId) > 0;
 
-const getEstimatedDeliveryDay = (daysToAdd = 7) => {
-  const date = new Date();
-  date.setDate(date.getDate() + daysToAdd);
+const getDateLocale = () => {
+  if (currentLanguage === "fr") {
+    return "fr-FR";
+  }
 
-  return `${date.toLocaleDateString("en-US", { weekday: "long" })} ${date.getDate()}`;
+  if (currentLanguage === "br") {
+    return "pt-BR";
+  }
+
+  return "en-GB";
+};
+
+const getEstimatedDeliveryDay = (
+  daysToAdd = 7
+) => {
+  const date = new Date();
+
+  date.setDate(
+    date.getDate() + daysToAdd
+  );
+
+  return date.toLocaleDateString(
+    getDateLocale(),
+    {
+      weekday: "long",
+      day: "numeric",
+    }
+  );
 };
 
 const sortImages = (images = []) => {
@@ -313,6 +489,115 @@ const handleColorSelect = (itemId, color, e) => {
   }));
 };
 
+const fetchTranslation = async (
+  productId,
+  lang
+) => {
+  if (
+    !productId ||
+    translations?.[productId]?.[lang]
+  ) {
+    return;
+  }
+
+  try {
+    const response =
+      await axios.get(
+        `${BASE_URL}/translate/product/translate/${productId}/${lang}`
+      );
+
+    setTranslations((prev) => ({
+      ...prev,
+
+      [productId]: {
+        ...(prev[productId] || {}),
+
+        [lang]:
+          response.data?.translation ||
+          {},
+      },
+    }));
+  } catch (error) {
+    console.error(
+      `Failed to translate product ${productId}:`,
+      error
+    );
+  }
+};
+
+
+useEffect(() => {
+  if (
+    currentLanguage === "en"
+  ) {
+    return;
+  }
+
+  items.forEach((itemData) => {
+    if (itemData?.itemId) {
+      fetchTranslation(
+        itemData.itemId,
+        currentLanguage
+      );
+    }
+  });
+}, [items, currentLanguage]);
+
+const translateColor = (color) => {
+  if (!color) return "";
+
+  const raw =
+    String(color).trim();
+
+  const key = `color_${raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")}`;
+
+  const namespace =
+    i18n.options?.defaultNS ||
+    "translation";
+
+  const translated =
+    i18n.getResource(
+      currentLanguage,
+      namespace,
+      key
+    );
+
+  return (
+    typeof translated ===
+      "string" &&
+    translated.trim()
+      ? translated
+      : raw
+  );
+};
+
+const getTranslatedName = (
+  item,
+  itemId
+) => {
+  if (
+    currentLanguage === "en"
+  ) {
+    return (
+      item?.name ||
+      t("unnamed_item")
+    );
+  }
+
+  return (
+    translations?.[itemId]?.[
+      currentLanguage
+    ]?.name ||
+    item?.name ||
+    t("unnamed_item")
+  );
+};
+
+
 const handleImageArrow = (itemData, direction, e) => {
   e.stopPropagation();
 
@@ -334,6 +619,35 @@ const handleImageArrow = (itemData, direction, e) => {
     };
   });
 };
+
+const translateTaxonomy = (value) => {
+  if (!value) return "";
+
+  const raw = String(value).trim();
+
+  const key = raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_");
+
+  const namespace =
+    i18n.options?.defaultNS || "translation";
+
+  const translated = i18n.getResource(
+    currentLanguage,
+    namespace,
+    key
+  );
+
+  return typeof translated === "string" &&
+    translated.trim()
+    ? translated
+    : raw.replaceAll("_", " ");
+};
+
+const translatedType =
+  translateTaxonomy(itemClicked);
 
   const filteredItems = useMemo(() => {
   return items.filter((itemData) => {
@@ -411,7 +725,17 @@ const handleImageArrow = (itemData, direction, e) => {
 
     if (response.status === 200 || response.status === 201) {
       await fetchUserBasket();
-      messageApi.success(`${item.name} added to cart`);
+            const productName =
+          getTranslatedName(
+            item,
+            itemData.itemId
+          );
+          
+        messageApi.success(
+          t("basket_add_success", {
+            product: productName,
+          })
+        );
     } else {
       messageApi.error("Failed to add to cart");
     }
@@ -491,15 +815,19 @@ if (!loading && !hasItems) {
        {contextHolder}
       <div className="women-item-shell">
        <section className="women-item-topbar">
-  <div className="women-item-breadcrumb">
-    <span>Malidag</span>
-    <span className="dot">•</span>
-    <span className="current">{String(itemClicked).replaceAll("_", " ")}</span>
-  </div>
+        <div className="women-item-breadcrumb">
+  <span>Malidag</span>
+<span className="dot">•</span>
+<span className="current">
+  {translatedType}
+</span>
+</div>
 
-  <div className="women-item-count">
-    {filteredItems.length} items
-  </div>
+ <div className="women-item-count">
+  {t("items_count", {
+    count: filteredItems.length,
+  })}
+</div>
 </section>
 
 {womenBrandThemes.length > 0 && (
@@ -514,7 +842,13 @@ if (!loading && !hasItems) {
           if (!themeRoute || !brand?.brandName) return;
 
           setSelectedBrandName(brand.brandName);
-          router.push(`/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`);
+          router.push(
+          withCountry(
+            `/brand/${themeRoute}/${encodeURIComponent(
+              brand.brandName
+            )}`
+          )
+        );
         }}
       >
         <img src={brand.logo} alt={`${brand.brandName} logo`} />
@@ -565,7 +899,7 @@ if (!loading && !hasItems) {
       className="women-mobile-filter-toggle"
       onClick={() => setMobileFiltersOpen((prev) => !prev)}
     >
-      Filters
+     {t("filters")}
     </button>
   </section>
 )}
@@ -588,7 +922,7 @@ if (!loading && !hasItems) {
       </div>
 
       <div className="women-filter-section">
-        <h3>Colors</h3>
+        <h3>{t("colors")}</h3>
 
         <div className="women-color-options">
           <button
@@ -597,7 +931,7 @@ if (!loading && !hasItems) {
             }`}
             onClick={() => setSelectedColor("all")}
           >
-            All
+            {t("all")}
           </button>
 
           {colors.map((color) => {
@@ -610,8 +944,14 @@ if (!loading && !hasItems) {
                 className={`women-color-circle ${
                   selectedColor === color ? "active" : ""
                 }`}
-                title={color}
-                aria-label={`Filter ${color}`}
+                title={translateColor(color)}
+                aria-label={t(
+                  "filter_color",
+                  {
+                    color:
+                      translateColor(color),
+                  }
+                )}
                 style={swatchColor ? { background: swatchColor } : {}}
                 onClick={() => setSelectedColor(color)}
               />
@@ -665,7 +1005,7 @@ if (!loading && !hasItems) {
               </div>
 
                <div className="women-filter-section">
-  <h3>Colors</h3>
+  <h3>{t("colors")}</h3>
 
   <div className="women-color-options">
     <button
@@ -674,7 +1014,7 @@ if (!loading && !hasItems) {
       }`}
       onClick={() => setSelectedColor("all")}
     >
-      All
+     {t("all")}
     </button>
 
     {colors.map((color) => {
@@ -687,8 +1027,14 @@ if (!loading && !hasItems) {
           className={`women-color-circle ${
             selectedColor === color ? "active" : ""
           }`}
-          title={color}
-          aria-label={`Filter ${color}`}
+         title={translateColor(color)}
+          aria-label={t(
+            "filter_color",
+            {
+              color:
+                translateColor(color),
+            }
+          )}
           style={swatchColor ? { background: swatchColor } : {}}
           onClick={() => setSelectedColor(color)}
         />
@@ -716,13 +1062,18 @@ if (!loading && !hasItems) {
             {displayedItems.map((itemData) => {
               const { itemId, id, item } = itemData;
               const {
-                  name,
                   usdPrice,
                   originalPrice,
                   sold,
                   videos,
                   numberOfItems,
                 } = item;
+
+                const name =
+                getTranslatedName(
+                  item,
+                  itemId
+                );
 
               const reviewsData = reviews[itemId] || {};
               const finalRating = reviewsData?.averageRating || null;
@@ -821,7 +1172,10 @@ if (!loading && !hasItems) {
           className={`women-card-color-circle ${
             selectedColorForItem === color ? "active" : ""
           }`}
-          title={color}
+         title={translateColor(color)}
+         aria-label={t("select_color", {
+            color: translateColor(color),
+          })}
           onClick={(e) => handleColorSelect(id, color, e)}
           style={
             swatchColor
@@ -843,7 +1197,9 @@ if (!loading && !hasItems) {
           handleNavigate(id);
         }}
       >
-        +{hiddenColorCount} more
+       {t("more_colors", {
+          count: hiddenColorCount,
+        })}
       </button>
     )}
   </div>
@@ -851,10 +1207,15 @@ if (!loading && !hasItems) {
 
                     <div className="item-prices">
                       <div className="item-price-row">
-                        <span className="item-price">${usdPrice}</span>
+                       <span className="item-price">
+                        {formatPrice(usdPrice)}
+                      </span>
 
-                        {Number(originalPrice) > 0 && (
-                          <span className="item-original-price">${originalPrice}</span>
+                        {Number(originalPrice) > 0 &&
+                          convertUsd(originalPrice) !== null && (
+                            <span className="item-original-price">
+                              {formatPrice(originalPrice)}
+                            </span>
                         )}
 
                         <span className="item-sold">
@@ -864,15 +1225,19 @@ if (!loading && !hasItems) {
                     </div>
 
                     <div className="women-delivery-info">
-                      <div className="women-free-delivery">Free delivery</div>
+                      <div className="women-free-delivery"> {t("free_delivery")}</div>
                       <div className="women-delivery-date">
-                        Get it by {getEstimatedDeliveryDay(7)}
+                      {t("get_it_by", {
+                          date: getEstimatedDeliveryDay(7),
+                        })}
                       </div>
                     </div>
 
                     {numberOfItems && Number(numberOfItems) > 0 && (
                       <div className="women-stock-badge">
-                        {numberOfItems} items in stock
+                       {t("items_in_stock", {
+                        count: numberOfItems,
+                      })}
                       </div>
                     )}
 
@@ -893,7 +1258,7 @@ if (!loading && !hasItems) {
                         className="women-add-cart-btn"
                         onClick={(e) => handleAddToBasket(itemData, e)}
                       >
-                        Add to cart
+                       {t("add_to_cart")}
                       </button>
                     )}
 

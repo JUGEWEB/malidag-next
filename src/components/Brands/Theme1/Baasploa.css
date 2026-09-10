@@ -645,13 +645,21 @@
 }
 
 .th1-department-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 250;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+
   margin-bottom: 14px;
-  padding: 6px 2px 10px;
+  padding: 10px 8px;
+
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
+
   flex-wrap: wrap;
 }
 

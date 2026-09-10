@@ -6,7 +6,10 @@ import React, {
   useMemo,
   useContext,
 } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import useScreenSize from "../../useIsMobile";
 import "./Baasploa.css";
 import { useTranslation } from "react-i18next";
@@ -14,14 +17,25 @@ import i18n from "i18next";
 import { useCheckoutStore } from "@/components/checkoutStore";
 import { AppContext } from "@/components/appContext";
 import colors from "../../../../lib/colors.json";
+import axios from "axios";
+import { auth } from "@/components/firebaseConfig";
+import { message } from "antd";
 
 import {
   getCountryConfig,
   isSupportedLanguage,
 } from "@/components/countryUtils";
 
+const BASE_URL = "https://api.malidag.com";
+const BASKET_API =
+  "https://api.malidag.com/add-to-basket";
+
 function Theme1({ brandName }) {
   const router = useRouter();
+const searchParams = useSearchParams();
+
+const requestedBrandType =
+  searchParams.get("brandType");
   const { isDesktop } = useScreenSize();
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
@@ -41,6 +55,26 @@ function Theme1({ brandName }) {
   });
 
   const { country } = useContext(AppContext);
+
+  const countryCode =
+  country?.code?.toLowerCase() || null;
+
+const withCountry = (path) => {
+  if (!countryCode) return "/";
+
+  if (!path) {
+    return `/${countryCode}`;
+  }
+
+  return `/${countryCode}${
+    path.startsWith("/") ? path : `/${path}`
+  }`;
+};
+
+const [basketItems, setBasketItems] = useState([]);
+
+const [messageApi, contextHolder] =
+  message.useMessage();
 
 const [rates, setRates] = useState(null);
 
@@ -112,6 +146,54 @@ const currencyConfig = useMemo(
       rawItem: product,
     };
   };
+
+  const fetchUserBasket = async () => {
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    setBasketItems([]);
+    return;
+  }
+
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/basket/${currentUser.uid}`
+    );
+
+    setBasketItems(
+      response.data?.basket || []
+    );
+  } catch (error) {
+    console.error(
+      "Error fetching basket:",
+      error
+    );
+
+    setBasketItems([]);
+  }
+};
+
+useEffect(() => {
+  const unsubscribe =
+    auth.onAuthStateChanged(() => {
+      fetchUserBasket();
+    });
+
+  return () => unsubscribe();
+}, []);
+
+const getBasketQuantity = (itemId) => {
+  const basketItem = basketItems.find(
+    (item) => item.itemId === itemId
+  );
+
+  return Number(
+    basketItem?.quantity || 0
+  );
+};
+
+const isItemInBasket = (itemId) =>
+  getBasketQuantity(itemId) > 0;
 
   const fetchTranslation = async (productId, lang) => {
     if (!productId || translations?.[productId]?.[lang]) return;
@@ -293,103 +375,245 @@ const currencyConfig = useMemo(
   }, [brandName]);
 
   useEffect(() => {
-    fetch(`https://api.malidag.com/api/brands/${brandName}/top-items`)
-      .then((response) => response.json())
-      .then((data) => {
-        const normalized = Array.isArray(data) ? data.map(normalizeTopItem) : [];
+  if (
+    !requestedBrandType ||
+    !departments.length
+  ) {
+    return;
+  }
 
-        const initialColors = {};
-        normalized.forEach((product) => {
-          const colorKeys = Object.keys(product?.imagesVariants || {});
-          if (colorKeys.length > 0) {
-            initialColors[product.id] = colorKeys[0];
-          }
-        });
+  const targetBrandType =
+    requestedBrandType
+      .trim()
+      .toLowerCase();
 
-        setSelectedColorByItem((prev) => ({ ...initialColors, ...prev }));
-        setTopItems(normalized);
-      })
-      .catch((error) => {
-        console.error("Error fetching top items:", error);
-        setTopItems([]);
-      });
-  }, [brandName]);
+  const matchingDepartment =
+    departments.find((department) =>
+      (department?.brandTypes || []).some(
+        (brandType) =>
+          String(brandType || "")
+            .trim()
+            .toLowerCase() ===
+          targetBrandType
+      )
+    );
 
-  useEffect(() => {
-    fetch(`https://api.malidag.com/api/brands/${brandName}/best-seller`)
-      .then((response) => response.json())
-      .then((data) => {
-        const normalized = data ? normalizeBestSeller(data) : null;
+  if (!matchingDepartment) {
+    return;
+  }
 
-        if (normalized) {
-          const colorKeys = Object.keys(normalized?.imagesVariants || {});
-          if (colorKeys.length > 0) {
-            setSelectedColorByItem((prev) => ({
-              ...prev,
-              [normalized.id]: prev[normalized.id] || colorKeys[0],
-            }));
-          }
+  const actualBrandType =
+    matchingDepartment.brandTypes.find(
+      (brandType) =>
+        String(brandType || "")
+          .trim()
+          .toLowerCase() ===
+        targetBrandType
+    );
+
+  if (!actualBrandType) return;
+
+  setSelectedDepartment(
+    matchingDepartment.name
+  );
+
+  setSelectedBrandType(
+    actualBrandType
+  );
+}, [
+  requestedBrandType,
+  departments,
+]);
+
+ useEffect(() => {
+  if (!brandName || !countryCode) return;
+
+  fetch(
+    `${BASE_URL}/api/brands/${encodeURIComponent(
+      brandName
+    )}/top-items?country=${encodeURIComponent(
+      countryCode
+    )}`
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      const normalized = Array.isArray(data)
+        ? data.map(normalizeTopItem)
+        : [];
+
+      const initialColors = {};
+
+      normalized.forEach((product) => {
+        const colorKeys = Object.keys(
+          product?.imagesVariants || {}
+        );
+
+        if (colorKeys.length > 0) {
+          initialColors[product.id] =
+            colorKeys[0];
         }
-
-        setBestSeller(normalized);
-      })
-      .catch((error) => {
-        console.error("Error fetching best seller:", error);
-        setBestSeller(null);
       });
-  }, [brandName]);
+
+      setSelectedColorByItem((prev) => ({
+        ...initialColors,
+        ...prev,
+      }));
+
+      setTopItems(normalized);
+    })
+    .catch((error) => {
+      console.error(
+        "Error fetching top items:",
+        error
+      );
+
+      setTopItems([]);
+    });
+}, [brandName, countryCode]);
 
   useEffect(() => {
-    if (!selectedDepartment || !selectedBrandType || !brandName) {
-      setBrandItems([]);
-      setDepartmentItemsError(null);
-      setDepartmentItemsLoading(false);
-      return;
-    }
+  if (!brandName || !countryCode) return;
 
-    setDepartmentItemsLoading(true);
+  fetch(
+    `${BASE_URL}/api/brands/${encodeURIComponent(
+      brandName
+    )}/best-seller?country=${encodeURIComponent(
+      countryCode
+    )}`
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      const normalized = data
+        ? normalizeBestSeller(data)
+        : null;
+
+      if (normalized) {
+        const colorKeys = Object.keys(
+          normalized?.imagesVariants || {}
+        );
+
+        if (colorKeys.length > 0) {
+          setSelectedColorByItem((prev) => ({
+            ...prev,
+            [normalized.id]:
+              prev[normalized.id] ||
+              colorKeys[0],
+          }));
+        }
+      }
+
+      setBestSeller(normalized);
+    })
+    .catch((error) => {
+      console.error(
+        "Error fetching best seller:",
+        error
+      );
+
+      setBestSeller(null);
+    });
+}, [brandName, countryCode]);
+
+ useEffect(() => {
+  if (
+    !selectedDepartment ||
+    !selectedBrandType ||
+    !brandName ||
+    !countryCode
+  ) {
+    setBrandItems([]);
     setDepartmentItemsError(null);
+    setDepartmentItemsLoading(false);
+    return;
+  }
 
-    fetch(`https://api.malidag.com/api/brands/${brandName}/items`)
-      .then((response) => response.json())
-      .then((data) => {
-        const list = Array.isArray(data) ? data : [];
+  setDepartmentItemsLoading(true);
+  setDepartmentItemsError(null);
 
-        const normalized = list
-          .map(normalizeBrandItem)
-          .filter((item) => {
-            const itemDepartment = item?.department?.trim()?.toLowerCase() || "";
-            const itemBrandType = item?.brandType?.trim()?.toLowerCase() || "";
-            const targetDepartment =
-              selectedDepartment?.trim()?.toLowerCase() || "";
-            const targetBrandType =
-              selectedBrandType?.trim()?.toLowerCase() || "";
+  fetch(
+    `${BASE_URL}/api/brands/${encodeURIComponent(
+      brandName
+    )}/items?country=${encodeURIComponent(
+      countryCode
+    )}`
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      const list = Array.isArray(data)
+        ? data
+        : [];
 
-            return (
-              itemDepartment === targetDepartment &&
-              itemBrandType === targetBrandType
-            );
-          });
+      const normalized = list
+        .map(normalizeBrandItem)
+        .filter((item) => {
+          const itemDepartment =
+            item?.department
+              ?.trim()
+              ?.toLowerCase() || "";
 
-        const initialColors = {};
-        normalized.forEach((product) => {
-          const colorKeys = Object.keys(product?.imagesVariants || {});
-          if (colorKeys.length > 0) {
-            initialColors[product.id] = colorKeys[0];
-          }
+          const itemBrandType =
+            item?.brandType
+              ?.trim()
+              ?.toLowerCase() || "";
+
+          const targetDepartment =
+            selectedDepartment
+              ?.trim()
+              ?.toLowerCase() || "";
+
+          const targetBrandType =
+            selectedBrandType
+              ?.trim()
+              ?.toLowerCase() || "";
+
+          return (
+            itemDepartment ===
+              targetDepartment &&
+            itemBrandType ===
+              targetBrandType
+          );
         });
 
-        setSelectedColorByItem((prev) => ({ ...initialColors, ...prev }));
-        setBrandItems(normalized);
-        setDepartmentItemsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching department items:", error);
-        setBrandItems([]);
-        setDepartmentItemsError(error?.message || "Failed to load items");
-        setDepartmentItemsLoading(false);
+      const initialColors = {};
+
+      normalized.forEach((product) => {
+        const colorKeys = Object.keys(
+          product?.imagesVariants || {}
+        );
+
+        if (colorKeys.length > 0) {
+          initialColors[product.id] =
+            colorKeys[0];
+        }
       });
-  }, [selectedDepartment, selectedBrandType, brandName]);
+
+      setSelectedColorByItem((prev) => ({
+        ...initialColors,
+        ...prev,
+      }));
+
+      setBrandItems(normalized);
+      setDepartmentItemsLoading(false);
+    })
+    .catch((error) => {
+      console.error(
+        "Error fetching department items:",
+        error
+      );
+
+      setBrandItems([]);
+      setDepartmentItemsError(
+        error?.message ||
+          "Failed to load items"
+      );
+      setDepartmentItemsLoading(false);
+    });
+}, [
+  selectedDepartment,
+  selectedBrandType,
+  brandName,
+  countryCode,
+]);
 
   useEffect(() => {
     setHideBestSellerVideo(false);
@@ -442,18 +666,45 @@ const formatPrice = (usdAmount) => {
   return `${currencyConfig.symbol}${converted.toFixed(2)}`;
 };
 
-  const handleBrandTypeClick = (department, brandType) => {
-    setExpandedDeptIndex(null);
-    setSelectedDepartment(department);
-    setSelectedBrandType(brandType);
-  };
+ const handleBrandTypeClick = (
+  department,
+  brandType
+) => {
+  setExpandedDeptIndex(null);
 
-  const handleBackToHome = () => {
-    setSelectedDepartment(null);
-    setSelectedBrandType(null);
-    setDepartmentItemsError(null);
-    setExpandedDeptIndex(null);
-  };
+  setSelectedDepartment(
+    department
+  );
+
+  setSelectedBrandType(
+    brandType
+  );
+
+  router.push(
+    withCountry(
+      `/brand/theme1/${encodeURIComponent(
+        brandName
+      )}?brandType=${encodeURIComponent(
+        brandType
+      )}`
+    )
+  );
+};
+
+ const handleBackToHome = () => {
+  setSelectedDepartment(null);
+  setSelectedBrandType(null);
+  setDepartmentItemsError(null);
+  setExpandedDeptIndex(null);
+
+  router.push(
+    withCountry(
+      `/brand/theme1/${encodeURIComponent(
+        brandName
+      )}`
+    )
+  );
+};
 
   const getTranslatedName = (item, itemId) => {
   if (currentLanguage === "en") {
@@ -641,7 +892,7 @@ const translateColor = (color) => {
         onClick={(e) => {
           e.stopPropagation();
           setItemData(item);
-          router.push("/reviewPage");
+         router.push(withCountry(`product/${item.id}/review`));
         }}
         style={{ cursor: "pointer" }}
       >
@@ -665,14 +916,119 @@ const translateColor = (color) => {
     return Math.round(((original - current) / original) * 100);
   };
 
-  const handleAddToBasketPreview = (product, selectedColor, selectedImage, e) => {
-    e.stopPropagation();
-    setItemData({
-      ...product,
-      selectedColor,
-      selectedImage,
-    });
-  };
+ const handleAddToBasket = async (
+  product,
+  e
+) => {
+  e.stopPropagation();
+
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    const currentPath =
+      typeof window !== "undefined"
+        ? window.location.pathname
+        : "/";
+
+    router.push(
+      withCountry(
+        `/auth?redirect=${encodeURIComponent(
+          currentPath
+        )}`
+      )
+    );
+
+    return;
+  }
+
+  try {
+    const colorOptions =
+      getColorOptions(product);
+
+    const selectedColorForBasket =
+      selectedColorByItem[product.id] ||
+      colorOptions?.[0] ||
+      null;
+
+    const basketImage =
+      getDisplayImage(product);
+
+    const basketItem = {
+      userId: currentUser.uid,
+
+      item: {
+        id: product.id,
+        itemId: product.itemId,
+
+        // canonical DB values
+        name: product.name,
+        price: Number(
+          product.usdPrice || 0
+        ),
+
+        color: selectedColorForBasket,
+        size: null,
+        image: basketImage,
+
+        brand:
+          product.brand ||
+          product.rawItem?.item?.brand ||
+          product.rawItem?.brand ||
+          brandName,
+
+        brandPrice:
+          product.brandPrice ||
+          product.rawItem?.item?.brandPrice ||
+          product.rawItem?.brandPrice,
+
+        quantity: 1,
+      },
+    };
+
+    const productName =
+      getTranslatedName(
+        product,
+        product.itemId
+      );
+
+    const response = await axios.post(
+      BASKET_API,
+      basketItem
+    );
+
+    if (
+      response.status === 200 ||
+      response.status === 201
+    ) {
+      await fetchUserBasket();
+
+      setTimeout(() => {
+        messageApi.success(
+          t("basket_add_success", {
+            product: productName,
+          })
+        );
+      }, 0);
+    } else {
+      setTimeout(() => {
+        messageApi.error(
+          t("basket_add_failed")
+        );
+      }, 0);
+    }
+  } catch (error) {
+    console.error(
+      "Error adding item to basket:",
+      error
+    );
+
+    setTimeout(() => {
+      messageApi.error(
+        t("basket_add_error")
+      );
+    }, 0);
+  }
+};
 
   const renderProductCard = (item, options = {}) => {
     const { isTop = false, badgeText = "" } = options;
@@ -692,15 +1048,22 @@ const translateColor = (color) => {
 
     return (
       <div key={item.id} className="th1-item-card">
+
+         {contextHolder}
+
         <div
           className="th1-item-media"
-          onClick={() => router.push(`/product/${item.id}`)}
+          onClick={() => router.push( withCountry(`/product/${item.id}`))}
         >
           {badgeText ? (
-            <div className="th1-image-badge th1-image-badge-best">{badgeText}</div>
-          ) : isTop ? (
-            <div className="th1-image-badge th1-image-badge-top">Top</div>
-          ) : null}
+          <div className="th1-image-badge th1-image-badge-best">
+            {badgeText}
+          </div>
+        ) : isTop ? (
+          <div className="th1-image-badge th1-image-badge-top">
+            {t("top")}
+          </div>
+        ) : null}
 
           {discountPercentage > 0 && (
             <div className="th1-image-badge th1-image-badge-discount">
@@ -721,7 +1084,7 @@ const translateColor = (color) => {
 
         <div
           className="th1-item-info"
-          onClick={() => router.push(`/product/${item.id}`)}
+          onClick={() => router.push( withCountry(`/product/${item.id}`))}
         >
         <div className="th1-item-price-row">
           <span className="th1-item-price">
@@ -778,15 +1141,31 @@ const translateColor = (color) => {
             )}
           </div>
 
-          <button
-            type="button"
-            className="th1-add-basket-btn"
-            onClick={(e) =>
-              handleAddToBasketPreview(item, selectedColor, displayImage, e)
-            }
-          >
-            Add to Basket
-          </button>
+         {isItemInBasket(item.itemId) ? (
+                <button
+                  type="button"
+                  className="th1-add-basket-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+
+                    router.push(
+                      withCountry("/basket")
+                    );
+                  }}
+                >
+                  🛒 {getBasketQuantity(item.itemId)}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="th1-add-basket-btn"
+                  onClick={(e) =>
+                    handleAddToBasket(item, e)
+                  }
+                >
+                  {t("add_to_cart")}
+                </button>
+              )}
         </div>
       </div>
     );
@@ -805,7 +1184,9 @@ const translateColor = (color) => {
         <div className="th1-best-video-card">
           <div
             className="th1-video-container"
-            onClick={() => router.push(`/product/${bestSeller.id}`)}
+            onClick={() => router.push(withCountry(
+                `/product/${bestSeller.id}`
+              ))}
           >
             <video
               autoPlay
@@ -816,7 +1197,7 @@ const translateColor = (color) => {
               onError={() => setHideBestSellerVideo(true)}
             >
               <source src={bestSellerVideo} type="video/mp4" />
-              Your browser does not support the video tag.
+               {t("video_not_supported")}
             </video>
           </div>
         </div>
@@ -824,9 +1205,11 @@ const translateColor = (color) => {
         <div className="th1-best-image-card">
           <div
             className="th1-best-image-wrap"
-            onClick={() => router.push(`/product/${bestSeller.id}`)}
+            onClick={() => router.push(withCountry(
+                `/product/${bestSeller.id}`
+              ))}
           >
-            <div className="th1-image-badge th1-image-badge-best">Best Seller</div>
+            <div className="th1-image-badge th1-image-badge-best"> {t("best_seller")}</div>
 
             <img
               src={getDisplayImage(bestSeller)}
@@ -860,7 +1243,12 @@ const translateColor = (color) => {
             {getColorOptions(bestSeller).length > 0 && (
               <div className="th1-color-block" onClick={(e) => e.stopPropagation()}>
                 <div className="th1-color-label">
-                  Color: <span>{selectedColorByItem[bestSeller.id]}</span>
+                  {t("color")}:{" "}
+                  <span>
+                    {translateColor(
+                      selectedColorByItem[bestSeller.id]
+                    )}
+                  </span>
                 </div>
 
                 <div className="th1-color-options">
@@ -890,20 +1278,37 @@ const translateColor = (color) => {
               )}
             </div>
 
+           {isItemInBasket(bestSeller.itemId) ? (
+            <button
+              type="button"
+              className="th1-add-basket-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+
+                router.push(
+                  withCountry("/basket")
+                );
+              }}
+            >
+              🛒{" "}
+              {getBasketQuantity(
+                bestSeller.itemId
+              )}
+            </button>
+          ) : (
             <button
               type="button"
               className="th1-add-basket-btn"
               onClick={(e) =>
-                handleAddToBasketPreview(
+                handleAddToBasket(
                   bestSeller,
-                  selectedColorByItem[bestSeller.id],
-                  getDisplayImage(bestSeller),
                   e
                 )
               }
             >
-              Add to Basket
+              {t("add_to_cart")}
             </button>
+          )}
           </div>
         </div>
       </div>
@@ -915,7 +1320,7 @@ const translateColor = (color) => {
 
     return (
       <div className={`th1-item-grid ${!isDesktop ? "mobile" : ""}`}>
-        {renderProductCard(bestSeller, { badgeText: "Best Seller" })}
+        {renderProductCard(bestSeller, { badgeText: t("best_seller"), })}
       </div>
     );
   };
@@ -929,7 +1334,7 @@ const translateColor = (color) => {
             className="th1-back-btn"
             onClick={handleBackToHome}
           >
-            ← {t("back") || "Back"}
+            ← {t("back")}
           </button>
 
           <div className="th1-department-current">
@@ -977,7 +1382,7 @@ const translateColor = (color) => {
               ) : null}
 
               <div className="th1-sidebar-title">
-                {t("departments_label") || "Departments"}
+               {t("departments_label")}
               </div>
 
               <div className="th1-type-list">

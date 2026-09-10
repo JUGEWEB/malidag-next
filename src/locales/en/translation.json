@@ -956,5 +956,9 @@
 "delivery_in_days": "Get it by {{days}} days",
 "stock_low": "Only {{count}} items left in stock",
 "stock_available": "{{count}} items in stock",
-"fashion": "Fashion"
+"fashion": "Fashion",
+"top": "Top",
+"best_seller": "Best Seller",
+"video_not_supported": "Your browser does not support video playback.",
+"back": "Back"
 }

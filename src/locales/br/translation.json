@@ -554,5 +554,10 @@
 "delivery_in_days": "Receba em até {{days}} dias",
 "stock_low": "Apenas {{count}} itens restantes em estoque",
 "stock_available": "{{count}} itens em estoque",
-"fashion": "Moda"
+"fashion": "Moda",
+"departments_label": "Departamentos",
+"top": "Destaque",
+"best_seller": "Mais vendido",
+"video_not_supported": "Seu navegador não oferece suporte à reprodução de vídeo.",
+"back": "Voltar"
 }

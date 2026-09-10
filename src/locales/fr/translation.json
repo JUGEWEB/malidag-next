@@ -820,5 +820,7 @@
 "delivery_in_days": "Livraison sous {{days}} jours",
 "stock_low": "Plus que {{count}} articles en stock",
 "stock_available": "{{count}} articles en stock",
-"fashion": "Mode"
+"fashion": "Mode",
+"video_not_supported": "Votre navigateur ne prend pas en charge la lecture vidéo.",
+"back": "Retour"
 }

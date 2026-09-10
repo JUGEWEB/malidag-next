@@ -1,12 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useContext,
+} from "react";
 import { useRouter } from "next/navigation";
 import useScreenSize from "../../useIsMobile";
 import "./Baasploa.css";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { useCheckoutStore } from "@/components/checkoutStore";
+import { AppContext } from "@/components/appContext";
+import colors from "../../../../lib/colors.json";
+
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "@/components/countryUtils";
 
 function Theme1({ brandName }) {
   const router = useRouter();
@@ -27,6 +39,20 @@ function Theme1({ brandName }) {
     headerImage: null,
     logo: null,
   });
+
+  const { country } = useContext(AppContext);
+
+const [rates, setRates] = useState(null);
+
+const currentLanguage =
+  isSupportedLanguage(i18n.language)
+    ? i18n.language
+    : "en";
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
 
   const [expandedDeptIndex, setExpandedDeptIndex] = useState(null);
   const [translations, setTranslations] = useState({});
@@ -145,21 +171,68 @@ function Theme1({ brandName }) {
     }
   };
 
-  useEffect(() => {
-    const lang = i18n.language || "en";
+ useEffect(() => {
+  if (currentLanguage === "en") {
+    return;
+  }
 
-    topItems.forEach((item) => {
-      if (item?.itemId) fetchTranslation(item.itemId, lang);
-    });
-
-    if (bestSeller?.itemId) {
-      fetchTranslation(bestSeller.itemId, lang);
+  topItems.forEach((item) => {
+    if (item?.itemId) {
+      fetchTranslation(
+        item.itemId,
+        currentLanguage
+      );
     }
+  });
 
-    brandItems.forEach((item) => {
-      if (item?.itemId) fetchTranslation(item.itemId, lang);
-    });
-  }, [topItems, bestSeller, brandItems]);
+  if (bestSeller?.itemId) {
+    fetchTranslation(
+      bestSeller.itemId,
+      currentLanguage
+    );
+  }
+
+  brandItems.forEach((item) => {
+    if (item?.itemId) {
+      fetchTranslation(
+        item.itemId,
+        currentLanguage
+      );
+    }
+  });
+}, [
+  topItems,
+  bestSeller,
+  brandItems,
+  currentLanguage,
+]);
+
+  useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await fetch(
+        "https://api.malidag.com/prices/rates"
+      );
+
+      const data = await response.json();
+
+      setRates(
+        data?.rates ||
+        data ||
+        null
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch currency rates:",
+        error
+      );
+
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
 
   useEffect(() => {
     topItems.forEach((item) => {
@@ -322,6 +395,53 @@ function Theme1({ brandName }) {
     setHideBestSellerVideo(false);
   }, [bestSeller?.id]);
 
+  const getCurrencyRate = () => {
+  if (!currencyConfig || !rates) {
+    return null;
+  }
+
+  if (currencyConfig.currency === "USD") {
+    return 1;
+  }
+
+  const rate = Number(
+    rates?.[currencyConfig.currency]
+  );
+
+  return Number.isFinite(rate) && rate > 0
+    ? rate
+    : null;
+};
+
+const convertUsd = (usdAmount) => {
+  const amount = Number(usdAmount);
+
+  if (!Number.isFinite(amount)) {
+    return null;
+  }
+
+  const rate = getCurrencyRate();
+
+  if (rate === null) {
+    return null;
+  }
+
+  return amount * rate;
+};
+
+const formatPrice = (usdAmount) => {
+  const converted = convertUsd(usdAmount);
+
+  if (
+    converted === null ||
+    !currencyConfig
+  ) {
+    return t("price_unavailable");
+  }
+
+  return `${currencyConfig.symbol}${converted.toFixed(2)}`;
+};
+
   const handleBrandTypeClick = (department, brandType) => {
     setExpandedDeptIndex(null);
     setSelectedDepartment(department);
@@ -336,9 +456,16 @@ function Theme1({ brandName }) {
   };
 
   const getTranslatedName = (item, itemId) => {
-    const lang = i18n.language || "en";
-    return translations?.[itemId]?.[lang]?.name || item?.name || "Unnamed product";
-  };
+  if (currentLanguage === "en") {
+    return item?.name || t("unnamed_item");
+  }
+
+  return (
+    translations?.[itemId]?.[currentLanguage]?.name ||
+    item?.name ||
+    t("unnamed_item")
+  );
+};
 
   const isSameProduct = (a, b) => {
     if (!a || !b) return false;
@@ -471,41 +598,39 @@ const getDisplayImage = (product) => {
     });
   }, [filteredTopItems]);
 
-  const getColorSwatch = (colorName = "") => {
-    const color = colorName.trim().toLowerCase();
+ const getColorSwatch = (colorName = "") => {
+  const key = String(colorName || "")
+    .trim()
+    .toLowerCase();
 
-    const swatches = {
-      black: "#111111",
-      white: "#f8f8f8",
-      red: "#dc2626",
-      blue: "#2563eb",
-      green: "#16a34a",
-      yellow: "#eab308",
-      pink: "#ec4899",
-      purple: "#9333ea",
-      orange: "#f97316",
-      brown: "#92400e",
-      grey: "#9ca3af",
-      gray: "#9ca3af",
-      silver: "#c0c0c0",
-      gold: "#d4af37",
-      beige: "#d6c7a1",
-      cream: "#f5f0dc",
-      ivory: "#fffff0",
-      navy: "#1e3a8a",
-      "sky blue": "#38bdf8",
-      skyblue: "#38bdf8",
-      maroon: "#7f1d1d",
-      olive: "#556b2f",
-      khaki: "#c3b091",
-      multicolor:
-        "linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #a855f7)",
-      transparent:
-        "linear-gradient(135deg, #ddd 25%, #fff 25%, #fff 50%, #ddd 50%, #ddd 75%, #fff 75%, #fff 100%)",
-    };
+  return colors[key] || "#d1d5db";
+};
 
-    return swatches[color] || "#d1d5db";
-  };
+const translateColor = (color) => {
+  if (!color) return "";
+
+  const raw = String(color).trim();
+
+  const key = `color_${raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")}`;
+
+  const namespace =
+    i18n.options?.defaultNS || "translation";
+
+  const translated = i18n.getResource(
+    currentLanguage,
+    namespace,
+    key
+  );
+
+  return typeof translated === "string" &&
+    translated.trim()
+    ? translated
+    : raw;
+};
 
   const renderStars = (rating, item) => {
     const safeRating = Math.round(Number(rating) || 0);
@@ -598,15 +723,18 @@ const getDisplayImage = (product) => {
           className="th1-item-info"
           onClick={() => router.push(`/product/${item.id}`)}
         >
-          <div className="th1-item-price-row">
-            <span className="th1-item-price">${item?.usdPrice || "0"}</span>
+        <div className="th1-item-price-row">
+          <span className="th1-item-price">
+            {formatPrice(item?.usdPrice)}
+          </span>
 
-            {Number(item?.originalPrice || 0) > 0 && (
+          {Number(item?.originalPrice || 0) > 0 &&
+            convertUsd(item.originalPrice) !== null && (
               <span className="th1-item-original-price">
-                ${Number(item.originalPrice).toFixed(2)}
+                {formatPrice(item.originalPrice)}
               </span>
             )}
-          </div>
+        </div>
 
           <div className="th1-item-name">
             {getTranslatedName(item, item.itemId)?.length > 70
@@ -617,7 +745,10 @@ const getDisplayImage = (product) => {
           {colorOptions.length > 0 && (
             <div className="th1-color-block" onClick={(e) => e.stopPropagation()}>
               <div className="th1-color-label">
-                Color: <span>{selectedColor}</span>
+               {t("color")}:{" "}
+              <span>
+                {translateColor(selectedColor)}
+              </span>
               </div>
 
               <div className="th1-color-options">
@@ -628,8 +759,10 @@ const getDisplayImage = (product) => {
                     className={`th1-color-circle ${
                       selectedColor === color ? "active" : ""
                     }`}
-                    title={color}
-                    aria-label={`Select ${color}`}
+                    title={translateColor(color)}
+                    aria-label={t("select_color", {
+                        color: translateColor(color),
+                      })}
                     style={{ background: getColorSwatch(color) }}
                     onClick={(e) => handleColorSelect(item.id, color, e)}
                   />
@@ -708,14 +841,17 @@ const getDisplayImage = (product) => {
 
           <div className="th1-item-info">
             <div className="th1-item-price-row">
-              <span className="th1-item-price">${bestSeller?.usdPrice || "0"}</span>
+            <span className="th1-item-price">
+              {formatPrice(bestSeller?.usdPrice)}
+            </span>
 
-              {Number(bestSeller?.originalPrice || 0) > 0 && (
+            {Number(bestSeller?.originalPrice || 0) > 0 &&
+              convertUsd(bestSeller.originalPrice) !== null && (
                 <span className="th1-item-original-price">
-                  ${Number(bestSeller.originalPrice).toFixed(2)}
+                  {formatPrice(bestSeller.originalPrice)}
                 </span>
               )}
-            </div>
+          </div>
 
             <div className="th1-item-name">
               {getTranslatedName(bestSeller, bestSeller.itemId)}
@@ -735,8 +871,10 @@ const getDisplayImage = (product) => {
                       className={`th1-color-circle ${
                         selectedColorByItem[bestSeller.id] === color ? "active" : ""
                       }`}
-                      title={color}
-                      aria-label={`Select ${color}`}
+                      title={translateColor(color)}
+                      aria-label={t("select_color", {
+                        color: translateColor(color),
+                      })}
                       style={{ background: getColorSwatch(color) }}
                       onClick={(e) => handleColorSelect(bestSeller.id, color, e)}
                     />

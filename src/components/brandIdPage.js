@@ -5,7 +5,6 @@ import axios from "axios";
 import { Carousel } from "antd";
 import { useTranslation } from "react-i18next";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
-import i18n from "i18next";
 import "./brandIdPage.css";
 
 const API_BASE = "https://api.malidag.com";
@@ -14,7 +13,7 @@ export default function BrandIdPage({ brandName }) {
   const [data, setData] = useState(null);
   const [translation, setTranslation] = useState(null);
   const [status, setStatus] = useState("loading");
-  const { t } = useTranslation();
+ const { t, i18n } = useTranslation();
 
   if (!brandName) return null;
 
@@ -99,8 +98,8 @@ const NextArrow = (props) => {
   return (
     <section className="brand-media-shell-brand">
       <div className="brand-media-header-brand">
-        <span className="brand-media-eyebrow-brand">trusted brand</span>
-        <h2>We Elevate quality</h2>
+        <span className="brand-media-eyebrow-brand"> {t("trusted_brand")}</span>
+        <h2>{t("we_elevate_quality")}</h2>
       </div>
 
       <div className="brand-media-list-brand">

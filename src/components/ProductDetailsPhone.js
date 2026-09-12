@@ -1,6 +1,15 @@
 "use client";
 
-import React from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  getCountryConfig,
+} from "./countryUtils";
+
 import Image from "next/image";
 import { FaStar, FaChevronDown } from "react-icons/fa";
 import FetchReviews from "./fetchReview";
@@ -24,7 +33,6 @@ export default function ProductDetailsPhone({
   finalRating,
   itemsd,
   id,
-  chainId,
   reviewCount,
   openModalSmall,
   setOpenModalSmall,
@@ -39,9 +47,6 @@ export default function ProductDetailsPhone({
   validVideos,
   Slider,
   videoSliderSettings,
-  convertToCrypto,
-  coinImages,
-  getNetworkName,
   handleVisitBrand,
   handleColorChange,
   handleImageChange,
@@ -71,7 +76,99 @@ setMobileZoomOpen,
   const canShipToSelectedCountry =
     !!selectedCountryCode && shippingCountries.includes(selectedCountryCode);
 
-  const tokenSymbol = product?.cryptocurrency?.toUpperCase?.() || "USDT";
+    const [rates, setRates] = useState(null);
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await fetch(
+        "https://api.malidag.com/prices/rates"
+      );
+
+      const data = await response.json();
+
+      setRates(
+        data?.rates ||
+        data ||
+        null
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch currency rates:",
+        error
+      );
+
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const getCurrencyRate = () => {
+  if (!currencyConfig) {
+    return null;
+  }
+
+  if (
+    currencyConfig.currency === "USD"
+  ) {
+    return 1;
+  }
+
+  if (!rates) {
+    return null;
+  }
+
+  const rate = Number(
+    rates?.[currencyConfig.currency]
+  );
+
+  return Number.isFinite(rate) &&
+    rate > 0
+    ? rate
+    : null;
+};
+
+const formatPrice = (usdAmount) => {
+  const amount = Number(usdAmount);
+
+  if (!Number.isFinite(amount)) {
+    return t("price_unavailable");
+  }
+
+  const rate = getCurrencyRate();
+
+  if (rate === null) {
+    return t("price_unavailable");
+  }
+
+  const converted = amount * rate;
+
+  return `${currencyConfig.symbol}${converted.toFixed(
+    2
+  )}`;
+};
+
+const getTranslatedColor = (color) => {
+  if (!color) return "";
+
+  const normalizedColor = color
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return t(`color_${normalizedColor}`, {
+    defaultValue: color,
+  });
+};
 
   const getImageUrl = (imageEntry) => {
   if (!imageEntry) return "";
@@ -136,7 +233,7 @@ const handleShareProduct = async () => {
   }
 
   await navigator.clipboard.writeText(shareUrl);
-  alert("Product link copied");
+ alert(t("product_link_copied"));
 };
 
   return (
@@ -145,14 +242,14 @@ const handleShareProduct = async () => {
       <div className="pdp-phone-slider-shell">
   <div className="pdp-phone-image-overlay-top">
     <div className="pdp-phone-color-badge">
-      {selectedColor}
+     {getTranslatedColor(selectedColor)}
     </div>
 
     <button
       type="button"
       onClick={handleShareProduct}
       className="pdp-phone-share-button"
-      aria-label="Share product"
+     aria-label={t("share_product")}
     >
       <FaShareAlt />
     </button>
@@ -164,7 +261,7 @@ const handleShareProduct = async () => {
     className="mobile-view-zoom-button"
   >
     <FaSearchPlus />
-    <span>View zoom</span>
+   <span>{t("view_zoom")}</span>
   </button>
 
   <div className="pdp-phone-slider-wrapper">
@@ -327,7 +424,9 @@ const handleShareProduct = async () => {
                           border: "1px solid #ffb3b3",
                         }}
                       >
-                        {`This item is not available in ${country.name}. Please select another delivery location.`}
+                      {t("item_not_available_country", {
+                        country: country.name,
+                      })}
                       </div>
                     )}
 
@@ -335,38 +434,54 @@ const handleShareProduct = async () => {
   <>
     {loadingDeliveryInfo && (
       <div className="pdp-delivery-card">
-        <p className="pdp-delivery-text">
-          Loading delivery information...
-        </p>
+       <p className="pdp-delivery-text">
+        {t("loading_delivery_information")}
+      </p>
       </div>
     )}
 
     {!loadingDeliveryInfo && selectedDeliveryInfo && (
       <div className="pdp-delivery-card">
-        <p className="pdp-delivery-text">
-          Delivering to{" "}
-          <strong>{selectedDeliveryInfo.fullName}</strong>{" "}
-          at {selectedDeliveryInfo.streetName}, {selectedDeliveryInfo.town},{" "}
-          {selectedDeliveryInfo.postalCode && `${selectedDeliveryInfo.postalCode}, `}
-          {selectedDeliveryInfo.country}. Contact:{" "}
-          <a
-            href={`mailto:${selectedDeliveryInfo.email}`}
-            className="pdp-delivery-email"
-          >
-            {selectedDeliveryInfo.email}
-          </a>
-        </p>
+       <p className="pdp-delivery-text">
+  {t("delivering_to", {
+    name: selectedDeliveryInfo.fullName,
+    address: [
+      selectedDeliveryInfo.streetName,
+      selectedDeliveryInfo.town,
+      selectedDeliveryInfo.postalCode,
+      selectedDeliveryInfo.country,
+    ]
+      .filter(Boolean)
+      .join(", "),
+  })}{" "}
+
+  <a
+    href={`mailto:${selectedDeliveryInfo.email}`}
+    className="pdp-delivery-email"
+  >
+    {selectedDeliveryInfo.email}
+  </a>
+</p>
       </div>
     )}
   </>
 )}
 
-          <div className="pdp-phone-network-row">
-            <span className="pdp-phone-network-icon" role="img" aria-label="network">
-              🌐
-            </span>
-            <span className="pdp-phone-network-text">{getNetworkName(chainId)}</span>
-          </div>
+         <div className="pdp-phone-network-row">
+          <button
+            type="button"
+            className="pdp-phone-return-policy-link"
+            onClick={() => {
+              if (!country?.code) return;
+
+              router.push(
+                `/${country.code.toLowerCase()}/refund-policy`
+              );
+            }}
+          >
+            {t("learn_return_policy")}
+          </button>
+        </div>
 
           <div className="pdp-phone-size-summary">
   <span className="pdp-phone-size-summary-label">
@@ -379,9 +494,14 @@ const handleShareProduct = async () => {
 
          {selectedOptions?.length > 0 && (
             <div className="pdp-phone-size-block">
-              <label htmlFor="size-select" className="pdp-phone-label">
-               Select {optionLabel}
-              </label>
+              <label
+              htmlFor="size-select"
+              className="pdp-phone-label"
+            >
+              {t("select_option", {
+                option: optionLabel,
+              })}
+            </label>
               <select
                 id="size-select"
                 value={selectedSize}
@@ -389,9 +509,9 @@ const handleShareProduct = async () => {
                 className="pdp-phone-size-select"
               >
                 {selectedOptions.map((option, index) => {
-                const priceText = option.price
-                  ? ` ($${Number(option.price).toFixed(2)})`
-                  : "";
+               const priceText = option.price
+                ? ` (${formatPrice(option.price)})`
+                : "";
 
                 return (
                   <option key={`${option.value}-${index}`} value={option.value}>
@@ -403,37 +523,29 @@ const handleShareProduct = async () => {
             </div>
           )}
 
-          {selectedOptions.find(o => o.value === selectedSize)?.price && (
+         {selectedOptions.find(
+          (o) => o.value === selectedSize
+        )?.price && (
           <div className="pdp-phone-option-hint">
-            ${Number(
-              selectedOptions.find(o => o.value === selectedSize).price
-            ).toFixed(2)} for this option
+            {t("for_this_option", {
+              price: formatPrice(
+                selectedOptions.find(
+                  (o) => o.value === selectedSize
+                ).price
+              ),
+            })}
           </div>
         )}
 
-          <div className="pdp-phone-price-card">
-            <div className="pdp-phone-price-row">
-              <h2 className="pdp-phone-usd-price">
-               ${(currentPrice * quantity).toFixed(2)}
-              </h2>
-
-              <span className="pdp-phone-price-separator">≈</span>
-
-              <h3 className="pdp-phone-crypto-price">
-                {convertToCrypto(currentPrice * quantity, tokenSymbol)}
-                {coinImages[tokenSymbol] && (
-                  <Image
-                    src={encodeURI(coinImages[tokenSymbol])}
-                    alt={tokenSymbol}
-                    width={22}
-                    height={22}
-                    className="pdp-phone-coin-image"
-                  />
-                )}
-                <span>{tokenSymbol}</span>
-              </h3>
-            </div>
+         <div className="pdp-phone-price-card">
+          <div className="pdp-phone-price-row">
+            <h2 className="pdp-phone-price">
+              {formatPrice(
+                currentPrice * quantity
+              )}
+            </h2>
           </div>
+        </div>
 
           <div className="pdp-phone-quantity-block">
             <span className="pdp-phone-quantity-label">{t("quantity")}</span>
@@ -567,7 +679,11 @@ const handleShareProduct = async () => {
           });
           setAuthState(true);
           setRatingFilter(selectedRating);
-          router.push("/reviewPage");
+         if (!country?.code) return;
+
+          router.push(
+            `/${country.code.toLowerCase()}/product/${id}/review`
+          );
         }}
         className="pdp-phone-see-all-reviews"
       >
@@ -577,11 +693,18 @@ const handleShareProduct = async () => {
   </div>
 )}
 
-        <MultiRecommendedItem
-                category={details?.category}
-                type={details?.type}
-                title={`Recommended ${details?.type}`}
-              />
+       <MultiRecommendedItem
+          category={details?.category}
+          type={details?.type}
+          title={t("recommended_type", {
+            type: t(
+              details?.type?.toLowerCase(),
+              {
+                defaultValue: details?.type,
+              }
+            ),
+          })}
+        />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { usePathname } from "next/navigation";
+import "./fetchReview.css";
 
 const BASE_URL = "https://api.malidag.com";
 
@@ -40,7 +41,7 @@ const supportedLangCodes = supportedLanguages.map(l => l.code);
 
 const FetchReviews = ({ productId, selectedRating, onRatingClick, serverReviews = [] }) => {
   const { i18n } = useTranslation();
-  const userLang = i18n.language.split("-")[0].toLowerCase();
+const userLang = i18n.language;
 
   const [reviews, setReviews] = useState(serverReviews.length ? serverReviews : []);
   const [loading, setLoading] = useState(true);
@@ -52,22 +53,56 @@ const FetchReviews = ({ productId, selectedRating, onRatingClick, serverReviews 
   const isReviewPage = pathname === "/review";
    const { t } = useTranslation()
 
-  const translateComment = async (index, text, targetLang) => {
-    setReviews(prev => prev.map((r, i) => i === index ? { ...r, isTranslating: true } : r));
-    try {
-      const res = await axios.post(`${BASE_URL}/translate`, { q: text, source: "auto", target: targetLang, format: "text" });
-      setReviews(prev => prev.map((r, i) => i === index ? { ...r, translatedComment: res.data.translatedText, isTranslating: false } : r));
-    } catch {
-      setReviews(prev => prev.map((r, i) => i === index ? { ...r, isTranslating: false } : r));
-    }
-  };
+ const translateComment = async (index, text, targetLang) => {
+  setReviews((prev) =>
+    prev.map((r, i) =>
+      i === index ? { ...r, isTranslating: true } : r
+    )
+  );
 
-  const getTranslationAction = (reviewLang) => {
-    if (!supportedLangCodes.includes(reviewLang)) return null;
-    if (supportedLangCodes.includes(userLang) && userLang !== reviewLang) return "direct";
-    if (!supportedLangCodes.includes(userLang)) return "select";
-    return null;
-  };
+  const providerTargetLang =
+    targetLang === "br" ? "pt-BR" : targetLang;
+
+  try {
+    const res = await axios.post(
+      `${BASE_URL}/translation/translate`,
+      {
+        q: text,
+        source: "auto",
+        target: providerTargetLang,
+        format: "text",
+      }
+    );
+
+    setReviews((prev) =>
+      prev.map((r, i) =>
+        i === index
+          ? {
+              ...r,
+              translatedComment: res.data.translatedText,
+              isTranslating: false,
+            }
+          : r
+      )
+    );
+  } catch (error) {
+    console.error("Review translation failed:", error);
+
+    setReviews((prev) =>
+      prev.map((r, i) =>
+        i === index
+          ? { ...r, isTranslating: false }
+          : r
+      )
+    );
+  }
+};
+
+ const getTranslationAction = (reviewLang) => {
+  if (!reviewLang) return null;
+
+  return reviewLang !== userLang ? "direct" : null;
+};
 
   
   useEffect(() => {
@@ -117,7 +152,9 @@ if (!reviews.length) return null;
   return (
     <div style={{ width: "100%", display: "flex", justifyContent: "start" }}>
       <div ref={reviewsRef} style={{ padding: "1rem", width: "100%" }}>
-        <h2>{t("customer_reviews")}</h2>
+        <h2 className="reviews-title">
+          {t("customer_reviews")}
+        </h2>
           <>
             {visibleReviews.map((r, index) => {
               const realIndex = reviews.findIndex(item => item === r);

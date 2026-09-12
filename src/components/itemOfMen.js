@@ -1049,27 +1049,51 @@ const pageTitle = useMemo(() => {
 
                             <div className="men-list-color-options">
                               {colorOptions.map((color) => {
-                                const previewImage = getColorPreviewImage(itemData, color);
+                                const swatchColor =
+                                getColorSwatch(color);
 
-                                return (
-                                  <button
-                                    key={color}
-                                    type="button"
-                                    className={`men-list-color-circle ${
-                                      selectedColorForItem === color ? "active" : ""
-                                    }`}
-                                   title={translateColor(color)}
-                                    aria-label={t("select_color", {
-                                      color: translateColor(color),
-                                    })}
-                                    style={
-                                      previewImage
-                                        ? { backgroundImage: `url("${previewImage}")` }
-                                        : { background: getColorSwatch(color) }
-                                    }
-                                    onClick={(e) => handleColorSelect(id, color, e)}
-                                  />
+                              const previewImage =
+                                getColorPreviewImage(
+                                  itemData,
+                                  color
                                 );
+
+                              return (
+                                <button
+                                  key={color}
+                                  type="button"
+                                  className={`men-list-color-circle ${
+                                    selectedColorForItem === color
+                                      ? "active"
+                                      : ""
+                                  }`}
+                                  title={translateColor(color)}
+                                  aria-label={t("select_color", {
+                                    color: translateColor(color),
+                                  })}
+                                  style={
+                                    swatchColor
+                                      ? {
+                                          background: swatchColor,
+                                        }
+                                      : previewImage
+                                      ? {
+                                          backgroundImage:
+                                            `url("${previewImage}")`,
+                                          backgroundSize: "cover",
+                                          backgroundPosition: "center",
+                                        }
+                                      : {}
+                                  }
+                                  onClick={(e) =>
+                                    handleColorSelect(
+                                      id,
+                                      color,
+                                      e
+                                    )
+                                  }
+                                />
+                              );
                               })}
                             </div>
                           </div>

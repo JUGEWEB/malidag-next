@@ -2,7 +2,6 @@
 
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from "chart.js";
 import useFinalRating from "./finalRating"; // ✅ Import the custom hook
@@ -16,15 +15,16 @@ const AnalyseReview = ({ productId, onRatingClick, id  }) => {
   const [selectedRating, setSelectedRating] = useState(null);
   const { finalRating, loading, error, ratingPercentages } = useFinalRating(productId); // ✅ Use the hook
    const {isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall, isVeryVerySmall} = useScreenSize()
-  const router = useRouter();
    const { t } = useTranslation();
 
  const handleStarClick = (rating) => {
-  console.log("Clicked star:", rating); // 👈 add this
-  setSelectedRating((prev) => (prev === rating ? null : rating));
-    onRatingClick(rating);
-    router.push(`/product/${id}?rating=${rating}`);
-   
+  const nextRating = selectedRating === rating ? null : rating;
+
+  setSelectedRating(nextRating);
+
+  if (onRatingClick) {
+    onRatingClick(nextRating);
+  }
 };
 
 

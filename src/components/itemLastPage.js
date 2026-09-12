@@ -5,7 +5,6 @@ import { AppContext } from "./appContext";
 import dynamic from "next/dynamic";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import axios from "axios";
-import { useAccount } from "wagmi";
 import { message } from "antd";
 import useFinalRating from "./finalRating";
 import "./ItemLastPage.css";
@@ -14,7 +13,6 @@ import "slick-carousel/slick/slick-theme.css";
 import ImageZoom from "./imageZoom";
 import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n";
 import { auth } from "@/components/firebaseConfig";
 import { useCheckoutStore } from "./checkoutStore";
 import Head from "next/head";
@@ -33,15 +31,6 @@ const Slider = dynamic(() => import("react-slick").then((m) => m.default), {
 const BASKET_API = "https://api.malidag.com/add-to-basket";
 const BASE_URL = "https://api.malidag.com";
 const LIKED_API = "https://api.malidag.com";
-
-const coinImages = {
-  ETH: "https://assets.coingecko.com/coins/images/279/large/ethereum.png?1595348880",
-  USDC: "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png?1547042389",
-  BUSD: "https://assets.coingecko.com/coins/images/9576/large/BUSD.png?1568947766",
-  SOL: "https://assets.coingecko.com/coins/images/4128/large/solana.png?1640133422",
-  BNB: "https://assets.coingecko.com/coins/images/825/large/binance-coin-logo.png?1547034615",
-  USDT: "https://assets.coingecko.com/coins/images/325/large/Tether-logo.png?1598003707",
-};
 
 const getImageUrl = (imageEntry) => {
   if (!imageEntry) return "";
@@ -87,9 +76,7 @@ const getFirstVariantImageUrl = (images = []) => {
 
 
 function ProductDetails() {
-  const { address, isConnected, chain } = useAccount();
   const { country,  basketItems } = useContext(AppContext);
-  const chainId = chain?.id;
 
   const [reviewCount, setReviewCount] = useState(0);
   const pathname = usePathname();
@@ -141,10 +128,9 @@ function ProductDetails() {
   const [openModalSmall, setOpenModalSmall] = useState(false);
   const [pendingRating, setPendingRating] = useState(null);
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [translation, setTranslation] = useState(null);
   const [ready, setReady] = useState(false);
-
   const setItemData = useCheckoutStore((state) => state.setItemData);
   const setRatingFilter = useCheckoutStore((state) => state.setRatingFilter);
   const setAuthState = useCheckoutStore((state) => state.setAuthState);
@@ -197,18 +183,29 @@ const [mobileZoomOpen, setMobileZoomOpen] = useState(false);
   };
 
   const getOptionLabel = () => {
-  const category = details?.category?.toLowerCase() || item?.category?.toLowerCase() || "";
-  const department = product?.department?.toLowerCase() || "";
+  const category =
+    details?.category?.toLowerCase() ||
+    item?.category?.toLowerCase() ||
+    "";
 
-  if (category === "electronic" || department === "electronic") {
-    return "Storage";
+  const department =
+    product?.department?.toLowerCase() || "";
+
+  if (
+    category === "electronic" ||
+    department === "electronic"
+  ) {
+    return t("storage");
   }
 
-  if (category === "shoes" || department === "shoes") {
-    return "Shoe size";
+  if (
+    category === "shoes" ||
+    department === "shoes"
+  ) {
+    return t("shoe_size");
   }
 
-  return "Size";
+  return t("size");
 };
 
   useEffect(() => {
@@ -436,22 +433,29 @@ const [mobileZoomOpen, setMobileZoomOpen] = useState(false);
   fetchDeliveryInfo();
 }, [country, currentUser, authReady]);
 
-  const fetchTranslation = async (productId, lang) => {
-    try {
-      const response = await axios.get(
-        `https://api.malidag.com/translate/product/translate/${productId}/${lang}`
-      );
-      setTranslation(response.data.translation);
-    } catch (error) {
-      console.error("Translation fetch error:", error.message);
-      setTranslation(null);
-    }
-  };
+ const fetchTranslation = async (productId, language) => {
+  if (!productId || !language) return;
 
-  useEffect(() => {
-    if (!id || !i18n.language) return;
-    fetchTranslation(id, i18n.language);
-  }, [id, i18n.language]);
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/translate/product/translate/${productId}/${language}`
+    );
+
+    setTranslation(response.data?.translation || null);
+  } catch (error) {
+    console.error("Translation fetch error:", error.message);
+    setTranslation(null);
+  }
+};
+
+useEffect(() => {
+  if (!itemsd || !i18n.language) return;
+
+  // Clear previous language immediately
+  setTranslation(null);
+
+  fetchTranslation(itemsd, i18n.language);
+}, [itemsd, i18n.language]);
 
   const getOptionsForColor = (color) => {
   const options = product?.size?.[color] || [];
@@ -504,7 +508,6 @@ const getCurrentPrice = () => {
                 setProduct(foundProduct.item);
                 setDetails(foundProduct.details);
 
-                const userLang = i18n.language || "en";
                 setSelectedColor(initialColor);
 
                 if (initialColor) {
@@ -512,8 +515,6 @@ const getCurrentPrice = () => {
                 } else {
                   setSelectedImage(getImageUrl(foundProduct.item.images?.[0]) || null);
                 }
-
-                fetchTranslation(foundProduct.itemId, userLang);
 
        const options = foundProduct.item.size?.[initialColor] || [];
 
@@ -537,37 +538,35 @@ const getCurrentPrice = () => {
   }, [id]);
 
 
-  useEffect(() => {
-    if (navigateToReview && ratingToPass !== null) {
-      setItemData({ id, itemId: itemsd, item: product });
-      setRatingFilter(ratingToPass);
+ useEffect(() => {
+  if (!navigateToReview || ratingToPass === null) return;
+  if (!country?.code) return;
 
-      router.push(`/product/${id}/review`);
-
-      setNavigateToReview(false);
-      setRatingToPass(null);
-    }
-  }, [
-    navigateToReview,
-    ratingToPass,
+  setItemData({
     id,
-    itemsd,
-    product,
-    router,
-    setItemData,
-    setRatingFilter,
-  ]);
+    itemId: itemsd,
+    item: product,
+  });
 
- const convertToCrypto = (usdAmount, cryptoType) => {
-  // Stablecoins = 1:1
-  const stableCoins = ["USDT", "USDC", "BUSD"];
+  setRatingFilter(ratingToPass);
 
-  if (stableCoins.includes(cryptoType)) {
-    return usdAmount.toFixed(2);
-  }
+  router.push(
+    `/${country.code.toLowerCase()}/product/${id}/review`
+  );
 
-  return usdAmount.toFixed(2); // fallback (or remove non-stable support entirely)
-};
+  setNavigateToReview(false);
+  setRatingToPass(null);
+}, [
+  navigateToReview,
+  ratingToPass,
+  country?.code,
+  id,
+  itemsd,
+  product,
+  router,
+  setItemData,
+  setRatingFilter,
+]);
 
  const handleColorChange = (color) => {
   setSelectedColor(color);
@@ -796,100 +795,40 @@ setSelectedSize(firstOption || t("no_size_available"));
     return null;
   };
 
-  const networkLogos = {
-    1: "https://assets.coingecko.com/coins/images/279/large/ethereum.png?1595348880",
-    56: "https://assets.coingecko.com/coins/images/825/large/binance-coin-logo.png?1547034615",
-    97: "https://assets.coingecko.com/coins/images/825/large/binance-coin-logo.png?1547034615",
-    137: "https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png?1624446912",
-  };
 
-  const getNetworkName = (chainId) => {
-    if (!chainId) {
-      return (
-        <div style={{ color: "red" }}>
-          {t("not_connected")}
-          <br />
-          <a
-            href="/supported-networks"
-            style={{ color: "blue", textDecoration: "underline" }}
-          >
-            {t("learn_supported_networks")}
-          </a>
-        </div>
-      );
-    }
-
-    const networkName = {
-      1: "Ethereum Mainnet",
-      56: "Binance Smart Chain",
-      97: "BSC Testnet",
-      137: "Polygon",
-    }[chainId];
-
-    if (!networkName) {
-      return (
-        <div style={{ color: "red" }}>
-          {t("unknown_network")}
-          <br />
-          <a
-            href="/supported-networks"
-            style={{ color: "blue", textDecoration: "underline" }}
-          >
-            {t("learn_supported_networks")}
-          </a>
-        </div>
-      );
-    }
-
-    if (!ready) return null;
-
-    return (
-      <div style={{ color: "green", display: "flex", alignItems: "center" }}>
-        {t("connected_to_network", { network: networkName })}
-        {networkLogos[chainId] && (
-          <img
-            src={networkLogos[chainId]}
-            alt={networkName}
-            style={{ width: "20px", height: "20px", marginLeft: "8px" }}
-          />
-        )}
-      </div>
-    );
-  };
-
-  const handlePaymentOptionSelect = (method) => {
-  if (method === "crypto" && !chainId) {
-    messageApi.warning("Connect your wallet first");
-    return;
-  }
-
+ const handlePaymentOptionSelect = () => {
   setCheckoutData({
     isFromBasket: false,
-    paymentMethod: method,
+    paymentMethod: "card",
   });
 
-  const query = `itemId=${itemsd}&quantity=${quantity}&selectedColor=${selectedColor}&selectedSize=${selectedSize}&tokenAmount=${
-   getCurrentPrice() * quantity
-  }&basket=false`;
+  const query =
+    `itemId=${itemsd}` +
+    `&quantity=${quantity}` +
+    `&selectedColor=${encodeURIComponent(selectedColor || "")}` +
+    `&selectedSize=${encodeURIComponent(selectedSize || "")}` +
+    `&amount=${getCurrentPrice() * quantity}` +
+    `&basket=false`;
 
-  if (method === "crypto") {
-    router.push(`/checkout?${query}`);
-  } else if (method === "paypal") {
-    router.push(`/paypalCheckout?${query}`);
-  } else if (method === "card") {
-    router.push(`/cardCheckout?${query}`);
-  }
+  router.push(
+    `/${country?.code?.toLowerCase()}/cardCheckout?${query}`
+  );
 
   setPaymentModalOpen(false);
 };
 
  const handleBuyNowClick = () => {
   if (country) {
-    localStorage.setItem("selectedCountry", JSON.stringify(country));
+    localStorage.setItem(
+      "selectedCountry",
+      JSON.stringify(country)
+    );
   }
 
   if (!selectedDeliveryInfo) {
-    router.push("/deliveryInformation");
+    router.push(
+      `/${country?.code?.toLowerCase()}/deliveryInformation`
+    );
     return;
   }
 
@@ -954,7 +893,6 @@ setSelectedSize(firstOption || t("no_size_available"));
             finalRating={finalRating}
             itemsd={itemsd}
             id={id}
-            chainId={chainId}
             reviewCount={reviewCount}
             openModalSmall={openModalSmall}
             setOpenModalSmall={setOpenModalSmall}
@@ -969,9 +907,6 @@ setSelectedSize(firstOption || t("no_size_available"));
             validVideos={validVideos}
             Slider={Slider}
             videoSliderSettings={videoSliderSettings}
-            convertToCrypto={convertToCrypto}
-            coinImages={coinImages}
-            getNetworkName={getNetworkName}
             handleVisitBrand={handleVisitBrand}
             handleColorChange={handleColorChange}
             handleImageChange={handleImageChange}
@@ -1003,7 +938,6 @@ setSelectedSize(firstOption || t("no_size_available"));
             finalRating={finalRating}
             itemsd={itemsd}
             id={id}
-            chainId={chainId}
             quantity={quantity}
             selectedSize={selectedSize}
             selectedRating={selectedRating}
@@ -1019,9 +953,6 @@ setSelectedSize(firstOption || t("no_size_available"));
             validVideos={validVideos}
             Slider={Slider}
             videoSliderSettings={videoSliderSettings}
-            convertToCrypto={convertToCrypto}
-            coinImages={coinImages}
-            getNetworkName={getNetworkName}
             renderImageZoom={renderImageZoom}
             handleImageChange={handleImageChange}
             handleColorChange={handleColorChange}
@@ -1058,7 +989,6 @@ setSelectedSize(firstOption || t("no_size_available"));
             finalRating={finalRating}
             itemsd={itemsd}
             id={id}
-            chainId={chainId}
             quantity={quantity}
             selectedSize={selectedSize}
             selectedRating={selectedRating}
@@ -1074,9 +1004,6 @@ setSelectedSize(firstOption || t("no_size_available"));
             validVideos={validVideos}
             Slider={Slider}
             videoSliderSettings={videoSliderSettings}
-            convertToCrypto={convertToCrypto}
-            coinImages={coinImages}
-            getNetworkName={getNetworkName}
             renderImageZoom={renderImageZoom}
             handleImageChange={handleImageChange}
             handleColorChange={handleColorChange}
@@ -1112,37 +1039,40 @@ setSelectedSize(firstOption || t("no_size_available"));
         ×
       </button>
 
-      <div className="payment-modal-header">
-        <div className="payment-modal-badge">🔐</div>
-        <h3>Choose payment method</h3>
-        <p>Secure checkout for your order</p>
+     <div className="payment-modal-header">
+      <div className="payment-modal-badge">
+        🔐
       </div>
 
-      <div className="payment-method-list">
-        <button className="payment-method-card" onClick={() => handlePaymentOptionSelect("card")}>
-          <span className="payment-method-icon">💳</span>
-          <span>
-            <strong>Pay with Card</strong>
-            <small>Visa, Mastercard, debit or credit card</small>
-          </span>
-        </button>
+      <h3>
+        {t("choose_payment_method")}
+      </h3>
 
-        <button className="payment-method-card" onClick={() => handlePaymentOptionSelect("paypal")}>
-          <span className="payment-method-icon">🅿️</span>
-          <span>
-            <strong>PayPal</strong>
-            <small>Fast checkout with your PayPal account</small>
-          </span>
-        </button>
+      <p>
+        {t("secure_checkout")}
+      </p>
+    </div>
 
-        <button className="payment-method-card" onClick={() => handlePaymentOptionSelect("crypto")}>
-          <span className="payment-method-icon">₿</span>
-          <span>
-            <strong>Crypto</strong>
-            <small>Pay with supported crypto wallet</small>
-          </span>
-        </button>
-      </div>
+     <div className="payment-method-list">
+            <button
+              className="payment-method-card"
+              onClick={handlePaymentOptionSelect}
+            >
+              <span className="payment-method-icon">
+                💳
+              </span>
+
+              <span>
+                <strong>
+                  {t("pay_with_card")}
+                </strong>
+
+                <small>
+                  {t("pay_with_card_description")}
+                </small>
+              </span>
+            </button>
+          </div>
     </div>
   </div>
 )}

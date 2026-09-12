@@ -6,6 +6,64 @@
   padding-bottom: 40px;
 }
 
+/* PRICE */
+
+.pdp-phone-price-card {
+  margin-top: 20px;
+}
+
+.pdp-phone-price-row {
+  display: flex;
+  align-items: baseline;
+}
+
+.pdp-phone-price {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+/* RETURN POLICY */
+
+.pdp-phone-network-row {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+}
+
+.pdp-phone-return-policy-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.pdp-phone-return-policy-link:hover {
+  color: #1d4ed8;
+}
+
+.pdp-phone-return-policy-link:active {
+  color: #1e40af;
+}
+
+.pdp-phone-return-policy-link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
 .pdp-phone-subname {
   font-size: 13px;
   color: #94a3b8;

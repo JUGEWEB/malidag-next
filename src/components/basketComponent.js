@@ -1,10 +1,11 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
+import React, { useContext, useEffect, useState } from "react";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import useScreenSize from "./useIsMobile";
+import { AppContext } from "./appContext";
 
 const BasketComponent = ({ basketItems }) => {
     const [isBasketVisible, setIsBasketVisible] = useState(false);
@@ -13,12 +14,27 @@ const BasketComponent = ({ basketItems }) => {
   const pathname = usePathname();
   const { t } = useTranslation();
 
+  const { country } = useContext(AppContext);
+
+const countryCode =
+  country?.code?.toLowerCase() || null;
+
+const withCountry = (path) => {
+  if (!countryCode) return "/";
+
+  if (!path) {
+    return `/${countryCode}`;
+  }
+
+  return `/${countryCode}${
+    path.startsWith("/") ? path : `/${path}`
+  }`;
+};
+
   // Using useEffect to track location changes
  useEffect(() => {
   const shouldShowBasket =
     pathname.includes("/product/") ||
-    pathname === "/checkout" ||
-    pathname === "/paypalCheckout" ||
     pathname === "/cardCheckout";
 
   setIsBasketVisible(shouldShowBasket);
@@ -33,6 +49,21 @@ const BasketComponent = ({ basketItems }) => {
     return null; // Don't render the basket if it's not visible or there are no items
   }
 
+  const getTranslatedColor = (color) => {
+  if (!color) return "";
+
+  const normalizedColor = color
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return t(`color_${normalizedColor}`, {
+    defaultValue: color,
+  });
+};
+
 
 
   return (
@@ -40,7 +71,7 @@ const BasketComponent = ({ basketItems }) => {
       style={{
         position: 'fixed',
         top: '0',
-        right: '0',
+        right: 'max(0px, calc((100vw - 1300px) / 2))',
         width: '150px',
         height: '100vh',
         backgroundColor: 'white',
@@ -55,7 +86,10 @@ const BasketComponent = ({ basketItems }) => {
       <h3 style={{ fontSize: '14px', textAlign: 'center' }}>{t('basket')}</h3>
       <ul style={{ listStyle: 'none', padding: '0', fontSize: '12px' }}>
         {basketItems.map((item) => (
-          <Link href={`/product/${item.id}`} key={item.id}>
+         <Link
+          href={withCountry(`/product/${item.id}`)}
+          key={item.id}
+        >
             <li className="basketsect" style={{ marginBottom: '20px', textAlign: 'center' }}>
               <img
                 src={item.image}
@@ -68,11 +102,13 @@ const BasketComponent = ({ basketItems }) => {
                  {t('size_label', { size: item.size })}
                 </div>
               )}
-              {item.color && (
-                <div className="basketsect" style={{ fontStyle: 'italic' }}>
-                 {t('color_label', { color: t(`color_${item.color.toLowerCase()}`) })}
-                </div>
-              )}
+             {item.color && (
+          <div className="basketsect" style={{ fontStyle: "italic" }}>
+            {t("color_label", {
+              color: getTranslatedColor(item.color),
+            })}
+          </div>
+        )}
               <div className="basketsect" style={{ fontStyle: 'italic' }}>
                 {t('quantity')}: {item.quantity || 1}
               </div>

@@ -326,17 +326,47 @@
 
 /* NETWORK */
 
+/* RETURN POLICY */
+
 .pdp-desktop-network-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #334155;
-  font-size: 14px;
+  margin: 4px 0 2px;
 }
 
-.pdp-desktop-network-text {
-  color: #0f172a;
+.pdp-desktop-return-policy-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  color: #2563eb;
+  font-size: 13px;
   font-weight: 600;
+  line-height: 1.5;
+
+  cursor: pointer;
+  text-align: left;
+
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  transition:
+    color 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.pdp-desktop-return-policy-link:hover {
+  color: #1d4ed8;
+}
+
+.pdp-desktop-return-policy-link:active {
+  opacity: 0.7;
+}
+
+.pdp-desktop-return-policy-link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+  border-radius: 3px;
 }
 
 /* PRICE */
@@ -353,7 +383,7 @@
 .pdp-desktop-usd-price {
   color: #0f172a;
   font-size: 36px;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: -0.035em;
   margin: 0;
 }

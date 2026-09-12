@@ -13,6 +13,9 @@ import BrandTypeItems from "./BrandTypeItems";
 import MultiRecommendedItem from "./multiRecommendedItem";
 import SimilarItemAds from "./SimilarItemAds";
 import { FaShareAlt } from "react-icons/fa";
+import {
+  getCountryConfig,
+} from "./countryUtils";
 
 export default function ProductDetailsDesktop({
   basketItems,
@@ -24,7 +27,6 @@ export default function ProductDetailsDesktop({
   finalRating,
   itemsd,
   id,
-  chainId,
   quantity,
   selectedSize,
   selectedRating,
@@ -40,9 +42,6 @@ export default function ProductDetailsDesktop({
   validVideos,
   Slider,
   videoSliderSettings,
-  convertToCrypto,
-  coinImages,
-  getNetworkName,
   renderImageZoom,
   handleImageChange,
   handleColorChange,
@@ -97,6 +96,103 @@ const [showId, setShowId] = useState(false);
 const hasBasket = isBasketVisible && basketItems?.length > 0;
 
 const [hasMoreDetailsScroll, setHasMoreDetailsScroll] = useState(false);
+
+const [rates, setRates] = useState(null);
+
+const [reviewFilter, setReviewFilter] = useState(selectedRating ?? null);
+const reviewsRef = React.useRef(null);
+
+const currencyConfig = React.useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await fetch(
+        "https://api.malidag.com/prices/rates"
+      );
+
+      const data = await response.json();
+
+      setRates(
+        data?.rates ||
+        data ||
+        null
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch currency rates:",
+        error
+      );
+
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const getCurrencyRate = () => {
+  if (!currencyConfig) {
+    return null;
+  }
+
+  if (
+    currencyConfig.currency === "USD"
+  ) {
+    return 1;
+  }
+
+  if (!rates) {
+    return null;
+  }
+
+  const rate = Number(
+    rates?.[currencyConfig.currency]
+  );
+
+  return Number.isFinite(rate) &&
+    rate > 0
+    ? rate
+    : null;
+};
+
+const handleReviewRatingSelect = (rating) => {
+  setReviewFilter(rating);
+
+  // close the rating analysis popup
+  closeModal();
+
+  // wait for React/modal update, then scroll
+  setTimeout(() => {
+    reviewsRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 100);
+};
+
+const formatPrice = (usdAmount) => {
+  const amount = Number(usdAmount);
+
+  if (!Number.isFinite(amount)) {
+    return t("price_unavailable");
+  }
+
+  const rate = getCurrencyRate();
+
+  if (rate === null) {
+    return t("price_unavailable");
+  }
+
+  const converted = amount * rate;
+
+  return `${currencyConfig.symbol}${converted.toFixed(
+    2
+  )}`;
+};
 
 const updateDetailsScrollHint = () => {
   const el = detailsRef?.current;
@@ -209,7 +305,7 @@ const handleShareProduct = async () => {
   }
 
   await navigator.clipboard.writeText(shareUrl);
-  alert("Product link copied");
+ alert(t("product_link_copied"));
 };
 
 const handleTopSectionWheel = (e) => {
@@ -239,6 +335,21 @@ const handleTopSectionWheel = (e) => {
   }
 
   // at top or bottom: allow normal page scroll
+};
+
+const getTranslatedColor = (color) => {
+  if (!color) return "";
+
+  const normalizedColor = color
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return t(`color_${normalizedColor}`, {
+    defaultValue: color,
+  });
 };
 
   return (
@@ -278,7 +389,7 @@ const handleTopSectionWheel = (e) => {
             type="button"
             onClick={handleShareProduct}
             className="pdp-desktop-share-button"
-            aria-label="Share product"
+           aria-label={t("share_product")}
           >
             <FaShareAlt />
           </button>
@@ -367,7 +478,10 @@ const handleTopSectionWheel = (e) => {
                       >
                         &times;
                       </span>
-                      <AnalyseReview productId={itemsd} id={id} />
+                     <AnalyseReview
+                        productId={itemsd}
+                        onRatingClick={handleReviewRatingSelect}
+                      />
                     </div>
                   )}
 
@@ -384,7 +498,9 @@ const handleTopSectionWheel = (e) => {
                           border: "1px solid #ffb3b3",
                         }}
                       >
-                        {`This item is not available in ${country.name}. Please select another delivery location.`}
+                       {t("item_not_available_country", {
+                            country: country.name,
+                          })}
                       </div>
                     )}
 
@@ -392,55 +508,62 @@ const handleTopSectionWheel = (e) => {
                       <>
                         {loadingDeliveryInfo && (
                           <div className="pdp-delivery-card">
-                            <p className="pdp-delivery-text">Loading delivery information...</p>
+                           <p className="pdp-delivery-text">
+                            {t("loading_delivery_information")}
+                          </p>
                           </div>
                         )}
 
                         {!loadingDeliveryInfo && selectedDeliveryInfo && (
                           <div className="pdp-delivery-card">
                             <p className="pdp-delivery-text">
-                              Delivering to{" "}
-                              <strong>{selectedDeliveryInfo.fullName}</strong>{" "}
-                              at {selectedDeliveryInfo.streetName}, {selectedDeliveryInfo.town},{" "}
-                              {selectedDeliveryInfo.postalCode && `${selectedDeliveryInfo.postalCode}, `}
-                              {selectedDeliveryInfo.country}. Contact:{" "}
-                              <a
-                                href={`mailto:${selectedDeliveryInfo.email}`}
-                                className="pdp-delivery-email"
-                              >
-                                {selectedDeliveryInfo.email}
-                              </a>
-                            </p>
+                            {t("delivering_to", {
+                              name: selectedDeliveryInfo.fullName,
+                              address: [
+                                selectedDeliveryInfo.streetName,
+                                selectedDeliveryInfo.town,
+                                selectedDeliveryInfo.postalCode,
+                                selectedDeliveryInfo.country,
+                              ]
+                                .filter(Boolean)
+                                .join(", "),
+                            })}{" "}
+
+                            <a
+                              href={`mailto:${selectedDeliveryInfo.email}`}
+                              className="pdp-delivery-email"
+                            >
+                              {selectedDeliveryInfo.email}
+                            </a>
+                          </p>
                           </div>
                         )}
                       </>
                     )}
 
-                  <div className="pdp-desktop-network-row">
-                    <span role="img" aria-label="network">
-                      🌐
-                    </span>
-                    <span className="pdp-desktop-network-text">
-                      {getNetworkName(chainId)}
-                    </span>
-                  </div>
+                 <div className="pdp-desktop-network-row">
+                  <button
+                    type="button"
+                    className="pdp-desktop-return-policy-link"
+                    onClick={() => {
+                      if (!country?.code) return;
 
-                  <div className="pdp-desktop-price-row">
-                    <h2 className="pdp-desktop-usd-price">${(currentPrice * quantity).toFixed(2)}</h2>
-                    <h4 className="pdp-desktop-price-separator">≈</h4>
+                      router.push(
+                        `/${country.code.toLowerCase()}/refund-policy`
+                      );
+                    }}
+                  >
+                    {t("learn_return_policy")}
+                  </button>
+                </div>
 
-                   <h3 className="pdp-desktop-crypto-price">
-                   {convertToCrypto(currentPrice * quantity, product?.cryptocurrency)}
-                    {coinImages[product?.cryptocurrency] && (
-                      <img
-                        src={coinImages[product?.cryptocurrency]}
-                        alt={product?.cryptocurrency}
-                        className="pdp-desktop-coin-image"
-                      />
+                <div className="pdp-desktop-price-row">
+                  <h2 className="pdp-desktop-usd-price">
+                    {formatPrice(
+                      currentPrice * quantity
                     )}
-                    {product?.cryptocurrency || "USDT"}
-                  </h3>
-                  </div>
+                  </h2>
+                </div>
 
                   <div className="pdp-desktop-quantity-block">
                     <span className="pdp-desktop-quantity-label">{t("quantity")}</span>
@@ -500,7 +623,9 @@ const handleTopSectionWheel = (e) => {
                 </div>
 
                 <h1 className="pdp-desktop-meta-title">
-                  {t("color_name", { color: selectedColor })}
+                  {t("color_name", {
+                    color: getTranslatedColor(selectedColor),
+                  })}
                 </h1>
               </div>
 
@@ -532,9 +657,14 @@ const handleTopSectionWheel = (e) => {
 
               {selectedOptions?.length > 0 && (
                 <div className="pdp-desktop-size-block">
-                  <label htmlFor="size-select" className="pdp-desktop-label">
-                   Select {optionLabel}
-                  </label>
+                 <label
+                  htmlFor="size-select"
+                  className="pdp-desktop-label"
+                >
+                  {t("select_option", {
+                    option: optionLabel,
+                  })}
+                </label>
                   <select
                     id="size-select"
                     value={selectedSize}
@@ -544,7 +674,9 @@ const handleTopSectionWheel = (e) => {
                    {selectedOptions.map((option, index) => (
                       <option key={`${option.value}-${index}`} value={option.value}>
                         {option.value}
-                        {option.price ? ` - $${Number(option.price).toFixed(2)}` : ""}
+                       {option.price
+                      ? ` - ${formatPrice(option.price)}`
+                      : ""}
                       </option>
                     ))}
                   </select>
@@ -569,7 +701,7 @@ const handleTopSectionWheel = (e) => {
 
               {hasMoreDetailsScroll && (
                 <div className="pdp-desktop-scroll-hint">
-                  <span>Scroll for more</span>
+                  <span>{t("scroll_for_more")}</span>
                   <span className="pdp-desktop-scroll-arrow">↓</span>
                 </div>
               )}
@@ -608,7 +740,12 @@ const handleTopSectionWheel = (e) => {
           <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />
         </div>
 
-        <FetchReviews productId={itemsd} selectedRating={selectedRating} />
+       <div ref={reviewsRef}>
+          <FetchReviews
+            productId={itemsd}
+            selectedRating={reviewFilter}
+          />
+        </div>
 
         {reviewCount > 11 && (
           <div
@@ -620,7 +757,11 @@ const handleTopSectionWheel = (e) => {
               });
               setAuthState(true);
               setRatingFilter(selectedRating);
-              router.push("/review");
+             if (!country?.code) return;
+
+              router.push(
+                `/${country.code.toLowerCase()}/product/${id}/review`
+              );
             }}
             className="pdp-desktop-see-all-reviews"
           >
@@ -631,7 +772,11 @@ const handleTopSectionWheel = (e) => {
           <MultiRecommendedItem
                          category={details?.category}
                          type={details?.type}
-                         title={`Recommended ${details?.type}`}
+                        title={t("recommended_type", {
+  type: t(details?.type?.toLowerCase(), {
+    defaultValue: details?.type,
+  }),
+})}
                        />
       </div>
     </div>

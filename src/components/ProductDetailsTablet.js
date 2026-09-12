@@ -1,6 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
+
+import {
+  getCountryConfig,
+} from "./countryUtils";
 import Image from "next/image";
 import { FaStar, FaChevronDown } from "react-icons/fa";
 import AnalyseReview from "./analyseReview";
@@ -24,7 +32,6 @@ export default function ProductDetailsTablet({
   finalRating,
   itemsd,
   id,
-  chainId,
   quantity,
   selectedSize,
   selectedRating,
@@ -40,9 +47,6 @@ export default function ProductDetailsTablet({
   validVideos,
   Slider,
   videoSliderSettings,
-  convertToCrypto,
-  coinImages,
-  getNetworkName,
   renderImageZoom,
   handleImageChange,
   handleColorChange,
@@ -67,7 +71,6 @@ selectedOptions,
 setMobileZoomOpen,
 }) {
 
-  const tokenSymbol = product?.cryptocurrency?.toUpperCase?.() || "USDT";
   const rawShippingCountries = details?.country || "";
 
   const [tapCount, setTapCount] = useState(0);
@@ -121,6 +124,87 @@ const handleSecretTap = () => {
 
 const canShipToSelectedCountry =
   !!selectedCountryCode && shippingCountries.includes(selectedCountryCode);
+
+  const [rates, setRates] = useState(null);
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await fetch(
+        "https://api.malidag.com/prices/rates"
+      );
+
+      const data = await response.json();
+
+      setRates(data?.rates || data || null);
+    } catch (error) {
+      console.error(
+        "Failed to fetch currency rates:",
+        error
+      );
+
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const getCurrencyRate = () => {
+  if (!currencyConfig) return null;
+
+  if (currencyConfig.currency === "USD") {
+    return 1;
+  }
+
+  if (!rates) return null;
+
+  const rate = Number(
+    rates?.[currencyConfig.currency]
+  );
+
+  return Number.isFinite(rate) && rate > 0
+    ? rate
+    : null;
+};
+
+const formatPrice = (usdAmount) => {
+  const amount = Number(usdAmount);
+
+  if (!Number.isFinite(amount)) {
+    return t("price_unavailable");
+  }
+
+  const rate = getCurrencyRate();
+
+  if (rate === null) {
+    return t("price_unavailable");
+  }
+
+  return `${currencyConfig.symbol}${(
+    amount * rate
+  ).toFixed(2)}`;
+};
+
+const getTranslatedColor = (color) => {
+  if (!color) return "";
+
+  const normalizedColor = color
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return t(`color_${normalizedColor}`, {
+    defaultValue: color,
+  });
+};
 
   const getImageUrl = (imageEntry) => {
   if (!imageEntry) return "";
@@ -185,7 +269,7 @@ const handleShareProduct = async () => {
   }
 
   await navigator.clipboard.writeText(shareUrl);
-  alert("Product link copied");
+ alert(t("product_link_copied"));
 };
 
 const handleTopSectionWheel = (e) => {
@@ -245,7 +329,7 @@ const handleTopSectionWheel = (e) => {
               type="button"
               onClick={handleShareProduct}
               className="pdp-tablet-share-button"
-              aria-label="Share product"
+             aria-label={t("share_product")}
             >
               <FaShareAlt />
             </button>
@@ -256,7 +340,7 @@ const handleTopSectionWheel = (e) => {
               className="pdp-tablet-view-zoom-button"
             >
               <FaSearchPlus />
-              <span>View zoom</span>
+             <span>{t("view_zoom")}</span>
             </button>
 
             {renderImageZoom()}
@@ -343,7 +427,9 @@ const handleTopSectionWheel = (e) => {
                           border: "1px solid #ffb3b3",
                         }}
                       >
-                        {`This item is not available in ${country.name}. Please select another delivery location.`}
+                       {t("item_not_available_country", {
+                          country: country.name,
+                        })}
                       </div>
                     )}
 
@@ -352,7 +438,7 @@ const handleTopSectionWheel = (e) => {
                       {loadingDeliveryInfo && (
                         <div className="pdp-tablet-delivery-card">
                           <p className="pdp-tablet-delivery-text">
-                            Loading delivery information...
+                           {t("loading_delivery_information")}
                           </p>
                         </div>
                       )}
@@ -360,47 +446,52 @@ const handleTopSectionWheel = (e) => {
                       {!loadingDeliveryInfo && selectedDeliveryInfo && (
                         <div className="pdp-tablet-delivery-card">
                           <p className="pdp-tablet-delivery-text">
-                            Delivering to{" "}
-                            <strong>{selectedDeliveryInfo.fullName}</strong>{" "}
-                            at {selectedDeliveryInfo.streetName}, {selectedDeliveryInfo.town},{" "}
-                            {selectedDeliveryInfo.postalCode && `${selectedDeliveryInfo.postalCode}, `}
-                            {selectedDeliveryInfo.country}. Contact:{" "}
-                            <a
-                              href={`mailto:${selectedDeliveryInfo.email}`}
-                              className="pdp-tablet-delivery-email"
-                            >
-                              {selectedDeliveryInfo.email}
-                            </a>
-                          </p>
+                        {t("delivering_to", {
+                          name: selectedDeliveryInfo.fullName,
+                          address: [
+                            selectedDeliveryInfo.streetName,
+                            selectedDeliveryInfo.town,
+                            selectedDeliveryInfo.postalCode,
+                            selectedDeliveryInfo.country,
+                          ]
+                            .filter(Boolean)
+                            .join(", "),
+                        })}{" "}
+
+                        <a
+                          href={`mailto:${selectedDeliveryInfo.email}`}
+                          className="pdp-tablet-delivery-email"
+                        >
+                          {selectedDeliveryInfo.email}
+                        </a>
+                      </p>
                         </div>
                       )}
                     </>
                   )}
 
                   <div className="pdp-tablet-network-row">
-                    <span role="img" aria-label="network">
-                      🌐
-                    </span>
-                    <span className="pdp-tablet-network-text">
-                      {getNetworkName(chainId)}
-                    </span>
+                    <button
+                      type="button"
+                      className="pdp-tablet-return-policy-link"
+                      onClick={() => {
+                        if (!country?.code) return;
+
+                        router.push(
+                          `/${country.code.toLowerCase()}/refund-policy`
+                        );
+                      }}
+                    >
+                      {t("learn_return_policy")}
+                    </button>
                   </div>
 
-                  <div className="pdp-tablet-price-row">
-                    <h2 className="pdp-tablet-usd-price">${(currentPrice * quantity).toFixed(2)}</h2>
-                    <h4 className="pdp-tablet-price-separator">≈</h4>
-
-                 <h3 className="pdp-tablet-crypto-price">
-                  {convertToCrypto(currentPrice * quantity, tokenSymbol)}
-                  {coinImages[tokenSymbol] && (
-                    <img
-                      src={coinImages[tokenSymbol]}
-                      alt={tokenSymbol}
-                      className="pdp-tablet-coin-image"
-                    />
-                  )}
-                  {tokenSymbol}
-                </h3>
+                 <div className="pdp-tablet-price-row">
+                    <h2 className="pdp-tablet-price">
+                      {formatPrice(
+                        currentPrice * quantity
+                      )}
+                    </h2>
                   </div>
 
                   <div className="pdp-tablet-quantity-block">
@@ -464,7 +555,9 @@ const handleTopSectionWheel = (e) => {
                 </div>
 
                 <h1 className="pdp-tablet-meta-title">
-                  {t("color_name", { color: selectedColor })}
+                 {t("color_name", {
+                    color: getTranslatedColor(selectedColor),
+                  })}
                 </h1>
               </div>
 
@@ -497,7 +590,9 @@ const handleTopSectionWheel = (e) => {
              {selectedOptions?.length > 0 && (
                 <div className="pdp-tablet-size-block">
                   <label htmlFor="size-select" className="pdp-tablet-label">
-                   Select {optionLabel}
+                  {t("select_option", {
+                    option: optionLabel,
+                  })}
                   </label>
                   <select
                     id="size-select"
@@ -506,9 +601,9 @@ const handleTopSectionWheel = (e) => {
                     className="pdp-tablet-size-select"
                   >
                     {selectedOptions.map((option, index) => {
-                      const priceText = option.price
-                        ? ` (+$${Number(option.price).toFixed(2)})`
-                        : "";
+                     const priceText = option.price
+                      ? ` (${formatPrice(option.price)})`
+                      : "";
 
                       return (
                         <option key={`${option.value}-${index}`} value={option.value}>
@@ -538,7 +633,7 @@ const handleTopSectionWheel = (e) => {
 
             {hasMoreDetailsScroll && (
             <div className="pdp-tablet-scroll-hint">
-              <span>Scroll for more</span>
+             <span>{t("scroll_for_more")}</span>
               <span className="pdp-tablet-scroll-arrow">↓</span>
             </div>
           )}
@@ -591,7 +686,11 @@ const handleTopSectionWheel = (e) => {
                     });
                     setAuthState(true);
                     setRatingFilter(selectedRating);
-                    router.push("/review");
+                   if (!country?.code) return;
+
+                  router.push(
+                    `/${country.code.toLowerCase()}/product/${id}/review`
+                  );
                   }}
                   className="pdp-tablet-see-all-reviews"
                 >
@@ -604,7 +703,14 @@ const handleTopSectionWheel = (e) => {
        <MultiRecommendedItem
                          category={details?.category}
                          type={details?.type}
-                         title={`Recommended ${details?.type}`}
+                         title={t("recommended_type", {
+                              type: t(
+                                details?.type?.toLowerCase(),
+                                {
+                                  defaultValue: details?.type,
+                                }
+                              ),
+                            })}
                        />
       </div>
     </>

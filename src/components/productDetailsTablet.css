@@ -7,6 +7,58 @@
   padding: 0 20px;
 }
 
+/* RETURN POLICY */
+
+.pdp-tablet-network-row {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.pdp-tablet-return-policy-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pdp-tablet-return-policy-link:hover {
+  color: #1d4ed8;
+}
+
+.pdp-tablet-return-policy-link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+
+/* PRICE */
+
+.pdp-tablet-price-row {
+  display: flex;
+  align-items: baseline;
+  margin-top: 12px;
+}
+
+.pdp-tablet-price {
+  margin: 0;
+  color: #0f172a;
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
 .pdp-tablet-details-section {
   position: relative;
 }

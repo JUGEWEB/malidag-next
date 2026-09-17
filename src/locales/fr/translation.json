@@ -847,5 +847,19 @@
 "we_elevate_quality": "Nous élevons la qualité",
 "rating_reviews": "{{rating}}/5 ({{count}} avis)",
 "view_zoom": "Voir le zoom",
-"for_this_option": "{{price}} pour cette option"
+"for_this_option": "{{price}} pour cette option",
+"delivery_address_details": "Saisissez les informations de votre nouvelle adresse de livraison.",
+"cancel": "Annuler",
+
+"address_selected": "Adresse de livraison sélectionnée",
+"address_selected_desc": "Cette adresse sera utilisée pour votre livraison.",
+"postal_code": "Code postal",
+"postal_code_placeholder": "Code postal",
+
+"postal_code_no_city": "Le code postal ne correspond à aucune ville.",
+"postal_code_lookup_failed": "Nous n’avons pas pu vérifier ce code postal.",
+"select_town": "Sélectionnez une ville",
+"choose_delivery_address": "Choisissez une adresse de livraison pour cette commande.",
+"neighborhood": "Quartier",
+"neighborhood_placeholder": "Quartier"
 }

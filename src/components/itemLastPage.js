@@ -84,6 +84,18 @@ function ProductDetails() {
   const { id, rating } = params;
   const router = useRouter();
 
+  const countryCode = country?.code?.toLowerCase() || null;
+
+const withCountry = (path) => {
+  if (!countryCode) return "/";
+
+  if (!path) {
+    return `/${countryCode}`;
+  }
+
+  return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
   const [product, setProduct] = useState(null);
   const [details, setDetails] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
@@ -206,6 +218,12 @@ const [mobileZoomOpen, setMobileZoomOpen] = useState(false);
   }
 
   return t("size");
+};
+
+const redirectToAuth = () => {
+  router.push(
+    `${withCountry("/auth")}?redirect=${encodeURIComponent(pathname)}`
+  );
 };
 
   useEffect(() => {
@@ -622,11 +640,12 @@ setSelectedSize(firstOption || t("no_size_available"));
   };
 
   const handleAddToBasket = async (product) => {
-    const currentUser = auth?.currentUser;
-    if (!currentUser) {
-      alert(t("login_to_add_to_basket"));
-      return;
-    }
+   const currentUser = auth?.currentUser;
+
+if (!currentUser) {
+  redirectToAuth();
+  return;
+}
 
     try {
       const basketItem = {
@@ -671,11 +690,12 @@ setSelectedSize(firstOption || t("no_size_available"));
   };
 
   const handleLikeItem = async (product) => {
-    const currentUser = auth?.currentUser;
-    if (!currentUser) {
-      alert(t("like_login_required"));
-      return;
-    }
+   const currentUser = auth?.currentUser;
+
+if (!currentUser) {
+  redirectToAuth();
+  return;
+}
 
     try {
       const likedItem = {
@@ -818,18 +838,18 @@ setSelectedSize(firstOption || t("no_size_available"));
 };
 
  const handleBuyNowClick = () => {
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    redirectToAuth();
+    return;
+  }
+
   if (country) {
     localStorage.setItem(
       "selectedCountry",
       JSON.stringify(country)
     );
-  }
-
-  if (!selectedDeliveryInfo) {
-    router.push(
-      `/${country?.code?.toLowerCase()}/deliveryInformation`
-    );
-    return;
   }
 
   setPaymentModalOpen(true);

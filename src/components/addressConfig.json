@@ -1,0 +1,14 @@
+{
+  "fr": {
+    "postalCodePattern": "^[0-9]{5}$",
+    "postalCodeExample": "75001"
+  },
+  "gb": {
+    "postalCodePattern": "^[A-Za-z]{1,2}[0-9][A-Za-z0-9]?\\s?[0-9][A-Za-z]{2}$",
+    "postalCodeExample": "SW1A 1AA"
+  },
+  "br": {
+    "postalCodePattern": "^[0-9]{5}-?[0-9]{3}$",
+    "postalCodeExample": "01310-100"
+  }
+}

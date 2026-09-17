@@ -987,5 +987,19 @@
 "we_elevate_quality": "We elevate quality",
 "rating_reviews": "{{rating}}/5 ({{count}} reviews)",
 "view_zoom": "View zoom",
-"for_this_option": "{{price}} for this option"
+"for_this_option": "{{price}} for this option",
+"enter_postal_code_first": "Enter postal code first",
+"checking_postal_code": "Checking postal code...",
+"postal_code_no_city": "The postal code does not match any city.",
+"postal_code_lookup_failed": "We could not verify this postal code.",
+"select_town": "Select town",
+"neighborhood": "Neighborhood",
+"neighborhood_placeholder": "Neighborhood",
+"choose_delivery_address": "Choose a delivery address for this order.",
+"delivery_address_details": "Enter the delivery details for your new address.",
+"cancel": "Cancel",
+"postal_code": "Postal Code",
+"postal_code_placeholder": "Postal Code",
+"address_selected": "Delivery Address Selected",
+"address_selected_desc": "This address will be used for your delivery."
 }

@@ -626,5 +626,46 @@
 "we_elevate_quality": "Elevamos a qualidade",
 "rating_reviews": "{{rating}}/5 ({{count}} avaliações)",
 "view_zoom": "Ver zoom",
-"for_this_option": "{{price}} para esta opção"
+"for_this_option": "{{price}} para esta opção",
+"postal_code_no_city": "O CEP não corresponde a nenhuma cidade.",
+"postal_code_lookup_failed": "Não foi possível verificar este CEP.",
+"select_town": "Selecionar cidade",
+"neighborhood": "Bairro",
+"neighborhood_placeholder": "Bairro",
+"title": "Informações de entrega",
+"saved_addresses": "Endereços salvos",
+"choose_delivery_address": "Escolha um endereço de entrega para este pedido.",
+"selected": "Selecionado ✅",
+"select": "Selecionar",
+"delete": "Excluir",
+
+"no_saved_addresses": "Preencha suas informações de entrega:",
+"no_saved_addresses_desc": "Você ainda não possui nenhum endereço de entrega salvo. Preencha o formulário abaixo.",
+
+"save_address": "Salvar endereço de entrega",
+"add_new_address": "Adicionar novo endereço de entrega",
+"delivery_address_details": "Informe os dados do seu novo endereço de entrega.",
+"cancel": "Cancelar",
+
+"success_added": "Endereço de entrega adicionado com sucesso",
+"success_description": "Seu endereço de entrega foi salvo.",
+"deleted_success": "Endereço de entrega removido com sucesso",
+"deleted_desc": "Seu endereço de entrega foi removido.",
+"delete_failed": "Não foi possível excluir o endereço de entrega.",
+"save_failed": "Não foi possível salvar o endereço de entrega.",
+
+"address_selected": "Endereço de entrega selecionado",
+"address_selected_desc": "Este endereço será usado para a sua entrega.",
+"name": "Nome",
+"street": "Rua",
+"company": "Empresa",
+"postal_code": "CEP",
+"town": "Cidade",
+"country": "País",
+
+"email_placeholder": "E-mail",
+"full_name": "Nome completo",
+"street_placeholder": "Nome da rua",
+"company_placeholder": "Nome da empresa (opcional)",
+"postal_code_placeholder": "CEP"
 }

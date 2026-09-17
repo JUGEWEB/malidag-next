@@ -1,55 +1,1149 @@
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
-import { Button, Result } from "antd";
+import React, { useEffect, useMemo, useState } from "react";
+import { App } from "antd";
+import Link from "next/link";
+import axios from "axios";
+import { useRouter, useSearchParams } from "next/navigation";
+import { auth } from "./firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import Loading from "./loading";
+import { useTranslation, Trans } from "react-i18next";
+import {
+  getCountryConfig,
+  getCountryCode,
+  normalizeCountryName,
+} from "./countryUtils";
+import "./paypalBuyNow.css";
+import { useContext } from "react";
+import { AppContext } from "./appContext";
+import useScreenSize from "./useIsMobile";
 
-const CardBuyNow = () => {
-  const router = useRouter();
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+
+const API_BASE_URL = "https://api.malidag.com";
+
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+);
+
+
+const parseShippableCountries = (countryValue) => {
+  return String(countryValue || "")
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+};
+
+
+const getLocalizedItemPrice = (productData, currencyConfig) => {
+  if (!productData) return 0;
+
+  const details = productData.details || {};
+  const field = currencyConfig.priceField;
+
+  if (field === "usdPrice") {
+    return Number.parseFloat(productData.usdPrice || details.usdText || 0) || 0;
+  }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "24px",
-        background: "#f9f9f9",
+    Number.parseFloat(details[field] || productData[field] || productData.usdPrice || details.usdText || 0) || 0
+  );
+};
+
+const formatDisplayAmount = (amount, currencyConfig) => {
+  const safeAmount = Number(amount || 0).toFixed(2);
+
+  if (currencyConfig.currency === "USDT") {
+    return `${safeAmount} USDT`;
+  }
+
+  return `${currencyConfig.symbol}${safeAmount}`;
+};
+
+const StripePaymentForm = ({
+  paymentIntentId,
+  deliveryInfo,
+  countryCode,
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { message } = App.useApp();
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+     const {
+  error,
+  paymentIntent,
+} = await stripe.confirmPayment({
+  elements,
+
+  confirmParams: {
+    payment_method_data: {
+      billing_details: {
+        name:
+          deliveryInfo?.fullName ||
+          undefined,
+
+        email:
+          deliveryInfo?.email ||
+          undefined,
+
+       address: {
+  line1:
+    deliveryInfo?.streetName ||
+    undefined,
+
+  city:
+    deliveryInfo?.town ||
+    undefined,
+
+  state:
+    deliveryInfo?.town ||
+    undefined,
+
+  postal_code:
+    deliveryInfo?.postalCode ||
+    undefined,
+
+  country:
+    countryCode?.toUpperCase(),
+},
+      },
+    },
+  },
+
+  redirect: "if_required",
+});
+
+      if (error) {
+        console.error(
+          "Stripe confirmation error:",
+          error
+        );
+
+        message.error(
+          error.message ||
+            "Card payment failed"
+        );
+
+        return;
+      }
+
+      if (
+        paymentIntent?.status ===
+        "succeeded"
+      ) {
+        message.success(
+          "Payment completed successfully"
+        );
+
+        console.log(
+          "Stripe payment succeeded:",
+          paymentIntentId
+        );
+
+        return;
+      }
+
+      if (
+        paymentIntent?.status ===
+        "processing"
+      ) {
+        message.info(
+          "Your payment is processing"
+        );
+
+        return;
+      }
+
+      message.info(
+        `Payment status: ${
+          paymentIntent?.status ||
+          "unknown"
+        }`
+      );
+    } catch (error) {
+      console.error(
+        "Card confirmation error:",
+        error
+      );
+
+      message.error(
+        "Unable to complete card payment"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="stripe-payment-form"
+    >
+     <PaymentElement
+  options={{
+    fields: {
+      billingDetails: {
+        name: "never",
+        email: "never",
+        address: "never",
+      },
+    },
+  }}
+/>
+
+      <button
+        type="submit"
+        className="card-payment-button"
+        disabled={
+          !stripe ||
+          !elements ||
+          submitting
+        }
+      >
+        {submitting
+          ? "Processing payment..."
+          : "Pay now"}
+      </button>
+    </form>
+  );
+};
+
+const CardBuyNow = ({
+  quantity: initialQuantity,
+  selectedColor,
+  selectedSize,
+  amount: initialAmount,
+  basket,
+}) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+ const { message, notification } = App.useApp();
+  const { t } = useTranslation();
+
+const [basketLoaded, setBasketLoaded] =
+  useState(false);
+
+  const urlItemId = searchParams.get("itemId") || "";
+  const urlQuantity =
+    Number(searchParams.get("quantity")) || initialQuantity || 1;
+  const urlSelectedColor =
+    searchParams.get("selectedColor") || selectedColor || "";
+  const urlSelectedSize = searchParams.get("selectedSize") || selectedSize || "";
+ const urlAmount =
+  Number(searchParams.get("amount")) || initialAmount || 0;
+  const urlBasket = searchParams.get("basket") || basket || "false";
+
+  const [item, setItem] = useState(null);
+  const [product, setProduct] = useState(null);
+  const [payItem, setPayItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  const [selectedDeliveryInfo, setSelectedDeliveryInfo] = useState(null);
+  const [lockedCountry, setLockedCountry] = useState(null);
+  const [rates, setRates] = useState(null);
+  const { basketItems } = useContext(AppContext);
+const { isDesktop } = useScreenSize();
+
+ const [checkoutBasket, setCheckoutBasket] =
+  useState([]);
+
+const [basketLoading, setBasketLoading] =
+  useState(urlBasket === "true");
+
+const [stripeClientSecret, setStripeClientSecret] =
+  useState(null);
+
+const [
+  stripePaymentIntentId,
+  setStripePaymentIntentId,
+] = useState(null);
+
+const [isSubmittingOrder, setIsSubmittingOrder] =
+  useState(false);
+
+const hasBasket = isDesktop && Array.isArray(basketItems) && basketItems.length > 0;
+
+ const headerCountryName = lockedCountry?.name || "";
+
+const currencyConfig = useMemo(() => {
+  return getCountryConfig(headerCountryName);
+}, [headerCountryName]);
+
+const convertUsdToCurrency = (usdAmount, currency) => {
+  const usd = Number(usdAmount || 0);
+
+  if (!currency || currency === "USD") {
+    return usd;
+  }
+
+  const rate = rates?.[currency];
+
+  if (!rate) {
+    return null;
+  }
+
+  return usd * rate;
+};
+
+const selectedCountryCode = useMemo(() => {
+  const code = getCountryCode(
+    headerCountryName
+  );
+
+  return code
+    ? String(code).toLowerCase()
+    : null;
+}, [headerCountryName]);
+
+const withCountry = (path) => {
+  if (!selectedCountryCode) return "/";
+
+  if (!path) {
+    return `/${selectedCountryCode}`;
+  }
+
+  return `/${selectedCountryCode}${
+    path.startsWith("/") ? path : `/${path}`
+  }`;
+};
+
+
+const isItemShippableToCountry = useMemo(() => {
+  if (!item || !selectedCountryCode) {
+    return false;
+  }
+
+  const shippableCountries =
+    parseShippableCountries(
+      item?.details?.country || ""
+    );
+
+  return shippableCountries.includes(
+    selectedCountryCode
+  );
+}, [item, selectedCountryCode]);
+
+const basketUsdTotal = useMemo(() => {
+  if (urlBasket !== "true") {
+    return 0;
+  }
+
+  return checkoutBasket.reduce(
+    (sum, basketItem) => {
+      const usdPrice =
+        Number.parseFloat(
+          basketItem?.usdPrice ||
+          basketItem?.price ||
+          0
+        ) || 0;
+
+      const quantity =
+        Number(basketItem?.quantity || 1);
+
+      return sum + usdPrice * quantity;
+    },
+    0
+  );
+}, [urlBasket, checkoutBasket]);
+
+const totalAmount = useMemo(() => {
+  if (urlBasket === "true") {
+    if (basketUsdTotal <= 0) {
+      return null;
+    }
+
+    const converted =
+      convertUsdToCurrency(
+        basketUsdTotal,
+        currencyConfig.currency
+      );
+
+    if (converted === null) {
+      return null;
+    }
+
+    return Number(
+      converted.toFixed(2)
+    );
+  }
+
+  const usdTotal = Number(urlAmount || 0);
+
+  if (usdTotal > 0) {
+    const converted =
+      convertUsdToCurrency(
+        usdTotal,
+        currencyConfig.currency
+      );
+
+    if (converted === null) {
+      return null;
+    }
+
+    return Number(
+      converted.toFixed(2)
+    );
+  }
+
+  if (product) {
+    const usdUnitPrice = Number(
+      product?.usdPrice ||
+      product?.details?.usdText ||
+      0
+    );
+
+    if (usdUnitPrice <= 0) {
+      return null;
+    }
+
+    const converted =
+      convertUsdToCurrency(
+        usdUnitPrice * urlQuantity,
+        currencyConfig.currency
+      );
+
+    if (converted === null) {
+      return null;
+    }
+
+    return Number(
+      converted.toFixed(2)
+    );
+  }
+
+  return null;
+}, [
+  urlBasket,
+  basketUsdTotal,
+  product,
+  urlAmount,
+  urlQuantity,
+  currencyConfig.currency,
+  rates,
+]);
+
+const orderItems = useMemo(() => {
+  if (urlBasket === "true") {
+    return checkoutBasket.map(
+      (basketItem) => ({
+        itemId: basketItem.itemId,
+
+        quantity:
+          basketItem.quantity || 1,
+
+        color:
+          basketItem.color || "noColor",
+
+        size:
+          basketItem.size || "nosize",
+
+        image:
+          basketItem.image ||
+          "/placeholder.png",
+
+        name:
+          basketItem.name ||
+          "Product",
+      })
+    );
+  }
+
+  return [
+    {
+      itemId: payItem,
+      quantity: urlQuantity || 1,
+
+      color:
+        urlSelectedColor &&
+        urlSelectedColor !== "null"
+          ? urlSelectedColor
+          : "noColor",
+
+      size:
+        urlSelectedSize &&
+        urlSelectedSize !== "null"
+          ? urlSelectedSize
+          : "nosize",
+
+      image:
+        item?.images?.[0] ||
+        "/placeholder.png",
+
+      name:
+        item?.name || "Product",
+    },
+  ];
+}, [
+  urlBasket,
+  checkoutBasket,
+  payItem,
+  urlQuantity,
+  urlSelectedColor,
+  urlSelectedSize,
+  item,
+]);
+
+  const previewImage = useMemo(() => {
+    if (urlBasket === "true" && orderItems.length > 0) {
+      return orderItems[0]?.image || "/placeholder.png";
+    }
+
+    return item?.images?.[0] || "/placeholder.png";
+  }, [urlBasket, orderItems, item]);
+
+ const basketItemCount = useMemo(() => {
+  if (urlBasket !== "true") {
+    return 0;
+  }
+
+  return checkoutBasket.length;
+}, [
+  urlBasket,
+  checkoutBasket,
+]);
+
+  const basketTotalQuantity = useMemo(() => {
+  if (urlBasket !== "true" || !Array.isArray(orderItems)) return urlQuantity || 1;
+
+  return orderItems.reduce((sum, item) => {
+    return sum + Number(item.quantity || 1);
+  }, 0);
+}, [urlBasket, orderItems, urlQuantity]);
+
+const previewTitle = useMemo(() => {
+  if (urlBasket === "true") {
+    return `Proceeding with ${basketItemCount} item${basketItemCount > 1 ? "s" : ""}`;
+  }
+
+  return item?.name || "Product";
+}, [urlBasket, basketItemCount, item]);
+
+const isBasketShippableToCountry =
+  useMemo(() => {
+    if (urlBasket !== "true") {
+      return false;
+    }
+
+    if (!selectedCountryCode) {
+      return false;
+    }
+
+    if (checkoutBasket.length === 0) {
+      return false;
+    }
+
+    return checkoutBasket.every(
+      (basketItem) => {
+        if (basketItem.productUnavailable) {
+          return false;
+        }
+
+        const shippableCountries =
+          parseShippableCountries(
+            basketItem?.shippingCountry ||
+            basketItem?.shippableCountries ||
+            ""
+          );
+
+        return shippableCountries.includes(
+          selectedCountryCode
+        );
+      }
+    );
+  }, [
+    urlBasket,
+    checkoutBasket,
+    selectedCountryCode,
+  ]);
+
+const canShipToSelectedCountry = useMemo(() => {
+  if (urlBasket === "true") {
+    return isBasketShippableToCountry;
+  }
+
+  return isItemShippableToCountry;
+}, [urlBasket, isBasketShippableToCountry, isItemShippableToCountry]);
+
+useEffect(() => {
+  if (urlBasket !== "true") {
+    setBasketLoading(false);
+    setBasketLoaded(true);
+    return;
+  }
+
+  if (!authReady) return;
+
+  if (!firebaseUser?.uid) {
+    setCheckoutBasket([]);
+    setBasketLoading(false);
+    setBasketLoaded(true);
+    return;
+  }
+
+  const fetchCheckoutBasket = async () => {
+    try {
+      setBasketLoading(true);
+
+      const response = await axios.get(
+        `${API_BASE_URL}/basket/${firebaseUser.uid}`
+      );
+
+      setCheckoutBasket(
+        Array.isArray(response.data?.basket)
+          ? response.data.basket
+          : []
+      );
+    } catch (error) {
+      console.error(
+        "Error fetching checkout basket:",
+        error
+      );
+
+      setCheckoutBasket([]);
+    } finally {
+      setBasketLoading(false);
+      setBasketLoaded(true);
+    }
+  };
+
+  fetchCheckoutBasket();
+}, [
+  urlBasket,
+  authReady,
+  firebaseUser,
+]);
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/prices/rates`);
+      setRates(response.data.rates);
+    } catch (error) {
+      console.error("Error fetching rates:", error);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setFirebaseUser(currentUser || null);
+      setAuthReady(true);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const savedCountry = localStorage.getItem("selectedCountry");
+      if (savedCountry) {
+        setLockedCountry(JSON.parse(savedCountry));
+      }
+    } catch (err) {
+      console.error("Failed to read selected country:", err);
+    }
+  }, []);
+
+useEffect(() => {
+  const fetchItem = async () => {
+    try {
+      setLoading(true);
+
+      if (!urlItemId || urlItemId === "false") {
+        setItem(null);
+        setProduct(null);
+        setPayItem(null);
+        return;
+      }
+
+      const response = await axios.get(
+        `${API_BASE_URL}/items`
+      );
+
+      const normalizedItemId =
+        String(urlItemId).trim();
+
+      const itemsArray =
+        Array.isArray(response.data?.items)
+          ? response.data.items
+          : [];
+
+      const foundItem = itemsArray.find(
+        (entry) =>
+          String(entry?.itemId ?? "").trim() ===
+            normalizedItemId ||
+          String(entry?.id ?? "").trim() ===
+            normalizedItemId
+      );
+
+      if (!foundItem) {
+        setItem(null);
+        setProduct(null);
+        setPayItem(null);
+        return;
+      }
+
+      const productData =
+        foundItem.item || {};
+
+      const mergedProductData = {
+        ...productData,
+
+        details:
+          foundItem.details || {},
+
+        itemId:
+          foundItem.itemId,
+
+        id:
+          foundItem.id,
+      };
+
+      setItem(mergedProductData);
+      setProduct(mergedProductData);
+      setPayItem(
+        foundItem.itemId || foundItem.id
+      );
+    } catch (error) {
+      console.error(
+        "Error fetching checkout item:",
+        error
+      );
+
+      setItem(null);
+      setProduct(null);
+      setPayItem(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchItem();
+}, [urlItemId]);
+
+  useEffect(() => {
+    const fetchDeliveryInfo = async () => {
+      try {
+        if (!authReady || !firebaseUser) return;
+
+        const response = await axios.get(
+          `${API_BASE_URL}/user/delivery-get/${firebaseUser.uid}`
+        );
+
+        const addresses = response.data.addresses || [];
+        const backendSelectedIndex = response.data.selectedIndex;
+
+        const normalizedLockedCountry =
+          lockedCountry?.name?.trim().toLowerCase() || "";
+
+        const selectedAddress =
+          backendSelectedIndex !== null &&
+          backendSelectedIndex >= 0 &&
+          addresses[backendSelectedIndex]
+            ? addresses[backendSelectedIndex]
+            : null;
+
+        const selectedMatchesCountry =
+          selectedAddress &&
+          selectedAddress.country?.trim().toLowerCase() === normalizedLockedCountry;
+
+        if (!normalizedLockedCountry) {
+          if (selectedAddress) {
+            setSelectedDeliveryInfo(selectedAddress);
+          } else if (addresses.length > 0) {
+            setSelectedDeliveryInfo(addresses[0]);
+          } else {
+            setSelectedDeliveryInfo(null);
+          }
+          return;
+        }
+
+        if (selectedMatchesCountry) {
+          setSelectedDeliveryInfo(selectedAddress);
+          return;
+        }
+
+        const firstMatchingEntry = addresses.find(
+          (address) =>
+            address?.country?.trim().toLowerCase() === normalizedLockedCountry
+        );
+
+        if (firstMatchingEntry) {
+          setSelectedDeliveryInfo(firstMatchingEntry);
+          return;
+        }
+
+       // STRICT MODE: only allow matching country
+       setSelectedDeliveryInfo(null);
+      } catch (error) {
+        console.error("Error fetching delivery info:", error);
+        setSelectedDeliveryInfo(null);
+      }
+    };
+
+    fetchDeliveryInfo();
+  }, [authReady, firebaseUser, lockedCountry]);
+
+  useEffect(() => {
+  const syncCountry = () => {
+    try {
+      const savedCountry = localStorage.getItem("selectedCountry");
+      if (savedCountry) {
+        setLockedCountry(JSON.parse(savedCountry));
+      } else {
+        setLockedCountry(null);
+      }
+    } catch (err) {
+      console.error("Failed to sync country:", err);
+      setLockedCountry(null);
+    }
+  };
+
+  syncCountry();
+  window.addEventListener("countryChanged", syncCountry);
+
+  return () => {
+    window.removeEventListener("countryChanged", syncCountry);
+  };
+}, []);
+
+
+ const handleCardPayment = async () => {
+  if (!firebaseUser) {
+    message.error(t("login_required"));
+    return;
+  }
+
+  if (!selectedDeliveryInfo) {
+    message.error(t("fill_delivery_info"));
+    return;
+  }
+
+  if (!canShipToSelectedCountry) {
+    message.error(
+      t("item_not_shippable_country")
+    );
+    return;
+  }
+
+  if (!totalAmount || totalAmount <= 0) {
+    message.error(t("price_unavailable"));
+    return;
+  }
+
+  try {
+    setIsSubmittingOrder(true);
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/stripe/create-payment-intent`,
+      {
+        userId: firebaseUser.uid,
+
+        countryCode:
+          selectedCountryCode,
+
+        currency:
+          currencyConfig.currency,
+
+        basket:
+          urlBasket === "true",
+
+        items: orderItems.map((orderItem) => ({
+          itemId: orderItem.itemId,
+          quantity: orderItem.quantity,
+          color: orderItem.color,
+          size: orderItem.size,
+        })),
+
+        delivery: {
+          fullName:
+            selectedDeliveryInfo.fullName || "",
+
+          email:
+            selectedDeliveryInfo.email || "",
+
+          streetAddress:
+            selectedDeliveryInfo.streetName || "",
+
+          companyName:
+            selectedDeliveryInfo.companyName || "",
+
+          country:
+            selectedDeliveryInfo.country || "",
+
+          town:
+            selectedDeliveryInfo.town || "",
+
+          postalCode:
+            selectedDeliveryInfo.postalCode || "",
+        },
+      }
+    );
+
+    const clientSecret =
+      response.data?.clientSecret;
+
+    const paymentIntentId =
+      response.data?.paymentIntentId;
+
+    if (!clientSecret) {
+      throw new Error(
+        "Stripe client secret missing"
+      );
+    }
+
+    setStripeClientSecret(clientSecret);
+
+    setStripePaymentIntentId(
+      paymentIntentId || null
+    );
+
+    
+  } catch (error) {
+    console.error(
+      "Stripe payment session error:",
+      error?.response?.data || error
+    );
+
+    message.error(
+      error?.response?.data?.message ||
+        t("payment_failed")
+    );
+  } finally {
+    setIsSubmittingOrder(false);
+  }
+};
+
+ if (
+  loading ||
+  !authReady ||
+  (urlBasket === "true" &&
+    !basketLoaded)
+) {
+  return  <Loading />;
+}
+
+  console.log("SHIPPING CHECK", {
+  rawProductCountry:
+    item?.details?.country || item?.country,
+
+
+  selectedCountryCode,
+
+  selectedCountryName:
+    lockedCountry?.name,
+});
+
+  return (
+    <>
+
+     <div className={`checkout-shell-paypal ${hasBasket ? "with-basket" : ""}`}>
+        <div className="checkout-container-paypal">
+          <div className="checkout-left-paypal">
+            {selectedDeliveryInfo && (
+              <div className="paypal-notice-paypal">
+                <Trans
+                  i18nKey="email_notice"
+                  values={{ email: selectedDeliveryInfo.email }}
+                  components={{ strong: <strong className="paypal-notice-email-paypal" /> }}
+                />
+              </div>
+            )}
+
+            <div className="section-paypal">
+              <h3>{t("delivery_information")}</h3>
+
+              {selectedDeliveryInfo ? (
+                <div className="delivery-card-paypal">
+                  <p>{selectedDeliveryInfo.fullName}</p>
+                  <p>{selectedDeliveryInfo.streetName}</p>
+                  {selectedDeliveryInfo.companyName ? (
+                    <p>{selectedDeliveryInfo.companyName}</p>
+                  ) : null}
+                  <p>{selectedDeliveryInfo.email}</p>
+                  <p>{selectedDeliveryInfo.town}</p>
+                  <p>{selectedDeliveryInfo.postalCode || ""}</p>
+                  <p>{selectedDeliveryInfo.country}</p>
+
+                  <Link
+                  className="section-link-paypal"
+                  href={withCountry("/deliveryInformation")}
+                >
+                  {t("modify_delivery_info")}
+                </Link>
+                  {!canShipToSelectedCountry && (
+                    <p className="error-text-paypal">
+                      {urlBasket === "true"
+                        ? `One or more basket items cannot be shipped to ${selectedDeliveryInfo.country}.`
+                        : `This item cannot be shipped to ${selectedDeliveryInfo.country}.`}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <p className="error-text-paypal">{t("please_fill_delivery_info")}</p>
+                 <Link
+                  className="section-link-paypal"
+                  href={withCountry("/deliveryInformation")}
+                >
+                  {t("add_delivery_info")}
+                </Link>
+                </div>
+              )}
+            </div>
+
+            <div className="section-paypal">
+  <h3>{t("pay_with_card")}</h3>
+
+  {!selectedDeliveryInfo ? (
+    <p className="error-text-paypal">
+      {t("please_fill_delivery_info")}
+    </p>
+  ) : !canShipToSelectedCountry ? (
+    <p className="error-text-paypal">
+      {urlBasket === "true"
+        ? "One or more basket items cannot be shipped to the selected country."
+        : "This item cannot be shipped to the selected country."}
+    </p>
+  ) : totalAmount === null ? (
+    <p className="error-text-paypal">
+      {t("price_unavailable")}
+    </p>
+  ) : (
+    <>
+      {!stripeClientSecret && (
+        <button
+          type="button"
+          className="card-payment-button"
+          onClick={handleCardPayment}
+          disabled={isSubmittingOrder}
+        >
+          {isSubmittingOrder
+            ? "Preparing secure payment..."
+            : t("pay_with_card")}
+        </button>
+      )}
+
+     {stripeClientSecret ? (
+  <div className="stripe-payment-element">
+    <Elements
+      stripe={stripePromise}
+      options={{
+        clientSecret:
+          stripeClientSecret,
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "600px",
-          background: "#fff",
-          borderRadius: "16px",
-          padding: "32px",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-        }}
-      >
-        <Result
-          status="info"
-          title="Card payment coming soon"
-          subTitle="We're working on enabling secure card payments. Please use PayPal or Crypto for now."
-          extra={[
-            <Button
-              key="back"
-              type="primary"
-              onClick={() => router.back()}
-            >
-              Choose another method
-            </Button>,
-            <Button
-              key="home"
-              onClick={() => router.push("/")}
-            >
-              Home
-            </Button>,
-          ]}
-        />
+     <StripePaymentForm
+        paymentIntentId={
+          stripePaymentIntentId
+        }
+        deliveryInfo={
+          selectedDeliveryInfo
+        }
+
+         countryCode={
+    selectedCountryCode
+  }
+      />
+    </Elements>
+  </div>
+) : null}
+    </>
+  )}
+</div>
+          </div>
+
+          <div className="checkout-right-paypal">
+            <div className="summary-card-paypal">
+             {urlBasket !== "true" && (
+              <div className="summary-image-wrap-paypal">
+                <img
+                  src={previewImage}
+                  alt={previewTitle}
+                  className="summary-image-paypal"
+                />
+              </div>
+            )}
+
+              <div className="summary-content-paypal">
+                <span className="summary-badge-paypal">Order summary</span>
+
+                <h3 className="summary-title-paypal">{previewTitle}</h3>
+
+                {urlBasket === "true" ? (
+                <p className="summary-meta-paypal">
+                  Your selected basket items are ready for checkout.
+                </p>
+              ) : null}
+
+                {urlBasket !== "true" && urlSelectedColor ? (
+                  <p className="summary-meta-paypal">Color: {urlSelectedColor}</p>
+                ) : null}
+
+                {urlBasket !== "true" &&
+                urlSelectedSize &&
+                urlSelectedSize !== "null" ? (
+                  <p className="summary-meta-paypal">Size: {urlSelectedSize}</p>
+                ) : null}
+
+              {urlBasket !== "true" && (
+                  <p className="summary-meta-paypal">Quantity: {urlQuantity}</p>
+                )}
+
+                <div className="summary-divider-paypal" />
+
+                <div className="summary-row-paypal">
+                  <span>Subtotal</span>
+                 <span>{formatDisplayAmount(totalAmount, currencyConfig)}</span>
+                </div>
+
+                <div className="summary-row-paypal">
+                  <span>Shipping</span>
+                  <span>Included</span>
+                </div>
+
+                <div className="summary-total-paypal">
+                  <span>Total</span>
+                 <span>{formatDisplayAmount(totalAmount, currencyConfig)}</span>
+                </div>
+
+                <p className="summary-secure-paypal">
+                  Secure card payment processed with Stripe
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

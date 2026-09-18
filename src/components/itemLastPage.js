@@ -877,7 +877,13 @@ if (!currentUser) {
       if (matchedBrand?.theme) {
         const themeRoute = matchedBrand.theme.toLowerCase();
         setSelectedBrandName(product.brand);
-        router.push(`/brand/${themeRoute}/${encodeURIComponent(product.brand)}`);
+         router.push(
+        withCountry(
+          `/brand/${themeRoute}/${encodeURIComponent(
+            product.brand
+          )}`
+        )
+      );
       } else {
         console.warn("Theme not found for brand:", product.brand);
       }

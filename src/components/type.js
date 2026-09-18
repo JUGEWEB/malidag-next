@@ -9,6 +9,8 @@ import "./type.css";
 const Type = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const isCardCheckout =
+  pathname?.toLowerCase().endsWith("/cardcheckout");
   const { t } = useTranslation();
 
   const {
@@ -69,6 +71,7 @@ if (
 ) {
   return null;
 }
+
 
   return (
     <div

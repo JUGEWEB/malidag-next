@@ -55,13 +55,19 @@ const withCountry = (path) => {
    const isCountrySelectorPage = pathname === "/";
   const [isBasketVisible, setIsBasketVisible] = useState(false);
   const {isSmallMobile , isMobile, isTablet, isVerySmall, isDesktop} = useScreenSize()
+
+   // Determine if we are on the BuyNow (checkout) page
+const isCheckoutPage =
+  pathname === withCountry("/cardCheckout");
+
+
+  const isPhone =
+  isMobile || isSmallMobile || isVerySmall;
+
+const hidePhoneCheckoutHeaderItems =
+  isCheckoutPage && isPhone;
   const [logoLoaded, setLogoLoaded] = useState(false); // ✨ Logo loading state
  
-  // Determine if we are on the BuyNow (checkout) page
-const isCheckoutPage =
-  pathname === "/checkout" ||
-  pathname === "/paypalCheckout" ||
-  pathname === "/cardCheckout";
 
 
  const openAuthWindow = () => {
@@ -154,14 +160,16 @@ const savedCountryCode = getSavedCountryCode();
   }}
 >
   {/* ALL */}
-  {(isMobile || isSmallMobile || isVerySmall) && (
+ {(isMobile || isSmallMobile || isVerySmall) &&
+  !hidePhoneCheckoutHeaderItems && (
     <div style={{ marginTop: "2px" }}>
       <All basketItems={basketItems} />
     </div>
-  )}
+)}
 
   {/* MALIDAG text logo */}
-  {(isSmallMobile || isMobile || isTablet || isDesktop) && (
+ {(isSmallMobile || isMobile || isTablet || isDesktop) &&
+  !hidePhoneCheckoutHeaderItems && (
     <div
       className="logoStyle"
       onClick={home}
@@ -176,10 +184,10 @@ const savedCountryCode = getSavedCountryCode();
     >
       MALIDAG
     </div>
-  )}
+)}
 
   {/* Image logo for very small devices */}
-  {isVerySmall && (
+ {isVerySmall && !hidePhoneCheckoutHeaderItems && (
     <div
       style={{
         position: "relative",
@@ -237,19 +245,31 @@ const savedCountryCode = getSavedCountryCode();
   </div>
 )}
 
-     {isCheckoutPage ? (
-  <div style={{ display: "flex", justifyContent: "center" }}>
+    {isCheckoutPage ? (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      minWidth: 0,
+    }}
+  >
     <div
       style={{
         color: "white",
-        fontSize: "22px",
+        fontSize:
+          isVerySmall || isSmallMobile
+            ? "14px"
+            : isMobile
+            ? "15px"
+            : "22px",
         fontWeight: "bold",
         textAlign: "center",
-        flexGrow: 1,
         display: "flex",
+        alignItems: "center",
+        whiteSpace: "nowrap",
       }}
     >
-     {t("header_checkout")}
+      {t("header_checkout")}
 
       <Dropdown
         overlay={trustMessage}
@@ -259,12 +279,33 @@ const savedCountryCode = getSavedCountryCode();
         <Button
           type="text"
           style={{
-            marginLeft: "10px",
+            marginLeft:
+              isVerySmall || isSmallMobile || isMobile
+                ? "3px"
+                : "10px",
+            padding:
+              isVerySmall || isSmallMobile || isMobile
+                ? "0 3px"
+                : undefined,
+            height: "auto",
             color: "white",
-            fontSize: "18px",
+            fontSize:
+              isVerySmall || isSmallMobile
+                ? "11px"
+                : isMobile
+                ? "12px"
+                : "18px",
           }}
         >
-         {t("header_trust_info")} <DownOutlined />
+          {t("header_trust_info")}{" "}
+          <DownOutlined
+            style={{
+              fontSize:
+                isVerySmall || isSmallMobile || isMobile
+                  ? "9px"
+                  : "14px",
+            }}
+          />
         </Button>
       </Dropdown>
     </div>

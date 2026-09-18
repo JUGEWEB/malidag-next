@@ -25,6 +25,16 @@ function AppHeader(props) {
   const pathSegments = pathname.split("/").filter(Boolean);
 const routeCountryCode = pathSegments[0];
 
+const isCardCheckout =
+  pathname?.toLowerCase() ===
+  `/${routeCountryCode}/cardcheckout`;
+
+const isPhone =
+  isMobile || isSmallMobile || isVerySmall;
+
+const isPhoneCheckout =
+  isPhone && isCardCheckout;
+
 const isCountryHome =
   routeCountryCode &&
   (pathname === `/${routeCountryCode}` ||
@@ -40,7 +50,8 @@ const isCountryHome =
                 
                  <BasketComponent basketItems={basketItems}/>
                 </div>
-                {(isMobile || isSmallMobile || isVerySmall || isTablet) && (
+               {(isMobile || isSmallMobile || isVerySmall || isTablet) &&
+  !isPhoneCheckout && (
                   <div style={{width: "100%", marginLeft: "0px", marginRight: "0px", backgroundColor: "#333", marginTop: "2px"}}>
             <InputSearch user={user} basketItems={basketItems} isBasketVisible={true} />
             </div>

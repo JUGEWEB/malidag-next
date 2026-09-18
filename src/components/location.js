@@ -19,6 +19,8 @@ function Location({ country, allCountries = [], setCountry }) {
 
   const router = useRouter();
 const pathname = usePathname();
+const isCheckoutPage =
+  pathname?.toLowerCase().endsWith("/cardcheckout");
 
 React.useEffect(() => {
   const syncFromStorage = () => {
@@ -108,6 +110,50 @@ if (pathname === "/") {
   }
 
   const flagUrl = `https://flagcdn.com/w320/${country.code}.png`;
+
+  const countryLabel = getCountryLabel(country);
+
+  if (isCheckoutPage) {
+  return (
+    <div
+      style={{
+        margin:
+          isMobile || isSmallMobile || isVerySmall
+            ? "0px"
+            : "10px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          color: "#fff",
+          fontSize:
+            isMobile || isSmallMobile || isVerySmall
+              ? "12px"
+              : "13px",
+        }}
+      >
+        <img
+          src={flagUrl}
+          alt={countryLabel}
+          style={{
+            width: "22px",
+            height: "auto",
+            flexShrink: 0,
+          }}
+        />
+
+        <span>
+          {t("checkout_deliver_to", {
+            country: countryLabel,
+          })}
+        </span>
+      </div>
+    </div>
+  );
+}
 
   const menuItems = allCountries.map((c) => ({
     key: c.code,

@@ -78,6 +78,8 @@ const StripePaymentForm = ({
 
   const [submitting, setSubmitting] =
     useState(false);
+  const { t } = useTranslation();
+const router = useRouter();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -133,53 +135,67 @@ const StripePaymentForm = ({
   redirect: "if_required",
 });
 
-      if (error) {
-        console.error(
-          "Stripe confirmation error:",
-          error
-        );
+     if (error) {
+  console.error(
+    "Stripe confirmation error:",
+    error
+  );
 
-        message.error(
-          error.message ||
-            "Card payment failed"
-        );
+  message.error(
+    error.message ||
+      t("card_payment_failed")
+  );
 
-        return;
-      }
+  return;
+}
 
-      if (
-        paymentIntent?.status ===
-        "succeeded"
-      ) {
-        message.success(
-          "Payment completed successfully"
-        );
+if (paymentIntent?.status === "succeeded") {
+  message.success(
+    t("payment_completed_successfully")
+  );
 
-        console.log(
-          "Stripe payment succeeded:",
-          paymentIntentId
-        );
+  const successfulPaymentIntentId =
+    paymentIntent.id || paymentIntentId;
 
-        return;
-      }
+  if (!successfulPaymentIntentId) {
+    console.error(
+      "Successful Stripe payment is missing PaymentIntent ID"
+    );
 
-      if (
-        paymentIntent?.status ===
-        "processing"
-      ) {
-        message.info(
-          "Your payment is processing"
-        );
+    message.error(
+      t("transaction_reference_missing", {
+        defaultValue:
+          "Transaction reference is missing.",
+      })
+    );
 
-        return;
-      }
+    return;
+  }
 
-      message.info(
-        `Payment status: ${
-          paymentIntent?.status ||
-          "unknown"
-        }`
-      );
+  router.replace(
+    `/${countryCode}/transaction/${encodeURIComponent(
+      successfulPaymentIntentId
+    )}`
+  );
+
+  return;
+}
+
+if (paymentIntent?.status === "processing") {
+  message.info(
+    t("payment_processing")
+  );
+
+  return;
+}
+
+message.info(
+  t("payment_status", {
+    status:
+      paymentIntent?.status ||
+      t("unknown"),
+  })
+);
     } catch (error) {
       console.error(
         "Card confirmation error:",
@@ -187,8 +203,8 @@ const StripePaymentForm = ({
       );
 
       message.error(
-        "Unable to complete card payment"
-      );
+  t("unable_complete_card_payment")
+);
     } finally {
       setSubmitting(false);
     }
@@ -211,19 +227,19 @@ const StripePaymentForm = ({
   }}
 />
 
-      <button
-        type="submit"
-        className="card-payment-button"
-        disabled={
-          !stripe ||
-          !elements ||
-          submitting
-        }
-      >
-        {submitting
-          ? "Processing payment..."
-          : "Pay now"}
-      </button>
+     <button
+  type="submit"
+  className="card-payment-button"
+  disabled={
+    !stripe ||
+    !elements ||
+    submitting
+  }
+>
+  {submitting
+    ? t("processing_payment")
+    : t("pay_now")}
+</button>
     </form>
   );
 };
@@ -238,7 +254,7 @@ const CardBuyNow = ({
   const searchParams = useSearchParams();
   const router = useRouter();
  const { message, notification } = App.useApp();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
 const [basketLoaded, setBasketLoaded] =
   useState(false);
@@ -307,6 +323,9 @@ const convertUsdToCurrency = (usdAmount, currency) => {
 
   return usd * rate;
 };
+
+const [itemTranslation, setItemTranslation] =
+  useState(null);
 
 const selectedCountryCode = useMemo(() => {
   const code = getCountryCode(
@@ -535,11 +554,37 @@ const orderItems = useMemo(() => {
 
 const previewTitle = useMemo(() => {
   if (urlBasket === "true") {
-    return `Proceeding with ${basketItemCount} item${basketItemCount > 1 ? "s" : ""}`;
+    return t("proceeding_with_items", {
+      count: basketItemCount,
+    });
   }
 
-  return item?.name || "Product";
-}, [urlBasket, basketItemCount, item]);
+  return (
+    itemTranslation?.name ||
+    item?.name ||
+    t("product")
+  );
+}, [
+  urlBasket,
+  basketItemCount,
+  itemTranslation,
+  item,
+  t,
+]);
+
+const translateColor = (color) => {
+  if (!color) return "";
+
+  const key = `color_${String(color)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-/g, "_")}`;
+
+  return t(key, {
+    defaultValue: color,
+  });
+};
 
 const isBasketShippableToCountry =
   useMemo(() => {
@@ -748,6 +793,34 @@ useEffect(() => {
 
   fetchItem();
 }, [urlItemId]);
+
+useEffect(() => {
+  const fetchItemTranslation = async () => {
+    if (!payItem || !i18n.language) {
+      setItemTranslation(null);
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/translate/product/translate/${payItem}/${i18n.language}`
+      );
+
+      setItemTranslation(
+        response.data?.translation || null
+      );
+    } catch (error) {
+      console.error(
+        "Checkout product translation error:",
+        error
+      );
+
+      setItemTranslation(null);
+    }
+  };
+
+  fetchItemTranslation();
+}, [payItem, i18n.language]);
 
   useEffect(() => {
     const fetchDeliveryInfo = async () => {
@@ -999,13 +1072,17 @@ useEffect(() => {
                 >
                   {t("modify_delivery_info")}
                 </Link>
-                  {!canShipToSelectedCountry && (
-                    <p className="error-text-paypal">
-                      {urlBasket === "true"
-                        ? `One or more basket items cannot be shipped to ${selectedDeliveryInfo.country}.`
-                        : `This item cannot be shipped to ${selectedDeliveryInfo.country}.`}
-                    </p>
-                  )}
+                 {!canShipToSelectedCountry && (
+                  <p className="error-text-paypal">
+                    {urlBasket === "true"
+                      ? t("basket_not_shippable_to_country", {
+                          country: selectedDeliveryInfo.country,
+                        })
+                      : t("item_not_shippable_to_country_name", {
+                          country: selectedDeliveryInfo.country,
+                        })}
+                  </p>
+                )}
                 </div>
               ) : (
                 <div>
@@ -1024,16 +1101,16 @@ useEffect(() => {
   <h3>{t("pay_with_card")}</h3>
 
   {!selectedDeliveryInfo ? (
-    <p className="error-text-paypal">
-      {t("please_fill_delivery_info")}
-    </p>
-  ) : !canShipToSelectedCountry ? (
-    <p className="error-text-paypal">
-      {urlBasket === "true"
-        ? "One or more basket items cannot be shipped to the selected country."
-        : "This item cannot be shipped to the selected country."}
-    </p>
-  ) : totalAmount === null ? (
+  <p className="error-text-paypal">
+    {t("please_fill_delivery_info")}
+  </p>
+) : !canShipToSelectedCountry ? (
+  <p className="error-text-paypal">
+    {urlBasket === "true"
+      ? t("basket_not_shippable_country")
+      : t("item_not_shippable_country")}
+  </p>
+) : totalAmount === null ? (
     <p className="error-text-paypal">
       {t("price_unavailable")}
     </p>
@@ -1046,9 +1123,9 @@ useEffect(() => {
           onClick={handleCardPayment}
           disabled={isSubmittingOrder}
         >
-          {isSubmittingOrder
-            ? "Preparing secure payment..."
-            : t("pay_with_card")}
+         {isSubmittingOrder
+          ? t("preparing_secure_payment")
+          : t("pay_with_card")}
         </button>
       )}
 
@@ -1093,52 +1170,76 @@ useEffect(() => {
               </div>
             )}
 
-              <div className="summary-content-paypal">
-                <span className="summary-badge-paypal">Order summary</span>
+             <div className="summary-content-paypal">
+  <span className="summary-badge-paypal">
+    {t("order_summary")}
+  </span>
 
-                <h3 className="summary-title-paypal">{previewTitle}</h3>
+  <h3 className="summary-title-paypal">
+    {previewTitle}
+  </h3>
 
-                {urlBasket === "true" ? (
-                <p className="summary-meta-paypal">
-                  Your selected basket items are ready for checkout.
-                </p>
-              ) : null}
+  {urlBasket === "true" ? (
+    <p className="summary-meta-paypal">
+      {t("basket_ready_checkout")}
+    </p>
+  ) : null}
 
-                {urlBasket !== "true" && urlSelectedColor ? (
-                  <p className="summary-meta-paypal">Color: {urlSelectedColor}</p>
-                ) : null}
+  {urlBasket !== "true" && urlSelectedColor ? (
+    <p className="summary-meta-paypal">
+      {t("color_label", {
+        color: translateColor(urlSelectedColor),
+      })}
+    </p>
+  ) : null}
 
-                {urlBasket !== "true" &&
-                urlSelectedSize &&
-                urlSelectedSize !== "null" ? (
-                  <p className="summary-meta-paypal">Size: {urlSelectedSize}</p>
-                ) : null}
+  {urlBasket !== "true" &&
+  urlSelectedSize &&
+  urlSelectedSize !== "null" ? (
+    <p className="summary-meta-paypal">
+      {t("size_label", {
+        size: urlSelectedSize,
+      })}
+    </p>
+  ) : null}
 
-              {urlBasket !== "true" && (
-                  <p className="summary-meta-paypal">Quantity: {urlQuantity}</p>
-                )}
+  {urlBasket !== "true" && (
+    <p className="summary-meta-paypal">
+      {t("quantity")}: {urlQuantity}
+    </p>
+  )}
 
-                <div className="summary-divider-paypal" />
+  <div className="summary-divider-paypal" />
 
-                <div className="summary-row-paypal">
-                  <span>Subtotal</span>
-                 <span>{formatDisplayAmount(totalAmount, currencyConfig)}</span>
-                </div>
+  <div className="summary-row-paypal">
+    <span>{t("subtotal")}</span>
+    <span>
+      {formatDisplayAmount(
+        totalAmount,
+        currencyConfig
+      )}
+    </span>
+  </div>
 
-                <div className="summary-row-paypal">
-                  <span>Shipping</span>
-                  <span>Included</span>
-                </div>
+  <div className="summary-row-paypal">
+    <span>{t("shipping")}</span>
+    <span>{t("included")}</span>
+  </div>
 
-                <div className="summary-total-paypal">
-                  <span>Total</span>
-                 <span>{formatDisplayAmount(totalAmount, currencyConfig)}</span>
-                </div>
+  <div className="summary-total-paypal">
+    <span>{t("total")}</span>
+    <span>
+      {formatDisplayAmount(
+        totalAmount,
+        currencyConfig
+      )}
+    </span>
+  </div>
 
-                <p className="summary-secure-paypal">
-                  Secure card payment processed with Stripe
-                </p>
-              </div>
+  <p className="summary-secure-paypal">
+    {t("secure_card_payment_stripe")}
+  </p>
+</div>
             </div>
           </div>
         </div>

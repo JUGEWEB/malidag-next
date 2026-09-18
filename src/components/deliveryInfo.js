@@ -49,12 +49,8 @@ const withCountry = (path) => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [postalCodeError, setPostalCodeError] = useState("");
   const [showForm, setShowForm] = useState(false);
-
-  const [locationMatches, setLocationMatches] = useState([]);
-const [checkingPostalCode, setCheckingPostalCode] = useState(false);
-const [postalCodeValid, setPostalCodeValid] = useState(false);
-const [postalCodeError, setPostalCodeError] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -96,7 +92,7 @@ const [postalCodeError, setPostalCodeError] = useState("");
         setSelectedIndex(response.data.selectedIndex);
       } catch (err) {
         console.error("Error fetching delivery data:", err);
-        setError("Could not load delivery information.");
+       setError(t("load_error"));
       } finally {
         setCheckingAuth(false);
       }
@@ -117,118 +113,76 @@ const [postalCodeError, setPostalCodeError] = useState("");
   const selectedMatchingEntry =
     matchingAddresses.find(({ index }) => index === selectedIndex) || null;
 
+
+const normalizePostalCode = (value, code) => {
+  let postalCode = String(value || "").trim();
+
+  if (code === "fr") {
+    postalCode = postalCode.replace(/\D/g, "");
+  }
+
+  if (code === "gb") {
+    postalCode = postalCode
+      .toUpperCase()
+      .replace(/\s+/g, "");
+
+    if (postalCode.length > 3) {
+      postalCode =
+        postalCode.slice(0, -3) +
+        " " +
+        postalCode.slice(-3);
+    }
+  }
+
+  if (code === "br") {
+    postalCode = postalCode.replace(/\D/g, "");
+
+    if (postalCode.length === 8) {
+      postalCode =
+        postalCode.slice(0, 5) +
+        "-" +
+        postalCode.slice(5);
+    }
+  }
+
+  return postalCode;
+};
+
+const isValidPostalCode = (value, code) => {
+  const postalCode =
+    normalizePostalCode(value, code);
+
+  if (code === "fr") {
+    return /^\d{5}$/.test(postalCode);
+  }
+
+  if (code === "gb") {
+    return /^[A-Z]{1,2}\d[A-Z\d]?\s\d[A-Z]{2}$/.test(
+      postalCode
+    );
+  }
+
+  if (code === "br") {
+    return /^\d{5}-\d{3}$/.test(postalCode);
+  }
+
+  return false;
+};
+
  const handleChange = (e) => {
   const { name, value } = e.target;
 
   setFormData((prev) => ({
     ...prev,
     [name]: value,
-    ...(name === "postalCode"
-  ? {
-      town: "",
-      neighborhood: "",
-    }
-  : {}),
   }));
 
   if (name === "postalCode") {
-    setLocationMatches([]);
-    setPostalCodeValid(false);
     setPostalCodeError("");
   }
 };
 
-const handlePostalCodeLookup = async (postalCode) => {
-  const value = postalCode.trim();
 
-  if (!value || !countryCode) {
-    return;
-  }
-
-  setCheckingPostalCode(true);
-  setPostalCodeError("");
-  setLocationMatches([]);
-  setPostalCodeValid(false);
-
-  try {
-    const response = await axios.get(
-      `${API_BASE_URL}/user/delivery-location/${countryCode}/${encodeURIComponent(
-        value
-      )}`
-    );
-
-    const matches = response.data?.matches || [];
-    const normalizedPostalCode =
-      response.data?.postalCode || value;
-
-    if (matches.length === 0) {
-      setPostalCodeError(
-        t("postal_code_no_city")
-      );
-      return;
-    }
-
-    setLocationMatches(matches);
-    setPostalCodeValid(true);
-
-   setFormData((prev) => ({
-  ...prev,
-  postalCode: normalizedPostalCode,
-  town:
-    matches.length === 1
-      ? matches[0].town
-      : "",
-  neighborhood:
-    countryCode === "br" &&
-    matches.length === 1
-      ? matches[0].neighborhood || ""
-      : "",
-}));
-  } catch (err) {
-    setLocationMatches([]);
-    setPostalCodeValid(false);
-
-   setFormData((prev) => ({
-  ...prev,
-  town: "",
-  neighborhood: "",
-}));
-
-    if (
-      err?.response?.status === 400 ||
-      err?.response?.status === 404
-    ) {
-      setPostalCodeError(
-        t("postal_code_no_city")
-      );
-    } else {
-      console.error("Postal code lookup error:", err);
-
-      setPostalCodeError(
-        t("postal_code_lookup_failed")
-      );
-    }
-  } finally {
-    setCheckingPostalCode(false);
-  }
-};
-
-useEffect(() => {
-  const postalCode = formData.postalCode.trim();
-
-  if (!postalCode || !countryCode) {
-    setLocationMatches([]);
-    setPostalCodeValid(false);
-    setPostalCodeError("");
-    return;
-  }
-
-  const timer = setTimeout(() => {
-    handlePostalCodeLookup(postalCode);
-  }, 500);
-
-  return () => clearTimeout(timer);
-}, [formData.postalCode, countryCode]);
 
 const handleCancelAddress = () => {
   setShowForm(false);
@@ -243,69 +197,128 @@ const handleCancelAddress = () => {
     neighborhood: "",
     postalCode: "",
   });
-
-  setLocationMatches([]);
-  setPostalCodeValid(false);
-  setPostalCodeError("");
   setError("");
 };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-   if (!iduser) {
-  router.replace(
-    `${withCountry("/auth")}?redirect=${encodeURIComponent(pathname)}`
+  if (!iduser) {
+    router.replace(
+      `${withCountry("/auth")}?redirect=${encodeURIComponent(pathname)}`
+    );
+    return;
+  }
+
+  const normalizedPostalCode =
+  normalizePostalCode(
+    formData.postalCode,
+    countryCode
   );
+
+if (
+  !isValidPostalCode(
+    normalizedPostalCode,
+    countryCode
+  )
+) {
+  setPostalCodeError(
+    countryCode === "br"
+      ? t("invalid_cep")
+      : t("invalid_postal_code")
+  );
+
   return;
 }
 
-if (!postalCodeValid || !formData.town.trim()) {
-  setError("Please enter a valid postal code and select the delivery town.");
-  return;
-}
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/user/delivery-post`, {
-        userId: iduser,
-        email: formData.email.trim(),
-        fullName: formData.fullName.trim(),
-        streetName: formData.streetName.trim(),
-        companyName: formData.companyName.trim(),
-        town: formData.town.trim(),
-        neighborhood: formData.neighborhood.trim(),
-        country: formData.country.trim(),
-        postalCode: formData.postalCode.trim(),
-      });
-
-      setDeliveryAddresses(response.data.data.addresses);
-      setSelectedIndex(response.data.data.selectedIndex);
-      setFormData({
-        email: "",
-        fullName: "",
-        streetName: "",
-        companyName: "",
-        town: "",
-        neighborhood: "",
-        country: lockedCountry?.name || "",
-        postalCode: "",
-      });
-      setShowForm(false);
-
-      notification.success({
-        message: t("success_added"),
-        description: t("success_description"),
-      });
-    } catch (err) {
-      console.error("Error adding delivery information:", err);
-      console.error("Backend error response:", err?.response?.data);
-      setError(err?.response?.data?.message || t("save_failed"));
-    } finally {
-      setLoading(false);
-    }
+  const payload = {
+    userId: iduser,
+    email: formData.email.trim(),
+    fullName: formData.fullName.trim(),
+    streetName: formData.streetName.trim(),
+    companyName: formData.companyName.trim(),
+    town: formData.town.trim(),
+    neighborhood: formData.neighborhood.trim(),
+    country: formData.country.trim(),
+   postalCode: normalizedPostalCode,
   };
+
+  console.log("DELIVERY PAYLOAD:", payload);
+
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/user/delivery-post`,
+      payload
+    );
+
+    setDeliveryAddresses(
+      response.data.data.addresses
+    );
+
+    setSelectedIndex(
+      response.data.data.selectedIndex
+    );
+
+    setFormData({
+      email: "",
+      fullName: "",
+      streetName: "",
+      companyName: "",
+      town: "",
+      neighborhood: "",
+      country: lockedCountry?.name || "",
+      postalCode: "",
+    });
+
+    setShowForm(false);
+
+    notification.success({
+      message: t("success_added"),
+      description: t("success_description"),
+    });
+  } catch (err) {
+    console.log(
+      "DELIVERY STATUS:",
+      err?.response?.status
+    );
+
+    console.log(
+      "DELIVERY RESPONSE:",
+      err?.response?.data
+    );
+
+    console.log(
+      "DELIVERY COUNTRY:",
+      payload.country
+    );
+
+    console.log(
+      "DELIVERY POSTAL CODE:",
+      payload.postalCode
+    );
+
+   const backendError = err?.response?.data?.error;
+
+if (backendError === "Invalid postal code format") {
+  setPostalCodeError(
+    countryCode === "br"
+      ? t("invalid_cep")
+      : t("invalid_postal_code")
+  );
+} else {
+  setError(
+    backendError ||
+    err?.response?.data?.message ||
+    t("save_failed")
+  );
+}
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSelectAddress = async (index) => {
     try {
@@ -320,7 +333,7 @@ if (!postalCodeValid || !formData.town.trim()) {
       });
     } catch (err) {
       console.error("Error selecting address:", err);
-      setError("Failed to select address.");
+     setError(t("load_error"));
     }
   };
 
@@ -560,77 +573,52 @@ if (!postalCodeValid || !formData.town.trim()) {
     />
   </div>
 
-  <div className="delivery-form-row delivery-postal-row">
-    <label htmlFor="delivery-postal-code">
-      {t("postal_code")}
-    </label>
+  <div className="delivery-form-row">
+  <label htmlFor="delivery-postal-code">
+    {t("postal_code")}
+  </label>
 
-    <div className="delivery-field">
-      <input
-        id="delivery-postal-code"
-        type="text"
-        name="postalCode"
-        value={formData.postalCode}
-        onChange={handleChange}
-        placeholder={t("postal_code_placeholder")}
-        className={
-          postalCodeError
-            ? "delivery-input-error"
-            : postalCodeValid
-              ? "delivery-input-valid"
-              : ""
-        }
-        required
-      />
+  <div className="delivery-field">
+    <input
+      id="delivery-postal-code"
+      type="text"
+      name="postalCode"
+      value={formData.postalCode}
+      onChange={handleChange}
+      placeholder={t("postal_code_placeholder")}
+      className={
+        postalCodeError
+          ? "delivery-input-error"
+          : ""
+      }
+      aria-invalid={
+        postalCodeError ? "true" : "false"
+      }
+      required
+    />
 
-      {postalCodeError && (
-        <p className="delivery-field-error">
-          {postalCodeError}
-        </p>
-      )}
-    </div>
+    {postalCodeError && (
+      <p className="delivery-field-error">
+        {postalCodeError}
+      </p>
+    )}
   </div>
+</div>
 
   <div className="delivery-form-row">
   <label htmlFor="delivery-town">
     {t("town")}
   </label>
 
-  {postalCodeValid && locationMatches.length === 1 ? (
-    <input
-      id="delivery-town"
-      type="text"
-      name="town"
-      value={formData.town}
-      disabled
-      readOnly
-    />
-  ) : (
-    <select
-      id="delivery-town"
-      name="town"
-      value={formData.town}
-      onChange={handleChange}
-      disabled={!postalCodeValid || checkingPostalCode}
-      required
-    >
-      <option value="">
-        {t("select_town")}
-      </option>
-
-      {locationMatches.map((location, index) => (
-        <option
-          key={`${location.town}-${location.region || location.admin1 || ""}-${index}`}
-          value={location.town}
-        >
-          {location.town}
-          {location.region || location.admin1
-            ? `, ${location.region || location.admin1}`
-            : ""}
-        </option>
-      ))}
-    </select>
-  )}
+  <input
+    id="delivery-town"
+    type="text"
+    name="town"
+    value={formData.town}
+    onChange={handleChange}
+    placeholder={t("town_placeholder")}
+    required
+  />
 </div>
 
 {countryCode === "br" && (
@@ -644,9 +632,9 @@ if (!postalCodeValid || !formData.town.trim()) {
       type="text"
       name="neighborhood"
       value={formData.neighborhood}
-      disabled
-      readOnly
+      onChange={handleChange}
       placeholder={t("neighborhood_placeholder")}
+      required
     />
   </div>
 )}
@@ -681,12 +669,7 @@ if (!postalCodeValid || !formData.town.trim()) {
   <button
     type="submit"
     className="delivery-save-btn"
-    disabled={
-      loading ||
-      checkingPostalCode ||
-      !postalCodeValid ||
-      !formData.town
-    }
+   disabled={loading}
   >
     {loading ? (
       <div className="loader" />

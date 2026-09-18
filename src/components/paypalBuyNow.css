@@ -212,6 +212,85 @@
   font-size: 16px;
 }
 
+/* ========================================
+   CARD PAYMENT BUTTON
+======================================== */
+
+.card-payment-button {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 16px;
+  padding: 0 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 12px;
+
+  background: #1677ff;
+  color: #ffffff;
+
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 6px 16px rgba(22, 119, 255, 0.22);
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.card-payment-button:hover:not(:disabled) {
+  background: #0958d9;
+
+  box-shadow:
+    0 8px 20px rgba(22, 119, 255, 0.28);
+
+  transform: translateY(-1px);
+}
+
+.card-payment-button:active:not(:disabled) {
+  transform: translateY(0);
+
+  box-shadow:
+    0 4px 10px rgba(22, 119, 255, 0.2);
+}
+
+.card-payment-button:focus-visible {
+  outline: 3px solid rgba(22, 119, 255, 0.25);
+  outline-offset: 3px;
+}
+
+.card-payment-button:disabled {
+  background: #b8c1cc;
+  color: #ffffff;
+
+  cursor: not-allowed;
+
+  box-shadow: none;
+  transform: none;
+}
+
+.stripe-payment-element {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.stripe-payment-form {
+  width: 100%;
+}
+
+.stripe-payment-form .card-payment-button {
+  margin-top: 20px;
+}
+
 @media (max-width: 992px) {
   .checkout-container-paypal {
     grid-template-columns: 1fr;
@@ -260,4 +339,14 @@
     padding: 14px 16px;
     font-size: 14px;
   }
+
+  .card-payment-button {
+  min-height: 50px;
+  margin-top: 12px;
+  padding: 0 16px;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+}
 }

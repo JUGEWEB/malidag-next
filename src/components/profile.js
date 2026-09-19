@@ -1,109 +1,153 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { auth, storage, db } from "./firebaseConfig";
-import { updateProfile, onAuthStateChanged, signOut } from "firebase/auth";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, updateDoc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { auth } from "./firebaseConfig";
+import {
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { message } from "antd";
 import "./profile.css";
 
 const Profile = () => {
   const router = useRouter();
+  const params = useParams();
+  const { t } = useTranslation();
 
   const [user, setUser] = useState(null);
-  const [profilePicUrl, setProfilePicUrl] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [authReady, setAuthReady] =
+    useState(false);
 
-  const [messageApi, contextHolder] = message.useMessage();
+  const [messageApi, contextHolder] =
+    message.useMessage();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+  const countryCode = String(
+    params?.country || ""
+  ).toLowerCase();
 
-      if (currentUser?.photoURL) {
-        setProfilePicUrl(currentUser.photoURL);
+  const withCountry = (path) => {
+    if (!countryCode) return "/";
+
+    if (!path) {
+      return `/${countryCode}`;
+    }
+
+    return `/${countryCode}${
+      path.startsWith("/") ? path : `/${path}`
+    }`;
+  };
+
+ useEffect(() => {
+  const unsubscribe = onAuthStateChanged(
+    auth,
+    (currentUser) => {
+      // Not logged in
+      if (!currentUser) {
+        setUser(null);
+        setAuthReady(true);
+        return;
       }
-    });
 
-    return () => unsubscribe();
-  }, []);
+      const usesPasswordProvider =
+        currentUser.providerData?.some(
+          (provider) =>
+            provider.providerId === "password"
+        );
 
-  const handleProfilePicChange = async (e) => {
-    const file = e.target.files?.[0];
+      const needsVerification =
+        usesPasswordProvider &&
+        !currentUser.emailVerified;
 
-    if (!file || !user) return;
+      // Email/password account exists,
+      // but email has not been verified yet.
+      if (needsVerification) {
+        setUser(null);
+        setAuthReady(true);
 
-    if (!file.type.startsWith("image/")) {
-      messageApi.error("Please upload a valid image file.");
-      return;
+        const profilePath =
+          withCountry("/profile");
+
+        router.replace(
+          `${withCountry(
+            "/auth"
+          )}?redirect=${encodeURIComponent(
+            profilePath
+          )}`
+        );
+
+        return;
+      }
+
+      // Google users and verified
+      // email/password users are allowed.
+      setUser(currentUser);
+      setAuthReady(true);
     }
+  );
 
-    try {
-      setIsUploading(true);
-      setSelectedFile(file);
-
-      const storageRef = ref(storage, `profilePics/${user.uid}`);
-      await uploadBytes(storageRef, file);
-
-      const url = await getDownloadURL(storageRef);
-      setProfilePicUrl(url);
-
-      messageApi.success("Image uploaded. Click save to update your profile.");
-    } catch (error) {
-      console.error("Image upload error:", error);
-      messageApi.error("Could not upload image.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleProfileUpdate = async () => {
-    try {
-      if (!user) throw new Error("User is not logged in");
-
-      setIsSaving(true);
-
-      await updateProfile(user, {
-        photoURL: profilePicUrl,
-      });
-
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        photoURL: profilePicUrl,
-      });
-
-      messageApi.success("Profile updated successfully.");
-    } catch (error) {
-      console.error("Profile update error:", error);
-      messageApi.error("Error updating profile.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  return () => unsubscribe();
+}, [router, countryCode]);
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      sessionStorage.removeItem("hasRefreshed");
-      messageApi.success("Logged out successfully.");
-      router.push("/");
+
+      sessionStorage.removeItem(
+        "hasRefreshed"
+      );
+
+      messageApi.success(
+        t("profile_logout_success")
+      );
+
+      router.push(withCountry(""));
     } catch (error) {
-      console.error("Logout error:", error);
-      messageApi.error("Error logging out.");
+      console.error(
+        "Logout error:",
+        error
+      );
+
+      messageApi.error(
+        t("profile_logout_error")
+      );
     }
   };
+
+  if (!authReady) {
+    return null;
+  }
 
   if (!user) {
     return (
       <main className="profile-page">
+        {contextHolder}
+
         <div className="profile-empty-state">
-          <h2>You are not logged in</h2>
-          <p>Please log in to view and manage your profile.</p>
-          <button onClick={() => router.push("/")}>Go to login</button>
+          <h2>
+            {t("profile_not_logged_in")}
+          </h2>
+
+          <p>
+            {t(
+              "profile_not_logged_in_description"
+            )}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                withCountry("/auth")
+              )
+            }
+          >
+            {t("profile_go_to_login")}
+          </button>
         </div>
       </main>
     );
@@ -115,104 +159,179 @@ const Profile = () => {
 
       <section className="profile-header">
         <div>
-          <p className="profile-eyebrow">Account Settings</p>
-          <h1>Manage your profile</h1>
+          <p className="profile-eyebrow">
+            {t(
+              "profile_account_settings"
+            )}
+          </p>
+
+          <h1>
+            {t("profile_manage")}
+          </h1>
+
           <p>
-            Update your profile picture and review your account information.
+            {t(
+              "profile_manage_description"
+            )}
           </p>
         </div>
 
-        <button className="logout-button" onClick={handleLogout}>
-          Logout
+        <button
+          type="button"
+          className="logout-button"
+          onClick={handleLogout}
+        >
+          {t("profile_logout")}
         </button>
       </section>
 
       <section className="profile-grid">
+
+        {/* Account information */}
         <div className="profile-card account-card">
-          <div className="avatar-section">
-            <div className="avatar-wrapper">
-              {profilePicUrl ? (
-                <img src={profilePicUrl} alt="Profile" className="avatar-img" />
-              ) : (
-                <div className="avatar-placeholder">
-                  {user.email?.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
+          <div className="profile-account-heading">
+            <h2>
+              {user.displayName ||
+                t("profile_your_profile")}
+            </h2>
 
-            <div>
-              <h2>{user.displayName || "Your Profile"}</h2>
-              <p>{user.email}</p>
-            </div>
+            <p>{user.email}</p>
           </div>
 
           <div className="form-group">
-            <label>Email address</label>
-            <input value={user.email || ""} disabled />
-          </div>
-
-          <div className="form-group">
-            <label>Username</label>
-            <input value={user.displayName || "Not set"} disabled />
-          </div>
-
-          <div className="upload-box">
-            <div>
-              <label>Profile image</label>
-              <p>Upload a clear image to personalize your account.</p>
-            </div>
-
-            <label className="upload-button">
-              {isUploading ? "Uploading..." : "Choose image"}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleProfilePicChange}
-                hidden
-              />
+            <label>
+              {t("profile_email_address")}
             </label>
+
+            <input
+              value={user.email || ""}
+              disabled
+            />
           </div>
 
-          {selectedFile && (
-            <p className="file-name">Selected: {selectedFile.name}</p>
-          )}
+          <div className="form-group">
+            <label>
+              {t("profile_username")}
+            </label>
 
-          <button
-            className="save-button"
-            onClick={handleProfileUpdate}
-            disabled={isSaving || isUploading}
-          >
-            {isSaving ? "Saving..." : "Save changes"}
-          </button>
+            <input
+              value={
+                user.displayName ||
+                t("profile_not_set")
+              }
+              disabled
+            />
+          </div>
         </div>
 
+        {/* Activity */}
         <div className="profile-card shortcuts-card">
-          <h2>Your activity</h2>
+          <h2>
+            {t("profile_activity")}
+          </h2>
+
           <p className="card-description">
-            Quickly jump back into the things you care about.
+            {t(
+              "profile_activity_description"
+            )}
           </p>
 
-          <div className="shortcut-item">
+          {/* Liked items */}
+          <button
+            type="button"
+            className="shortcut-item"
+            onClick={() =>
+              router.push(
+                withCountry("/likeditem")
+              )
+            }
+          >
             <img
               src="https://cdn.malidag.com/themes/1777938103580-98a9b6b2-dd98-4a40-9b7e-7dbbc88b8050.webp"
-              alt="Liked items"
+              alt=""
             />
-            <div>
-              <h3>Liked items</h3>
-              <p>View products and content you saved.</p>
-            </div>
-          </div>
 
-          <div className="shortcut-item">
+            <div>
+              <h3>
+                {t(
+                  "profile_liked_items"
+                )}
+              </h3>
+
+              <p>
+                {t(
+                  "profile_liked_items_description"
+                )}
+              </p>
+            </div>
+
+            <span
+              className="shortcut-arrow"
+              aria-hidden="true"
+            >
+              →
+            </span>
+          </button>
+
+          {/* Basket */}
+          <button
+            type="button"
+            className="shortcut-item"
+            onClick={() =>
+              router.push(
+                withCountry("/basket")
+              )
+            }
+          >
             <img
               src="https://cdn.malidag.com/themes/1777938140559-2643e175-6bbe-40b4-996d-5a637543b296.webp"
-              alt="Basket"
+              alt=""
             />
+
             <div>
-              <h3>Your basket</h3>
-              <p>Continue shopping from your cart.</p>
+              <h3>
+                {t(
+                  "profile_your_basket"
+                )}
+              </h3>
+
+              <p>
+                {t(
+                  "profile_basket_description"
+                )}
+              </p>
             </div>
-          </div>
+
+            <span
+              className="shortcut-arrow"
+              aria-hidden="true"
+            >
+              →
+            </span>
+          </button>
+
+          {/* Transactions */}
+          <button
+            type="button"
+            className="profile-transactions-link"
+            onClick={() =>
+              router.push(
+                withCountry(
+                  "/transactions"
+                )
+              )
+            }
+          >
+            <span>
+              {t(
+                "profile_view_transactions"
+              )}
+            </span>
+
+            <span aria-hidden="true">
+              →
+            </span>
+          </button>
         </div>
       </section>
     </main>

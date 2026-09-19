@@ -1,0 +1,167 @@
+/* =========================================================
+   FIREBASE AUTH ACTION PAGE
+   ========================================================= */
+
+.auth-action-page {
+  width: 100%;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.auth-action-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 40px 32px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.auth-action-card h1 {
+  margin: 0 0 14px;
+  color: #222;
+  font-family: "Roboto", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.auth-action-card p {
+  margin: 0 0 20px;
+  color: #555;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.auth-action-email {
+  padding: 10px 14px;
+  background: #f6f7f8;
+  border-radius: 6px;
+  color: #222 !important;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.auth-action-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.auth-action-icon.success {
+  color: #198754;
+  background: rgba(25, 135, 84, 0.12);
+}
+
+.auth-action-icon.error {
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.12);
+}
+
+.auth-action-card .auth-submit {
+  width: 100%;
+  padding: 14px 20px;
+  margin-top: 5px;
+  background-color: #00bfff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    transform 0.15s ease;
+}
+
+.auth-action-card .auth-submit:hover {
+  background-color: #0088cc;
+}
+
+.auth-action-card .auth-submit:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 480px) {
+  .auth-action-page {
+    padding: 25px 15px;
+  }
+
+  .auth-action-card {
+    padding: 30px 20px;
+  }
+
+  .auth-action-card h1 {
+    font-size: 22px;
+  }
+}
+
+.auth-action-form {
+  width: 100%;
+  margin-top: 24px;
+  text-align: left;
+}
+
+.auth-action-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 15px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.auth-action-form input:focus {
+  border-color: #00bfff;
+  outline: none;
+}
+
+.auth-password-field {
+  position: relative;
+}
+
+.auth-password-field input {
+  padding-right: 70px;
+}
+
+.auth-password-field .password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #0088cc;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-action-icon.password {
+  color: #0088cc;
+  background: rgba(0, 136, 204, 0.1);
+}
+
+.auth-action-form .password-requirements {
+  margin: 4px 0 14px 3px;
+}
+
+.auth-action-form .password-match {
+  margin: 0 0 14px 3px;
+}
+
+.auth-action-form .auth-submit {
+  margin-top: 12px;
+}

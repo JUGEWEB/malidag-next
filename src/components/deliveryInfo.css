@@ -115,17 +115,27 @@
 
 @media (max-width: 600px) {
   .delivery-info-container {
-    margin: 16px;
-    padding: 20px;
+    margin: 0px;
+    padding: 0px;
+  }
+
+  .delivery-address-section {
+    margin-top: 18px;
+  }
+
+  .delivery-section-header {
+    gap: 10px;
+    margin-bottom: 14px;
   }
 
   .delivery-form {
-    gap: 16px;
+    gap: 14px;
+    margin-top: 16px;
   }
 
   .delivery-form-row {
     grid-template-columns: 1fr;
-    gap: 7px;
+    gap: 6px;
   }
 
   .delivery-form-row label {
@@ -478,16 +488,18 @@
   }
 
   .delivery-address-card {
-    padding: 16px;
+    padding: 12px;
   }
 
   .delivery-address-content {
     padding-left: 0;
-    margin-top: 14px;
+    margin-top: 10px;
   }
 
   .delivery-address-actions {
     align-items: stretch;
+    margin-top: 12px;
+    padding-top: 10px;
   }
 
   .delivery-select-btn {
@@ -495,21 +507,24 @@
   }
 
   .delivery-form-card {
-    padding: 16px;
+    margin-top: 16px;
+    padding: 0px;
+  }
+
+  .delivery-form-header {
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
   }
 
   .delivery-form-actions {
-  flex-direction: column-reverse;
-}
+    flex-direction: column-reverse;
+  }
 
-.delivery-form-actions .delivery-save-btn,
-.delivery-cancel-btn {
-  width: 100%;
-}
-
-.delivery-form-card {
-  padding: 18px;
-}
+  .delivery-form-actions .delivery-save-btn,
+  .delivery-cancel-btn {
+    width: 100%;
+  }
 }
 
 .delivery-form-card {

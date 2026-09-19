@@ -16,7 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 // CHANGE THESE TWO PATHS TO YOUR EXISTING PROJECT PATHS
-import { auth } from "@/firebase";
+import { auth } from "@/components/firebaseConfig"
 import Loading from "@/components/loading";
 
 import "./AuthForm.css";

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  useParams,
   useRouter,
   useSearchParams,
 } from "next/navigation";
@@ -26,7 +25,6 @@ const AuthActionPage = () => {
   const { t } = useTranslation();
 
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
 
   const [status, setStatus] = useState("loading");
@@ -42,24 +40,6 @@ const AuthActionPage = () => {
 
   const [submitting, setSubmitting] =
     useState(false);
-
-  const countryCode = String(
-    params?.country || ""
-  ).toLowerCase();
-
-  const withCountry = (path = "") => {
-    if (!countryCode) return "/";
-
-    if (!path) {
-      return `/${countryCode}`;
-    }
-
-    return `/${countryCode}${
-      path.startsWith("/")
-        ? path
-        : `/${path}`
-    }`;
-  };
 
   const mode = searchParams.get("mode");
   const oobCode = searchParams.get("oobCode");
@@ -262,9 +242,7 @@ const AuthActionPage = () => {
             type="button"
             className="auth-submit"
             onClick={() =>
-              router.replace(
-                withCountry("/auth")
-              )
+              router.replace("/")
             }
           >
             {t("continue_to_login")}
@@ -498,9 +476,7 @@ const AuthActionPage = () => {
             type="button"
             className="auth-submit"
             onClick={() =>
-              router.replace(
-                withCountry("/auth")
-              )
+              router.replace("/")
             }
           >
             {t("continue_to_login")}
@@ -538,9 +514,7 @@ const AuthActionPage = () => {
             type="button"
             className="auth-submit"
             onClick={() =>
-              router.replace(
-                withCountry("/auth")
-              )
+             router.replace("/")
             }
           >
             {t("go_to_login")}
@@ -577,9 +551,7 @@ const AuthActionPage = () => {
           type="button"
           className="auth-submit"
           onClick={() =>
-            router.replace(
-              withCountry("/auth")
-            )
+           router.replace("/")
           }
         >
           {t("go_to_login")}

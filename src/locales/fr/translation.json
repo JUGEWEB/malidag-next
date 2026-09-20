@@ -11,7 +11,6 @@
   "shipping_notice": "Nous affichons les produits livrables à votre adresse. Vous pouvez sélectionner une autre adresse dans le menu ci-dessus.",
   "learn_about_shipping": "En savoir plus sur l'expédition internationale ici",
   "deliver_to": "Livrer à",
-  "liked_title": "Ce que tu aimes",
   "no_liked_items": "Aucun article aimé pour le moment.",
   "remove": "Retirer",
   "loading_toy_items": "Chargement des articles de jouets...",
@@ -929,5 +928,57 @@
 "profile_view_transactions": "Voir toutes vos transactions",
 "profile_not_logged_in": "Vous n'êtes pas connecté",
 "profile_not_logged_in_description": "Veuillez vous connecter pour consulter et gérer votre profil.",
-"profile_go_to_login": "Se connecter"
+"profile_go_to_login": "Se connecter",
+"email_verified_title": "Adresse e-mail vérifiée",
+  "email_verified_description": "Votre adresse e-mail a été vérifiée avec succès. Vous pouvez maintenant accéder à votre compte Malidag.",
+  "continue_to_login": "Continuer vers la connexion",
+
+  "reset_password_title": "Réinitialiser votre mot de passe",
+  "reset_password_description": "Saisissez un nouveau mot de passe pour votre compte Malidag.",
+  "new_password": "Nouveau mot de passe",
+  "confirm_new_password": "Confirmer le nouveau mot de passe",
+  "resetting_password": "Réinitialisation du mot de passe...",
+  "reset_password": "Réinitialiser le mot de passe",
+
+  "password_reset_success_title": "Mot de passe mis à jour",
+  "password_reset_success_description": "Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
+
+  "verification_link_invalid_title": "Lien de vérification indisponible",
+  "verification_link_invalid_description": "Ce lien de vérification est invalide, a expiré ou a déjà été utilisé.",
+
+  "auth_action_unsupported_title": "Action indisponible",
+  "auth_action_unsupported_description": "Cette action sur le compte ne peut pas être effectuée depuis cette page.",
+
+  "go_to_login": "Aller à la connexion",
+
+  "username_placeholder": "Nom d’utilisateur",
+  "username_required": "Veuillez saisir un nom d’utilisateur.",
+
+  "verify_your_email": "Vérifiez votre adresse e-mail",
+  "verification_email_sent_to": "Nous avons envoyé un e-mail de vérification à",
+  "verification_instructions": "Ouvrez l’e-mail et vérifiez votre adresse, puis revenez ici pour continuer.",
+  "i_verified_my_email": "J’ai vérifié mon adresse e-mail",
+  "checking_verification": "Vérification...",
+  "email_verified_success": "Votre adresse e-mail a été vérifiée avec succès.",
+  "email_not_verified_yet": "Votre adresse e-mail n’a pas encore été vérifiée.",
+  "verification_check_failed": "Impossible de vérifier le statut de votre adresse e-mail. Veuillez réessayer.",
+
+  "google_signin_error": "Impossible de se connecter avec Google.",
+
+  "wishlist": "Liste de souhaits",
+  "view_all": "Voir tout",
+  "no_liked_items_description": "Enregistrez les produits que vous aimez pour les retrouver facilement ici.",
+  "adding": "Ajout en cours...",
+  "in_basket": "Dans le panier",
+  "added_to_basket": "{{product}} a été ajouté à votre panier.",
+  "add_to_basket_failed": "Impossible d'ajouter l'article au panier. Veuillez réessayer.",
+  "removed_from_wishlist": "Article retiré de votre liste de souhaits.",
+  "remove_from_wishlist_failed": "Impossible de retirer l'article de votre liste de souhaits. Veuillez réessayer.",
+  "liked_title": "Vos articles favoris",
+  "price_dropped": "Baisse de prix",
+"price_increased": "Hausse de prix",
+"dismiss": "Fermer",
+"price_change_acknowledge_failed": "Impossible de fermer la mise à jour du prix. Veuillez réessayer.",
+"price_changed_from_to": "Le prix est passé de {{oldPrice}} à {{newPrice}}."
+
 }

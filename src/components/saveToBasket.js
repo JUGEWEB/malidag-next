@@ -65,6 +65,39 @@ const getLocalizedBasketItemPrice = (basketItem) => {
   return usdPrice * rate;
 };
 
+const formatUsdToLocal = (
+  usdValue
+) => {
+  const usdPrice =
+    Number(usdValue || 0);
+
+  const currency =
+    countryCurrencyConfig?.currency ||
+    "USD";
+
+  let localizedPrice =
+    usdPrice;
+
+  if (currency !== "USD") {
+    const rate =
+      Number(
+        rates?.[currency]
+      );
+
+    if (rate) {
+      localizedPrice =
+        usdPrice * rate;
+    }
+  }
+
+  const symbol =
+    countryCurrencyConfig?.symbol ||
+    "$";
+
+  return `${symbol}${localizedPrice.toFixed(
+    2
+  )}`;
+};
 
 const totalPriceLocalized = basket.reduce((sum, item) => {
   const localizedPrice = getLocalizedBasketItemPrice(item);
@@ -396,7 +429,7 @@ const cannotCheckout =
               <p style={{color: "black", fontStyle: "italic"}}>{t("size")}: {size} </p>
             )}
 
-           {item.priceChange && (
+          {item.priceChange && (
   <div
     style={{
       color: "#d46b08",
@@ -406,15 +439,22 @@ const cannotCheckout =
     }}
   >
     <span>
-      Price changed from $
-      {Number(
-        item.priceChange.oldPrice
-      ).toFixed(2)}
-      {" to $"}
-      {Number(
-        item.priceChange.newPrice
-      ).toFixed(2)}
-      .
+      {t(
+        "price_changed_from_to",
+        {
+          oldPrice:
+            formatUsdToLocal(
+              item.priceChange
+                .oldPrice
+            ),
+
+          newPrice:
+            formatUsdToLocal(
+              item.priceChange
+                .newPrice
+            ),
+        }
+      )}
     </span>
 
     <button
@@ -427,10 +467,10 @@ const cannotCheckout =
       style={{
         marginLeft: "10px",
         cursor: "pointer",
-        color: "blue"
+        color: "blue",
       }}
     >
-      Got it
+      {t("got_it")}
     </button>
   </div>
 )}

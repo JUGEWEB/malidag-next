@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useContext,
+} from "react";
 import {
   useRouter,
   useSearchParams,
@@ -18,6 +22,7 @@ import { useTranslation } from "react-i18next";
 // CHANGE THESE TWO PATHS TO YOUR EXISTING PROJECT PATHS
 import { auth } from "@/components/firebaseConfig"
 import Loading from "@/components/loading";
+import { AppContext } from "@/components/appContext";
 
 import "./AuthForm.css";
 
@@ -25,7 +30,29 @@ const AuthActionPage = () => {
   const { t } = useTranslation();
 
   const router = useRouter();
+
+  const { country } = useContext(AppContext);
+
+const countryCode =
+  country?.code?.toLowerCase() || null;
+
+const withCountry = (path) => {
+  if (!countryCode) return "/";
+
+  if (!path) {
+    return `/${countryCode}`;
+  }
+
+  return `/${countryCode}${
+    path.startsWith("/") ? path : `/${path}`
+  }`;
+};
+
   const searchParams = useSearchParams();
+
+ const goToAuth = () => {
+  router.replace(withCountry("/auth"));
+};
 
   const [status, setStatus] = useState("loading");
 
@@ -241,9 +268,9 @@ const AuthActionPage = () => {
           <button
             type="button"
             className="auth-submit"
-            onClick={() =>
-              router.replace("/")
-            }
+            
+             onClick={goToAuth}
+            
           >
             {t("continue_to_login")}
           </button>
@@ -475,9 +502,9 @@ const AuthActionPage = () => {
           <button
             type="button"
             className="auth-submit"
-            onClick={() =>
-              router.replace("/")
-            }
+           
+              onClick={goToAuth}
+            
           >
             {t("continue_to_login")}
           </button>
@@ -513,9 +540,7 @@ const AuthActionPage = () => {
           <button
             type="button"
             className="auth-submit"
-            onClick={() =>
-             router.replace("/")
-            }
+           onClick={goToAuth}
           >
             {t("go_to_login")}
           </button>
@@ -550,9 +575,7 @@ const AuthActionPage = () => {
         <button
           type="button"
           className="auth-submit"
-          onClick={() =>
-           router.replace("/")
-          }
+         onClick={goToAuth}
         >
           {t("go_to_login")}
         </button>

@@ -1107,7 +1107,13 @@
   "confirm_new_password": "Confirm new password",
   "resetting_password": "Resetting password...",
   "reset_password": "Reset password",
-
+   "in_basket": "In basket",
   "password_reset_success_title": "Password updated",
-  "password_reset_success_description": "Your password has been changed successfully. You can now sign in with your new password."
+  "password_reset_success_description": "Your password has been changed successfully. You can now sign in with your new password.",
+  "price_dropped": "Price dropped",
+"price_increased": "Price increased",
+"dismiss": "Dismiss",
+"price_change_acknowledge_failed": "Failed to dismiss the price update. Please try again.",
+"price_changed_from_to": "Price changed from {{oldPrice}} to {{newPrice}}.",
+"got_it": "Got it"
 }

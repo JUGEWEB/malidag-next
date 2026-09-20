@@ -741,5 +741,58 @@
 "profile_view_transactions": "Ver todas as suas transações",
 "profile_not_logged_in": "Você não está conectado",
 "profile_not_logged_in_description": "Faça login para visualizar e gerenciar seu perfil.",
-"profile_go_to_login": "Entrar"
+"profile_go_to_login": "Entrar",
+ "email_verified_title": "E-mail verificado",
+  "email_verified_description": "Seu endereço de e-mail foi verificado com sucesso. Agora você pode acessar sua conta Malidag.",
+  "continue_to_login": "Continuar para o login",
+
+  "reset_password_title": "Redefinir sua senha",
+  "reset_password_description": "Digite uma nova senha para sua conta Malidag.",
+  "new_password": "Nova senha",
+  "confirm_new_password": "Confirmar nova senha",
+  "resetting_password": "Redefinindo a senha...",
+  "reset_password": "Redefinir senha",
+
+  "password_reset_success_title": "Senha atualizada",
+  "password_reset_success_description": "Sua senha foi alterada com sucesso. Agora você pode entrar com sua nova senha.",
+
+  "verification_link_invalid_title": "Link de verificação indisponível",
+  "verification_link_invalid_description": "Este link de verificação é inválido, expirou ou já foi utilizado.",
+
+  "auth_action_unsupported_title": "Ação indisponível",
+  "auth_action_unsupported_description": "Esta ação da conta não pode ser concluída nesta página.",
+
+  "go_to_login": "Ir para o login",
+
+  "username_placeholder": "Nome de usuário",
+  "username_required": "Digite um nome de usuário.",
+
+  "verify_your_email": "Verifique seu e-mail",
+  "verification_email_sent_to": "Enviamos um e-mail de verificação para",
+  "verification_instructions": "Abra o e-mail e verifique seu endereço. Depois, volte aqui para continuar.",
+  "i_verified_my_email": "Já verifiquei meu e-mail",
+  "checking_verification": "Verificando...",
+  "email_verified_success": "Seu e-mail foi verificado com sucesso.",
+  "email_not_verified_yet": "Seu e-mail ainda não foi verificado.",
+  "verification_check_failed": "Não foi possível verificar o status do seu e-mail. Tente novamente.",
+
+  "google_signin_error": "Não foi possível entrar com o Google.",
+
+   "wishlist": "Lista de desejos",
+  "liked_title": "Seus itens favoritos",
+  "view_all": "Ver tudo",
+  "no_liked_items": "Sua lista de desejos está vazia",
+  "no_liked_items_description": "Salve os produtos que você gosta para encontrá-los facilmente aqui.",
+  "remove": "Remover",
+  "adding": "Adicionando...",
+  "in_basket": "No carrinho",
+  "added_to_basket": "{{product}} foi adicionado ao seu carrinho.",
+  "add_to_basket_failed": "Não foi possível adicionar o item ao carrinho. Tente novamente.",
+  "removed_from_wishlist": "Item removido da sua lista de desejos.",
+  "remove_from_wishlist_failed": "Não foi possível remover o item da sua lista de desejos. Tente novamente.",
+  "price_dropped": "O preço caiu",
+"price_increased": "O preço aumentou",
+"dismiss": "Fechar",
+"price_change_acknowledge_failed": "Não foi possível fechar a atualização de preço. Tente novamente.",
+"price_changed_from_to": "O preço mudou de {{oldPrice}} para {{newPrice}}."
 }

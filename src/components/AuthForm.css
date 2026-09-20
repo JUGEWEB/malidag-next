@@ -156,4 +156,69 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* PASSWORD INPUT + SHOW/HIDE */
+
+.auth-form form > div:has(.password-toggle) {
+  position: relative;
+  width: 100%;
+}
+
+.auth-form form > div:has(.password-toggle) input {
+  width: 100%;
+  padding-right: 70px;
+  box-sizing: border-box;
+}
+
+.auth-form .password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: auto;
+  margin: 0;
+  padding: 4px 6px;
+
+  background: transparent;
+  border: none;
+  color: #00bfff;
+
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.auth-form .password-toggle:hover {
+  color: #0088cc;
+}
+
+/* FORGOT PASSWORD LINK */
+
+.auth-form .forgot-password-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+
+  color: #00bfff;
+  font-size: 14px;
+  font-family: inherit;
+
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-form .forgot-password-button:hover {
+  color: #0088cc;
+}
+
+.auth-form .forgot-password-button:focus {
+  outline: none;
+}
+
+.auth-form .forgot-password-button:focus-visible {
+  outline: 2px solid #00bfff;
+  outline-offset: 2px;
+}
   

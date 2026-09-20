@@ -689,34 +689,75 @@ if (!currentUser) {
     }
   };
 
-  const handleLikeItem = async (product) => {
-   const currentUser = auth?.currentUser;
+ const handleLikeItem = async (product) => {
+  const currentUser = auth?.currentUser;
 
-if (!currentUser) {
-  redirectToAuth();
-  return;
-}
+  if (!currentUser) {
+    redirectToAuth();
+    return;
+  }
 
-    try {
-      const likedItem = {
-        userId: currentUser?.uid,
-        id: id,
-        name: product.name,
-        price: product.usdPrice,
-        image: product.images?.[0],
-      };
+  if (!id || !itemsd) {
+    console.error("Cannot like item: missing id or itemId", {
+      id,
+      itemId: itemsd,
+    });
 
-      const response = await axios.post(`${LIKED_API}/like-item`, likedItem);
+    return;
+  }
 
-      if (response.status === 200 || response.status === 201) {
-        alert(t("like_success", { product: product.name }));
-      } else {
-        alert(t("like_failed"));
-      }
-    } catch (error) {
-      console.error("Error liking item:", error);
+  try {
+    const likedItem = {
+      userId: currentUser.uid,
+
+      // Malidag product/page ID
+      // Used for navigation: /product/:id
+      id,
+
+      // Canonical product itemId
+      // Used for translations, basket, product matching, etc.
+      itemId: itemsd,
+
+      // Original canonical product name
+      name: product?.name || "",
+
+      // IMPORTANT:
+      // Save USD only. Do not save converted currency.
+      price: getCurrentPrice(),
+
+      // Save a usable image URL
+      image:
+        selectedImage ||
+        getImageUrl(product?.images?.[0]) ||
+        "",
+    };
+
+    const response = await axios.post(
+      `${LIKED_API}/like-item`,
+      likedItem
+    );
+
+    if (
+      response.status === 200 ||
+      response.status === 201
+    ) {
+      alert(
+        t("like_success", {
+          product: product?.name || "",
+        })
+      );
+    } else {
+      alert(t("like_failed"));
     }
-  };
+  } catch (error) {
+    console.error(
+      "Error liking item:",
+      error
+    );
+
+    alert(t("like_failed"));
+  }
+};
 
   const handleMouseMove = ({ xPercent, yPercent }) => {
     setZoomedPosition({

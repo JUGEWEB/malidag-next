@@ -25,16 +25,8 @@ const processName = (name) => {
 };
 
 const supportedLanguages = [
-  { label: "Arabic", code: "ar" }, { label: "Azerbaijani", code: "az" },
-  { label: "Chinese (Simplified)", code: "zh" }, { label: "Chinese (Traditional)", code: "zh-Hant" },
-  { label: "Czech", code: "cs" }, { label: "Danish", code: "da" }, { label: "Dutch", code: "nl" },
-  { label: "English", code: "en" }, { label: "French", code: "fr" }, { label: "German", code: "de" },
-  { label: "Greek", code: "el" }, { label: "Hindi", code: "hi" }, { label: "Indonesian", code: "id" },
-  { label: "Italian", code: "it" }, { label: "Japanese", code: "ja" }, { label: "Korean", code: "ko" },
-  { label: "Persian", code: "fa" }, { label: "Polish", code: "pl" }, { label: "Portuguese", code: "pt" },
-  { label: "Portuguese (Brazil)", code: "pt-BR" }, { label: "Romanian", code: "ro" }, { label: "Russian", code: "ru" },
-  { label: "Spanish", code: "es" }, { label: "Swedish", code: "sv" }, { label: "Thai", code: "th" },
-  { label: "Turkish", code: "tr" }, { label: "Ukrainian", code: "uk" }, { label: "Vietnamese", code: "vi" }
+  { label: "English", code: "en" }, { label: "French", code: "fr" },
+  { label: "Portuguese (Brazil)", code: "br" }
 ];
 
 const supportedLangCodes = supportedLanguages.map(l => l.code);

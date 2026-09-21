@@ -794,5 +794,7 @@
 "price_increased": "O preço aumentou",
 "dismiss": "Fechar",
 "price_change_acknowledge_failed": "Não foi possível fechar a atualização de preço. Tente novamente.",
-"price_changed_from_to": "O preço mudou de {{oldPrice}} para {{newPrice}}."
+"price_changed_from_to": "O preço mudou de {{oldPrice}} para {{newPrice}}.",
+"filter_reviews": "Filtrar avaliações",
+  "review_items_you_liked": "Itens que você curtiu"
 }

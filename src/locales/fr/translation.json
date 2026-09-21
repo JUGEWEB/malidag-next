@@ -979,6 +979,8 @@
 "price_increased": "Hausse de prix",
 "dismiss": "Fermer",
 "price_change_acknowledge_failed": "Impossible de fermer la mise à jour du prix. Veuillez réessayer.",
-"price_changed_from_to": "Le prix est passé de {{oldPrice}} à {{newPrice}}."
+"price_changed_from_to": "Le prix est passé de {{oldPrice}} à {{newPrice}}.",
+"filter_reviews": "Filtrer les avis",
+  "review_items_you_liked": "Articles que vous aimez"
 
 }

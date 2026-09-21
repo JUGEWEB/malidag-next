@@ -1115,5 +1115,11 @@
 "dismiss": "Dismiss",
 "price_change_acknowledge_failed": "Failed to dismiss the price update. Please try again.",
 "price_changed_from_to": "Price changed from {{oldPrice}} to {{newPrice}}.",
-"got_it": "Got it"
+"got_it": "Got it",
+"filter_reviews": "Filter reviews",
+  "review_items_you_liked": "Items you liked",
+  "view_all": "View all",
+  "rating": "Rating",
+  "stars_label": "Stars",
+  "stars_label_singular": "Star"
 }

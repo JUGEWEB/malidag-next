@@ -35,12 +35,19 @@ const [user, setUser] = useState(null);
 const [authReady, setAuthReady] = useState(false);
 const [basketLoaded, setBasketLoaded] =
   useState(false);
-  const { t } = useTranslation();
+ const {
+  t,
+  i18n
+} = useTranslation();
    const [messageApi, contextHolder] = message.useMessage();
 const [lockedCountry, setLockedCountry] = useState(null);
 const countryCurrencyConfig = getCountryConfig(lockedCountry?.name || "");
 const selectedCountryCode = getCountryCode(lockedCountry?.name || "");
 const [rates, setRates] = useState(null);
+const [
+  basketTranslations,
+  setBasketTranslations
+] = useState({});
 
 const getUsdBasketItemPrice = (basketItem) => {
   return Number.parseFloat(
@@ -153,6 +160,132 @@ const hasUnavailableItems =
 }, [
   authReady,
   user,
+]);
+
+useEffect(() => {
+  let cancelled = false;
+
+  const translateBasketItems =
+    async () => {
+      const rawLanguage =
+        (
+          i18n.resolvedLanguage ||
+          i18n.language ||
+          "en"
+        ).toLowerCase();
+
+      let lang = "en";
+
+      if (
+        rawLanguage === "br" ||
+        rawLanguage === "pt-br" ||
+        rawLanguage.startsWith("pt")
+      ) {
+        lang = "br";
+      } else if (
+        rawLanguage.startsWith("fr")
+      ) {
+        lang = "fr";
+      }
+
+      // English uses the original product data.
+      if (lang === "en") {
+        setBasketTranslations({});
+        return;
+      }
+
+      const itemIds = [
+        ...new Set(
+          basket
+            .map(
+              (item) =>
+                item?.itemId
+            )
+            .filter(Boolean)
+            .map(String)
+        ),
+      ];
+
+      if (!itemIds.length) {
+        setBasketTranslations({});
+        return;
+      }
+
+      try {
+        const results =
+          await Promise.allSettled(
+            itemIds.map(
+              async (itemId) => {
+                const response =
+                  await axios.get(
+                    `${BASKET_API}/translate/product/translate/${encodeURIComponent(
+                      itemId
+                    )}/${encodeURIComponent(
+                      lang
+                    )}`
+                  );
+
+                return {
+                  itemId,
+                  translation:
+                    response.data
+                      ?.translation ||
+                    null,
+                };
+              }
+            )
+          );
+
+        if (cancelled) return;
+
+        const translations = {};
+
+        results.forEach(
+          (result) => {
+            if (
+              result.status !==
+              "fulfilled"
+            ) {
+              return;
+            }
+
+            const {
+              itemId,
+              translation
+            } = result.value;
+
+            if (translation) {
+              translations[
+                String(itemId)
+              ] = translation;
+            }
+          }
+        );
+
+        setBasketTranslations(
+          translations
+        );
+      } catch (error) {
+        console.error(
+          "Error translating basket items:",
+          error
+        );
+
+        if (!cancelled) {
+          setBasketTranslations({});
+        }
+      }
+    };
+
+  translateBasketItems();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  basket,
+  i18n.language,
+  i18n.resolvedLanguage,
 ]);
 
 useEffect(() => {
@@ -350,6 +483,29 @@ const handleCheckout = () => {
   );
 };
 
+const getTranslatedColor = (
+  color
+) => {
+  if (!color) return "";
+
+  const normalized =
+    String(color)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/-/g, "_");
+
+  const key =
+    `color_${normalized}`;
+
+  const translated =
+    t(key, {
+      defaultValue: color
+    });
+
+  return translated;
+};
+
 const cannotCheckout =
   basket.length === 0 ||
   !lockedCountry?.name ||
@@ -378,7 +534,21 @@ const cannotCheckout =
           if (!item) return null; // Ensure item exists
 
           const { id, name, price, image, quantity, color, size, itemId } = item;
-          const slicedName = name.length > 20 ? name.slice(0, 20) + "..." : name;
+         const productTranslation =
+  basketTranslations[
+    String(itemId)
+  ];
+
+const translatedName =
+  productTranslation?.name ||
+  productTranslation?.itemName ||
+  name ||
+  t("product");
+
+const slicedName =
+  translatedName.length > 20
+    ? `${translatedName.slice(0, 20)}...`
+    : translatedName;
           const imageUrl = image || "placeholder.jpg";
           const itemLocalizedPrice = getLocalizedBasketItemPrice(item);
           const itemTotalLocalized = itemLocalizedPrice * (quantity || 1);
@@ -390,7 +560,7 @@ const cannotCheckout =
               <div>
               {/* Item Image */}
               <div style={{display: "flex", alignItems: "center", justifyContent: "start"}}>
-              <img src={imageUrl} alt={name} className="basket-item-image" />
+              <img src={imageUrl} alt={translatedName} className="basket-item-image" />
 
               {/* Clickable Name */}
               <div
@@ -423,7 +593,8 @@ const cannotCheckout =
               </div>
               </div>
               {color !== null && (
-              <p style={{color: "black", fontStyle: "italic"}}>{t("color")}: {color}</p>
+              <p style={{color: "black", fontStyle: "italic"}}> {t("color")}:{" "}
+              {getTranslatedColor(color)}</p>
             )}
             {size !== null && (
               <p style={{color: "black", fontStyle: "italic"}}>{t("size")}: {size} </p>

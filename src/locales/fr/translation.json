@@ -981,6 +981,32 @@
 "price_change_acknowledge_failed": "Impossible de fermer la mise à jour du prix. Veuillez réessayer.",
 "price_changed_from_to": "Le prix est passé de {{oldPrice}} à {{newPrice}}.",
 "filter_reviews": "Filtrer les avis",
-  "review_items_you_liked": "Articles que vous aimez"
+  "review_items_you_liked": "Articles que vous aimez",
+  "country_united_states": "États-Unis",
+"items_no_products_available": "Aucun produit disponible",
+"items_no_products_delivery": "Nous n'avons trouvé aucun produit {{type}} actuellement disponible pour une livraison vers {{country}}.",
+"items_new_arrivals_message": "De nouveaux produits sont ajoutés régulièrement. Essayez un autre pays ou revenez bientôt.",
+  "toys": "Jouets",
+  "accessories": "Accessoires",
+  "home_and_kitchen": "Maison et cuisine",
+  "pet_care": "Soins pour animaux",
+  "jewelry": "Bijoux",
+
+ 
+  "woman": "Femme",
+  "boy": "Garçon",
+  "boys": "Garçons",
+  "baby": "Bébé",
+  "babies": "Bébés",
+  "babyboy": "Bébé garçon",
+  "babygirl": "Bébé fille",
+  "kid": "Enfant",
+  "running_shoes": "Chaussures de course",
+  "hiking_shoes": "Chaussures de randonnée",
+  "sports_bag": "Sac de sport",
+"women_t_shirt": "T-shirts pour femme",
+"women_shoes": "Chaussures pour femme",
+"men_shoes": "Chaussures pour homme",
+"men_sweat_shirt": "Sweats pour homme"
 
 }

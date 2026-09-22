@@ -8,6 +8,9 @@ import "./itemOfItems.css";
 import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
+import { getCountryConfig } from "./countryUtils";
+
+const BASE_URL = "https://api.malidag.com";
 
 function Item( { countryCode, itemClicked: itemClickedProp }) {
   const params = useParams();
@@ -42,10 +45,25 @@ const [selectedSize, setSelectedSize] = useState(null);
 const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [filterOpen, setFilterOpen] = useState(false);
 
-  const { t } = useTranslation();
+ const { t, i18n } = useTranslation();
+
+const [itemTranslations, setItemTranslations] = useState({});
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [bestSellersByCategory, setBestSellersByCategory] = useState({});
+
+  const [rates, setRates] = useState({});
+
+const [lockedCountry, setLockedCountry] =
+  useState(null);
+
+const countryCurrencyConfig = useMemo(
+  () =>
+    getCountryConfig(
+      lockedCountry?.name || ""
+    ),
+  [lockedCountry?.name]
+);
 
   const fetchReviews = async (productId) => {
     try {
@@ -72,6 +90,28 @@ const [filterOpen, setFilterOpen] = useState(false);
     }
   };
 
+  const getTranslationLanguage = () => {
+  const raw = (
+    i18n.resolvedLanguage ||
+    i18n.language ||
+    "en"
+  ).toLowerCase();
+
+  if (
+    raw === "br" ||
+    raw === "pt-br" ||
+    raw.startsWith("pt")
+  ) {
+    return "br";
+  }
+
+  if (raw.startsWith("fr")) {
+    return "fr";
+  }
+
+  return "en";
+};
+
   useEffect(() => {
     const fetchBeautyImages = async () => {
       try {
@@ -91,6 +131,68 @@ const [filterOpen, setFilterOpen] = useState(false);
 
     fetchBeautyImages();
   }, [itemClicked]);
+
+  useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/prices/rates`
+      );
+
+      setRates(response.data?.rates || {});
+    } catch (error) {
+      console.error(
+        "Error fetching exchange rates:",
+        error
+      );
+    }
+  };
+
+  fetchRates();
+}, []);
+
+useEffect(() => {
+  const syncCountry = () => {
+    try {
+      const savedCountry =
+        localStorage.getItem(
+          "selectedCountry"
+        );
+
+      if (savedCountry) {
+        const parsedCountry =
+          JSON.parse(savedCountry);
+
+        setLockedCountry(
+          parsedCountry
+        );
+      } else {
+        setLockedCountry(null);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to sync country:",
+        error
+      );
+
+      setLockedCountry(null);
+    }
+  };
+
+  syncCountry();
+
+  window.addEventListener(
+    "countryChanged",
+    syncCountry
+  );
+
+  return () => {
+    window.removeEventListener(
+      "countryChanged",
+      syncCountry
+    );
+  };
+}, []);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -138,6 +240,87 @@ setBestSellersByCategory(bestSellerMap);
 
     fetchItems();
   },[itemClicked, countryCode, params?.country]);
+
+  useEffect(() => {
+  if (!items.length) {
+    setItemTranslations({});
+    return;
+  }
+
+  let cancelled = false;
+
+  const fetchItemTranslations = async () => {
+    const lang = getTranslationLanguage();
+
+    // English is the original product language.
+    if (lang === "en") {
+      if (!cancelled) {
+        setItemTranslations({});
+      }
+      return;
+    }
+
+    const itemIds = [
+      ...new Set(
+        items
+          .map((itemData) => itemData?.itemId)
+          .filter(Boolean)
+          .map(String)
+      ),
+    ];
+
+    try {
+      const results = await Promise.allSettled(
+        itemIds.map(async (itemId) => {
+          const response = await axios.get(
+            `${BASE_URL}/translate/product/translate/${encodeURIComponent(
+              itemId
+            )}/${encodeURIComponent(lang)}`
+          );
+
+          return {
+            itemId,
+            translation: response.data?.translation || null,
+          };
+        })
+      );
+
+      if (cancelled) return;
+
+      const translationMap = {};
+
+      results.forEach((result) => {
+        if (result.status !== "fulfilled") return;
+
+        const {
+          itemId,
+          translation,
+        } = result.value;
+
+        if (translation) {
+          translationMap[String(itemId)] = translation;
+        }
+      });
+
+      setItemTranslations(translationMap);
+    } catch (error) {
+      console.error(
+        "Error translating item names:",
+        error
+      );
+    }
+  };
+
+  fetchItemTranslations();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  items,
+  i18n.language,
+  i18n.resolvedLanguage,
+]);
 
   const formatTypeForUrl = (type) =>
   encodeURIComponent(String(type || "").toLowerCase().replace(/\s+/g, "-"));
@@ -315,6 +498,100 @@ const displayedItems = useMemo(() => {
   });
 }, [items, selectedColor, selectedSize]);
 
+const translateDynamicLabel = (value) => {
+  if (!value) return "";
+
+  const raw = String(value).trim();
+
+  return t(raw, {
+    defaultValue: raw,
+  });
+};
+
+const normalizeTranslationKey = (value) => {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[\s-]+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+};
+
+const translateGenderType = (gender, type) => {
+  if (!gender && !type) return "";
+
+  if (!gender) {
+    return translateDynamicLabel(type);
+  }
+
+  if (!type) {
+    return translateDynamicLabel(gender);
+  }
+
+  const genderKey = normalizeTranslationKey(gender);
+  const typeKey = normalizeTranslationKey(type);
+
+  // Example:
+  // women + jacket  -> women_jacket
+  // men + T-Shirt   -> men_t_shirt
+  const combinedKey = `${genderKey}_${typeKey}`;
+
+  // First priority: proper combined translation.
+  if (i18n.exists(combinedKey)) {
+    return t(combinedKey);
+  }
+
+  // Fallback: translate the two backend values separately.
+  return `${translateDynamicLabel(gender)} ${translateDynamicLabel(type)}`;
+};
+
+const getTranslatedColor = (color) => {
+  if (!color) return "";
+
+  const normalizedColor = String(color)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-/g, "_");
+
+  return t(`color_${normalizedColor}`, {
+    defaultValue: color,
+  });
+};
+
+const formatUsdToLocal = (usdValue) => {
+  const usdPrice =
+    Number(usdValue || 0);
+
+  const currency =
+    countryCurrencyConfig?.currency ||
+    "USD";
+
+  let localizedPrice = usdPrice;
+
+  if (currency !== "USD") {
+    const rate =
+      Number(rates?.[currency]);
+
+    if (rate) {
+      localizedPrice =
+        usdPrice * rate;
+    }
+  }
+
+  const symbol =
+    countryCurrencyConfig?.symbol ||
+    "$";
+
+  return `${symbol}${localizedPrice.toFixed(
+    2
+  )}`;
+};
+
+
+
  if (loading) {
   return (
     <div className="items-page-loading">
@@ -347,24 +624,26 @@ if (!loading && items.length === 0) {
         {String(itemClicked).replaceAll("_", " ")}
       </span>
 
-      <h2>No products available</h2>
+     <h2>{t("items_no_products_available")}</h2>
 
-      <p>
-        We couldn't find any{" "}
-        <strong>{String(itemClicked).replaceAll("_", " ")}</strong>{" "}
-        products currently available for delivery to{" "}
-        <strong>{countryName}</strong>.
-      </p>
+<p>
+  {t("items_no_products_delivery", {
+    type: String(itemClicked).replaceAll("_", " "),
+    country: countryName,
+  })}
+</p>
 
-      <p>New arrivals are added regularly. Try another country or check back soon.</p>
+<p>
+  {t("items_new_arrivals_message")}
+</p>
 
-      <button
-        type="button"
-        className="items-empty-btn"
-        onClick={() => router.push(withCountry("/"))}
-      >
-        Continue Shopping
-      </button>
+<button
+  type="button"
+  className="items-empty-btn"
+  onClick={() => router.push(withCountry("/"))}
+>
+  {t("continue_shopping")}
+</button>
     </div>
   );
 }
@@ -401,7 +680,7 @@ if (!loading && items.length === 0) {
         className="items-related-category"
         onClick={() => toggleDropdown(category)}
       >
-        <span>{category}</span>
+        <span> {translateDynamicLabel(category)}</span>
         <span className="items-dropdown-arrow">
           {dropdownOpen[category] ? "▲" : "▼"}
         </span>
@@ -428,9 +707,10 @@ if (!loading && items.length === 0) {
               className="items-related-type"
               onClick={() => handleNavigateByType(item)}
             >
-              {item.item?.genre
-                ? `${item.item.genre} ${item.item.type}`
-                : item.item?.type}
+            {translateGenderType(
+              item.item?.genre,
+              item.item?.type
+            )}
             </button>
           ))}
       </div>
@@ -443,13 +723,13 @@ if (!loading && items.length === 0) {
     className="items-filter-toggle"
     onClick={() => setFilterOpen((prev) => !prev)}
   >
-    <span>Filters</span>
+    <span>{t("filters")}</span>
     <span>{filterOpen ? "▲" : "▼"}</span>
   </button>
 
   <div className={`items-filter-dropdown ${filterOpen ? "open" : ""}`}>
     <div className="items-filter-section">
-      <h3>Colors</h3>
+      <h3>{t("colors")}</h3>
 
       <div className="items-color-options">
         <button
@@ -459,7 +739,7 @@ if (!loading && items.length === 0) {
           }`}
           onClick={() => setSelectedColor("all")}
         >
-          All
+         {t("all")}
         </button>
 
         {colors.map((color) => {
@@ -472,7 +752,8 @@ if (!loading && items.length === 0) {
               className={`items-color-circle ${
                 selectedColor === color ? "active" : ""
               }`}
-              title={color}
+             title={getTranslatedColor(color)}
+              aria-label={getTranslatedColor(color)}
               style={swatchColor ? { background: swatchColor } : {}}
               onClick={() => setSelectedColor(color)}
             />
@@ -483,7 +764,7 @@ if (!loading && items.length === 0) {
 
     {getAllSizes().length > 0 && (
       <div className="items-filter-section">
-        <h3>Sizes</h3>
+        <h3>{t("sizes")}</h3>
 
         <div className="items-size-options">
           {getAllSizes().map((size) => (
@@ -511,7 +792,7 @@ if (!loading && items.length === 0) {
           setSelectedSize(null);
         }}
       >
-        Clear filters
+       {t("clear_filters")}
       </button>
     )}
   </div>
@@ -522,16 +803,23 @@ if (!loading && items.length === 0) {
           <div className={gridClassName}>
            {displayedItems.map((itemData) => {
               const { itemId, id, item } = itemData;
-              const isBestSeller =
-                id === bestSellersByCategory[itemData.category];
-
-              const {
+               const {
                 name,
                 usdPrice,
                 originalPrice,
                 sold,
                 videos,
               } = item;
+              const translatedProduct =
+              itemTranslations[String(itemId)];
+
+            const displayName =
+              translatedProduct?.name ||
+              translatedProduct?.itemName ||
+              name ||
+              t("product");
+              const isBestSeller =
+                id === bestSellersByCategory[itemData.category];
 
               const reviewsData = reviews[itemId] || {};
               const finalRating = reviewsData?.averageRating;
@@ -573,7 +861,7 @@ if (!loading && items.length === 0) {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = "/fallback.png";
                           }}
-                          alt={name}
+                          alt={displayName}
                           onClick={() => handleNavigate(id)}
                         />
 
@@ -598,7 +886,9 @@ if (!loading && items.length === 0) {
                    <div className="item-brand-name">
                     <strong>{item?.brand || itemData?.details?.brand || "Malidag"}</strong>
                     <span>
-                      {name?.length > 70 ? `${name.substring(0, 70)}...` : name}
+                     {displayName?.length > 70
+                      ? `${displayName.substring(0, 70)}...`
+                      : displayName}
                     </span>
                   </div>
 
@@ -617,7 +907,8 @@ if (!loading && items.length === 0) {
                               className={`items-card-color-circle ${
                                 selectedColorByItem[id] === color ? "active" : ""
                               }`}
-                              title={color}
+                             title={getTranslatedColor(color)}
+                              aria-label={getTranslatedColor(color)}
                               style={
                                 swatchColor
                                   ? { background: swatchColor }
@@ -637,7 +928,9 @@ if (!loading && items.length === 0) {
                               handleNavigate(id);
                             }}
                           >
-                            +{getColorOptions(itemData).length - 3} more
+                           {t("more_colors", {
+                              count: getColorOptions(itemData).length - 3,
+                            })}
                           </button>
                         )}
                       </div>
@@ -645,12 +938,16 @@ if (!loading && items.length === 0) {
 
                     <div className="item-prices">
                       <div className="item-price-row">
-                        <span className="item-price">${usdPrice}</span>
+                       <span className="item-price">
+                        {formatUsdToLocal(usdPrice)}
+                      </span>
 
                         {originalPrice > 0 && (
                           <span className="item-original-price">
-                            ${originalPrice}
-                          </span>
+                          {formatUsdToLocal(
+                              originalPrice
+                            )}
+                        </span>
                         )}
 
                         <span className="item-sold">

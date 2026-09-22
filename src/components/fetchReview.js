@@ -24,6 +24,22 @@ const processName = (name) => {
   return name;
 };
 
+const COUNTRY_KEYS = {
+  france: "country_france",
+  "united kingdom": "country_united_kingdom",
+  uk: "country_united_kingdom",
+  "great britain": "country_united_kingdom",
+  england: "country_united_kingdom",
+
+  brazil: "country_brazil",
+  brasil: "country_brazil",
+
+  "united states": "country_united_states",
+  "united states of america": "country_united_states",
+  usa: "country_united_states",
+  us: "country_united_states"
+};
+
 const supportedLanguages = [
   { label: "English", code: "en" }, { label: "French", code: "fr" },
   { label: "Portuguese (Brazil)", code: "br" }
@@ -32,7 +48,7 @@ const supportedLanguages = [
 const supportedLangCodes = supportedLanguages.map(l => l.code);
 
 const FetchReviews = ({ productId, selectedRating, onRatingClick, serverReviews = [] }) => {
-  const { i18n } = useTranslation();
+   const { t ,  i18n} = useTranslation()
 const userLang = i18n.language;
 
   const [reviews, setReviews] = useState(serverReviews.length ? serverReviews : []);
@@ -43,7 +59,34 @@ const userLang = i18n.language;
   const reviewsRef = useRef(null);
   const pathname = usePathname();
   const isReviewPage = pathname === "/review";
-   const { t } = useTranslation()
+
+
+   const getTranslatedCountry = (
+  country
+) => {
+  if (!country) {
+    return t("no_country");
+  }
+
+  const normalizedCountry =
+    String(country)
+      .trim()
+      .toLowerCase();
+
+  const translationKey =
+    COUNTRY_KEYS[
+      normalizedCountry
+    ];
+
+  if (!translationKey) {
+    // Unknown country:
+    // preserve backend value instead of
+    // displaying a broken translation key.
+    return country;
+  }
+
+  return t(translationKey);
+};
 
  const translateComment = async (index, text, targetLang) => {
   setReviews((prev) =>
@@ -224,7 +267,14 @@ if (!reviews.length) return null;
 
 
                   <p style={{ color: "blue", cursor: "pointer", fontSize: "14px" }} onClick={() => setSelectedReviewIndex(realIndex)}>
-                    {t("from")}: {r.country || t("no_country")} — {t("date")}: {new Date(r.date).toLocaleDateString()}
+                   {t("from")}:{" "}
+                    {getTranslatedCountry(
+                      r.country
+                    )}{" "}
+                    — {t("date")}:{" "}
+                    {new Date(
+                      r.date
+                    ).toLocaleDateString()}
                   </p>
                   <p style={{ color: "black", fontWeight: selectedRating === r.rating ? "bold" : "normal" }} onClick={() => onRatingClick?.(r.rating)}>
                     {t("rating")}: {r.rating} 
@@ -241,7 +291,7 @@ if (!reviews.length) return null;
         
 
         {selectedReviewIndex !== null && (
-          <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.09)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setSelectedReviewIndex(null)}>
+          <div style={{ position: "fixed", top: 0, left: 0, maxWidth: "100%", width: "500px", height: "100vh", backgroundColor: "rgba(0,0,0,0.09)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setSelectedReviewIndex(null)}>
             <div style={{ background: "white", padding: "20px", borderRadius: "8px", minWidth: "300px", maxWidth: "90%", boxShadow: "0 4px 8px rgba(0,0,0,0.2)", position: "relative", color: "black" }} onClick={e => e.stopPropagation()}>
               <button style={{ position: "absolute", top: "10px", right: "10px", background: "transparent", border: "none", fontSize: "18px", cursor: "pointer" }} onClick={() => setSelectedReviewIndex(null)}>×</button>
               <h3>{t("review_details")}</h3>

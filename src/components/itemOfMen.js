@@ -359,9 +359,18 @@ const handleAddToBasket = async (itemData, e) => {
             ? itemsResponse.value?.data?.items || []
             : [];
 
-        const menItems = fetchedItems.filter(
-          (entry) => normalizeText(entry?.item?.genre) === "men"
-        );
+       const menItems = fetchedItems.filter(
+        (entry) => {
+          const gender = normalizeText(
+            entry?.item?.genre
+          );
+
+          return (
+             gender === "men" ||
+            gender === "unisex"
+          );
+        }
+      );
 
         const fetchedImages =
           imagesResponse.status === "fulfilled" &&

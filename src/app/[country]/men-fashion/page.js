@@ -126,6 +126,7 @@ async function getData(countryCode) {
     genre === "man" ||
     genre === "male" ||
     genre === "mens" ||
+    genre === "unisex" ||
     genre === "men's";
 
   return isMen && category !== "beauty";

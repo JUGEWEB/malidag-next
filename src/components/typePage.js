@@ -32,10 +32,7 @@ export default function TypePage() {
   const { setItemData } = useCheckoutStore();
 
   const [items, setItems] = useState([]);
-  const [allItems, setAllItems] = useState([]);
-  const [categoryTypes, setCategoryTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState({});
   const [activeVideoId, setActiveVideoId] = useState(null);
   const [reviews, setReviews] = useState({});
 
@@ -70,8 +67,6 @@ export default function TypePage() {
         const { data } = await axios.get(`${BASE_URL}/items`);
         const normalized = normalizeItems(data);
 
-        setAllItems(normalized);
-
         const twoMonthsAgo = new Date();
         twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
@@ -81,9 +76,21 @@ export default function TypePage() {
         });
 
         setItems(filtered);
-        setCategoryTypes([
-          ...new Set(normalized.map((i) => i.item.type.toLowerCase())),
-        ]);
+
+        const brands = [
+  ...new Set(
+    filtered
+      .map(
+        (itemData) =>
+          itemData?.item?.brand ||
+          itemData?.details?.brand
+      )
+      .filter(Boolean)
+      .map((brand) =>
+        String(brand).trim()
+      )
+  ),
+];
 
         filtered.slice(0, 20).forEach((i) => fetchReviews(i.itemId));
       } catch (err) {
@@ -96,15 +103,23 @@ export default function TypePage() {
     fetchData();
   }, []);
 
-  const toggleDropdown = (type) => {
-    setDropdownOpen((prev) => ({
-      ...prev,
-      [type]: !prev[type],
-    }));
-  };
+  const relatedBrands = useMemo(() => {
+  return [
+    ...new Set(
+      items
+        .map(
+          (itemData) =>
+            itemData?.item?.brand ||
+            itemData?.details?.brand
+        )
+        .filter(Boolean)
+        .map((brand) =>
+          String(brand).trim()
+        )
+    ),
+  ];
+}, [items]);
 
-  const getItemsByType = (type) =>
-    allItems.filter((i) => i.item.type.toLowerCase() === type).slice(0, 8);
 
   const handleItemClick = (id) => router.push(`/product/${id}`);
 
@@ -134,66 +149,77 @@ export default function TypePage() {
 
   return (
     <div className="tp-page">
-      <div className="tp-topbar">
-        <div className="tp-topbar-head">
-          <h2 className="tp-title">Shop by Type</h2>
-          <p className="tp-subtitle">Explore fresh arrivals across related product types</p>
-        </div>
+     {relatedBrands.length > 0 && (
+  <section className="tp-brands">
+    <div className="tp-brands-head">
+      <div>
+        <span className="tp-brands-eyebrow">
+          Discover more
+        </span>
 
-        <div className="tp-type-pills">
-          {categoryTypes.map((type) => (
-            <button
-              key={type}
-              type="button"
-              className={`tp-type-pill ${dropdownOpen[type] ? "active" : ""}`}
-              onClick={() => toggleDropdown(type)}
-            >
-              <span>{type}</span>
-              {dropdownOpen[type] ? <UpOutlined /> : <DownOutlined />}
-            </button>
-          ))}
-        </div>
+        <h2 className="tp-brands-title">
+          Related Brands
+        </h2>
       </div>
+    </div>
 
-      <div className="tp-dropdown-area">
-        {categoryTypes.map(
-          (type) =>
-            dropdownOpen[type] && (
-              <div key={type} className="tp-dropdown-card">
-                <div className="tp-dropdown-header">
-                  <h3>{type}</h3>
-                  <span>{getItemsByType(type).length} items</span>
-                </div>
-
-                <div className="tp-related-grid">
-                  {getItemsByType(type).map((item) => (
-                    <div
-                      key={item.id}
-                      className="tp-related-item"
-                      onClick={() => handleItemClick(item.id)}
-                    >
-                      <div className="tp-related-image-wrap">
-                        <img
-                          src={item.item.images[0]}
-                          alt={item.item.name}
-                          className="tp-related-image"
-                        />
-                      </div>
-                      <div className="tp-related-name">
-                        {item.item.name.length > 38
-                          ? `${item.item.name.slice(0, 38)}...`
-                          : item.item.name}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+    <div className="tp-brand-list">
+      {relatedBrands.map((brand) => (
+        <button
+          key={brand}
+          type="button"
+          className="tp-brand-pill"
+          onClick={() =>
+            router.push(
+              `/brand/${encodeURIComponent(
+                brand
+              )}`
             )
-        )}
-      </div>
+          }
+        >
+          {brand}
+          <span className="tp-brand-arrow">
+            →
+          </span>
+        </button>
+      ))}
+    </div>
+  </section>
+)}
 
-      <div className="tp-grid">
-        {latestItems.map((itemData) => {
+     {latestItems.length === 0 ? (
+  <div className="tp-empty-state">
+    <div className="tp-empty-icon">
+      <span>✦</span>
+    </div>
+
+    <span className="tp-empty-label">
+      New arrivals
+    </span>
+
+    <h2>
+      Fresh finds are on the way
+    </h2>
+
+    <p>
+      We don't have any new products to
+      show right now, but we're always
+      adding something new. Check back
+      soon for the latest arrivals.
+    </p>
+
+    <button
+      type="button"
+      className="tp-empty-action"
+      onClick={() => router.push("/")}
+    >
+      Continue shopping
+      <span>→</span>
+    </button>
+  </div>
+) : (
+  <div className="tp-grid">
+    {latestItems.map((itemData) => {
           const { itemId, id, item } = itemData;
           const rating = reviews[itemId]?.averageRating;
 
@@ -280,8 +306,9 @@ export default function TypePage() {
               </div>
             </div>
           );
-        })}
+        })} 
       </div>
+      )}
     </div>
   );
 }

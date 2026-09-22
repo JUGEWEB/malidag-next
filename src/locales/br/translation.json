@@ -55,7 +55,7 @@
 "loading_product": "Carregando produto",
 "updating_delivery_country": "Atualizando o país de entrega...",
 "type_new": "Novidades",
-"madix_news": "Notícias Madix",
+"madix_news": "Notícias Malidag",
 "review_title": "Análise da avaliação",
 "review_error": "Erro ao carregar avaliações:",
 "review_loading": "Carregando avaliações...",
@@ -829,5 +829,12 @@
 "men_jacket": "Jaquetas masculinas",
 "men_shoes": "Calçados masculinos",
 "men_sweat_shirt": "Moletons masculinos",
-"view_reviews": "Ver avaliações deste produto"
+"view_reviews": "Ver avaliações deste produto",
+"unisex_socks": "Meias unissex",
+"discover_more": "Descubra mais",
+"video": "Vídeo",
+"new": "Novo",
+"new_arrivals": "Novidades",
+"new_arrivals_empty_title": "Novidades estão a caminho",
+"new_arrivals_empty_description": "Não temos novos produtos para mostrar no momento, mas estamos sempre adicionando novidades. Volte em breve para conferir os últimos lançamentos."
 }

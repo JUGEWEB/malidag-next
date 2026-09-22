@@ -394,7 +394,7 @@
 "loading_product": "Chargement du produit",
 "updating_delivery_country": "Mise à jour du pays de livraison...",
 "type_new": "Nouveautés",
-"madix_news": "Actualités Madix",
+"madix_news": "Actualités malidag",
 "t-shirt": "T-shirt",
 "sweat-shirt": "Sweat-shirt",
 "slider_sneakers_title": "Découvrez des collections de baskets adaptées à votre style",
@@ -1007,6 +1007,13 @@
 "women_t_shirt": "T-shirts pour femme",
 "women_shoes": "Chaussures pour femme",
 "men_shoes": "Chaussures pour homme",
-"men_sweat_shirt": "Sweats pour homme"
+"men_sweat_shirt": "Sweats pour homme",
+"unisex_socks": "Chaussettes unisexes",
+"discover_more": "Découvrez davantage",
+"video": "Vidéo",
+"new": "Nouveau",
+"new_arrivals": "Nouveautés",
+"new_arrivals_empty_title": "De nouvelles trouvailles arrivent bientôt",
+"new_arrivals_empty_description": "Nous n'avons aucun nouveau produit à afficher pour le moment, mais nous ajoutons régulièrement de nouveaux articles. Revenez bientôt pour découvrir les dernières nouveautés."
 
 }

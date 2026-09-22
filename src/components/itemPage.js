@@ -491,7 +491,8 @@ const handleNavigateByType = (firstItem) => {
     ["boy", "girl", "babies", "babyboy", "babygirl", "kids", "kid"].includes(gender)
   ) {
    router.push(withCountry(`/itemOfKids/${gender}/${formattedType}`));
-  } else if (category === "beauty") {
+  } else if (category === "beauty" ||
+    category === "accessories") {
    router.push(withCountry(`/itemOfItems/${formattedType}`));
   } else if (category === "shoes") {
     router.push(withCountry(`/itemOfShoes/${gender}-${formattedType}`));

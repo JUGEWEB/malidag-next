@@ -1,11 +1,29 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { DownOutlined, PlayCircleOutlined, UpOutlined } from "@ant-design/icons";
+"use client";
+
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  PlayCircleOutlined,
+} from "@ant-design/icons";
+
 import axios from "axios";
 import "./typePage.css";
+
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import { AppContext } from "./appContext";
 import { useCheckoutStore } from "./checkoutStore";
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
 
 const BASE_URL = "https://api.malidag.com";
 
@@ -31,10 +49,67 @@ export default function TypePage() {
   const router = useRouter();
   const { setItemData } = useCheckoutStore();
 
+  const { country } = useContext(AppContext);
+const { t, i18n } = useTranslation();
+const [brandThemes, setBrandThemes] =
+  useState([]);
+
+const countryCode =
+  country?.code?.toLowerCase() || "fr";
+
+const currencyConfig = useMemo(
+  () =>
+    getCountryConfig(
+      country?.name || ""
+    ),
+  [country?.name]
+);
+
+const rawLanguage = (
+  i18n.resolvedLanguage ||
+  i18n.language ||
+  "en"
+).toLowerCase();
+
+let currentLanguage = "en";
+
+if (
+  rawLanguage === "br" ||
+  rawLanguage === "pt-br" ||
+  rawLanguage.startsWith("pt")
+) {
+  currentLanguage = "br";
+} else if (
+  rawLanguage.startsWith("fr")
+) {
+  currentLanguage = "fr";
+}
+
+const withCountry = (path) => {
+  if (!path) {
+    return `/${countryCode}`;
+  }
+
+  const cleanPath = path.replace(
+    /^\/(fr|gb|br|us|de|ie|au|be)(\/|$)/,
+    "/"
+  );
+
+  return `/${countryCode}${
+    cleanPath.startsWith("/")
+      ? cleanPath
+      : `/${cleanPath}`
+  }`;
+};
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState(null);
   const [reviews, setReviews] = useState({});
+
+  const [rates, setRates] = useState({});
+const [translations, setTranslations] =
+  useState({});
 
   const fetchReviews = async (id) => {
     try {
@@ -64,7 +139,14 @@ export default function TypePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data } = await axios.get(`${BASE_URL}/items`);
+       const { data } = await axios.get(
+  `${BASE_URL}/items`,
+  {
+    params: {
+      country: countryCode,
+    },
+  }
+);
         const normalized = normalizeItems(data);
 
         const twoMonthsAgo = new Date();
@@ -77,20 +159,7 @@ export default function TypePage() {
 
         setItems(filtered);
 
-        const brands = [
-  ...new Set(
-    filtered
-      .map(
-        (itemData) =>
-          itemData?.item?.brand ||
-          itemData?.details?.brand
-      )
-      .filter(Boolean)
-      .map((brand) =>
-        String(brand).trim()
-      )
-  ),
-];
+      
 
         filtered.slice(0, 20).forEach((i) => fetchReviews(i.itemId));
       } catch (err) {
@@ -101,7 +170,177 @@ export default function TypePage() {
     };
 
     fetchData();
-  }, []);
+  }, [countryCode]);
+
+  useEffect(() => {
+  const fetchBrandThemes = async () => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/brands/themes`
+      );
+
+      setBrandThemes(
+        response.data || []
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch brand themes:",
+        error
+      );
+    }
+  };
+
+  fetchBrandThemes();
+}, []);
+
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+
+const getBrandTheme = (brandName) => {
+  const match = brandThemes.find(
+    (entry) =>
+      normalizeText(entry?.brandName) ===
+      normalizeText(brandName)
+  );
+
+  return (
+    match?.theme?.trim()?.toLowerCase() ||
+    "brand"
+  );
+};
+
+  useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/prices/rates`
+      );
+
+      setRates(
+        response.data?.rates || {}
+      );
+    } catch (error) {
+      console.error(
+        "Error fetching exchange rates:",
+        error
+      );
+
+      setRates({});
+    }
+  };
+
+  fetchRates();
+}, []);
+
+useEffect(() => {
+  const fetchTranslations = async () => {
+    if (!items.length) {
+      setTranslations({});
+      return;
+    }
+
+    if (currentLanguage === "en") {
+      setTranslations({});
+      return;
+    }
+
+    try {
+      const results =
+        await Promise.all(
+          items.map(async (itemData) => {
+            const productId =
+              itemData?.itemId;
+
+            if (!productId) {
+              return null;
+            }
+
+            try {
+              const response =
+                await axios.get(
+                  `${BASE_URL}/translate/product/translate/${encodeURIComponent(
+                    productId
+                  )}/${encodeURIComponent(
+                    currentLanguage
+                  )}`
+                );
+
+              return {
+                productId:
+                  String(productId),
+
+                translation:
+                  response.data
+                    ?.translation || null,
+              };
+            } catch (error) {
+              console.error(
+                `Failed to translate product ${productId}:`,
+                error
+              );
+
+              return null;
+            }
+          })
+        );
+
+      const nextTranslations = {};
+
+      results.forEach((result) => {
+        if (
+          result?.productId &&
+          result?.translation
+        ) {
+          nextTranslations[
+            result.productId
+          ] = result.translation;
+        }
+      });
+
+      setTranslations(
+        nextTranslations
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch translations:",
+        error
+      );
+    }
+  };
+
+  fetchTranslations();
+}, [items, currentLanguage]);
+
+const formatUsdToLocal = (usdValue) => {
+  const usdPrice =
+    Number(usdValue || 0);
+
+  const currency =
+    currencyConfig?.currency || "USD";
+
+  let localizedPrice = usdPrice;
+
+  if (currency !== "USD") {
+    const rate =
+      Number(rates?.[currency]);
+
+    if (rate) {
+      localizedPrice =
+        usdPrice * rate;
+    }
+  }
+
+  const symbol =
+    currencyConfig?.symbol || "$";
+
+  return `${symbol}${localizedPrice.toFixed(
+    2
+  )}`;
+};
 
   const relatedBrands = useMemo(() => {
   return [
@@ -121,7 +360,11 @@ export default function TypePage() {
 }, [items]);
 
 
-  const handleItemClick = (id) => router.push(`/product/${id}`);
+ const handleItemClick = (id) => {
+  router.push(
+    withCountry(`/product/${id}`)
+  );
+};
 
   const renderStars = (rating) => {
     const safeRating = Math.round(Number(rating) || 0);
@@ -154,11 +397,11 @@ export default function TypePage() {
     <div className="tp-brands-head">
       <div>
         <span className="tp-brands-eyebrow">
-          Discover more
+         {t("discover_more")}
         </span>
 
         <h2 className="tp-brands-title">
-          Related Brands
+         {t("related_brands")}
         </h2>
       </div>
     </div>
@@ -169,13 +412,20 @@ export default function TypePage() {
           key={brand}
           type="button"
           className="tp-brand-pill"
-          onClick={() =>
-            router.push(
-              `/brand/${encodeURIComponent(
-                brand
-              )}`
-            )
-          }
+         onClick={() => {
+  const theme =
+    getBrandTheme(brand);
+
+  router.push(
+    withCountry(
+      `/brand/${encodeURIComponent(
+        theme
+      )}/${encodeURIComponent(
+        brand
+      )}`
+    )
+  );
+}}
         >
           {brand}
           <span className="tp-brand-arrow">
@@ -193,35 +443,63 @@ export default function TypePage() {
       <span>✦</span>
     </div>
 
-    <span className="tp-empty-label">
-      New arrivals
-    </span>
+   <span className="tp-empty-label">
+  {t("new_arrivals")}
+</span>
 
-    <h2>
-      Fresh finds are on the way
-    </h2>
+<h2>
+  {t("new_arrivals_empty_title")}
+</h2>
 
-    <p>
-      We don't have any new products to
-      show right now, but we're always
-      adding something new. Check back
-      soon for the latest arrivals.
-    </p>
+<p>
+  {t("new_arrivals_empty_description")}
+</p>
 
-    <button
-      type="button"
-      className="tp-empty-action"
-      onClick={() => router.push("/")}
-    >
-      Continue shopping
-      <span>→</span>
-    </button>
+<button
+  type="button"
+  className="tp-empty-action"
+  onClick={() =>
+    router.push(
+      withCountry("/")
+    )
+  }
+>
+  {t("continue_shopping")}
+  <span>→</span>
+</button>
   </div>
 ) : (
   <div className="tp-grid">
     {latestItems.map((itemData) => {
-          const { itemId, id, item } = itemData;
-          const rating = reviews[itemId]?.averageRating;
+         const {
+  itemId,
+  id,
+  item = {},
+  details = {},
+} = itemData;
+
+const rating =
+  reviews[itemId]?.averageRating;
+
+const originalName =
+  item?.name ||
+  details?.itemName ||
+  t("unnamed_item");
+
+const translatedProduct =
+  translations[String(itemId)];
+
+const displayName =
+  currentLanguage === "en"
+    ? originalName
+    : translatedProduct?.name ||
+      translatedProduct?.itemName ||
+      originalName;
+
+      const brandName =
+  item?.brand ||
+  details?.brand ||
+  "";
 
           const video = Array.isArray(item.videos)
             ? item.videos.find((v) => v?.endsWith(".mp4"))
@@ -232,7 +510,7 @@ export default function TypePage() {
           return (
             <div key={id} className="tp-card">
               <div className="tp-media">
-                {video && <div className="tp-badge">Video</div>}
+                {video && <div className="tp-badge">{t("video")}</div>}
 
                 {activeVideoId === id && video ? (
                   <video
@@ -246,7 +524,7 @@ export default function TypePage() {
                   <>
                     <img
                       src={item.images[0]}
-                      alt={item.name}
+                      alt={displayName}
                       className="tp-image"
                       onClick={() => handleItemClick(id)}
                       onError={(e) => {
@@ -272,13 +550,53 @@ export default function TypePage() {
               </div>
 
               <div className="tp-info">
-                <div className="tp-name" onClick={() => handleItemClick(id)}>
-                  {item.name.length > 58 ? `${item.name.slice(0, 58)}...` : item.name}
-                </div>
+
+                {brandName && (
+  <button
+    type="button"
+    className="tp-card-brand"
+    onClick={(e) => {
+      e.stopPropagation();
+
+      const theme =
+        getBrandTheme(brandName);
+
+      router.push(
+        withCountry(
+          `/brand/${encodeURIComponent(
+            theme
+          )}/${encodeURIComponent(
+            brandName
+          )}`
+        )
+      );
+    }}
+  >
+    <span>{brandName}</span>
+    <span
+      className="tp-card-brand-arrow"
+      aria-hidden="true"
+    >
+      →
+    </span>
+  </button>
+)}
+               <div
+                className="tp-name"
+                onClick={() =>
+                  handleItemClick(id)
+                }
+              >
+                {displayName.length > 58
+                  ? `${displayName.slice(0, 58)}...`
+                  : displayName}
+              </div>
 
                 <div className="tp-price-row">
-                  <span className="tp-price">${Number(item.usdPrice || 0).toFixed(2)}</span>
-                  <span className="tp-new-badge">New</span>
+                 <span className="tp-price">
+                  {formatUsdToLocal(item.usdPrice)}
+                </span>
+                  <span className="tp-new-badge">{t("new")}</span>
                 </div>
 
                 <div className="tp-rating-row">
@@ -288,7 +606,7 @@ export default function TypePage() {
                       <span className="tp-rating-value">{rating}/5</span>
                     </>
                   ) : (
-                    <span className="tp-no-reviews">No reviews yet</span>
+                    <span className="tp-no-reviews">{t("no_reviews_yet")}</span>
                   )}
                 </div>
 
@@ -298,10 +616,14 @@ export default function TypePage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setItemData(itemData);
-                    router.push("/review");
+                   router.push(
+                  withCountry(
+                    `/product/${id}/review`
+                  )
+                );
                   }}
                 >
-                  Buy Now
+                 {t("buy_now")}
                 </button>
               </div>
             </div>

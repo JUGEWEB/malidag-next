@@ -5,18 +5,18 @@ import useScreenSize from "./useIsMobile";
 
 const fallbackNews = [
   {
-    id: "madix-jewelry",
+    id: "malidag-jewelry",
     title: "Jewelry shopping is expanding on Madix",
     description:
       "Madix is expanding jewelry collections with watches, rings, necklaces, bracelets, and premium accessories.",
     source: "Madix",
   },
   {
-    id: "madix-store",
+    id: "malidag-store",
     title: "Watches store is now available",
     description:
       "Customers can now browse selected watch collections directly from the jewelry section.",
-    source: "Madix",
+    source: "Malidag",
   },
 ];
 
@@ -173,7 +173,7 @@ const MalidagNews = () => {
   return (
     <div style={containerStyle}>
       <div style={heroStyle}>
-        <h1 style={headingStyle}>Madix News</h1>
+        <h1 style={headingStyle}>Malidag News</h1>
 
         <p style={subtitleStyle}>
           Explore marketplace updates, shopping highlights,

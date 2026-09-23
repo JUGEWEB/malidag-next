@@ -1014,6 +1014,13 @@
 "new": "Nouveau",
 "new_arrivals": "Nouveautés",
 "new_arrivals_empty_title": "De nouvelles trouvailles arrivent bientôt",
-"new_arrivals_empty_description": "Nous n'avons aucun nouveau produit à afficher pour le moment, mais nous ajoutons régulièrement de nouveaux articles. Revenez bientôt pour découvrir les dernières nouveautés."
+"new_arrivals_empty_description": "Nous n'avons aucun nouveau produit à afficher pour le moment, mais nous ajoutons régulièrement de nouveaux articles. Revenez bientôt pour découvrir les dernières nouveautés.",
+"malidag_news": "Actualités Malidag",
+"malidag_news_subtitle": "Découvrez les actualités de la marketplace, les tendances shopping et mode, les collections de bijoux et une sélection d'actualités du commerce.",
+"news_loading": "Chargement des dernières actualités...",
+"news_empty": "Aucune actualité n'est disponible pour le moment.",
+"news_latest_update": "Dernière mise à jour",
+"news_default_description": "Découvrez les dernières actualités de Malidag.",
+"read_more": "Lire la suite"
 
 }

@@ -1,58 +1,141 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import useScreenSize from "./useIsMobile";
+import React, {
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
-const fallbackNews = [
-  {
-    id: "malidag-jewelry",
-    title: "Jewelry shopping is expanding on Madix",
-    description:
-      "Madix is expanding jewelry collections with watches, rings, necklaces, bracelets, and premium accessories.",
-    source: "Madix",
-  },
-  {
-    id: "malidag-store",
-    title: "Watches store is now available",
-    description:
-      "Customers can now browse selected watch collections directly from the jewelry section.",
-    source: "Malidag",
-  },
-];
+import { useTranslation } from "react-i18next";
+import { AppContext } from "./appContext";
+import useScreenSize from "./useIsMobile";
+import { useRouter } from "next/navigation";
+
+const BASE_URL = "https://api.malidag.com";
+
 
 const MalidagNews = () => {
   const { isMobile, isSmallMobile, isVerySmall } = useScreenSize();
 
-  const isPhone = isMobile || isSmallMobile || isVerySmall;
-
-  const [articles, setArticles] = useState(fallbackNews);
+ const [articles, setArticles] =
+  useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const response = await fetch(
-          "https://api.malidag.com/api/news"
+  const { country } =
+    useContext(AppContext);
+
+  const { t, i18n } =
+    useTranslation();
+
+  const countryCode =
+    country?.code
+      ?.toLowerCase() || "fr";
+
+  const isPhone =
+    isMobile ||
+    isSmallMobile ||
+    isVerySmall;
+
+  const router = useRouter();
+
+
+  const withCountry = (path) => {
+  if (!path) {
+    return `/${countryCode}`;
+  }
+
+  const cleanPath = path.replace(
+    /^\/(fr|gb|br|us|de|ie|au|be)(\/|$)/,
+    "/"
+  );
+
+  return `/${countryCode}${
+    cleanPath.startsWith("/")
+      ? cleanPath
+      : `/${cleanPath}`
+  }`;
+};
+
+
+ useEffect(() => {
+  const controller =
+    new AbortController();
+
+  const fetchNews = async () => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `${BASE_URL}/api/news?country=${encodeURIComponent(
+          countryCode
+        )}`,
+        {
+          cache: "no-store",
+          signal:
+            controller.signal,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `News request failed: ${response.status}`
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (
+        data?.success &&
+        Array.isArray(
+          data.articles
+        )
+      ) {
+        setArticles(
+          data.articles
+        );
+      } else {
+        setArticles([]);
+      }
+    } catch (error) {
+      if (
+        error?.name !==
+        "AbortError"
+      ) {
+        console.error(
+          "News fetch error:",
+          error
         );
 
-        const data = await response.json();
-
-        if (
-          data?.success &&
-          Array.isArray(data.articles) &&
-          data.articles.length > 0
-        ) {
-          setArticles(data.articles);
-        }
-      } catch (error) {
-        console.error("News fetch error:", error);
-      } finally {
+        setArticles([]);
+      }
+    } finally {
+      if (
+        !controller.signal.aborted
+      ) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    fetchNews();
-  }, []);
+  fetchNews();
+
+  return () => {
+    controller.abort();
+  };
+}, [countryCode]);
+
+const getDateLocale = () => {
+  if (countryCode === "fr") {
+    return "fr-FR";
+  }
+
+  if (countryCode === "br") {
+    return "pt-BR";
+  }
+
+  return "en-GB";
+};
 
   const containerStyle = {
     padding: isPhone ? "18px 14px" : "40px 28px",
@@ -173,20 +256,20 @@ const MalidagNews = () => {
   return (
     <div style={containerStyle}>
       <div style={heroStyle}>
-        <h1 style={headingStyle}>Malidag News</h1>
+       <h1 style={headingStyle}>
+          {t("malidag_news")}
+        </h1>
 
         <p style={subtitleStyle}>
-          Explore marketplace updates, shopping highlights,
-          fashion trends, jewelry collections, and curated
-          retail news from around the world.
+          {t("malidag_news_subtitle")}
         </p>
       </div>
 
       {loading ? (
-        <div style={loadingStyle}>
-          Loading latest news...
-        </div>
-      ) : null}
+  <div style={loadingStyle}>
+    {t("news_loading")}
+  </div>
+) : null}
 
       <div style={gridStyle}>
         {articles.map((article, index) => {
@@ -215,7 +298,7 @@ const MalidagNews = () => {
                 <span style={badgeStyle}>
                   {article.author ||
                     article.source ||
-                    "Madix News"}
+                     t("malidag_news")}
                 </span>
 
                 <h2 style={titleStyle}>
@@ -224,28 +307,35 @@ const MalidagNews = () => {
 
                 <p style={descriptionStyle}>
                   {article.description ||
-                    "Read the latest news update from Madix."}
+                     t("news_default_description")}
                 </p>
 
                 <div style={footerStyle}>
                   <span style={dateStyle}>
-                    {article.published
-                      ? new Date(
-                          article.published
-                        ).toLocaleDateString()
-                      : "Latest update"}
+                   {article.published
+                    ? new Date(
+                        article.published
+                      ).toLocaleDateString(
+                        getDateLocale(),
+                        {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        }
+                      )
+                    : t("news_latest_update")}
                   </span>
 
-                  {article.url ? (
-                    <a
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={linkStyle}
-                    >
-                      Read more →
-                    </a>
-                  ) : null}
+               {article.url ? (
+  <a
+    href={article.url}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={linkStyle}
+  >
+    {t("read_more")} →
+  </a>
+) : null}
                 </div>
               </div>
             </article>

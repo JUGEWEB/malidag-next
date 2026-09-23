@@ -1149,5 +1149,12 @@
 "buy_now": "Buy Now",
 "new_arrivals": "New arrivals",
 "new_arrivals_empty_title": "Fresh finds are on the way",
-"new_arrivals_empty_description": "We don't have any new products to show right now, but we're always adding something new. Check back soon for the latest arrivals."
+"new_arrivals_empty_description": "We don't have any new products to show right now, but we're always adding something new. Check back soon for the latest arrivals.",
+"malidag_news": "Malidag News",
+"malidag_news_subtitle": "Explore marketplace updates, shopping highlights, fashion trends, jewelry collections, and curated retail news from around the world.",
+"news_loading": "Loading latest news...",
+"news_empty": "No news is available right now.",
+"news_latest_update": "Latest update",
+"news_default_description": "Read the latest news update from Malidag.",
+"read_more": "Read more"
 }

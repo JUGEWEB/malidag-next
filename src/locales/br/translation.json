@@ -836,5 +836,12 @@
 "new": "Novo",
 "new_arrivals": "Novidades",
 "new_arrivals_empty_title": "Novidades estão a caminho",
-"new_arrivals_empty_description": "Não temos novos produtos para mostrar no momento, mas estamos sempre adicionando novidades. Volte em breve para conferir os últimos lançamentos."
+"new_arrivals_empty_description": "Não temos novos produtos para mostrar no momento, mas estamos sempre adicionando novidades. Volte em breve para conferir os últimos lançamentos.",
+"malidag_news": "Notícias Malidag",
+"malidag_news_subtitle": "Confira novidades do marketplace, destaques de compras, tendências de moda, coleções de joias e notícias selecionadas do varejo.",
+"news_loading": "Carregando as últimas notícias...",
+"news_empty": "Nenhuma notícia está disponível no momento.",
+"news_latest_update": "Última atualização",
+"news_default_description": "Confira as últimas notícias da Malidag.",
+"read_more": "Leia mais"
 }

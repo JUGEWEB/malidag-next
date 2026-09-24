@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useContext } from "react";
 import axios from "axios";
 import "./saveBig.css";
 import { useRouter } from "next/navigation";
+import { AppContext } from "./appContext";
 import { useCheckoutStore } from "./checkoutStore";
 import { auth } from "@/components/firebaseConfig";
+import { useTranslation } from "react-i18next";
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
 import colorSwatches from "../../lib/colors.json";
 
 const BASE_URL = "https://api.malidag.com";
@@ -14,6 +20,7 @@ const BASKET_API = "https://api.malidag.com/add-to-basket";
 
 function SaveBig({ countryCode }) {
   const router = useRouter();
+  const { country } = useContext(AppContext);
   const setItemData = useCheckoutStore((state) => state.setItemData);
 const [reviews, setReviews] = useState({});
   const [types, setTypes] = useState({});
@@ -21,6 +28,23 @@ const [reviews, setReviews] = useState({});
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
   const [bestSellerId, setBestSellerId] = useState(null);
   const [basketItems, setBasketItems] = useState([]);
+  const { t, i18n } = useTranslation();
+
+const [rates, setRates] = useState({});
+const [translations, setTranslations] = useState({});
+
+const lang = ["en", "fr", "br"].includes(i18n.language)
+  ? i18n.language
+  : "en";
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
+const currentLanguage = isSupportedLanguage(i18n.language)
+  ? i18n.language
+  : "en";
 
   const withCountry = (path) => {
   const code = countryCode;
@@ -79,6 +103,57 @@ setBestSellerId(bestSeller?.id || null);
 
     fetchFilteredItems();
   },  [countryCode]);
+
+ useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/prices/rates`);
+
+      setRates(response.data?.rates || response.data || null);
+    } catch (error) {
+      console.error("Failed to fetch currency rates:", error);
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const getCurrencyRate = () => {
+  if (!currencyConfig || !rates) return null;
+
+  if (currencyConfig.currency === "USD") {
+    return 1;
+  }
+
+  const rate = Number(rates?.[currencyConfig.currency]);
+
+  return Number.isFinite(rate) && rate > 0
+    ? rate
+    : null;
+};
+
+const convertUsd = (usdAmount) => {
+  const amount = Number(usdAmount);
+
+  if (!Number.isFinite(amount)) return null;
+
+  const rate = getCurrencyRate();
+
+  if (!rate) return null;
+
+  return amount * rate;
+};
+
+const formatPrice = (usdAmount) => {
+  const converted = convertUsd(usdAmount);
+
+  if (converted === null || !currencyConfig) {
+    return t("price_unavailable");
+  }
+
+  return `${currencyConfig.symbol}${converted.toFixed(2)}`;
+};
 
   const allItems = useMemo(() => Object.values(types).flat(), [types]);
 
@@ -329,6 +404,136 @@ if (response.status === 200 || response.status === 201) {
 };
 
 useEffect(() => {
+  const fetchTranslations = async () => {
+    if (!allItems.length) {
+      setTranslations({});
+      return;
+    }
+
+    // English uses the original database content.
+    if (currentLanguage === "en") {
+      setTranslations({});
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        allItems.map(async (itemData) => {
+          const productId = itemData?.itemId;
+
+          if (!productId) {
+            return null;
+          }
+
+          try {
+            const response = await axios.get(
+              `${BASE_URL}/translate/product/translate/${productId}/${currentLanguage}`
+            );
+
+            return {
+              productId,
+              translation: response.data?.translation || null,
+            };
+          } catch (error) {
+            console.error(
+              `Failed to translate product ${productId}:`,
+              error
+            );
+
+            return null;
+          }
+        })
+      );
+
+      const nextTranslations = {};
+
+      results.forEach((result) => {
+        if (result?.productId && result?.translation) {
+          nextTranslations[result.productId] = result.translation;
+        }
+      });
+
+      setTranslations(nextTranslations);
+    } catch (error) {
+      console.error("Failed to fetch product translations:", error);
+    }
+  };
+
+  fetchTranslations();
+}, [allItems, currentLanguage]);
+
+ const translateColor = (color) => {
+  if (!color) return "";
+
+  const raw = String(color).trim();
+
+  const key = `color_${raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")}`;
+
+  return i18n.exists(key)
+    ? t(key)
+    : raw;
+};
+
+const translateTaxonomy = (value) => {
+  if (!value) return "";
+
+  const raw = String(value).trim();
+
+  const normalizedKey = raw
+    .toLowerCase()
+    .replace(/&/g, "_and_")
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_");
+
+  if (i18n.exists(normalizedKey)) {
+    return t(normalizedKey);
+  }
+
+  if (i18n.exists(raw)) {
+    return t(raw);
+  }
+
+  return raw;
+};
+
+const translateTaxonomyPhrase = (gender, type) => {
+  const rawGender = String(gender || "").trim();
+  const rawType = String(type || "").trim();
+
+  if (!rawGender && !rawType) return "";
+
+  const normalizeKey = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, "_and_")
+      .replace(/[-\s]+/g, "_")
+      .replace(/_+/g, "_");
+
+  const genderKey = normalizeKey(rawGender);
+  const typeKey = normalizeKey(rawType);
+
+  const joinedKey = [genderKey, typeKey]
+    .filter(Boolean)
+    .join("_");
+
+  if (joinedKey && i18n.exists(joinedKey)) {
+    return t(joinedKey);
+  }
+
+  const translatedGender = translateTaxonomy(rawGender);
+  const translatedType = translateTaxonomy(rawType);
+
+  return [translatedGender, translatedType]
+    .filter(Boolean)
+    .join(" ");
+};
+
+useEffect(() => {
   const unsubscribe = auth.onAuthStateChanged(() => {
     fetchUserBasket();
   });
@@ -360,32 +565,31 @@ useEffect(() => {
 
 if (!loading && !hasItems) {
   return (
-    <div className="bbe-empty-country">
-      <div className="bbe-empty-icon">💸</div>
+   <div className="bbe-empty-country">
+  <div className="bbe-empty-icon">💸</div>
 
-      <span className="bbe-empty-badge">
-        Save Big Deals
-      </span>
+  <span className="bbe-empty-badge">
+    {t("save_big_deals")}
+  </span>
 
-      <h2>No discounted products available</h2>
+  <h2>{t("no_discounted_products")}</h2>
 
-      <p>
-        We couldn't find any discounted products currently available for
-        delivery to <strong>{countryName}</strong>.
-      </p>
+  <p>
+    {t("no_discounted_products_country", {
+      country: countryName,
+    })}
+  </p>
 
-      <p>
-        New deals are added every day. Try another country or check back soon.
-      </p>
+  <p>{t("new_deals_every_day")}</p>
 
-      <button
-        type="button"
-        className="bbe-empty-btn"
-        onClick={() => router.push(withCountry("/"))}
-      >
-        Browse Homepage
-      </button>
-    </div>
+  <button
+    type="button"
+    className="bbe-empty-btn"
+    onClick={() => router.push(withCountry("/"))}
+  >
+    {t("browse_homepage")}
+  </button>
+</div>
   );
 }
 
@@ -395,8 +599,14 @@ if (!loading && !hasItems) {
         {Object.entries(types).map(([type, items]) => {
           const firstItem = items[0];
           const category = firstItem?.category?.toLowerCase();
-          const gender = firstItem?.item?.genre || "Unisex";
-          const label = category === "electronic" ? type : `${gender} ${type}`;
+        const gender = firstItem?.item?.genre || "";
+const rawType = firstItem?.item?.type || "";
+
+const label =
+  category === "electronic"
+    ? translateTaxonomy(rawType)
+    : translateTaxonomyPhrase(gender, rawType);
+
 
           return (
             <div
@@ -413,6 +623,20 @@ if (!loading && !hasItems) {
       <div className="bbe-item-grid">
         {allItems.map((product) => {
           const { id, item } = product;
+         const originalName =
+  item?.name ||
+  product?.details?.itemName ||
+  product?.name ||
+  t("unnamed_item");
+
+const translatedName =
+  translations?.[product.itemId]?.name;
+
+const displayName =
+  currentLanguage === "en"
+    ? originalName
+    : translatedName || originalName;
+
           const selectedColor = selectedColorByItem[id];
           const colorOptions = getColorOptions(product);
           const displayImage = getDisplayImage(product);
@@ -424,7 +648,7 @@ if (!loading && !hasItems) {
   <div className="bbe-item-media">
     {isBestSeller && (
       <div className="bbe-image-badge bbe-image-badge-best">
-        Best Seller
+       {t("best_seller")}
       </div>
     )}
 
@@ -436,7 +660,7 @@ if (!loading && !hasItems) {
 
     <img
       src={displayImage}
-      alt={item?.name}
+     alt={displayName}
       onClick={() => handleItemClick(id)}
       className="bbe-item-image"
       onError={(e) => {
@@ -452,17 +676,19 @@ if (!loading && !hasItems) {
 </div>
 
 <div className="bbe-item-name">
-  {item?.name?.length > 70 ? `${item.name.slice(0, 70)}...` : item?.name}
+  {displayName.length > 70
+    ? `${displayName.slice(0, 70)}...`
+    : displayName}
 </div>
 
 <div className="bbe-item-price-row">
-  <span className="bbe-item-price">${item?.usdPrice}</span>
+  <span className="bbe-item-price"> {formatPrice(item?.usdPrice)}</span>
 
-  <span className="bbe-deals-badge">Deal</span>
+  <span className="bbe-deals-badge">{t("deal")}</span>
 
   {Number(item?.originalPrice || 0) > 0 && (
     <span className="bbe-item-original-price">
-      ${Number(item.originalPrice).toFixed(2)}
+     {formatPrice(item.originalPrice)}
     </span>
   )}
 </div>
@@ -484,7 +710,7 @@ if (!loading && !hasItems) {
       <>
         <span className="bbe-rating-number">{rating.toFixed(1)}/5</span>
         {renderStars(rating)}
-        <span className="bbe-review-count">({reviewCount} reviews)</span>
+        <span className="bbe-review-count">{t("reviews_count", { count: reviewCount })}</span>
       </>
     );
   })()}
@@ -493,7 +719,7 @@ if (!loading && !hasItems) {
 {colorOptions.length > 1 && (
   <div className="bbe-color-block" onClick={(e) => e.stopPropagation()}>
     <div className="bbe-color-label">
-      Color: <span>{selectedColor}</span>
+     {t("color")}: <span>{translateColor(selectedColor)}</span>
     </div>
 
     <div className="bbe-color-options">
@@ -504,8 +730,8 @@ if (!loading && !hasItems) {
           className={`bbe-color-circle ${
             selectedColor === color ? "active" : ""
           }`}
-          title={color}
-          aria-label={`Select ${color}`}
+          title={translateColor(color)}
+          aria-label={`${t("select_color")} ${translateColor(color)}`}
          style={
   getColorSwatch(color)
     ? { background: getColorSwatch(color) }
@@ -530,7 +756,9 @@ if (!loading && !hasItems) {
             handleItemClick(id);
           }}
         >
-          +{colorOptions.length - 3} colors more
+         {t("more_colors", {
+            count: colorOptions.length - 3,
+          })}
         </button>
       )}
     </div>
@@ -545,9 +773,17 @@ if (!loading && !hasItems) {
         : "bbe-stock-badge"
     }
   >
-    {Number(item?.numberOfItems || product?.details?.numberItemText || 0) < 100
-      ? `Only ${item?.numberOfItems || product?.details?.numberItemText} left in stock`
-      : `${item?.numberOfItems || product?.details?.numberItemText} items in stock`}
+   {Number(item?.numberOfItems || product?.details?.numberItemText || 0) < 100
+  ? t("only_items_left", {
+      count:
+        item?.numberOfItems ||
+        product?.details?.numberItemText,
+    })
+  : t("items_in_stock", {
+      count:
+        item?.numberOfItems ||
+        product?.details?.numberItemText,
+    })}
   </div>
 )}
 
@@ -579,7 +815,7 @@ if (!loading && !hasItems) {
       )
     }
   >
-    Add to Basket
+   {t("add_to_basket")}
   </button>
 )}
 

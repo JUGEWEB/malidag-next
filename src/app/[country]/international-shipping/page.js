@@ -17,19 +17,20 @@ export async function generateMetadata() {
   const url = `${baseUrl}/international-shipping`;
   const ogImage = `${baseUrl}/og/international-shipping.jpg`;
 
-  const title = t("intl_ship_title", {
-    defaultValue: "International Shipping | Malidag",
-  });
-  const description = t("intl_ship_desc", {
-    defaultValue:
-      "Learn how Malidag delivers products internationally. Shipping times, regions, and fees explained.",
-  });
+ const title = t("intl_ship_title", {
+  defaultValue: "International Shipping & Availability | Malidag",
+});
 
-  const keywordsCsv =
-    t("intl_ship_keywords", {
-      defaultValue:
-        "international shipping, Malidag shipping policy, crypto shopping delivery, Malidag shipping, global delivery",
-    }) || "";
+const description = t("intl_ship_desc", {
+  defaultValue:
+    "Learn how shipping and product availability work on Malidag. We currently support France, the United Kingdom, and Brazil, with more countries planned.",
+});
+
+const keywordsCsv =
+  t("intl_ship_keywords", {
+    defaultValue:
+      "Malidag shipping, international shipping, France delivery, UK delivery, Brazil delivery, product availability",
+  }) || "";
 
   const keywords = keywordsCsv
     .split(",")
@@ -76,73 +77,89 @@ export default async function Page() {
 
   const jsonLd = [
     {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      headline: "International Shipping | Malidag",
-      description:
-        "Learn how Malidag delivers products internationally. Shipping times, regions, and fees explained.",
-      mainEntityOfPage: url,
-      datePublished: "2024-01-01",
-      dateModified: "2025-09-02",
-      author: { "@type": "Organization", name: "Malidag" },
-      publisher: {
-        "@type": "Organization",
-        name: "Malidag",
-        logo: {
-          "@type": "ImageObject",
-          url: `${baseUrl}/malidag.png`,
-          width: 200,
-          height: 200,
-        },
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "International Shipping & Availability | Malidag",
+  description:
+    "Learn how shipping and product availability work on Malidag. We currently support France, the United Kingdom, and Brazil, with more countries planned.",
+  mainEntityOfPage: url,
+  dateModified: "2026-09-24",
+  author: {
+    "@type": "Organization",
+    name: "Malidag",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Malidag",
+    logo: {
+      "@type": "ImageObject",
+      url: `${baseUrl}/malidag.png`,
+      width: 200,
+      height: 200,
+    },
+  },
+  image: [`${baseUrl}/og/international-shipping.jpg`],
+},
+    {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Which countries does Malidag currently support for shipping?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Malidag currently supports shipping for available products in France, the United Kingdom, and Brazil.",
       },
-      image: [`${baseUrl}/og/international-shipping.jpg`],
     },
     {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: [
-        {
-          "@type": "Question",
-          name: "Which countries do you ship to?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "We ship to most countries worldwide. Shipping availability depends on the item and destination regulations.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "How long does international shipping take?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Typical delivery times range from 7–20 business days depending on the region, carrier, and customs processing.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "How are shipping fees calculated?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Fees are based on the destination, package weight and dimensions, and the selected shipping method.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Do I pay customs or import taxes?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Some countries require duties or taxes upon import. These charges are the responsibility of the recipient.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Can I track my order?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Yes, most shipments include tracking. A tracking link is provided as soon as your order is dispatched.",
-          },
-        },
-      ],
+      "@type": "Question",
+      name: "Will Malidag ship to more countries?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Yes. Malidag is working on expanding availability to additional countries. New countries and products may become available gradually.",
+      },
     },
+    {
+      "@type": "Question",
+      name: "Why are some products available in one country but not another?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Product availability can vary depending on the brand, the location of its products, the markets where the brand operates, and the shipping options available for a particular destination.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Will every product become available at the same time in a new country?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Not necessarily. Some brands or products may become available earlier than others depending on their location and shipping availability.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does Malidag decide which products to show for my country?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Malidag uses the selected country to display products that are currently available for that market. Products that are not currently available for the selected country may not appear in the catalog.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Are delivery times the same for every product?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "No. Delivery times can vary depending on the product, brand, product location, destination, and available shipping method.",
+      },
+    },
+  ],
+},
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",

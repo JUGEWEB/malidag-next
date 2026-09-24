@@ -57,9 +57,19 @@
 
 .desktop-results-title-cc,
 .mobile-results-title-cc {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1677ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  width: fit-content;
+  transition: color 0.2s ease;
+}
+
+.desktop-results-title-cc:hover,
+.mobile-results-title-cc:hover {
+  color: #0958d9;
 }
 
 .desktop-results-title-cc {

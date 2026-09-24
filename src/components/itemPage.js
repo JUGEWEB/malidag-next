@@ -4,7 +4,7 @@ import React, { useEffect, useState, useContext, useMemo } from "react";
 import { AppContext } from "./appContext";
 import axios from "axios";
 import "./itemPage.css";
-import { useRouter } from "next/navigation";
+import { useRouter,  useSearchParams } from "next/navigation";
 import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
@@ -18,6 +18,9 @@ import {
 
 function ItemPage({ searchTerm }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const visibleSearchQuery =
+  searchParams.get("q") || searchTerm || "";
   const { country } = useContext(AppContext);
 
 const countryCode = country?.code?.toLowerCase() || null;
@@ -724,7 +727,15 @@ const filteredItems = items.filter((itemData) => {
       {contextHolder}
       {isSmallScreen && (
         <div className="mobile-top-bar-cc">
-          <div className="mobile-results-title-cc">
+          <div className="mobile-results-title-cc"  onClick={() =>
+    router.push(
+      withCountry(
+        `/search-info?q=${encodeURIComponent(
+          visibleSearchQuery
+        )}&term=${encodeURIComponent(searchTerm)}`
+      )
+    )
+  }>
             {t("search_results")}
           </div>
 
@@ -894,7 +905,15 @@ const filteredItems = items.filter((itemData) => {
 
       <main className="item-page-container-cc">
         {!isSmallScreen && (
-          <div className="desktop-results-title-cc">
+          <div className="desktop-results-title-cc"    onClick={() =>
+    router.push(
+      withCountry(
+        `/search-info?q=${encodeURIComponent(
+          visibleSearchQuery
+        )}&term=${encodeURIComponent(searchTerm)}`
+      )
+    )
+  }>
             {t("search_results")}
           </div>
         )}

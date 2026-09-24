@@ -65,36 +65,6 @@
   "product_id": "Je l'ai fait}}",
   "see_all_reviews": "Voir tous les avis →",
   "color_name": "Nom de la couleur : {{color}}",
-  "international_shipping_policy_title": "Politique d'expédition internationale",
-  "shipping_regions_country_title": "Régions et pays d'expédition",
-  "americas": "🌎 Amérique du Nord et du Sud",
-  "americas_list": "🇦🇬 Antigua-et-Barbuda, 🇦🇷 Argentine, 🇧🇸 Bahamas, 🇧🇧 Barbade, 🇧🇿 Belize, 🇧🇴 Bolivie, 🇧🇷 Brésil, 🇨🇦 Canada, 🇨🇱 Chili, 🇨🇴 Colombie, 🇨🇷 Costa Rica, 🇨🇺 Cuba, 🇩🇲 Dominique, 🇩🇴 République dominicaine, 🇪🇨 Équateur, 🇸🇻 El Salvador, 🇬🇩 Grenade, 🇬🇹 Guatemala, 🇬🇾 Guyane, 🇭🇹 Haïti, 🇭🇳Honduras, 🇯🇲 Jamaïque, 🇲🇽 Mexique, 🇳🇮 Nicaragua, 🇵🇦 Panama, 🇵🇾 Paraguay, 🇵🇪 Pérou, 🇰🇳 Saint-Kitts-et-Nevis, 🇱🇨 Sainte-Lucie, 🇻🇨 Saint-Vincent-et-les Grenadines, 🇸🇷 Suriname, 🇹🇹 Trinité-et-Tobago, 🇺🇸 États-Unis, 🇺🇾 Uruguay, 🇻🇪 Venezuela",
-  "europe": "🇪🇺 Europe",
-  "europe_list": "🇦🇱 Albanie, 🇦🇩 Andorre, 🇦🇹 Autriche, 🇧🇾 Biélorussie, 🇧🇪 Belgique, 🇧🇦 Bosnie-Herzégovine, 🇧🇬 Bulgarie, 🇭🇷 Croatie, 🇨🇾 Chypre, 🇨🇿 République tchèque, 🇩🇰 Danemark, 🇪🇪 Estonie, 🇫🇮 Finlande, 🇫🇷 France, 🇩🇪 Allemagne, 🇬🇷 Grèce, 🇭🇺 Hongrie, 🇮🇸 Islande, 🇮🇪 Irlande, 🇮🇹 Italie, 🇽🇰 Kosovo, 🇱🇻 Lettonie, 🇱🇮 Liechtenstein, 🇱🇹 Lituanie, 🇱🇺 Luxembourg, 🇲🇹 Malte, 🇲🇩 Moldavie, 🇲🇨 Monaco, 🇲🇪 Monténégro, 🇳🇱 Pays-Bas, 🇲🇰 Macédoine du Nord, 🇳🇴 Norvège, 🇵🇱 Pologne, 🇵🇹 Portugal, 🇷🇴 Roumanie, 🇷🇺 Russie, 🇸🇲 Saint-Marin, 🇷🇸 Serbie, 🇸🇰 Slovaquie, 🇸🇮 Slovénie, 🇪🇸 Espagne, 🇸🇪 Suède, 🇨🇭 Suisse, 🇺🇦 Ukraine, 🇬🇧 Royaume-Uni, 🇻🇦 Cité du Vatican",
-  "middle_east_africa": "🌍 Moyen-Orient et Afrique",
-  "middle_east_africa_list": "Émirats arabes unis, Arabie saoudite, Qatar, Oman, Bahreïn, Koweït, Irak, Iran, Jordanie, 🇱🇧 Liban, 🇸🇾 Syrie, 🇮🇱 Israël, 🇵🇸 Palestine, 🇾🇪 Yémen, 🇹🇷 Turquie, 🇪🇬 Égypte, 🇸🇩 Soudan, 🇸🇸 Soudan du Sud Libye, Maroc, Algérie, Tunisie, Mauritanie, Mali, Niger, Nigéria, Sénégal, Ghana, Côte d'Ivoire, Burkina Faso, Togo, Bénin, Cameroun, Guinée équatoriale, Gabon, République du Congo, 🇨🇩 République démocratique du Congo, 🇺🇬 Ouganda, 🇷🇼 Rwanda, 🇧🇮 Burundi, 🇰🇪 Kenya, 🇹🇿 Tanzanie, 🇪🇹 Éthiopie, 🇸🇴 Somalie, 🇩🇯 Djibouti, Érythrée, Madagascar, Mozambique, Zambie, Zimbabwe, Malawi, Angola, Botswana, Namibie, 🇿🇦 Lesotho, 🇸🇿 Swaziland, 🇰🇲 Comores, 🇲🇺 Maurice, 🇸🇨 Seychelles",
-  "asia_pacific": "🇨🇳 Asie et Pacifique",
-  "asia_pacific_list": "🇨🇳 Chine, 🇯🇵 Japon, 🇰🇷 Corée du Sud, 🇮🇳 Inde, 🇵🇰 Pakistan, 🇧🇩 Bangladesh, 🇮🇩 Indonésie, 🇲🇾 Malaisie, 🇸🇬 Singapour, 🇹🇭 Thaïlande, 🇵🇭 Philippines, 🇻🇳 Vietnam, 🇱🇰 Sri Lanka, 🇳🇵 Népal, 🇲🇲 Myanmar, 🇰🇭 Cambodge, 🇱🇦 Laos, 🇹🇼 Taïwan, 🇭🇰 Hong Kong, 🇲🇳 Mongolie, 🇦🇫 Afghanistan, 🇰🇿 Kazakhstan, 🇺🇿 Ouzbékistan, 🇹🇲 Turkménistan, 🇰🇬 Kirghizistan, 🇹🇯 Tadjikistan, 🇬🇪 Géorgie, 🇦🇲 Arménie, 🇦🇿 Azerbaïdjan, 🇮🇷 Iran, 🇮🇶 Irak, 🇸🇾 Syrie, 🇱🇧 Liban, 🇮🇱 Israël, 🇹🇷 Turquie, 🇦🇺 Australie, 🇳🇿 Nouvelle-Zélande, 🇫🇯 Fidji, 🇵🇬 Papouasie-Nouvelle-Guinée, 🇼🇸 Samoa, 🇹🇴 Tonga, 🇰🇮 Kiribati, 🇻🇺 Vanuatu, 🇲🇭 Îles Marshall, 🇳🇷 Nauru, 🇸🇧 Îles Salomon, 🇵🇼 Palau, 🇲🇵 Îles Mariannes du Nord, 🇬🇺 Guam",
-  "Estimate_delivery_time_title": "Délais de livraison estimés",
-  "Estimate_delivery_time_paragraph1": "Chez Malidag, nous comprenons qu'une livraison rapide est essentielle à votre expérience d'achat. C'est pourquoi nous collaborons étroitement avec des transporteurs internationaux de confiance pour garantir que vos commandes vous parviennent en toute sécurité et efficacité, où que vous soyez dans le monde.",
-  "Estimate_delivery_time_paragraph2": "Les délais de livraison estimés varient en fonction de votre destination, du mode de livraison sélectionné lors du paiement et des formalités douanières applicables. Bien que nous nous efforcions de respecter les délais indiqués ci-dessous, des retards occasionnels dus aux services postaux locaux ou aux réglementations internationales peuvent survenir.",
-  "standard": "<strong>Expédition standard :</strong> généralement livrée sous <strong>7 à 21 jours ouvrables</strong> , selon l&#39;emplacement et les conditions du service postal.",
-  "express": "<strong>Expédition express :</strong> arrive sous <strong>3 à 7 jours ouvrables</strong> pour la plupart des destinations internationales via des transporteurs premium.",
-  "Estimate_delivery_time_paragraph3": "Vous recevrez un numéro de suivi dès l'expédition de votre commande, ce qui vous permettra de suivre son acheminement en temps réel. Si votre colis est retardé au-delà du délai estimé, notre équipe d'assistance est toujours disponible pour vous aider à résoudre le problème rapidement.",
-  "Estimate_delivery_time_paragraph4": "Veuillez noter que les jours fériés, les contrôles douaniers et les zones de livraison éloignées peuvent entraîner des délais supplémentaires. Nous vous recommandons d'opter pour la livraison express pour les commandes urgentes.",
-  "Shipping_Fees_title": "Frais d'expédition",
-  "Shipping_Fees_paragraph1": "Chez Malidag, nous nous efforçons de vous proposer des frais de livraison transparents et compétitifs, adaptés à votre localisation et à la nature de votre commande. Les frais de livraison sont calculés dynamiquement lors du paiement, en tenant compte de facteurs tels que la destination, le mode de livraison, le poids de l'article et la taille de l'emballage.",
-  "Shipping_Fees_paragraph2": "Nous collaborons avec plusieurs transporteurs internationaux afin de vous proposer les meilleurs tarifs disponibles pour les livraisons standard et express. Lors du paiement, vous pourrez consulter le coût exact de la livraison avant de finaliser votre achat : aucun frais caché ni imprévu.",
-  "Shipping_Fees_paragraph3": "Pour les commandes plus importantes ou dépassant un certain montant, nous pouvons proposer <strong>des offres de livraison gratuite</strong> , clairement indiquées lors du paiement. Ces offres peuvent varier selon la région et la période de l&#39;année.",
-  "Shipping_Fees_paragraph4": "Pour toute question concernant les frais de livraison ou l'éligibilité à la livraison gratuite, n'hésitez pas à contacter notre équipe d'assistance. Nous sommes là pour vous aider à prendre la décision la plus éclairée et la plus économique pour vos besoins de livraison.",
-  "Customs_Duties_Taxes_title": "Douanes, droits et taxes",
-  "Customs_Duties_Taxes_paragraph1": "Veuillez noter que toutes les commandes internationales peuvent être soumises à des droits de douane, des taxes d'importation et d'autres frais réglementaires imposés par votre gouvernement local. Ces frais ne sont pas inclus dans les prix des produits ni dans les frais de livraison affichés sur Malidag et peuvent être perçus par les autorités douanières locales lors de la livraison.",
-  "Customs_Duties_Taxes_paragraph2": "En tant que destinataire, vous êtes seul responsable du respect des réglementations d'importation de votre pays et du paiement des frais applicables. Nous vous recommandons de vous renseigner auprès des douanes de votre pays pour plus de détails avant de passer commande.",
-  "Customs_Duties_Taxes_paragraph3": "Malidag décline toute responsabilité en cas de frais supplémentaires, de retards de douane ou de refus de colis en raison de droits d'importation ou de taxes impayés. En cas de retour d'un colis pour non-paiement ou non-conformité douanière, les frais de retour ou de restockage seront déduits de votre remboursement.",
-  "Customs_Duties_Taxes_paragraph4": "Nous mettons tout en œuvre pour que votre expérience d'achat à l'international soit la plus fluide possible et sommes là pour vous aider à répondre à toutes vos questions concernant les douanes ou la documentation. N'hésitez pas à contacter notre équipe d'assistance avant ou après votre achat.",
-  "Need_Help_title": "Besoin d'aide?",
-  "Need_Help_part1": "Contactez notre équipe d'assistance au",
-  "Need_Help_part2": "pour toute question d'expédition.",
   "category": "Catégorie",
   "type": "Taper",
   "brandType": "Type de marque",
@@ -1021,6 +991,130 @@
 "news_empty": "Aucune actualité n'est disponible pour le moment.",
 "news_latest_update": "Dernière mise à jour",
 "news_default_description": "Découvrez les dernières actualités de Malidag.",
-"read_more": "Lire la suite"
+"read_more": "Lire la suite",
+"search_info_back": "Retour aux résultats de recherche",
+  "search_info_title": "En savoir plus sur vos résultats de recherche",
+  "search_info_intro": "Découvrez comment Malidag utilise votre recherche pour trouver et afficher des produits pertinents.",
+
+  "search_info_your_search": "Votre recherche",
+  "search_info_how_title": "Comment nous traitons votre recherche",
+  "search_info_how_description": "Lorsque vous effectuez une recherche sur Malidag, nous pouvons normaliser votre recherche afin de la faire correspondre de manière cohérente aux informations sur les produits de notre catalogue.",
+  "search_info_search_term": "Terme de recherche utilisé :",
+
+  "search_info_match_title": "Comment les produits sont mis en correspondance",
+  "search_info_match_description": "Nous comparons votre recherche aux informations disponibles sur les produits. Cela peut inclure :",
+  "search_info_match_name": "Nom du produit",
+  "search_info_match_category": "Catégorie du produit",
+  "search_info_match_type": "Type de produit",
+  "search_info_match_gender": "Genre ou public auquel le produit est destiné",
+  "search_info_match_brand": "Marque et type de marque",
+  "search_info_match_product_info": "Autres informations produit pouvant être utilisées pour la recherche",
+
+  "search_info_country_title": "Disponibilité des produits",
+  "search_info_country_description": "Les résultats de recherche sont limités en fonction du pays actuellement sélectionné sur Malidag. Un produit disponible dans un pays peut ne pas apparaître dans un autre.",
+
+  "search_info_results_title": "Pourquoi vous voyez ces résultats",
+  "search_info_results_description": "Les produits affichés sont ceux qui correspondent au terme de recherche et aux critères de disponibilité pour le pays que vous avez sélectionné.",
+
+  "search_info_change_title": "Pourquoi les résultats de recherche peuvent changer",
+  "search_info_change_description": "Les résultats de recherche peuvent changer lorsque des produits sont ajoutés, supprimés ou mis à jour, ou lorsque leur disponibilité change dans le pays que vous avez sélectionné.",
+  "deal": "Offre",
+  "reviews_count": "{{count}} avis",
+  "only_items_left": "Plus que {{count}} en stock",
+
+  "save_big_deals": "Offres à prix réduit",
+  "no_discounted_products": "Aucun produit en promotion disponible",
+  "no_discounted_products_country": "Nous n'avons trouvé aucun produit en promotion actuellement disponible pour une livraison vers {{country}}.",
+  "new_deals_every_day": "De nouvelles offres sont ajoutées chaque jour. Essayez un autre pays ou revenez bientôt.",
+  "browse_homepage": "Parcourir l'accueil",
+   "intl_ship_title": "Livraison internationale et disponibilité | Malidag",
+  "intl_ship_desc": "Découvrez comment fonctionnent la livraison et la disponibilité des produits sur Malidag. Nous prenons actuellement en charge la France, le Royaume-Uni et le Brésil, et nous travaillons à étendre notre présence à d'autres pays.",
+
+  "shipping_learn_more": "Informations sur la livraison",
+
+  "international_shipping_policy_title": "Livraison internationale et disponibilité",
+
+  "shipping_intro": "Malidag développe son service d'achat international pays par pays. Nous prenons actuellement en charge la livraison des produits disponibles en France, au Royaume-Uni et au Brésil, et nous travaillons à étendre notre service à d'autres pays.",
+
+  "shipping_current_countries_title": "Pays actuellement pris en charge",
+  "shipping_current_countries_text": "Malidag prend actuellement en charge l'achat et la livraison des produits disponibles dans les pays suivants :",
+
+  "shipping_country_france": "France",
+  "shipping_country_uk": "Royaume-Uni",
+  "shipping_country_brazil": "Brésil",
+  "shipping_currently_supported": "Actuellement pris en charge",
+
+  "shipping_country_selection_note": "Le pays que vous sélectionnez sur Malidag nous aide à déterminer quels produits sont affichés comme disponibles pour votre marché.",
+
+  "shipping_how_it_works_title": "Comment fonctionne la livraison internationale",
+  "shipping_how_it_works_p1": "Malidag n'affiche pas exactement le même catalogue de produits dans tous les pays. La disponibilité des produits est déterminée en fonction du pays que vous sélectionnez et des possibilités de livraison actuellement prises en charge pour ce marché.",
+  "shipping_how_it_works_p2": "Les produits qui ne sont pas actuellement disponibles pour le pays sélectionné peuvent ne pas apparaître dans le catalogue. Cela nous permet d'éviter de présenter un produit comme disponible lorsque sa livraison ne peut pas encore être prise en charge pour ce marché.",
+
+  "shipping_availability_title": "Pourquoi la disponibilité peut varier selon les marques et les produits",
+  "shipping_availability_p1": "Les produits et les marques ne deviennent pas tous disponibles au même moment dans chaque pays pris en charge. La disponibilité peut dépendre de la localisation de la marque ou de ses produits, des marchés sur lesquels la marque est présente et des options de livraison disponibles pour une destination donnée.",
+  "shipping_availability_p2": "Certaines marques peuvent déjà être présentes dans votre pays ou y disposer de solutions de distribution et de livraison adaptées. Les produits de ces marques peuvent donc devenir disponibles plus tôt que ceux d'autres marques.",
+  "shipping_availability_example": "Par exemple, un produit peut déjà être disponible pour les clients en France alors que ce même produit ne l'est pas encore au Brésil ou au Royaume-Uni. L'inverse peut également se produire selon la marque et la localisation du produit.",
+
+  "shipping_expansion_title": "Nous nous développons",
+  "shipping_expansion_p1": "Nous travaillons à étendre Malidag à d'autres pays. Cette expansion se fait progressivement, et la disponibilité des différentes marques et des différents produits peut également augmenter au fil du temps sur chaque marché.",
+  "shipping_expansion_box_title": "Les nouveaux pays et produits peuvent devenir disponibles à des moments différents",
+  "shipping_expansion_box_text": "La prise en charge d'un nouveau pays ne signifie pas nécessairement que tous les produits Malidag y seront immédiatement disponibles. Certaines marques et certains produits peuvent devenir disponibles plus tôt que d'autres.",
+
+  "shipping_delivery_title": "Délais de livraison",
+  "shipping_delivery_p1": "Les délais de livraison peuvent varier en fonction du produit, de la marque, de la localisation du produit, de la destination et du mode de livraison disponible pour la commande.",
+  "shipping_delivery_p2": "Les produits proposés sur Malidag pouvant provenir de différentes marques et de différents lieux, deux produits peuvent avoir des délais de livraison différents. Lorsque ces informations sont disponibles, les détails pertinents concernant la livraison sont affichés pendant vos achats ou lors du paiement.",
+
+  "shipping_cost_title": "Frais de livraison",
+  "shipping_cost_p1": "Les frais de livraison peuvent varier en fonction du produit, de la destination, du colis et du mode de livraison disponible. Lorsque des frais de livraison s'appliquent, ils sont affichés avant que vous ne finalisiez votre achat.",
+
+  "shipping_customs_title": "Douanes, droits et taxes",
+  "shipping_customs_p1": "Selon le produit, son origine et sa destination, une commande peut être soumise à des droits de douane, des taxes d'importation ou d'autres frais exigés par les autorités locales. Lorsque ces frais s'appliquent, ils peuvent être facturés séparément du prix du produit et des frais de livraison.",
+
+  "Need_Help_title": "Besoin d'aide ?",
+  "Need_Help_part1": "Contactez notre équipe d'assistance à l'adresse",
+  "Need_Help_part2": "si vous avez des questions concernant la livraison ou la disponibilité des produits.",
+
+  "fashionkick_luxury_footwear": "Chaussures de luxe",
+  "fashionkick_curated_styles": "Styles sélectionnés",
+  "fashionkick_for_every_step": "Pour chacun de vos pas",
+  "fashionkick_hero_description": "Découvrez une sélection premium de sneakers et de bottes conçues pour un style affirmé, un confort au quotidien et une élégance moderne. Des modèles pensés pour faire de chaque pas une véritable déclaration de style.",
+
+  "fashionkick_shop_trending": "Découvrir les tendances",
+  "fashionkick_explore_categories": "Explorer les catégories",
+
+  "fashionkick_best_selling_styles": "Styles les plus vendus",
+  "fashionkick_premium_comfort": "Confort premium",
+  "fashionkick_modern_luxury": "Luxe moderne",
+
+  "fashionkick_luxury_showcase_alt": "Sélection de chaussures de luxe",
+  "fashionkick_new_season": "Nouvelle saison",
+  "fashionkick_statement_footwear": "Sneakers, bottes tendance et plus encore",
+  "fashionkick_elevated_essentials": "Des essentiels raffinés pour chaque garde-robe.",
+
+  "fashionkick_shop_by_category": "Acheter par catégorie",
+  "fashionkick_collections_count": "{{count}} collections",
+  "fashionkick_collection": "Collection",
+  "fashionkick_explore_now": "Découvrir maintenant",
+
+  "fashionkick_top_topics": "Tendances du moment",
+  "fashionkick_style_directions_count": "{{count}} inspirations de style",
+  "fashionkick_premium_collection": "Collection premium",
+  "fashionkick_step_into_luxury": "Entrez dans l'univers du luxe",
+  "fashionkick_banner_description": "Découvrez les sneakers et bottes les plus populaires, conçues pour allier style, confort et assurance. Parcourez les modèles les plus recherchés et trouvez votre prochain coup de cœur.",
+
+  "fashionkick_trending_products": "Produits tendance",
+  "fashionkick_items_count": "{{count}} articles",
+  "fashionkick_view_product": "Voir le produit",
+  "fashionkick_picked_from_style": "Sélectionnés selon votre style",
+
+  "fashionkick_loading_title": "Nous recherchons les meilleures chaussures pour {{country}}",
+  "fashionkick_loading_description": "Nous vérifions la disponibilité, les tendances et les collections les plus vendues disponibles dans votre région.",
+
+  "fashionkick_empty_title": "Aucun produit Fashion Kick disponible",
+  "fashionkick_empty_country": "Nous n'avons trouvé aucune sneaker ni botte actuellement disponible pour une livraison vers {{country}}.",
+  "fashionkick_empty_description": "De nouvelles collections sont ajoutées régulièrement. Essayez un autre pays ou revenez prochainement.",
+   "recommended_no_items": "Aucun produit recommandé n'est disponible pour le moment.",
+  "rating_out_of_five": "Note : {{rating}} sur 5",
+  "recommended_review_summary": "{{rating}}/5 ({{count}} avis)"
 
 }

@@ -843,5 +843,130 @@
 "news_empty": "Nenhuma notícia está disponível no momento.",
 "news_latest_update": "Última atualização",
 "news_default_description": "Confira as últimas notícias da Malidag.",
-"read_more": "Leia mais"
+"read_more": "Leia mais",
+"search_info_back": "Voltar aos resultados da pesquisa",
+  "search_info_title": "Saiba mais sobre os resultados da sua pesquisa",
+  "search_info_intro": "Saiba como a Malidag usa sua pesquisa para encontrar e exibir produtos relevantes.",
+
+  "search_info_your_search": "Sua pesquisa",
+  "search_info_how_title": "Como processamos sua pesquisa",
+  "search_info_how_description": "Quando você pesquisa na Malidag, podemos normalizar sua pesquisa para que ela possa ser comparada de forma consistente com as informações dos produtos em nosso catálogo.",
+  "search_info_search_term": "Termo de pesquisa utilizado:",
+
+  "search_info_match_title": "Como os produtos são encontrados",
+  "search_info_match_description": "Comparamos sua pesquisa com as informações disponíveis sobre os produtos. Isso pode incluir:",
+  "search_info_match_name": "Nome do produto",
+  "search_info_match_category": "Categoria do produto",
+  "search_info_match_type": "Tipo de produto",
+  "search_info_match_gender": "Gênero ou público do produto",
+  "search_info_match_brand": "Marca e tipo de marca",
+  "search_info_match_product_info": "Outras informações pesquisáveis sobre o produto",
+
+  "search_info_country_title": "Disponibilidade dos produtos",
+  "search_info_country_description": "Os resultados da pesquisa são limitados de acordo com o país atualmente selecionado na Malidag. Um produto disponível em um país pode não aparecer em outro.",
+
+  "search_info_results_title": "Por que você está vendo estes resultados",
+  "search_info_results_description": "Os produtos exibidos são aqueles que correspondem ao termo de pesquisa e aos requisitos de disponibilidade para o país que você selecionou.",
+
+  "search_info_change_title": "Por que os resultados da pesquisa podem mudar",
+  "search_info_change_description": "Os resultados da pesquisa podem mudar à medida que produtos são adicionados, removidos ou atualizados, ou quando sua disponibilidade muda no país que você selecionou.",
+  
+  "deal": "Oferta",
+  "reviews_count": "{{count}} avaliações",
+  "only_items_left": "Apenas {{count}} em estoque",
+
+  "save_big_deals": "Grandes ofertas",
+  "no_discounted_products": "Nenhum produto em promoção disponível",
+  "no_discounted_products_country": "Não encontramos produtos em promoção disponíveis no momento para entrega em {{country}}.",
+  "new_deals_every_day": "Novas ofertas são adicionadas todos os dias. Tente outro país ou volte em breve.",
+  "browse_homepage": "Ir para a página inicial",
+  "intl_ship_title": "Envio internacional e disponibilidade | Malidag",
+  "intl_ship_desc": "Saiba como funcionam o envio e a disponibilidade dos produtos na Malidag. Atualmente, oferecemos suporte para França, Reino Unido e Brasil, e estamos trabalhando para expandir para outros países.",
+
+  "shipping_learn_more": "Informações sobre envio",
+
+  "international_shipping_policy_title": "Envio internacional e disponibilidade",
+
+  "shipping_intro": "A Malidag está expandindo suas compras internacionais país por país. Atualmente, oferecemos suporte ao envio de produtos disponíveis na França, no Reino Unido e no Brasil, e estamos trabalhando para expandir nosso serviço para outros países.",
+
+  "shipping_current_countries_title": "Países atualmente atendidos",
+  "shipping_current_countries_text": "Atualmente, a Malidag oferece suporte para compras e envio de produtos disponíveis nos seguintes países:",
+
+  "shipping_country_france": "França",
+  "shipping_country_uk": "Reino Unido",
+  "shipping_country_brazil": "Brasil",
+  "shipping_currently_supported": "Disponível atualmente",
+
+  "shipping_country_selection_note": "O país selecionado na Malidag nos ajuda a determinar quais produtos são exibidos como disponíveis para o seu mercado.",
+
+  "shipping_how_it_works_title": "Como funciona o envio internacional",
+  "shipping_how_it_works_p1": "A Malidag não exibe exatamente o mesmo catálogo de produtos em todos os países. A disponibilidade dos produtos é determinada de acordo com o país selecionado e com as opções de envio atualmente disponíveis para esse mercado.",
+  "shipping_how_it_works_p2": "Produtos que ainda não estão disponíveis para o país selecionado podem não aparecer no catálogo. Isso nos ajuda a evitar que um produto seja apresentado como disponível quando sua entrega ainda não pode ser realizada nesse mercado.",
+
+  "shipping_availability_title": "Por que a disponibilidade pode variar entre marcas e produtos",
+  "shipping_availability_p1": "Nem todos os produtos ou marcas ficam disponíveis ao mesmo tempo em cada país atendido. A disponibilidade pode depender da localização da marca ou de seus produtos, dos mercados em que a marca atua e das opções de envio disponíveis para determinado destino.",
+  "shipping_availability_p2": "Algumas marcas podem já estar presentes no seu país ou contar com opções adequadas de distribuição e envio. Por isso, os produtos dessas marcas podem ficar disponíveis antes dos produtos de outras marcas.",
+  "shipping_availability_example": "Por exemplo, um produto pode já estar disponível para clientes na França enquanto o mesmo produto ainda não está disponível no Brasil ou no Reino Unido. O contrário também pode acontecer, dependendo da marca e da localização do produto.",
+
+  "shipping_expansion_title": "Estamos expandindo",
+  "shipping_expansion_p1": "Estamos trabalhando para expandir a Malidag para outros países. Essa expansão acontece gradualmente, e a disponibilidade de diferentes marcas e produtos também pode aumentar ao longo do tempo em cada mercado.",
+  "shipping_expansion_box_title": "Novos países e produtos podem ficar disponíveis em momentos diferentes",
+  "shipping_expansion_box_text": "Oferecer suporte a um novo país não significa necessariamente que todos os produtos da Malidag estarão disponíveis imediatamente nesse mercado. Algumas marcas e produtos podem ficar disponíveis antes de outros.",
+
+  "shipping_delivery_title": "Prazos de entrega",
+  "shipping_delivery_p1": "Os prazos de entrega podem variar de acordo com o produto, a marca, a localização do produto, o destino e o método de envio disponível para o pedido.",
+  "shipping_delivery_p2": "Como os produtos disponíveis na Malidag podem vir de diferentes marcas e localidades, dois produtos podem ter prazos de entrega diferentes. Quando disponíveis, as informações relevantes sobre a entrega são exibidas durante a compra ou no checkout.",
+
+  "shipping_cost_title": "Custos de envio",
+  "shipping_cost_p1": "Os custos de envio podem variar de acordo com o produto, o destino, o pacote e o método de envio disponível. Quando aplicável, o custo do envio é exibido antes de você finalizar a compra.",
+
+  "shipping_customs_title": "Alfândega, impostos e taxas",
+  "shipping_customs_p1": "Dependendo do produto, de sua origem e do destino, um pedido pode estar sujeito a impostos de importação, taxas alfandegárias ou outros encargos exigidos pelas autoridades locais. Quando aplicáveis, esses valores podem ser cobrados separadamente do preço do produto e do frete.",
+
+  "Need_Help_title": "Precisa de ajuda?",
+  "Need_Help_part1": "Entre em contato com nossa equipe de suporte pelo e-mail",
+  "Need_Help_part2": "se tiver dúvidas sobre envio ou disponibilidade de produtos.",
+
+  "fashionkick_luxury_footwear": "Calçados de luxo",
+  "fashionkick_curated_styles": "Estilos selecionados",
+  "fashionkick_for_every_step": "Para cada passo",
+  "fashionkick_hero_description": "Explore uma seleção premium de tênis e botas criados para looks marcantes, conforto no dia a dia e elegância moderna. Modelos pensados para transformar cada passo em uma expressão de estilo.",
+
+  "fashionkick_shop_trending": "Comprar tendências",
+  "fashionkick_explore_categories": "Explorar categorias",
+
+  "fashionkick_best_selling_styles": "Estilos mais vendidos",
+  "fashionkick_premium_comfort": "Conforto premium",
+  "fashionkick_modern_luxury": "Luxo moderno",
+
+  "fashionkick_luxury_showcase_alt": "Seleção de calçados de luxo",
+  "fashionkick_new_season": "Nova temporada",
+  "fashionkick_statement_footwear": "Tênis, botas de destaque e muito mais",
+  "fashionkick_elevated_essentials": "Essenciais sofisticados para todos os estilos.",
+
+  "fashionkick_shop_by_category": "Comprar por categoria",
+  "fashionkick_collections_count": "{{count}} coleções",
+  "fashionkick_collection": "Coleção",
+  "fashionkick_explore_now": "Explorar agora",
+
+  "fashionkick_top_topics": "Tendências em destaque",
+  "fashionkick_style_directions_count": "{{count}} inspirações de estilo",
+  "fashionkick_premium_collection": "Coleção premium",
+  "fashionkick_step_into_luxury": "Entre no universo do luxo",
+  "fashionkick_banner_description": "Descubra tênis e botas entre os mais vendidos, criados para oferecer estilo, conforto e confiança. Explore os modelos mais desejados e encontre sua próxima paixão.",
+
+  "fashionkick_trending_products": "Produtos em alta",
+  "fashionkick_items_count": "{{count}} itens",
+  "fashionkick_view_product": "Ver produto",
+  "fashionkick_picked_from_style": "Selecionados para o seu estilo",
+
+  "fashionkick_loading_title": "Encontrando os melhores calçados para {{country}}",
+  "fashionkick_loading_description": "Estamos verificando a disponibilidade, as tendências e as coleções mais vendidas disponíveis na sua região.",
+
+  "fashionkick_empty_title": "Nenhum produto Fashion Kick disponível",
+  "fashionkick_empty_country": "Não encontramos tênis ou botas disponíveis no momento para entrega em {{country}}.",
+  "fashionkick_empty_description": "Novas coleções são adicionadas regularmente. Tente selecionar outro país ou volte em breve.",
+   "recommended_no_items": "Nenhum produto recomendado disponível no momento.",
+  "rating_out_of_five": "Avaliação: {{rating}} de 5",
+  "recommended_review_summary": "{{rating}}/5 ({{count}} avaliações)"
 }

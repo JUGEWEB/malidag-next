@@ -8,7 +8,11 @@ import React, {
   useRef,
 } from "react";
 import { AppContext } from "./appContext";
-import { useRouter, usePathname } from "next/navigation";
+import {
+  useRouter,
+  usePathname,
+  useSearchParams,
+} from "next/navigation";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
 import useScreenSize from "./useIsMobile";
@@ -38,6 +42,7 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
  const inputRef = useRef(null);
   const withCountry = (path) => {
   const code = countryCode || "fr";
@@ -146,6 +151,20 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
   useEffect(() => {
     updateSuggestions(searchTerm);
   }, [searchTerm, detectedLang]);
+
+  useEffect(() => {
+  const q = searchParams.get("q");
+
+  if (q) {
+    setSearchTerm(q);
+    return;
+  }
+
+  // If we leave a search-result page, don't keep an old query
+  if (!pathname.includes("/itemPage/")) {
+    setSearchTerm("");
+  }
+}, [pathname, searchParams]);
 
   if (pathname === "/") {
   return null;

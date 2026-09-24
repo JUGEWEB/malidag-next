@@ -8,6 +8,10 @@ import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import ShoeRecommended from "./shoeRecomended";
 import { AppContext } from "./appContext";
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
 
 const BASE_URL = "https://api.malidag.com";
 
@@ -18,13 +22,6 @@ const CACHE_KEYS = {
 
 const CACHE_TTL = 1000 * 60 * 30;
 
-const TYPE_TRANSLATION_KEYS = {
-  "Men sneakers": "men_sneakers",
-  "Girls boots": "girls_boots",
-  "Women boots": "women_boots",
-  "Women sneakers": "women_sneakers",
-  "Men boots": "men_boots",
-};
 
 function getCache(key) {
   if (typeof window === "undefined") return null;
@@ -140,11 +137,18 @@ const countryCode = country?.code;
   const [loading, setLoading] = useState(true);
   const [translations, setTranslations] = useState({});
   const [reviews, setReviews] = useState({});
-
+const [rates, setRates] = useState(null);
   const translationRequestsRef = useRef(new Set());
   const reviewRequestsRef = useRef(new Set());
 
-  const currentLang = i18n.language || "en";
+ const currentLang = isSupportedLanguage(i18n.language)
+  ? i18n.language
+  : "en";
+
+const currencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
 
   const withCountry = useCallback(
   (path) => {
@@ -175,6 +179,67 @@ const countryName = countryCode?.toUpperCase() || "your country";
       .flatMap((genreMap) => Object.values(genreMap))
       .flatMap((genreObj) => genreObj.items || []);
   }, [types]);
+
+  const translateTaxonomy = useCallback(
+  (value) => {
+    if (!value) return "";
+
+    const raw = String(value).trim();
+
+    const normalizedKey = raw
+      .toLowerCase()
+      .replace(/&/g, "_and_")
+      .replace(/[-\s]+/g, "_")
+      .replace(/_+/g, "_");
+
+    if (i18n.exists(normalizedKey)) {
+      return t(normalizedKey);
+    }
+
+    if (i18n.exists(raw)) {
+      return t(raw);
+    }
+
+    return raw;
+  },
+  [t]
+);
+
+const translateTaxonomyPhrase = useCallback(
+  (gender, type) => {
+    const rawGender = String(gender || "").trim();
+    const rawType = String(type || "").trim();
+
+    if (!rawGender && !rawType) return "";
+
+    const normalizeKey = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/&/g, "_and_")
+        .replace(/[-\s]+/g, "_")
+        .replace(/_+/g, "_");
+
+    const genderKey = normalizeKey(rawGender);
+    const typeKey = normalizeKey(rawType);
+
+    const joinedKey = [genderKey, typeKey]
+      .filter(Boolean)
+      .join("_");
+
+    if (joinedKey && i18n.exists(joinedKey)) {
+      return t(joinedKey);
+    }
+
+    return [
+      translateTaxonomy(rawGender),
+      translateTaxonomy(rawType),
+    ]
+      .filter(Boolean)
+      .join(" ");
+  },
+  [t, translateTaxonomy]
+);
 
   const hasProducts = allItems.length > 0;
 const hasCategories = mtypes.length > 0;
@@ -316,6 +381,21 @@ const hasCategories = mtypes.length > 0;
   }, [currentLang, hydrateProductMeta]);
 
   useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/prices/rates`);
+
+      setRates(response.data?.rates || response.data || null);
+    } catch (error) {
+      console.error("Failed to fetch currency rates:", error);
+      setRates(null);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     const fetchData = async () => {
@@ -371,6 +451,48 @@ const hasCategories = mtypes.length > 0;
       });
     });
   }, [types, currentLang, fetchTranslation]);
+
+  const getCurrencyRate = useCallback(() => {
+  if (!currencyConfig || !rates) return null;
+
+  if (currencyConfig.currency === "USD") {
+    return 1;
+  }
+
+  const rate = Number(rates?.[currencyConfig.currency]);
+
+  return Number.isFinite(rate) && rate > 0
+    ? rate
+    : null;
+}, [currencyConfig, rates]);
+
+const convertUsd = useCallback(
+  (usdAmount) => {
+    const amount = Number(usdAmount);
+
+    if (!Number.isFinite(amount)) return null;
+
+    const rate = getCurrencyRate();
+
+    if (!rate) return null;
+
+    return amount * rate;
+  },
+  [getCurrencyRate]
+);
+
+const formatPrice = useCallback(
+  (usdAmount) => {
+    const converted = convertUsd(usdAmount);
+
+    if (converted === null || !currencyConfig) {
+      return t("price_unavailable");
+    }
+
+    return `${currencyConfig.symbol}${converted.toFixed(2)}`;
+  },
+  [convertUsd, currencyConfig, t]
+);
 
   const handleItemClick = (id) => {
     if (id)router.push(withCountry(`/product/${id}`));
@@ -475,28 +597,24 @@ if (!loading && !hasProducts) {
     <div className="fashionkick-empty-country">
       <div className="fashionkick-empty-icon">👟</div>
 
-      <h1>No Fashion Kick products available</h1>
+     <h1>{t("fashionkick_empty_title")}</h1>
 
-      <p>
-        We couldn't find sneakers or boots currently available for delivery to{" "}
-        <strong>{countryName}</strong>.
-      </p>
+<p>
+  {t("fashionkick_empty_country", {
+    country: countryName,
+  })}
+</p>
 
-      <p>
-        New collections are added regularly. Try another country or check back
-        soon.
-      </p>
+<p>{t("fashionkick_empty_description")}</p>
 
-      <div className="fashionkick-empty-actions">
-        <button
-          type="button"
-          className="fashionkick-primary-btn"
-          onClick={() => router.push(withCountry("/"))}
-        >
-          Browse Homepage
-        </button>
+<button
+  type="button"
+  className="fashionkick-primary-btn"
+  onClick={() => router.push(withCountry("/"))}
+>
+  {t("browse_homepage")}
+</button>
       </div>
-    </div>
   );
 }
 
@@ -506,17 +624,20 @@ return (
       <div className="fashionkick-page-inner">
         <section className="fashionkick-hero-shell">
           <div className="fashionkick-hero-copy">
-            <span className="fashionkick-hero-label">Luxury Footwear</span>
+            <span className="fashionkick-hero-label">
+            {t("fashionkick_luxury_footwear")}
+          </span>
 
-            <h1 className="fashionkick-hero-heading">
-              Curated Styles
-              <span className="fashionkick-hero-heading-accent"> For Every Step</span>
-            </h1>
+          <h1 className="fashionkick-hero-heading">
+            {t("fashionkick_curated_styles")}
+            <span className="fashionkick-hero-heading-accent">
+              {" "}{t("fashionkick_for_every_step")}
+            </span>
+          </h1>
 
-            <p className="fashionkick-hero-subtext">
-              Explore premium sneakers and boots crafted for bold looks, everyday comfort,
-              and modern elegance. Designed to turn every walk into a statement.
-            </p>
+          <p className="fashionkick-hero-subtext">
+            {t("fashionkick_hero_description")}
+          </p>
 
             <div className="fashionkick-hero-actions">
               <button
@@ -527,7 +648,7 @@ return (
                   el?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
               >
-                Shop Trending
+               {t("fashionkick_shop_trending")}
               </button>
 
               <button
@@ -538,14 +659,22 @@ return (
                   el?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
               >
-                Explore Categories
+               {t("fashionkick_explore_categories")}
               </button>
             </div>
 
             <div className="fashionkick-hero-trust-row">
-              <div className="fashionkick-trust-pill">Best-selling styles</div>
-              <div className="fashionkick-trust-pill">Premium comfort</div>
-              <div className="fashionkick-trust-pill">Modern luxury</div>
+              <div className="fashionkick-trust-pill">
+              {t("fashionkick_best_selling_styles")}
+            </div>
+
+            <div className="fashionkick-trust-pill">
+              {t("fashionkick_premium_comfort")}
+            </div>
+
+            <div className="fashionkick-trust-pill">
+              {t("fashionkick_modern_luxury")}
+            </div>
             </div>
           </div>
 
@@ -553,14 +682,18 @@ return (
             <div className="fashionkick-hero-visual-card fashionkick-hero-card-main">
               <img
                 src="https://cdn.malidag.com/themes/1773233374853-869b7d85-8687-4f39-8301-83679b8afd83.webp"
-                alt="Luxury footwear showcase"
+               alt={t("fashionkick_luxury_showcase_alt")}
                 className="fashionkick-hero-visual-image"
               />
               <div className="fashionkick-hero-visual-overlay" />
               <div className="fashionkick-hero-visual-content">
-                <span className="fashionkick-mini-badge">New Season</span>
-                <h3>Statement Sneakers & Boots</h3>
-                <p>Elevated essentials for every wardrobe.</p>
+               <span className="fashionkick-mini-badge">
+                  {t("fashionkick_new_season")}
+                </span>
+
+                <h3>{t("fashionkick_statement_footwear")}</h3>
+
+                <p>{t("fashionkick_elevated_essentials")}</p>
               </div>
             </div>
           </div>
@@ -568,8 +701,13 @@ return (
 
         <section id="fashionkick-categories" className="fashionkick-categories-section">
           <div className="fashionkick-section-header">
-            <h2>Shop by Category</h2>
-            <span>{mtypes.length} collections</span>
+            <h2>{t("fashionkick_shop_by_category")}</h2>
+
+            <span>
+              {t("fashionkick_collections_count", {
+                count: mtypes.length,
+              })}
+            </span>
           </div>
 
           {mtypes.length === 0 ? (
@@ -592,11 +730,15 @@ return (
                   </div>
 
                   <div className="type-content">
-                    <span className="type-kicker">Collection</span>
+                   <span className="type-kicker">
+                    {t("fashionkick_collection")}
+                  </span>
                     <h3 className="type-title">
-                      {t(TYPE_TRANSLATION_KEYS[typeObj?.type] || typeObj?.type)}
+                     {translateTaxonomy(typeObj?.type)}
                     </h3>
-                    <span className="type-link">Explore now</span>
+                   <span className="type-link">
+                    {t("fashionkick_explore_now")}
+                  </span>
                   </div>
                 </article>
               ))}
@@ -609,8 +751,13 @@ return (
     <section className="fashionkick-panel fashionkick-panel-dark fashionkick-banner-panel">
       <div className="fashionkick-page-inner">
         <div className="fashionkick-section-header">
-          <h2>Top Topics</h2>
-          <span>{topicCards.length} style directions</span>
+         <h2>{t("fashionkick_top_topics")}</h2>
+
+        <span>
+          {t("fashionkick_style_directions_count", {
+            count: topicCards.length,
+          })}
+        </span>
         </div>
 
         <section className="fashionkick-topic-banner">
@@ -623,11 +770,16 @@ return (
           <div className="fashionkick-topic-banner-overlay" />
 
           <div className="fashionkick-topic-banner-vertical">
-            <span className="fashionkick-badge">Premium Collection</span>
-            <h2 className="fashionkick-banner-title">Step Into Luxury</h2>
+           <span className="fashionkick-badge">
+              {t("fashionkick_premium_collection")}
+            </span>
+
+            <h2 className="fashionkick-banner-title">
+              {t("fashionkick_step_into_luxury")}
+            </h2>
+
             <p className="fashionkick-banner-text">
-              Discover best-selling sneakers and boots designed for style, comfort,
-              and confidence. Scroll through the most wanted looks and enter your next obsession.
+              {t("fashionkick_banner_description")}
             </p>
 
             <div className="fashionkick-topic-scroll">
@@ -649,8 +801,13 @@ return (
                       )
                     }
                   >
-                    <span className="fashionkick-topic-item-type">{t(type) || type}</span>
-                    <span className="fashionkick-topic-item-genre">{genre}</span>
+                   <span className="fashionkick-topic-item-type">
+                      {translateTaxonomy(type)}
+                    </span>
+
+                    <span className="fashionkick-topic-item-genre">
+                      {translateTaxonomy(genre)}
+                    </span>
                   </button>
                 ))
               )}
@@ -662,8 +819,13 @@ return (
 
  <div className="fashionkick-page-inner">
   <div className="fashionkick-section-header">
-    <h2>Trending Products</h2>
-    <span>{allItems.length} items</span>
+   <h2>{t("fashionkick_trending_products")}</h2>
+
+    <span>
+      {t("fashionkick_items_count", {
+        count: allItems.length,
+      })}
+    </span>
   </div>
 
   {allItems.length === 0 ? (
@@ -694,13 +856,13 @@ return (
             <div className="fashionkick-product-media fashionkick-product-media-vertical">
               {discountPercentage > 0 && (
                 <div className="fashionkick-product-badge fashionkick-product-badge-discount">
-                  -{discountPercentage}% OFF
+                 -{discountPercentage}% {t("off")}
                 </div>
               )}
 
               {item?.type && (
                 <div className="fashionkick-product-badge fashionkick-product-badge-type">
-                  {item.type}
+                  {translateTaxonomy(item.type)}
                 </div>
               )}
 
@@ -727,7 +889,9 @@ return (
 
                     return (
                       <>
-                        ${whole}
+                       <div className="fashionkick-price">
+                        {formatPrice(currentPrice)}
+                      </div>
                         <sup className="fashionkick-price-decimal">{decimal}</sup>
                       </>
                     );
@@ -736,7 +900,7 @@ return (
 
                 {hasDiscount && (
                   <div className="fashionkick-old-price">
-                    ${originalPrice.toFixed(2)}
+                    {formatPrice(originalPrice)}
                   </div>
                 )}
               </div>
@@ -752,7 +916,9 @@ return (
 
               <div className="fashionkick-product-footer">
                 <span className="fashionkick-product-genre">
-                  {item?.genre || "Fashion"}
+                  {item?.genre
+                    ? translateTaxonomy(item.genre)
+                    : t("fashion")}
                 </span>
 
                 <button
@@ -763,7 +929,7 @@ return (
                     handleItemClick(id);
                   }}
                 >
-                  View Product
+                 {t("fashionkick_view_product")}
                 </button>
               </div>
             </div>
@@ -775,7 +941,7 @@ return (
 
   <div className="fashionkick-recommended-wrap">
     <div className="fashionkick-section-header">
-      <span>Picked from your style</span>
+      <span>{t("fashionkick_picked_from_style")}</span>
     </div>
 
     <ShoeRecommended />

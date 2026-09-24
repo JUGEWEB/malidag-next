@@ -26,16 +26,26 @@
   flex: 0 0 auto;
   padding: 9px 12px;
   margin: 4px 10px;
+
   background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 8px;
+
   color: #333333;
   font-size: 14px;
   white-space: nowrap;
   cursor: pointer;
-  transition: 0.2s ease;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
 }
 
 .bbe-type-item:hover {
-  background: #dcdfe4;
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  transform: translateX(2px);
 }
 
 .bbe-type-item.active {
@@ -93,6 +103,9 @@
   top: 10px;
   z-index: 6;
   padding: 6px 8px;
+
+  border-radius: 6px;
+
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
@@ -166,7 +179,10 @@
   align-items: center;
   justify-content: center;
   min-height: 20px;
-  padding: 3px 7px;
+  padding: 3px 8px;
+
+  border-radius: 6px;
+
   font-size: 0.68rem;
   font-weight: 900;
   color: #ffffff;
@@ -276,8 +292,11 @@
   display: inline-flex;
   align-items: center;
   padding: 6px 9px;
+
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+  border-radius: 7px;
+
   color: #0f172a;
   font-size: 0.7rem;
   font-weight: 900;
@@ -291,24 +310,82 @@
 
 .bbe-add-basket-btn {
   width: 100%;
-  min-height: 40px;
-  margin-top: 4px;
-  border: none;
+  min-height: 42px;
+  margin-top: 6px;
+
+  border: 1px solid #111827;
+  border-radius: 10px;
+
   background: #111827;
   color: #ffffff;
+
   font-size: 0.86rem;
   font-weight: 900;
+  letter-spacing: 0.01em;
+
   cursor: pointer;
-  transition: 0.2s ease;
-  text-align: center;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
 }
 
 .bbe-add-basket-btn:hover {
   background: #000000;
+  border-color: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(17, 24, 39, 0.16);
 }
 
 .bbe-add-basket-btn:active {
-  transform: scale(0.99);
+  transform: translateY(0) scale(0.99);
+  box-shadow: none;
+}
+
+.bbe-added-basket-btn {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 6px;
+
+  border: 1px solid #15803d;
+  border-radius: 10px;
+
+  background: #15803d;
+  color: #ffffff;
+
+  font-size: 0.88rem;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.bbe-added-basket-btn:hover {
+  background: #166534;
+  border-color: #166534;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(21, 128, 61, 0.18);
+}
+
+.bbe-added-basket-btn:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: none;
 }
 
 .item-spinner-wrapper {

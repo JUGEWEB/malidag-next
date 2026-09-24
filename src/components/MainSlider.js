@@ -361,9 +361,31 @@ const slides = useMemo(() => {
     saveSlideIndex(currentSlide);
     stopVideoPlayback();
 
-    router.push(withCountry(path));
+    let finalPath = path;
+
+    const [pathname, queryString] = path.split("?");
+
+    if (queryString) {
+      const params = new URLSearchParams(queryString);
+      const q = params.get("q");
+
+      if (q) {
+        params.set("q", t(q));
+
+        finalPath = `${pathname}?${params.toString()}`;
+      }
+    }
+
+    router.push(withCountry(finalPath));
   },
-  [router, currentSlide, saveSlideIndex, stopVideoPlayback, withCountry]
+  [
+    router,
+    currentSlide,
+    saveSlideIndex,
+    stopVideoPlayback,
+    withCountry,
+    t,
+  ]
 );
 
   const handleNavigation = useCallback(

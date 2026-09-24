@@ -1279,5 +1279,16 @@
   "shoes_topic_review_insight": "Review Insight",
   "shoes_topic_product_analysis": "Product analysis",
 
-  "close": "Close"
+  "close": "Close",
+
+   "men_fashion_hero_title": "Fresh Fits for Every Day",
+  "men_fashion_hero_description": "Discover sneakers, socks, outfits, and trending essentials.",
+  "men_shop_by_type": "Shop by Type",
+  "men_trending_products": "Trending Products",
+  "men_items_count": "{{count}} items",
+
+  "men_empty_title": "No men's fashion items available",
+  "men_empty_country": "We couldn't find men's fashion products currently available for delivery to {{country}}.",
+  "men_empty_description": "New styles are added regularly. Try another country or check back soon.",
+  "items_sold": "{{count}} sold"
 }

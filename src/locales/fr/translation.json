@@ -1139,6 +1139,24 @@
   "shoes_topic_review_insight": "Analyse des avis",
   "shoes_topic_product_analysis": "Analyse du produit",
 
-  "close": "Fermer"
+  "close": "Fermer",
+
+   "men_fashion_hero_title": "Des looks tendance au quotidien",
+
+  "men_fashion_hero_description": "Découvrez des sneakers, chaussettes, tenues et essentiels tendance.",
+
+  "men_shop_by_type": "Acheter par type",
+
+  "men_trending_products": "Produits tendance",
+
+  "men_items_count": "{{count}} articles",
+
+  "men_empty_title": "Aucun article de mode pour homme disponible",
+
+  "men_empty_country": "Nous n'avons trouvé aucun article de mode pour homme actuellement disponible à la livraison vers {{country}}.",
+
+  "men_empty_description": "De nouveaux styles sont ajoutés régulièrement. Essayez un autre pays ou revenez bientôt.",
+
+  "items_sold": "{{count}} vendus"
 
 }

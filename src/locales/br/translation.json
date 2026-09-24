@@ -992,5 +992,23 @@
   "shoes_topic_review_insight": "Análise das avaliações",
   "shoes_topic_product_analysis": "Análise do produto",
 
-  "close": "Fechar"
+  "close": "Fechar",
+
+  "men_fashion_hero_title": "Looks modernos para todos os dias",
+
+  "men_fashion_hero_description": "Descubra tênis, meias, looks e itens essenciais que estão em alta.",
+
+  "men_shop_by_type": "Comprar por tipo",
+
+  "men_trending_products": "Produtos em alta",
+
+  "men_items_count": "{{count}} itens",
+
+  "men_empty_title": "Nenhum item de moda masculina disponível",
+
+  "men_empty_country": "Não encontramos produtos de moda masculina disponíveis para entrega em {{country}} no momento.",
+
+  "men_empty_description": "Novos estilos são adicionados regularmente. Tente outro país ou volte em breve.",
+
+  "items_sold": "{{count}} vendidos"
 }

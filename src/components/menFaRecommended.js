@@ -1,174 +1,571 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import "./recomendedItem.css";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
+
+import { useAppContext } from "./appContext";
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
 
 const BASE_URL = "https://api.malidag.com";
-const CACHE_KEY = "recommendedItems_first20";
 const MAX_CACHE_ITEMS = 20;
+const MAX_DISPLAY_ITEMS = 30;
+const CACHE_TTL = 30 * 60 * 1000;
 
 function MenFaRecommended() {
   const router = useRouter();
-  const [recommendedItems, setRecommendedItems] = useState([]);
-  const [reviews, setReviews] = useState({});
-  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+const { t, i18n } = useTranslation();
+const { country } = useAppContext();
 
-  const getCryptoIcon = (cryptocurrency) => {
-    const cryptoIcons = {
-      USDT: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
-      USDC: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
-      BUSD: "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png",
-    };
+const [recommendedItems, setRecommendedItems] = useState([]);
+const [reviews, setReviews] = useState({});
+const [rates, setRates] = useState({});
+const [itemTranslations, setItemTranslations] = useState({});
+const [loadingRecommendations, setLoadingRecommendations] =
+  useState(true);
 
-    return cryptoIcons[cryptocurrency] || "https://api.malidag.com/learn/videos/1764978237824-logo%20(1).png";
-  };
+const countryCode =
+  country?.code?.toLowerCase() || "fr";
+
+const currentLang = isSupportedLanguage(i18n.language)
+  ? i18n.language
+  : "en";
+
+const countryCurrencyConfig = useMemo(
+  () => getCountryConfig(country?.name || ""),
+  [country?.name]
+);
+
+const cacheKey =
+  `menFaRecommended_${countryCode}`;
+
+const withCountry = useCallback(
+  (path) => {
+    if (!path) return `/${countryCode}`;
+
+    const cleanPath = path.replace(
+      /^\/(fr|gb|br|us|de|ie|au|be)(\/|$)/,
+      "/"
+    );
+
+    return `/${countryCode}${
+      cleanPath.startsWith("/")
+        ? cleanPath
+        : `/${cleanPath}`
+    }`;
+  },
+  [countryCode]
+);
 
   const renderStars = (rating) => {
     const rounded = Math.round(Number(rating) || 0);
     return "★".repeat(rounded) + "☆".repeat(5 - rounded);
   };
 
-  const fetchReviews = async (productId) => {
-    try {
-      const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
+ const fetchReviews = useCallback(
+  async (productId) => {
+    if (!productId) return;
 
-      if (response.data?.success) {
-        const reviewsArray = Array.isArray(response.data.reviews)
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/get-reviews/${productId}`
+      );
+
+      const reviewsArray =
+        response.data?.success &&
+        Array.isArray(response.data.reviews)
           ? response.data.reviews
           : [];
 
-        const totalRating = reviewsArray.reduce((acc, review) => {
-          const rating = parseFloat(review?.rating);
-          return acc + (isNaN(rating) ? 4 : rating);
-        }, 0);
+      const validRatings = reviewsArray
+        .map((review) =>
+          Number(review?.rating)
+        )
+        .filter(
+          (rating) =>
+            Number.isFinite(rating) &&
+            rating >= 1 &&
+            rating <= 5
+        );
 
-        const averageRating = reviewsArray.length
-          ? (totalRating / reviewsArray.length).toFixed(2)
+      const averageRating =
+        validRatings.length > 0
+          ? (
+              validRatings.reduce(
+                (sum, rating) =>
+                  sum + rating,
+                0
+              ) / validRatings.length
+            ).toFixed(1)
           : null;
 
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating,
-            count: reviewsArray.length,
-            reviewsArray,
-          },
-        }));
-      } else {
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating: null,
-            count: 0,
-            reviewsArray: [],
-          },
-        }));
-      }
+      setReviews((prev) => ({
+        ...prev,
+        [productId]: {
+          averageRating,
+          count: validRatings.length,
+        },
+      }));
     } catch (error) {
-      if (error?.response?.status === 404) {
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating: null,
-            count: 0,
-            reviewsArray: [],
-          },
-        }));
-      } else {
-        console.error("Error fetching reviews:", error);
+      if (error?.response?.status !== 404) {
+        console.error(
+          "Error fetching reviews:",
+          error
+        );
       }
+
+      setReviews((prev) => ({
+        ...prev,
+        [productId]: {
+          averageRating: null,
+          count: 0,
+        },
+      }));
     }
+  },
+  []
+);
+
+ useEffect(() => {
+  let cancelled = false;
+
+  const hydrateReviews = async (items) => {
+    await Promise.all(
+      items.map((product) => {
+        const productId = product?.itemId;
+
+        return productId
+          ? fetchReviews(productId)
+          : Promise.resolve();
+      })
+    );
   };
 
-  useEffect(() => {
-    const loadCachedItems = () => {
-      try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (!cached) return false;
+  const loadCachedItems = () => {
+    try {
+      const cached =
+        localStorage.getItem(cacheKey);
 
-        const parsed = JSON.parse(cached);
+      if (!cached) return false;
 
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setRecommendedItems(parsed);
-          setLoadingRecommendations(false);
+      const parsed = JSON.parse(cached);
 
-          Promise.all(
-            parsed.map((item) => {
-              const productId = item?.itemId;
-              return productId ? fetchReviews(productId) : Promise.resolve();
-            })
-          ).catch((error) => {
-            console.error("Error fetching cached reviews:", error);
-          });
-
-          return true;
-        }
-      } catch (error) {
-        console.error("Error reading recommended cache:", error);
+      if (
+        !parsed ||
+        !Array.isArray(parsed.items) ||
+        !parsed.items.length ||
+        !parsed.timestamp
+      ) {
+        localStorage.removeItem(cacheKey);
+        return false;
       }
+
+      const isExpired =
+        Date.now() - parsed.timestamp >
+        CACHE_TTL;
+
+      if (isExpired) {
+        localStorage.removeItem(cacheKey);
+        return false;
+      }
+
+      if (cancelled) return false;
+
+      setRecommendedItems(parsed.items);
+      setLoadingRecommendations(false);
+
+      hydrateReviews(parsed.items).catch(
+        (error) => {
+          console.error(
+            "Error fetching cached reviews:",
+            error
+          );
+        }
+      );
+
+      return true;
+    } catch (error) {
+      console.error(
+        "Error reading recommended cache:",
+        error
+      );
+
+      localStorage.removeItem(cacheKey);
 
       return false;
-    };
-
-    const fetchRecommendedItems = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}/items`);
-        const data = await response.json();
-
-        const itemsArray = Array.isArray(data) ? data : [];
-
-        const filteredItems = itemsArray.filter((item) => {
-          const price = parseFloat(item?.item?.usdPrice ?? 0);
-          const category = item?.category || "";
-          const coin = item?.item?.cryptocurrency || "";
-
-          return (
-            category.toLowerCase() === "shoes" &&
-            price >= 1 &&
-            price <= 50 &&
-            ["USDT", "USDC", "BUSD"].includes(coin)
-          );
-        });
-
-        const shuffledItems = [...filteredItems].sort(() => 0.5 - Math.random());
-        const selectedItems = shuffledItems.slice(0, 30);
-
-        setRecommendedItems(selectedItems);
-
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify(selectedItems.slice(0, MAX_CACHE_ITEMS))
-        );
-
-        await Promise.all(
-          selectedItems.map((item) => {
-            const productId = item?.itemId;
-            return productId ? fetchReviews(productId) : Promise.resolve();
-          })
-        );
-      } catch (error) {
-        console.error("Error fetching recommended items:", error);
-        setRecommendedItems([]);
-      } finally {
-        setLoadingRecommendations(false);
-      }
-    };
-
-    loadCachedItems();
-    fetchRecommendedItems();
-  }, []);
-
-  const handleItemClick = (id) => {
-    if (id) {
-      router.push(`/product/${id}`);
     }
   };
+
+  const fetchRecommendedItems = async () => {
+    try {
+      const response = await fetch(
+        `${BASE_URL}/items?country=${encodeURIComponent(
+          countryCode
+        )}`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch items: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      const itemsArray = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.items)
+          ? data.items
+          : [];
+
+   const filteredItems =
+  itemsArray.filter((product) => {
+    const item =
+      product?.item || {};
+
+    const details =
+      product?.details || {};
+
+    const price = Number(
+      item?.usdPrice || 0
+    );
+
+    const category = String(
+      product?.category ||
+        details?.category ||
+        ""
+    )
+      .trim()
+      .toLowerCase();
+
+    const genre = String(
+      item?.genre ||
+        details?.genre ||
+        product?.genre ||
+        ""
+    )
+      .trim()
+      .toLowerCase();
+
+    const isMen =
+      genre === "men" ||
+      genre === "man" ||
+      genre === "male" ||
+      genre === "unisex";
+
+    const isFashion =
+      category === "fashion" ||
+      category === "clothes" ||
+      category === "clothing" ||
+      category === "shoes";
+
+    return (
+      isMen &&
+      isFashion &&
+      price >= 1 &&
+      price <= 100
+    );
+  });
+
+      // Fisher-Yates shuffle
+      const shuffledItems = [
+        ...filteredItems,
+      ];
+
+      for (
+        let i = shuffledItems.length - 1;
+        i > 0;
+        i--
+      ) {
+        const j = Math.floor(
+          Math.random() * (i + 1)
+        );
+
+        [
+          shuffledItems[i],
+          shuffledItems[j],
+        ] = [
+          shuffledItems[j],
+          shuffledItems[i],
+        ];
+      }
+
+      const selectedItems =
+        shuffledItems.slice(
+          0,
+          MAX_DISPLAY_ITEMS
+        );
+
+      if (cancelled) return;
+
+      setRecommendedItems(selectedItems);
+
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          timestamp: Date.now(),
+          items: selectedItems.slice(
+            0,
+            MAX_CACHE_ITEMS
+          ),
+        })
+      );
+
+      await hydrateReviews(selectedItems);
+    } catch (error) {
+      console.error(
+        "Error fetching recommended items:",
+        error
+      );
+
+      if (!cancelled) {
+        setRecommendedItems([]);
+      }
+    } finally {
+      if (!cancelled) {
+        setLoadingRecommendations(false);
+      }
+    }
+  };
+
+  setLoadingRecommendations(true);
+
+  loadCachedItems();
+
+  fetchRecommendedItems();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  countryCode,
+  cacheKey,
+  fetchReviews,
+]);
+
+  useEffect(() => {
+  if (
+    currentLang === "en" ||
+    recommendedItems.length === 0
+  ) {
+    if (currentLang === "en") {
+      setItemTranslations({});
+    }
+
+    return;
+  }
+
+  let cancelled = false;
+
+  const fetchTranslations = async () => {
+    const missingIds = [
+      ...new Set(
+        recommendedItems
+          .map((product) => product?.itemId)
+          .filter(Boolean)
+      ),
+    ].filter(
+      (itemId) =>
+        !itemTranslations?.[itemId]?.[
+          currentLang
+        ]
+    );
+
+    if (!missingIds.length) return;
+
+    const results =
+      await Promise.allSettled(
+        missingIds.map(async (itemId) => {
+          const response = await fetch(
+            `${BASE_URL}/translate/product/translate/${encodeURIComponent(
+              itemId
+            )}/${encodeURIComponent(
+              currentLang
+            )}`
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Translation failed: ${response.status}`
+            );
+          }
+
+          const data = await response.json();
+
+          return {
+            itemId,
+            translation:
+              data?.translation ||
+              data?.translatedProduct ||
+              data,
+          };
+        })
+      );
+
+    if (cancelled) return;
+
+    setItemTranslations((prev) => {
+      const next = { ...prev };
+
+      results.forEach((result) => {
+        if (
+          result.status !== "fulfilled"
+        ) {
+          return;
+        }
+
+        const { itemId, translation } =
+          result.value;
+
+        next[itemId] = {
+          ...(next[itemId] || {}),
+          [currentLang]: translation,
+        };
+      });
+
+      return next;
+    });
+  };
+
+  fetchTranslations();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  recommendedItems,
+  currentLang,
+]);
+
+const getProductName = (product) => {
+  const originalName =
+    product?.item?.name ||
+    product?.details?.itemName ||
+    t("recommended_item");
+
+  if (currentLang === "en") {
+    return originalName;
+  }
+
+  const translated =
+    itemTranslations?.[product?.itemId]?.[
+      currentLang
+    ];
+
+  return (
+    translated?.name ||
+    translated?.itemName ||
+    originalName
+  );
+};
+
+  useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await fetch(
+        `${BASE_URL}/prices/rates`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch rates: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      setRates(data?.rates || {});
+    } catch (error) {
+      console.error(
+        "Error fetching exchange rates:",
+        error
+      );
+
+      setRates({});
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const convertUsdToLocal = useCallback(
+  (usdValue) => {
+    const usdPrice = Number(usdValue || 0);
+    const currency =
+      countryCurrencyConfig?.currency || "USD";
+
+    if (!usdPrice) return 0;
+
+    if (currency === "USD") {
+      return usdPrice;
+    }
+
+    const rate = Number(rates?.[currency]);
+
+    if (!rate) return null;
+
+    return usdPrice * rate;
+  },
+  [
+    rates,
+    countryCurrencyConfig?.currency,
+  ]
+);
+
+const formatPrice = useCallback(
+  (usdValue) => {
+    const converted =
+      convertUsdToLocal(usdValue);
+
+    if (converted === null) {
+      return t("price_unavailable");
+    }
+
+    return `${
+      countryCurrencyConfig?.symbol || "$"
+    }${converted.toFixed(2)}`;
+  },
+  [
+    convertUsdToLocal,
+    countryCurrencyConfig?.symbol,
+    t,
+  ]
+);
+
+ const handleItemClick = (id) => {
+  if (!id) return;
+
+  router.push(
+    withCountry(`/product/${id}`)
+  );
+};
+
+if (
+  !loadingRecommendations &&
+  recommendedItems.length === 0
+) {
+  return null;
+}
 
   return (
     <div className="recommended-items-container">
-      <h2 className="recommended-title">Recommended Products</h2>
+      <h2 className="recommended-title"> {t("recommended_products")}</h2>
 
       <div className="recommended-grid">
         {loadingRecommendations && recommendedItems.length === 0 ? (
@@ -184,66 +581,56 @@ function MenFaRecommended() {
           ))
         ) : (
           recommendedItems.map((item) => {
+            const productName =
+  getProductName(item);
             const productId = item?.itemId;
             const reviewData = reviews[productId];
             const averageRating = reviewData?.averageRating;
             const reviewCount = reviewData?.count || 0;
-            const stableCoin = item?.item?.cryptocurrency || "USDT";
 
             return (
               <div className="recommended-item" key={item?.id || productId}>
                 <div className="rec-img">
                   <img
                     src={item?.item?.images?.[0] || "/fallback.png"}
-                    alt={item?.item?.name || "Recommended item"}
+                   alt={productName}
                     className="recommended-image"
                     onClick={() => handleItemClick(item?.id)}
                   />
                 </div>
 
                 <div className="recommended-info">
-                  <p
+                 <p
                     className="recommended-name"
-                    onClick={() => handleItemClick(item?.id)}
+                    onClick={() =>
+                      handleItemClick(item?.id)
+                    }
                   >
-                    {item?.item?.name || "Unnamed product"}
+                    {productName}
                   </p>
 
                   <div className="item-sta">
-                    {averageRating ? renderStars(averageRating) : "No rating"}
-                  </div>
+                      {averageRating
+                        ? renderStars(averageRating)
+                        : t("no_rating")}
+                    </div>
 
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#666",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {averageRating
-                      ? `${averageRating}/5 (${reviewCount} reviews)`
-                      : "No reviews yet"}
-                  </div>
+                    <div className="recommended-review-summary">
+                      {averageRating
+                        ? t(
+                            "recommended_review_summary",
+                            {
+                              rating: averageRating,
+                              count: reviewCount,
+                            }
+                          )
+                        : t("no_reviews_yet")}
+                    </div>
 
                   <div className="recommended-price">
-                    ${item?.item?.usdPrice || "0"}
+                    {formatPrice(item?.item?.usdPrice)}
                   </div>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      marginTop: "6px",
-                    }}
-                  >
-                    <div className="recommended-price">{stableCoin}</div>
-                    <img
-                      src={getCryptoIcon(stableCoin)}
-                      alt={stableCoin}
-                      style={{ width: "16px", height: "16px" }}
-                    />
-                  </div>
                 </div>
               </div>
             );

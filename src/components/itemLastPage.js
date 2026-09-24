@@ -3,7 +3,12 @@
 import React, { useState, useEffect, useRef,  useContext } from "react";
 import { AppContext } from "./appContext";
 import dynamic from "next/dynamic";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import {
+  useRouter,
+  useParams,
+  usePathname,
+  useSearchParams,
+} from "next/navigation";
 import axios from "axios";
 import { message } from "antd";
 import useFinalRating from "./finalRating";
@@ -80,9 +85,13 @@ function ProductDetails() {
 
   const [reviewCount, setReviewCount] = useState(0);
   const pathname = usePathname();
-  const params = useParams();
-  const { id, rating } = params;
-  const router = useRouter();
+const params = useParams();
+const searchParams = useSearchParams();
+const router = useRouter();
+
+const { id } = params;
+
+const ratingFromURL = searchParams.get("rating");
 
   const countryCode = country?.code?.toLowerCase() || null;
 
@@ -106,8 +115,6 @@ const withCountry = (path) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [zoomType, setZoomType] = useState("zoom1");
-
-  const ratingFromURL = rating;
   const buttonRef = useRef(null);
   const modalRef = useRef(null);
   const { finalRating } = useFinalRating(itemsd);
@@ -325,11 +332,24 @@ const redirectToAuth = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (ratingFromURL) {
-      setSelectedRating(parseFloat(ratingFromURL));
-    }
-  }, [ratingFromURL]);
+ useEffect(() => {
+  if (!ratingFromURL) {
+    setSelectedRating(null);
+    return;
+  }
+
+  const parsedRating = Number(ratingFromURL);
+
+  if (
+    Number.isFinite(parsedRating) &&
+    parsedRating >= 1 &&
+    parsedRating <= 5
+  ) {
+    setSelectedRating(parsedRating);
+  } else {
+    setSelectedRating(null);
+  }
+}, [ratingFromURL]);
 
   useEffect(() => {
     if (pathname.includes("product/")) {

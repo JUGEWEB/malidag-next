@@ -1,260 +1,677 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import axios from "axios";
-import { useRouter, useParams } from "next/navigation";
+import {
+  useRouter,
+  useParams,
+  usePathname,
+  useSearchParams,
+} from "next/navigation";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
+
 import "./shoesTopTopic.css";
 import AnalyseReview from "./analyseReview";
+import { AppContext } from "./appContext";
+import { isSupportedLanguage } from "./countryUtils";
 
 const BASE_URL = "https://api.malidag.com";
 
 const ShoesTopTopic = () => {
   const params = useParams();
-  const router = useRouter();
+const searchParams = useSearchParams();
 
-  const type = params?.type || "";
-  const genre = params?.genre || "";
+const { id } = params;
+const router = useRouter();
+
+const ratingFromURL = searchParams.get("rating");
+
+  const { country } = useContext(AppContext);
+  const { t } = useTranslation();
+
+  const type = decodeURIComponent(String(params?.type || ""));
+  const genre = decodeURIComponent(String(params?.genre || ""));
+
+  const countryCode =
+    country?.code?.toLowerCase() || "fr";
+
+  const currentLang = isSupportedLanguage(i18n.language)
+    ? i18n.language
+    : "en";
 
   const [topShoesItems, setTopShoesItems] = useState([]);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedItemId, setSelectedItemId] = useState(null);
-  const [selectedItemProductId, setSelectedItemProductId] = useState(null);
+  const [translations, setTranslations] = useState({});
+
+  const [selectedItemId, setSelectedItemId] =
+    useState(null);
+
+  const [
+    selectedItemProductId,
+    setSelectedItemProductId,
+  ] = useState(null);
+
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [loading, setLoading] = useState(true);
 
+  /*
+   * Country-aware routes
+   */
+  const withCountry = useCallback(
+    (path) => {
+      if (!path) return `/${countryCode}`;
+
+      const cleanPath = path.replace(
+        /^\/(fr|gb|br|us|de|ie|au|be)(\/|$)/,
+        "/"
+      );
+
+      return `/${countryCode}${
+        cleanPath.startsWith("/")
+          ? cleanPath
+          : `/${cleanPath}`
+      }`;
+    },
+    [countryCode]
+  );
+
+  /*
+   * Taxonomy translation
+   *
+   * Raw taxonomy remains canonical for:
+   * - URL params
+   * - API comparisons
+   *
+   * Translation is only for display.
+   */
+  const translateTaxonomy = useCallback(
+    (value) => {
+      if (!value) return "";
+
+      const raw = String(value).trim();
+
+      const normalizedKey = raw
+        .toLowerCase()
+        .replace(/&/g, "_and_")
+        .replace(/[-\s]+/g, "_")
+        .replace(/_+/g, "_");
+
+      if (i18n.exists(normalizedKey)) {
+        return t(normalizedKey);
+      }
+
+      if (i18n.exists(raw)) {
+        return t(raw);
+      }
+
+      return raw.replace(/-/g, " ");
+    },
+    [t]
+  );
+
+  /*
+   * Product translation
+   */
   useEffect(() => {
-    const fetchTopShoesItems = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/items`);
-        const data = Array.isArray(response.data) ? response.data : [];
+    let cancelled = false;
 
-        const filteredItems = data.filter((product) => {
-          const category = product?.category?.toLowerCase?.() || "";
-          const productType = product?.item?.type?.toLowerCase?.() || "";
-          const productGenre = product?.item?.genre?.toLowerCase?.() || "";
-          const sold = Number(product?.item?.sold || 0);
+    const fetchTranslations = async () => {
+      if (
+        currentLang === "en" ||
+        topShoesItems.length === 0
+      ) {
+        return;
+      }
 
-          return (
-            category === "shoes" &&
-            productType === type.toLowerCase() &&
-            productGenre === genre.toLowerCase() &&
-            sold >= 100
+      const uniqueItemIds = [
+        ...new Set(
+          topShoesItems
+            .map((product) => product?.itemId)
+            .filter(Boolean)
+        ),
+      ];
+
+      const missingItemIds = uniqueItemIds.filter(
+        (itemId) =>
+          !translations?.[itemId]?.[currentLang]
+      );
+
+      if (missingItemIds.length === 0) {
+        return;
+      }
+
+      const results = await Promise.allSettled(
+        missingItemIds.map(async (itemId) => {
+          const response = await axios.get(
+            `${BASE_URL}/translate/product/translate/${encodeURIComponent(
+              itemId
+            )}/${encodeURIComponent(currentLang)}`
           );
+
+          return {
+            itemId,
+            translation:
+              response.data?.translation || {},
+          };
+        })
+      );
+
+      if (cancelled) return;
+
+      setTranslations((prev) => {
+        const next = { ...prev };
+
+        results.forEach((result) => {
+          if (result.status !== "fulfilled") {
+            return;
+          }
+
+          const { itemId, translation } =
+            result.value;
+
+          next[itemId] = {
+            ...(next[itemId] || {}),
+            [currentLang]: translation,
+          };
         });
 
-        setTopShoesItems(filteredItems);
+        return next;
+      });
+    };
+
+    fetchTranslations().catch((error) => {
+      console.error(
+        "Error fetching product translations:",
+        error
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    topShoesItems,
+    currentLang,
+    translations,
+  ]);
+
+  /*
+   * Country-filtered products
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchTopShoesItems = async () => {
+      setLoading(true);
+
+      try {
+        const response = await axios.get(
+          `${BASE_URL}/items?country=${encodeURIComponent(
+            countryCode
+          )}`
+        );
+
+        if (cancelled) return;
+
+        const data = Array.isArray(
+          response.data?.items
+        )
+          ? response.data.items
+          : Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        const normalizedType = type
+          .trim()
+          .toLowerCase();
+
+        const normalizedGenre = genre
+          .trim()
+          .toLowerCase();
+
+        const filteredItems = data.filter(
+          (product) => {
+            const category = String(
+              product?.category || ""
+            )
+              .trim()
+              .toLowerCase();
+
+            const productType = String(
+              product?.item?.type || ""
+            )
+              .trim()
+              .toLowerCase();
+
+            const productGenre = String(
+              product?.item?.genre || ""
+            )
+              .trim()
+              .toLowerCase();
+
+            const sold = Number(
+              product?.item?.sold || 0
+            );
+
+            return (
+              category === "shoes" &&
+              productType === normalizedType &&
+              productGenre === normalizedGenre &&
+              sold >= 100
+            );
+          }
+        );
+
+        /*
+         * This is a "Top sellers" page, so let's actually
+         * rank products by units sold.
+         */
+        const rankedItems = [...filteredItems].sort(
+          (a, b) =>
+            Number(b?.item?.sold || 0) -
+            Number(a?.item?.sold || 0)
+        );
+
+        setTopShoesItems(rankedItems);
       } catch (error) {
-        console.error("Error fetching top shoes items:", error);
-        setTopShoesItems([]);
+        console.error(
+          "Error fetching top shoes items:",
+          error
+        );
+
+        if (!cancelled) {
+          setTopShoesItems([]);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     if (!type || !genre) {
+      setTopShoesItems([]);
       setLoading(false);
       return;
     }
 
     fetchTopShoesItems();
-  }, [type, genre]);
 
-  const openModal = (item, event) => {
-    setSelectedItem(item);
-    setSelectedItemId(item.id);
-    setSelectedItemProductId(item.itemId);
+    return () => {
+      cancelled = true;
+    };
+  }, [type, genre, countryCode]);
 
-    const rect = event.target.getBoundingClientRect();
-    setModalPosition({
-      top: rect.top + window.scrollY + 30,
-      left: rect.left + window.scrollX + 10,
-    });
+  /*
+   * Display helpers
+   */
+  const displayType = useMemo(
+    () => translateTaxonomy(type),
+    [type, translateTaxonomy]
+  );
 
+  const displayGenre = useMemo(
+    () => translateTaxonomy(genre),
+    [genre, translateTaxonomy]
+  );
+
+  const getProductName = useCallback(
+    (product) => {
+      const itemId = product?.itemId;
+
+      const originalName =
+        product?.item?.name ||
+        t("fashion_item");
+
+      if (currentLang === "en") {
+        return originalName;
+      }
+
+      return (
+        translations?.[itemId]?.[currentLang]
+          ?.name ||
+        translations?.[itemId]?.[currentLang]
+          ?.itemName ||
+        originalName
+      );
+    },
+    [translations, currentLang, t]
+  );
+
+  /*
+   * Modal
+   */
+  const openModal = (product) => {
+    setSelectedItemId(product?.id || null);
+    setSelectedItemProductId(
+      product?.itemId || null
+    );
     setModalOpen(true);
   };
 
   const closeModal = () => {
-    setSelectedItem(null);
     setSelectedItemId(null);
     setSelectedItemProductId(null);
     setModalOpen(false);
   };
 
-  const handleRatingClick = () => {
-    if (selectedItemId) {
-      router.push(`/product/${selectedItemId}`);
-    } else {
-      console.error("Error: Product ID is undefined");
-    }
-  };
+ const handleRatingClick = (rating) => {
+  if (!selectedItemId) return;
 
- if (loading) {
-  return (
-    <div className="topic-page">
-      <div className="topic-shell">
-        <div className="topic-loading">
-          <div className="topic-loading-title" />
-          <div className="topic-loading-subtitle" />
+  const productPath =
+    rating !== null && rating !== undefined
+      ? `/product/${selectedItemId}?rating=${encodeURIComponent(rating)}`
+      : `/product/${selectedItemId}`;
 
-          <div className="topic-loading-grid">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="topic-skeleton-card">
-                <div className="topic-skeleton-image" />
-                <div className="topic-skeleton-line topic-skeleton-line-lg" />
-                <div className="topic-skeleton-line" />
-                <div className="topic-skeleton-line topic-skeleton-line-sm" />
-              </div>
-            ))}
+  router.push(withCountry(productPath));
+};
+
+  /*
+   * Loading
+   */
+  if (loading) {
+    return (
+      <div className="topic-page">
+        <div className="topic-shell">
+          <div className="topic-loading">
+            <div className="topic-loading-title" />
+            <div className="topic-loading-subtitle" />
+
+            <div className="topic-loading-grid">
+              {Array.from({ length: 6 }).map(
+                (_, index) => (
+                  <div
+                    key={index}
+                    className="topic-skeleton-card"
+                  >
+                    <div className="topic-skeleton-image" />
+                    <div className="topic-skeleton-line topic-skeleton-line-lg" />
+                    <div className="topic-skeleton-line" />
+                    <div className="topic-skeleton-line topic-skeleton-line-sm" />
+                  </div>
+                )
+              )}
+            </div>
           </div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="topic-page">
+      <div className="topic-shell">
+        {/* HERO */}
+        <section className="topic-hero">
+          <div className="topic-hero-copy">
+            <span className="topic-kicker">
+              {t("shoes_topic_top_performing")}
+            </span>
+
+            <h1 className="topic-title">
+              {displayGenre} {displayType}
+            </h1>
+
+            <p className="topic-subtitle">
+              {t("shoes_topic_description")}
+            </p>
+
+            <div className="topic-hero-stats">
+              <div className="topic-stat">
+                <strong>
+                  {topShoesItems.length}
+                </strong>
+
+                <span>
+                  {t("shoes_topic_top_items")}
+                </span>
+              </div>
+
+              <div className="topic-stat">
+                <strong>
+                  {displayGenre}
+                </strong>
+
+                <span>
+                  {t("shoes_topic_audience")}
+                </span>
+              </div>
+
+              <div className="topic-stat">
+                <strong>
+                  {displayType}
+                </strong>
+
+                <span>
+                  {t("shoes_topic_category")}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="topic-hero-side">
+            <div className="topic-hero-panel">
+              <span className="topic-panel-kicker">
+                {t("shoes_topic_selection_rule")}
+              </span>
+
+              <strong>
+                {t("shoes_topic_sold_100")}
+              </strong>
+
+              <p>
+                {t("shoes_topic_selection_description")}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* RESULTS */}
+        <section className="topic-results-section">
+          <div className="topic-section-head">
+            <div>
+              <span className="topic-section-kicker">
+                {t("shoes_topic_ranked_products")}
+              </span>
+
+              <h2>
+                {t("shoes_topic_top_sellers")}
+              </h2>
+            </div>
+
+            <span className="topic-results-meta">
+              {t("shoes_topic_results_count", {
+                count: topShoesItems.length,
+              })}
+            </span>
+          </div>
+
+          {topShoesItems.length === 0 ? (
+            <div className="topic-empty">
+              <h3>
+                {t("shoes_topic_empty_title")}
+              </h3>
+
+              <p>
+                {t("shoes_topic_empty_description", {
+                  genre: displayGenre,
+                  type: displayType,
+                })}
+              </p>
+            </div>
+          ) : (
+            <div className="topic-grid">
+              {topShoesItems.map(
+                (product, index) => {
+                  const {
+                    itemId,
+                    id,
+                    item = {},
+                  } = product;
+
+                  const productName =
+                    getProductName(product);
+
+                  return (
+                    <article
+                      key={id || itemId}
+                      className="topic-card"
+                    >
+                      <div className="topic-card-media">
+                        <img
+                          src={
+                            item?.images?.[0] ||
+                            "/placeholder.jpg"
+                          }
+                          alt={productName}
+                          className="topic-card-image"
+                          loading="lazy"
+                          onClick={() =>
+                            router.push(
+                              withCountry(
+                                `/product/${id}`
+                              )
+                            )
+                          }
+                        />
+
+                        <div className="topic-rank-badge">
+                          #{index + 1}
+                        </div>
+
+                        <div className="topic-sales-badge">
+                          {t(
+                            "shoes_topic_sold_count",
+                            {
+                              count: Number(
+                                item?.sold || 0
+                              ),
+                            }
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="topic-card-body">
+                        <div
+                          className="topic-card-main"
+                          onClick={() =>
+                            router.push(
+                              withCountry(
+                                `/product/${id}`
+                              )
+                            )
+                          }
+                        >
+                          <h3 className="topic-card-title">
+                            {productName}
+                          </h3>
+
+                          <div className="topic-card-meta">
+                            <span>
+                              {displayGenre}
+                            </span>
+
+                            <span>
+                              {displayType}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="topic-card-actions">
+                          <button
+                            type="button"
+                            className="topic-secondary-btn"
+                            onClick={() =>
+                              openModal(product)
+                            }
+                          >
+                            {t(
+                              "shoes_topic_reviews_analysis"
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="topic-primary-btn"
+                            onClick={() =>
+                              router.push(
+                                withCountry(
+                                  `/product/${id}`
+                                )
+                              )
+                            }
+                          >
+                            {t(
+                              "fashionkick_view_product"
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                }
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* REVIEW MODAL */}
+        {modalOpen &&
+          selectedItemProductId && (
+            <div
+              className="topic-modal-backdrop"
+              onClick={closeModal}
+            >
+              <div
+                className="topic-modal"
+                onClick={(event) =>
+                  event.stopPropagation()
+                }
+              >
+                <button
+                  type="button"
+                  className="topic-modal-close"
+                  onClick={closeModal}
+                  aria-label={t("close")}
+                >
+                  ×
+                </button>
+
+                <div className="topic-modal-head">
+                  <span className="topic-section-kicker">
+                    {t(
+                      "shoes_topic_review_insight"
+                    )}
+                  </span>
+
+                  <h3>
+                    {t(
+                      "shoes_topic_product_analysis"
+                    )}
+                  </h3>
+                </div>
+
+                <AnalyseReview
+                  productId={
+                    selectedItemProductId
+                  }
+                  id={selectedItemId}
+                  onRatingClick={
+                    handleRatingClick
+                  }
+                />
+              </div>
+            </div>
+          )}
+      </div>
     </div>
   );
-}
-
-return (
-  <div className="topic-page">
-    <div className="topic-shell">
-      <section className="topic-hero">
-        <div className="topic-hero-copy">
-          <span className="topic-kicker">Top Performing Footwear</span>
-          <h1 className="topic-title">
-            {genre} {type.replace(/-/g, " ")}
-          </h1>
-          <p className="topic-subtitle">
-            A curated selection of best-selling shoes with strong demand,
-            standout reviews, and proven customer interest.
-          </p>
-
-          <div className="topic-hero-stats">
-            <div className="topic-stat">
-              <strong>{topShoesItems.length}</strong>
-              <span>Top items</span>
-            </div>
-            <div className="topic-stat">
-              <strong>{genre}</strong>
-              <span>Audience</span>
-            </div>
-            <div className="topic-stat">
-              <strong>{type.replace(/-/g, " ")}</strong>
-              <span>Category</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="topic-hero-side">
-          <div className="topic-hero-panel">
-            <span className="topic-panel-kicker">Selection rule</span>
-            <strong>Sold 100+ units</strong>
-            <p>Only strong-selling products appear in this ranking.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="topic-results-section">
-        <div className="topic-section-head">
-          <div>
-            <span className="topic-section-kicker">Ranked Products</span>
-            <h2>Top sellers board</h2>
-          </div>
-          <span className="topic-results-meta">
-            {topShoesItems.length} results
-          </span>
-        </div>
-
-        {topShoesItems.length === 0 ? (
-          <div className="topic-empty">
-            <h3>No top-selling items found</h3>
-            <p>
-              We could not find products matching {genre}{" "}
-              {type.replace(/-/g, " ")} with strong sales performance.
-            </p>
-          </div>
-        ) : (
-          <div className="topic-grid">
-            {topShoesItems.map(({ itemId, id, item }, index) => (
-              <article key={id} className="topic-card">
-                <div className="topic-card-media">
-                  <img
-                    src={item?.images?.[0] || "/placeholder.jpg"}
-                    alt={item?.name || "Product image"}
-                    className="topic-card-image"
-                    onClick={() => router.push(`/product/${id}`)}
-                  />
-
-                  <div className="topic-rank-badge">
-                    #{index + 1}
-                  </div>
-
-                  <div className="topic-sales-badge">
-                    {Number(item?.sold || 0)} sold
-                  </div>
-                </div>
-
-                <div className="topic-card-body">
-                  <div
-                    className="topic-card-main"
-                    onClick={() => router.push(`/product/${id}`)}
-                  >
-                    <h3 className="topic-card-title">
-                      {item?.name || "Unnamed product"}
-                    </h3>
-
-                    <div className="topic-card-meta">
-                      <span>{genre}</span>
-                      <span>{type.replace(/-/g, " ")}</span>
-                    </div>
-                  </div>
-
-                  <div className="topic-card-actions">
-                    <button
-                      className="topic-secondary-btn"
-                      onClick={(e) => openModal({ id, itemId, item }, e)}
-                    >
-                      Reviews & Analysis
-                    </button>
-
-                    <button
-                      className="topic-primary-btn"
-                      onClick={() => router.push(`/product/${id}`)}
-                    >
-                      View Product
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {modalOpen && selectedItemProductId && (
-        <div className="topic-modal-backdrop" onClick={closeModal}>
-          <div
-            className="topic-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button className="topic-modal-close" onClick={closeModal}>
-              ×
-            </button>
-
-            <div className="topic-modal-head">
-              <span className="topic-section-kicker">Review Insight</span>
-              <h3>Product analysis</h3>
-            </div>
-
-            <AnalyseReview
-              productId={selectedItemProductId}
-              id={selectedItemId}
-              onRatingClick={handleRatingClick}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-);
 };
 
 export default ShoesTopTopic;

@@ -100,6 +100,31 @@ const [hasMoreDetailsScroll, setHasMoreDetailsScroll] = useState(false);
 const [rates, setRates] = useState(null);
 
 const [reviewFilter, setReviewFilter] = useState(selectedRating ?? null);
+
+useEffect(() => {
+  const rating = Number(selectedRating);
+
+  if (
+    !Number.isFinite(rating) ||
+    rating < 1 ||
+    rating > 5
+  ) {
+    setReviewFilter(null);
+    return;
+  }
+
+  setReviewFilter(rating);
+
+  const timer = setTimeout(() => {
+    reviewsRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 300);
+
+  return () => clearTimeout(timer);
+}, [selectedRating]);
+
 const reviewsRef = React.useRef(null);
 
 const currencyConfig = React.useMemo(

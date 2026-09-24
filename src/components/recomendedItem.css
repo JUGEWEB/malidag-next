@@ -178,5 +178,26 @@
   color: #555;
   margin-left: 3px;
 }
+
+.fashionkick-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.fashionkick-section-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.fashionkick-section-header span {
+  color: #6b7280;
+  font-size: 25px;
+}
   
   

@@ -1255,5 +1255,29 @@
   "price_unavailable": "Price unavailable",
    "recommended_no_items": "No recommended products available right now.",
   "rating_out_of_five": "Rating: {{rating}} out of 5",
-  "recommended_review_summary": "{{rating}}/5 ({{count}} reviews)"
+  "recommended_review_summary": "{{rating}}/5 ({{count}} reviews)",
+  "shoes_topic_top_performing": "Top Performing Footwear",
+  "shoes_topic_description": "A curated selection of best-selling shoes with strong demand, standout reviews, and proven customer interest.",
+
+  "shoes_topic_top_items": "Top items",
+  "shoes_topic_audience": "Audience",
+  "shoes_topic_category": "Category",
+
+  "shoes_topic_selection_rule": "Selection rule",
+  "shoes_topic_sold_100": "Sold 100+ units",
+  "shoes_topic_selection_description": "Only strong-selling products appear in this ranking.",
+
+  "shoes_topic_ranked_products": "Ranked Products",
+  "shoes_topic_top_sellers": "Top sellers board",
+  "shoes_topic_results_count": "{{count}} results",
+
+  "shoes_topic_empty_title": "No top-selling items found",
+  "shoes_topic_empty_description": "We could not find {{genre}} {{type}} products with strong sales performance.",
+
+  "shoes_topic_sold_count": "{{count}} sold",
+  "shoes_topic_reviews_analysis": "Reviews & Analysis",
+  "shoes_topic_review_insight": "Review Insight",
+  "shoes_topic_product_analysis": "Product analysis",
+
+  "close": "Close"
 }

@@ -3,6 +3,7 @@
 import React, {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -65,6 +66,7 @@ selectedOptions,
 setMobileZoomOpen,
 }) {
   const rawShippingCountries = details?.country || "";
+  const reviewsRef = useRef(null);
 
   const shippingCountries = rawShippingCountries
     .split(",")
@@ -109,6 +111,28 @@ useEffect(() => {
 
   fetchRates();
 }, []);
+
+useEffect(() => {
+  const rating = Number(selectedRating);
+
+  if (
+    !Number.isFinite(rating) ||
+    rating < 1 ||
+    rating > 5 ||
+    reviewCount <= 0
+  ) {
+    return;
+  }
+
+  const timer = setTimeout(() => {
+    reviewsRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 400);
+
+  return () => clearTimeout(timer);
+}, [selectedRating, reviewCount]);
 
 const getCurrencyRate = () => {
   if (!currencyConfig) {
@@ -665,9 +689,15 @@ const handleShareProduct = async () => {
            <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />
         </div>
 
-       {reviewCount > 0 && (
-  <div className="pdp-phone-reviews-block">
-    <FetchReviews productId={itemsd} selectedRating={selectedRating} />
+     {reviewCount > 0 && (
+  <div
+    ref={reviewsRef}
+    className="pdp-phone-reviews-block"
+  >
+    <FetchReviews
+      productId={itemsd}
+      selectedRating={selectedRating}
+    />
 
     {reviewCount > 11 && (
       <div

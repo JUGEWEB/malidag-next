@@ -968,5 +968,29 @@
   "fashionkick_empty_description": "Novas coleções são adicionadas regularmente. Tente selecionar outro país ou volte em breve.",
    "recommended_no_items": "Nenhum produto recomendado disponível no momento.",
   "rating_out_of_five": "Avaliação: {{rating}} de 5",
-  "recommended_review_summary": "{{rating}}/5 ({{count}} avaliações)"
+  "recommended_review_summary": "{{rating}}/5 ({{count}} avaliações)",
+   "shoes_topic_top_performing": "Calçados de melhor desempenho",
+  "shoes_topic_description": "Uma seleção dos calçados mais vendidos, escolhidos pela alta demanda, excelentes avaliações e interesse comprovado dos clientes.",
+
+  "shoes_topic_top_items": "Principais itens",
+  "shoes_topic_audience": "Público",
+  "shoes_topic_category": "Categoria",
+
+  "shoes_topic_selection_rule": "Critério de seleção",
+  "shoes_topic_sold_100": "Mais de 100 unidades vendidas",
+  "shoes_topic_selection_description": "Apenas produtos com forte desempenho de vendas aparecem neste ranking.",
+
+  "shoes_topic_ranked_products": "Produtos classificados",
+  "shoes_topic_top_sellers": "Ranking dos mais vendidos",
+  "shoes_topic_results_count": "{{count}} resultados",
+
+  "shoes_topic_empty_title": "Nenhum item entre os mais vendidos",
+  "shoes_topic_empty_description": "Não encontramos produtos {{genre}} {{type}} com um volume de vendas suficiente.",
+
+  "shoes_topic_sold_count": "{{count}} vendidos",
+  "shoes_topic_reviews_analysis": "Avaliações e análise",
+  "shoes_topic_review_insight": "Análise das avaliações",
+  "shoes_topic_product_analysis": "Análise do produto",
+
+  "close": "Fechar"
 }

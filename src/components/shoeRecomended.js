@@ -544,6 +544,11 @@ function ShoeRecommended() {
 
   return (
     <div className="recommended-items-container">
+
+       <div className="fashionkick-section-header">
+      <span>{t("fashionkick_picked_from_style")}</span>
+    </div>
+    
       <div className="recommended-grid">
         {loadingRecommendations &&
         recommendedItems.length === 0 ? (

@@ -940,9 +940,6 @@ return (
   )}
 
   <div className="fashionkick-recommended-wrap">
-    <div className="fashionkick-section-header">
-      <span>{t("fashionkick_picked_from_style")}</span>
-    </div>
 
     <ShoeRecommended />
   </div>

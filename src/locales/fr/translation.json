@@ -1115,6 +1115,30 @@
   "fashionkick_empty_description": "De nouvelles collections sont ajoutées régulièrement. Essayez un autre pays ou revenez prochainement.",
    "recommended_no_items": "Aucun produit recommandé n'est disponible pour le moment.",
   "rating_out_of_five": "Note : {{rating}} sur 5",
-  "recommended_review_summary": "{{rating}}/5 ({{count}} avis)"
+  "recommended_review_summary": "{{rating}}/5 ({{count}} avis)",
+   "shoes_topic_top_performing": "Chaussures les plus performantes",
+  "shoes_topic_description": "Une sélection des chaussures les plus vendues, choisies pour leur forte demande, leurs excellents avis et l'intérêt confirmé des clients.",
+
+  "shoes_topic_top_items": "Meilleurs articles",
+  "shoes_topic_audience": "Public",
+  "shoes_topic_category": "Catégorie",
+
+  "shoes_topic_selection_rule": "Critère de sélection",
+  "shoes_topic_sold_100": "Plus de 100 unités vendues",
+  "shoes_topic_selection_description": "Seuls les produits enregistrant de fortes ventes apparaissent dans ce classement.",
+
+  "shoes_topic_ranked_products": "Produits classés",
+  "shoes_topic_top_sellers": "Classement des meilleures ventes",
+  "shoes_topic_results_count": "{{count}} résultats",
+
+  "shoes_topic_empty_title": "Aucun article parmi les meilleures ventes",
+  "shoes_topic_empty_description": "Nous n'avons trouvé aucun produit {{genre}} {{type}} présentant un volume de ventes suffisant.",
+
+  "shoes_topic_sold_count": "{{count}} vendus",
+  "shoes_topic_reviews_analysis": "Avis et analyse",
+  "shoes_topic_review_insight": "Analyse des avis",
+  "shoes_topic_product_analysis": "Analyse du produit",
+
+  "close": "Fermer"
 
 }

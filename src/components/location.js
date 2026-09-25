@@ -101,7 +101,12 @@ const getCountryLabel = (countryItem) => {
 };
 
 // Hide Location only on the main landing page "/"
-if (pathname === "/") {
+const isCountryNeutralRoute =
+  pathname === "/" ||
+  pathname === "/auth/action" ||
+  pathname.startsWith("/auth/action/");
+
+if (isCountryNeutralRoute) {
   return null;
 }
 

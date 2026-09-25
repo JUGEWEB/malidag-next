@@ -69,6 +69,18 @@ const setCountry = (nextCountry) => {
 
   const pathname = usePathname();
 
+  const COUNTRY_NEUTRAL_ROUTES = [
+  "/auth/action",
+];
+
+const isCountryNeutralRoute =
+  pathname === "/" ||
+  COUNTRY_NEUTRAL_ROUTES.some(
+    (route) =>
+      pathname === route ||
+      pathname.startsWith(`${route}/`)
+  );
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
     return () => unsub();
@@ -90,21 +102,28 @@ const setCountry = (nextCountry) => {
 }, [pathname]);
 
 useEffect(() => {
-  const segments = pathname.split("/").filter(Boolean);
-  const routeCountryCode = segments[0]?.toLowerCase();
-
-  // "/" is the country selection page
-  if (!routeCountryCode) {
+  // Routes such as / and /auth/action
+  // do not require a country prefix.
+  if (isCountryNeutralRoute) {
     setCountryState(null);
     setCountryChanging(false);
     return;
   }
 
-  const routeCountry = SUPPORTED_COUNTRIES.find(
-    (c) => c.code === routeCountryCode
-  );
+  const segments = pathname
+    .split("/")
+    .filter(Boolean);
 
-  // Unsupported country
+  const routeCountryCode =
+    segments[0]?.toLowerCase();
+
+  const routeCountry =
+    SUPPORTED_COUNTRIES.find(
+      (c) => c.code === routeCountryCode
+    );
+
+  // Normal storefront route with an invalid
+  // or unsupported country prefix.
   if (!routeCountry) {
     setCountryState(null);
     setCountryChanging(true);
@@ -112,7 +131,7 @@ useEffect(() => {
     return;
   }
 
-  // URL country is authoritative
+  // URL country is authoritative.
   setCountryState(routeCountry);
 
   localStorage.setItem(
@@ -120,10 +139,16 @@ useEffect(() => {
     JSON.stringify(routeCountry)
   );
 
-  window.dispatchEvent(new Event("countryChanged"));
+  window.dispatchEvent(
+    new Event("countryChanged")
+  );
 
   setCountryChanging(false);
-}, [pathname, router]);
+}, [
+  pathname,
+  router,
+  isCountryNeutralRoute,
+]);
 
 
   useEffect(() => {
@@ -193,13 +218,10 @@ useEffect(() => {
     bootApp();
   }, [languageReady]);
 
-
-  const isCountrySelectionPage = pathname === "/";
-
 if (
   !languageReady ||
   !appReady ||
-  (!isCountrySelectionPage && !country?.code)
+  (!isCountryNeutralRoute && !country?.code)
 ) {
     return (
       <div

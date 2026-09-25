@@ -34,17 +34,22 @@ const AuthActionPage = () => {
   const { country } = useContext(AppContext);
 
 const countryCode =
-  country?.code?.toLowerCase() || null;
+  country?.code?.toLowerCase() || "gb";
 
 const withCountry = (path) => {
-  if (!countryCode) return "/";
-
   if (!path) {
     return `/${countryCode}`;
   }
 
+  const cleanPath = path.replace(
+    /^\/(fr|gb|br|us|de|ie|au|be)(\/|$)/,
+    "/"
+  );
+
   return `/${countryCode}${
-    path.startsWith("/") ? path : `/${path}`
+    cleanPath.startsWith("/")
+      ? cleanPath
+      : `/${cleanPath}`
   }`;
 };
 

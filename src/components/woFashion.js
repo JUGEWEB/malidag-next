@@ -1,22 +1,56 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import axios from "axios";
 import "./woFashion.css";
-import RecommendedItem from "./personalRecommend";
+import WoRecommendedItem from "./woRecommendeditem";
 import { useRouter } from "next/navigation";
 import Slider from "react-slick";
 
+import { useTranslation } from "react-i18next";
+import { AppContext } from "./appContext";
+import {
+  getCountryConfig,
+  isSupportedLanguage,
+} from "./countryUtils";
+
 const BASE_URLs = "https://api.malidag.com";
 const BASE_URL = "https://api.malidag.com";
-const CRYPTO_URL = "https://api.malidag.com/crypto-prices";
 
-function WoFashion({ countryCode }) {
+function WoFashion({countryCode: countryCodeProp, }) {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
+
+  const { country } =
+    useContext(AppContext);
+
+  const countryCode =
+    country?.code?.toLowerCase() ||
+    countryCodeProp?.toLowerCase() ||
+    "fr";
+
+  const currentLang =
+    isSupportedLanguage(i18n.language)
+      ? i18n.language
+      : "en";
+
+  const countryCurrencyConfig =
+    useMemo(
+      () =>
+        getCountryConfig(
+          country?.name || ""
+        ),
+      [country?.name]
+    );
   const [types, setTypes] = useState({});
   const [mtypes, setMTypes] = useState({});
   const [loadingMTypes, setLoadingMTypes] = useState(true);
-  const [cryptoPrices, setCryptoPrices] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadingTypes, setLoadingTypes] = useState(true);
 
@@ -25,6 +59,111 @@ function WoFashion({ countryCode }) {
   if (!path) return `/${code}`;
   return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
 };
+
+const [
+  itemTranslations,
+  setItemTranslations,
+] = useState({});
+
+const [rates, setRates] =
+  useState({});
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      const response = await fetch(
+        `${BASE_URL}/prices/rates`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch rates: ${response.status}`
+        );
+      }
+
+      const data =
+        await response.json();
+
+      setRates(data?.rates || {});
+    } catch (error) {
+      console.error(
+        "Error fetching exchange rates:",
+        error
+      );
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const convertUsdToLocal =
+  useCallback(
+    (usdValue) => {
+      const usdPrice =
+        Number(usdValue || 0);
+
+      const currency =
+        countryCurrencyConfig
+          ?.currency || "USD";
+
+      if (!usdPrice) return 0;
+
+      if (currency === "USD") {
+        return usdPrice;
+      }
+
+      const rate =
+        Number(rates?.[currency]);
+
+      if (!rate) return null;
+
+      return usdPrice * rate;
+    },
+    [
+      rates,
+      countryCurrencyConfig?.currency,
+    ]
+  );
+
+  const formatPrice =
+  useCallback(
+    (usdValue) => {
+      const converted =
+        convertUsdToLocal(usdValue);
+
+      if (converted === null) {
+        return t("price_unavailable");
+      }
+
+      const currency =
+        countryCurrencyConfig
+          ?.currency || "USD";
+
+      const locale =
+        currentLang === "fr"
+          ? "fr-FR"
+          : currentLang === "br"
+            ? "pt-BR"
+            : "en-US";
+
+      return new Intl.NumberFormat(
+        locale,
+        {
+          style: "currency",
+          currency,
+        }
+      ).format(converted);
+    },
+    [
+      convertUsdToLocal,
+      countryCurrencyConfig?.currency,
+      currentLang,
+      t,
+    ]
+  );
 
   useEffect(() => {
     const fetchWomenTypes = async () => {
@@ -73,19 +212,6 @@ function WoFashion({ countryCode }) {
     };
 
     fetchWomenItems();
-
-    const fetchCryptoPrices = async () => {
-      try {
-        const response = await axios.get(CRYPTO_URL);
-        setCryptoPrices(response.data);
-      } catch (error) {
-        console.error("Error fetching crypto prices:", error);
-      }
-    };
-
-    fetchCryptoPrices();
-    const intervalId = setInterval(fetchCryptoPrices, 5000);
-    return () => clearInterval(intervalId);
   }, [countryCode]);
 
   const handleItemClick = (id) => {
@@ -106,7 +232,155 @@ function WoFashion({ countryCode }) {
     }
   };
 
-  const allItems = Object.values(types || {}).flat();
+ const allItems = useMemo(
+  () =>
+    Object.values(types || {}).flat(),
+  [types]
+);
+
+useEffect(() => {
+  if (
+    currentLang === "en" ||
+    !allItems.length
+  ) {
+    return;
+  }
+
+  let cancelled = false;
+
+  const translateProducts =
+    async () => {
+      const missingItems =
+        allItems.filter(
+          (entry) => {
+            const itemId =
+              entry?.itemId;
+
+            return (
+              itemId &&
+              !itemTranslations[
+                itemId
+              ]?.[currentLang]
+            );
+          }
+        );
+
+      if (!missingItems.length) {
+        return;
+      }
+
+      const results =
+        await Promise.allSettled(
+          missingItems.map(
+            async (entry) => {
+              const itemId =
+                entry.itemId;
+
+              const response =
+                await axios.get(
+                  `${BASE_URL}/translate/product/translate/${encodeURIComponent(
+                    itemId
+                  )}/${encodeURIComponent(
+                    currentLang
+                  )}`
+                );
+
+              return {
+                itemId,
+                translation:
+                  response.data,
+              };
+            }
+          )
+        );
+
+      if (cancelled) return;
+
+      setItemTranslations(
+        (previous) => {
+          const next = {
+            ...previous,
+          };
+
+          results.forEach(
+            (result) => {
+              if (
+                result.status !==
+                "fulfilled"
+              ) {
+                return;
+              }
+
+              const {
+                itemId,
+                translation,
+              } = result.value;
+
+              next[itemId] = {
+                ...(next[itemId] ||
+                  {}),
+                [currentLang]:
+                  translation,
+              };
+            }
+          );
+
+          return next;
+        }
+      );
+    };
+
+  translateProducts();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  allItems,
+  currentLang,
+  itemTranslations,
+]);
+
+const getProductName = (
+  entry
+) => {
+  const originalName =
+    entry?.item?.name ||
+    t("fashion_item");
+
+  if (currentLang === "en") {
+    return originalName;
+  }
+
+  const translated =
+    itemTranslations[
+      entry?.itemId
+    ]?.[currentLang];
+
+  return (
+    translated?.name ||
+    translated?.itemName ||
+    originalName
+  );
+};
+
+const translateTaxonomy = useCallback(
+  (value) => {
+    if (!value) return "";
+
+    const key = value
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+
+    return t(key, {
+      defaultValue: value,
+    });
+  },
+  [t]
+);
 
   const countryName = countryCode?.toUpperCase() || "your country";
 const hasItems = allItems.length > 0;
@@ -146,25 +420,32 @@ const hasItems = allItems.length > 0;
       <section className="women-empty-country">
         <div className="women-empty-icon">👗</div>
 
-        <span className="women-empty-badge">Women’s Fashion</span>
+       <span className="women-empty-badge">
+          {t("women_fashion")}
+        </span>
 
-        <h2>No women’s fashion items available</h2>
+        <h2>
+          {t("women_empty_title")}
+        </h2>
 
         <p>
-          We couldn’t find women’s fashion products currently available for delivery to{" "}
-          <strong>{countryName}</strong>.
+          {t("women_empty_country", {
+            country: countryName,
+          })}
         </p>
 
         <p>
-          New styles are added regularly. Try another country or check back soon.
+          {t("women_empty_description")}
         </p>
 
         <button
           type="button"
           className="women-empty-btn"
-          onClick={() => router.push(withCountry("/"))}
+          onClick={() =>
+            router.push(withCountry("/"))
+          }
         >
-          Browse Homepage
+          {t("browse_homepage")}
         </button>
       </section>
 
@@ -179,17 +460,23 @@ const hasItems = allItems.length > 0;
     <div className="women-fashion-page">
       <section className="women-fashion-header">
         <div className="women-fashion-header-content">
-          <span className="women-fashion-badge">Women’s Fashion</span>
-          <h1>Elegant Looks, Everyday Confidence</h1>
-          <p>
-            Discover fashion-forward styles, trending pieces, and beautiful essentials.
-          </p>
+         <span className="women-fashion-badge">
+          {t("women_fashion")}
+        </span>
+
+        <h1>
+          {t("women_fashion_hero_title")}
+        </h1>
+
+        <p>
+          {t("women_fashion_hero_description")}
+        </p>
         </div>
       </section>
 
       <section className="women-slider-section">
         <div className="section-header">
-          <h2>Featured Categories</h2>
+          <h2> {t("women_featured_categories")}</h2>
         </div>
 
         {loadingMTypes ? (
@@ -197,7 +484,7 @@ const hasItems = allItems.length > 0;
             <div className="section-spinner"></div>
           </div>
         ) : Object.values(mtypes).length === 0 ? (
-          <div className="empty-state">No types found for Women Fashion</div>
+          <div className="empty-state"> {t("women_no_types")}</div>
         ) : (
           <Slider {...sliderSettings}>
             {Object.values(mtypes).map((typeObj, index) => (
@@ -205,18 +492,20 @@ const hasItems = allItems.length > 0;
                 <div className="slider-card">
                   <img
                     src={typeObj.image}
-                    alt={typeObj.type}
+                    alt={translateTaxonomy(typeObj.type)}
                     className="slider-card-image"
                     onClick={() => handleCategoryClick(typeObj.type)}
                   />
                   <div className="slider-card-overlay">
                     <div className="slider-card-content">
-                      <h3>{typeObj.type}</h3>
+                     <h3>
+                        {translateTaxonomy(typeObj.type)}
+                      </h3>
                       <button
                         className="slider-card-button"
                         onClick={() => handleCategoryClick(typeObj.type)}
                       >
-                        View more
+                       {t("view_more")}
                       </button>
                     </div>
                   </div>
@@ -229,22 +518,30 @@ const hasItems = allItems.length > 0;
 
    <section className="women-topics-section">
   <div className="section-header">
-    <h2>Top Topics</h2>
+    <h2> {t("women_top_topics")}</h2>
   </div>
 
   <div className="topics-center-hero">
     <img
       src="https://cdn.malidag.com/themes/1760454830463-0a9bff23-526a-40ba-a2b9-be41271c845f.webp"
-      alt="Women fashion topics"
+      alt={t("women_topics_alt")}
       className="topics-center-image"
     />
 
     <div className="topics-center-overlay"></div>
 
     <div className="topics-center-content">
-      <span className="topics-center-badge">Women’s Fashion</span>
-      <h3>Explore Top Styles</h3>
-      <p>Scroll and choose your favorite fashion category</p>
+      <span className="topics-center-badge">
+        {t("women_fashion")}
+      </span>
+
+      <h3>
+        {t("women_explore_top_styles")}
+      </h3>
+
+      <p>
+        {t("women_top_styles_description")}
+      </p>
 
       <div className="topics-center-scroll">
         {loadingTypes ? (
@@ -258,7 +555,9 @@ const hasItems = allItems.length > 0;
               className="topics-center-item"
               onClick={() => router.push(withCountry(`/women-toptopic/${type.toLowerCase()}`))}
             >
-              Top {type}
+            {t("women_top_type", {
+              type: translateTaxonomy(type),
+            })}
             </button>
           ))
         )}
@@ -268,9 +567,16 @@ const hasItems = allItems.length > 0;
 </section>
 
       <section className="women-products-section">
-  <div className="section-header">
-    <h2>Trending Products</h2>
-    <span>{allItems.length} items</span>
+        <div className="section-header">
+        <h2>
+          {t("women_trending_products")}
+        </h2>
+
+        <span>
+          {t("items_count", {
+            count: allItems.length,
+          })}
+        </span>
   </div>
 
   {loadingTypes ? (
@@ -285,13 +591,33 @@ const hasItems = allItems.length > 0;
     </div>
   ) : (
     <div className="women-products-grid">
-      {allItems.map(({ id, item }) => {
-        const currentPrice = Number(item?.usdPrice || 0);
-        const originalPrice = Number(item?.originalPrice || 0);
-        const hasDiscount = originalPrice > currentPrice && originalPrice > 0;
-        const discountPercentage = hasDiscount
-          ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
-          : 0;
+     {allItems.map((entry) => {
+  const { id, item } = entry;
+
+  const productName =
+    getProductName(entry);
+
+  const currentPrice =
+    Number(item?.usdPrice || 0);
+
+  const originalPrice =
+    Number(
+      item?.originalPrice || 0
+    );
+
+  const hasDiscount =
+    originalPrice > currentPrice &&
+    originalPrice > 0;
+
+  const discountPercentage =
+    hasDiscount
+      ? Math.round(
+          ((originalPrice -
+            currentPrice) /
+            originalPrice) *
+            100
+        )
+      : 0;
 
         return (
           <div
@@ -302,13 +628,13 @@ const hasItems = allItems.length > 0;
             <div className="women-product-image-wrap women-product-image-wrap-vertical">
               {discountPercentage > 0 && (
                 <div className="product-image-badge product-image-badge-discount">
-                  -{discountPercentage}% OFF
+                 -{discountPercentage}% {t("off")}
                 </div>
               )}
 
               <img
                 src={item?.images?.[0] || "/fallback.png"}
-                alt={item?.name}
+                alt={productName}
                 className="women-product-image"
                 onError={(e) => {
                   e.target.onerror = null;
@@ -319,32 +645,25 @@ const hasItems = allItems.length > 0;
 
             <div className="women-product-info women-product-info-vertical">
               <h3 className="women-product-title">
-                {item?.name?.length > 60
-                  ? `${item.name.substring(0, 60)}...`
-                  : item?.name}
+                {productName.length > 60
+                  ? `${productName.substring(
+                      0,
+                      60
+                    )}...`
+                  : productName}
               </h3>
 
-              <div className="women-product-price-row">
-                <span className="women-product-price">
-                  {(() => {
-                    const price = Number(item?.usdPrice || 0).toFixed(2);
-                    const [whole, decimal] = price.split(".");
+             <div className="women-product-price-row">
+              <span className="women-product-price">
+                {formatPrice(currentPrice)}
+              </span>
 
-                    return (
-                      <>
-                        ${whole}
-                        <sup className="women-product-price-decimal">{decimal}</sup>
-                      </>
-                    );
-                  })()}
+              {hasDiscount && (
+                <span className="women-product-old-price">
+                  {formatPrice(originalPrice)}
                 </span>
-
-                {originalPrice > 0 && (
-                  <span className="women-product-old-price">
-                    ${originalPrice.toFixed(2)}
-                  </span>
-                )}
-              </div>
+              )}
+            </div>
 
               <button
                 type="button"
@@ -354,7 +673,7 @@ const hasItems = allItems.length > 0;
                   handleItemClick(id);
                 }}
               >
-                View Product
+               {t("view_product")}
               </button>
             </div>
           </div>
@@ -365,7 +684,7 @@ const hasItems = allItems.length > 0;
 </section>
 
       <section className="women-recommended-section">
-        <RecommendedItem />
+        <WoRecommendedItem />
       </section>
     </div>
   );

@@ -1290,5 +1290,45 @@
   "men_empty_title": "No men's fashion items available",
   "men_empty_country": "We couldn't find men's fashion products currently available for delivery to {{country}}.",
   "men_empty_description": "New styles are added regularly. Try another country or check back soon.",
-  "items_sold": "{{count}} sold"
+
+  "women_fashion": "Women’s Fashion",
+  "women_fashion_hero_title": "Elegant Looks, Everyday Confidence",
+  "women_fashion_hero_description": "Discover fashion-forward styles, trending pieces, and beautiful essentials.",
+
+  "women_empty_title": "No women’s fashion items available",
+  "women_empty_country": "We couldn’t find women’s fashion products currently available for delivery to {{country}}.",
+  "women_empty_description": "New styles are added regularly. Try another country or check back soon.",
+  "browse_homepage": "Browse Homepage",
+
+  "women_featured_categories": "Featured Categories",
+  "women_no_types": "No categories found for Women’s Fashion",
+  "view_more": "View more",
+
+  "women_top_topics": "Top Topics",
+  "women_topics_alt": "Women’s fashion topics",
+  "women_explore_top_styles": "Explore Top Styles",
+  "women_top_styles_description": "Scroll and choose your favorite fashion category",
+  "women_top_type": "Top {{type}}",
+
+  "women_trending_products": "Trending Products",
+  "items_count": "{{count}} items",
+
+  "view_product": "View Product",
+  "fashion_item": "Fashion item",
+  "off": "OFF",
+  "price_unavailable": "Price unavailable",
+  "women_top_topic_badge": "Women’s Fashion",
+  "women_top_items_title": "Top {{type}}",
+  "women_top_items_description": "Explore popular women’s styles based on products with strong sales.",
+  "women_top_loading": "Finding top styles for you...",
+  "women_top_empty_title": "No top items available",
+  "women_top_empty_description": "We couldn’t find top-selling {{type}} currently available for your selected country.",
+  "women_top_sold": "{{count}} sold",
+  "view_reviews": "View reviews",
+  "customer_reviews": "Customer Reviews",
+  "review_modal_description": "See customer ratings and review details for this product.",
+  "close_modal": "Close",
+  "fashion_item": "Fashion item",
+  "price_unavailable": "Price unavailable",
+  "no_reviews_yet": "No reviews yet"
 }

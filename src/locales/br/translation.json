@@ -1010,5 +1010,33 @@
 
   "men_empty_description": "Novos estilos são adicionados regularmente. Tente outro país ou volte em breve.",
 
-  "items_sold": "{{count}} vendidos"
+  "items_sold": "{{count}} vendidos",
+  "women_fashion_hero_title": "Looks elegantes, confiança todos os dias",
+  "women_fashion_hero_description": "Descubra estilos modernos, peças em alta e essenciais para o seu dia a dia.",
+
+  "women_empty_title": "Nenhum item de moda feminina disponível",
+  "women_empty_country": "Não encontramos produtos de moda feminina disponíveis no momento para entrega no {{country}}.",
+  "women_empty_description": "Novos estilos são adicionados regularmente. Tente outro país ou volte em breve.",
+
+  "women_featured_categories": "Categorias em destaque",
+  "women_no_types": "Nenhuma categoria de moda feminina disponível",
+
+  "women_top_topics": "Principais tendências",
+  "women_topics_alt": "Tendências de moda feminina",
+  "women_explore_top_styles": "Explore os estilos em alta",
+  "women_top_styles_description": "Navegue e escolha sua categoria de moda favorita",
+  "women_top_type": "Top {{type}}",
+
+  "women_trending_products": "Produtos em alta",
+  "fashion_item": "Item de moda",
+
+  "women_top_topic_badge": "Moda feminina",
+  "women_top_items_title": "Top {{type}}",
+  "women_top_items_description": "Explore estilos femininos populares entre os produtos com alto volume de vendas.",
+  "women_top_loading": "Buscando os estilos em destaque...",
+  "women_top_empty_title": "Nenhum item em destaque disponível",
+  "women_top_empty_description": "Não encontramos produtos {{type}} entre os mais vendidos disponíveis no momento para o país selecionado.",
+  "women_top_sold": "{{count}} vendidos",
+  "review_modal_description": "Veja as notas e os detalhes das avaliações deste produto.",
+  "close_modal": "Fechar"
 }

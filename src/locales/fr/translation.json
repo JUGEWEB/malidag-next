@@ -1157,6 +1157,36 @@
 
   "men_empty_description": "De nouveaux styles sont ajoutés régulièrement. Essayez un autre pays ou revenez bientôt.",
 
-  "items_sold": "{{count}} vendus"
+  "items_sold": "{{count}} vendus",
+
+  "women_fashion_hero_title": "Des looks élégants, une confiance au quotidien",
+  "women_fashion_hero_description": "Découvrez des styles tendance, des pièces incontournables et de beaux essentiels.",
+
+  "women_empty_title": "Aucun article de mode femme disponible",
+  "women_empty_country": "Nous n’avons trouvé aucun article de mode femme actuellement disponible pour une livraison en {{country}}.",
+  "women_empty_description": "De nouveaux styles sont ajoutés régulièrement. Essayez un autre pays ou revenez bientôt.",
+
+  "women_featured_categories": "Catégories à la une",
+  "women_no_types": "Aucune catégorie de mode femme disponible",
+
+  "women_top_topics": "Tendances du moment",
+  "women_topics_alt": "Tendances de la mode femme",
+  "women_explore_top_styles": "Découvrez les styles tendance",
+  "women_top_styles_description": "Parcourez et choisissez votre catégorie de mode préférée",
+  "women_top_type": "Top {{type}}",
+
+  "women_trending_products": "Produits tendance",
+
+  "fashion_item": "Article de mode",
+
+  "women_top_topic_badge": "Mode femme",
+  "women_top_items_title": "Top {{type}}",
+  "women_top_items_description": "Découvrez les styles femme populaires parmi les produits qui enregistrent de fortes ventes.",
+  "women_top_loading": "Recherche des styles tendance...",
+  "women_top_empty_title": "Aucun article tendance disponible",
+  "women_top_empty_description": "Nous n’avons trouvé aucun article {{type}} parmi les meilleures ventes actuellement disponible dans le pays sélectionné.",
+  "women_top_sold": "{{count}} vendus",
+  "review_modal_description": "Consultez les notes et les avis des clients sur ce produit.",
+  "close_modal": "Fermer"
 
 }

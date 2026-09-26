@@ -2,12 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
 import Head from "next/head";
 import "./topItem.css";
 import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
-import i18n from "i18next";
 import colorSwatches from "../../lib/colors.json";
 import { useCheckoutStore } from "./checkoutStore";
 import { auth } from "@/components/firebaseConfig";
@@ -18,7 +20,7 @@ const BASKET_API = "https://api.malidag.com/add-to-basket";
 
 function TopItem() {
   const router = useRouter();
-  const { t } = useTranslation();
+ const { t, i18n } = useTranslation();
   const { isVerySmall } = useScreenSize();
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -38,31 +40,101 @@ function TopItem() {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedColor, setSelectedColor] = useState("all");
   const [priceRange, setPriceRange] = useState([0, 10000]);
-
+const [rates, setRates] = useState({});
+const [ratesLoading, setRatesLoading] =
+  useState(true);
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
   const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
 
+  const pathname = usePathname();
+
+const routeCountryCode =
+  pathname.split("/").filter(Boolean)[0]?.toLowerCase();
+
+const countryCode = [
+  "fr",
+  "gb",
+  "br",
+  "us",
+  "de",
+  "ie",
+  "au",
+  "be",
+].includes(routeCountryCode)
+  ? routeCountryCode
+  : "fr";
+
+const currentLang = [
+  "en",
+  "fr",
+  "br",
+].includes(i18n.language)
+  ? i18n.language
+  : "en";
+
+const currencyByCountry = {
+  fr: "EUR",
+  gb: "GBP",
+  br: "BRL",
+  us: "USD",
+  de: "EUR",
+  ie: "EUR",
+  au: "AUD",
+  be: "EUR",
+};
+
+const currency =
+  currencyByCountry[countryCode] || "USD";
+
+const withCountry = (path) => {
+  if (!path) return `/${countryCode}`;
+
+  const cleanPath = path.replace(
+    /^\/(fr|gb|br|us|de|ie|au|be)(\/|$)/,
+    "/"
+  );
+
+  return `/${countryCode}${
+    cleanPath.startsWith("/")
+      ? cleanPath
+      : `/${cleanPath}`
+  }`;
+};
+
   const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
-  const fetchTranslation = async (productId, lang) => {
-    if (!productId || translations[productId]?.[lang]) return;
+  const fetchTranslation = async (
+  productId,
+  lang
+) => {
+  if (!productId || lang === "en") return;
 
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/translate/product/translate/${productId}/${lang}`
-      );
+  if (translations[productId]?.[lang]) {
+    return;
+  }
 
-      setTranslations((prev) => ({
-        ...prev,
-        [productId]: {
-          ...(prev[productId] || {}),
-          [lang]: response.data.translation,
-        },
-      }));
-    } catch (error) {
-      console.error(`Error fetching translation for ${productId}`, error);
-    }
-  };
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/translate/product/translate/${encodeURIComponent(
+        productId
+      )}/${encodeURIComponent(lang)}`
+    );
+
+    setTranslations((prev) => ({
+      ...prev,
+      [productId]: {
+        ...(prev[productId] || {}),
+        [lang]:
+          response.data.translation,
+      },
+    }));
+  } catch (error) {
+    console.error(
+      `Error fetching translation for ${productId}`,
+      error
+    );
+  }
+};
 
   const fetchReviews = async (productId) => {
     if (!productId) return;
@@ -122,7 +194,14 @@ function TopItem() {
       try {
         setLoading(true);
 
-        const response = await fetch(`${BASE_URL}/items`);
+       const response = await fetch(
+        `${BASE_URL}/items?country=${encodeURIComponent(
+          countryCode
+        )}`,
+        {
+          cache: "no-store",
+        }
+      );
         const data = await response.json();
 
         const itemsArray = Array.isArray(data)
@@ -159,7 +238,7 @@ function TopItem() {
     };
 
     fetchTopSoldItems();
-  }, []);
+  },  [countryCode]);
 
   useEffect(() => {
     const fetchBrandThemes = async () => {
@@ -179,6 +258,85 @@ function TopItem() {
     const lang = i18n.language || "en";
     items.forEach((itemData) => fetchTranslation(itemData.itemId, lang));
   }, [i18n.language, items]);
+
+  useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      setRatesLoading(true);
+
+      const response = await fetch(
+        `${BASE_URL}/prices/rates`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch rates: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setRates(data?.rates || {});
+    } catch (error) {
+      console.error(
+        "Error fetching exchange rates:",
+        error
+      );
+    } finally {
+      setRatesLoading(false);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const convertUsdToLocal = (usdValue) => {
+  const usdPrice = Number(usdValue || 0);
+
+  if (!usdPrice) return 0;
+  if (currency === "USD") return usdPrice;
+
+  const rate = Number(rates?.[currency]);
+
+  if (!rate) return null;
+
+  return usdPrice * rate;
+};
+
+const formatPrice = (usdValue) => {
+  const usdPrice = Number(usdValue || 0);
+
+  if (
+    currency !== "USD" &&
+    ratesLoading
+  ) {
+    return "—";
+  }
+
+  const converted =
+    convertUsdToLocal(usdPrice);
+
+  if (converted === null) {
+    return t("price_unavailable");
+  }
+
+  const locale =
+    currentLang === "fr"
+      ? "fr-FR"
+      : currentLang === "br"
+        ? "pt-BR"
+        : "en-US";
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(converted);
+};
 
   const getBasketQuantity = (itemId) => {
     const basketItem = basketItems.find((item) => item.itemId === itemId);
@@ -365,10 +523,31 @@ function TopItem() {
     );
   }, [brandThemes, brands]);
 
+  const translateTaxonomy = (value = "") => {
+  if (!value) return "";
+
+  const key = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return t(key, {
+    defaultValue: String(value)
+      .replace(/_/g, " ")
+      .replace(/-/g, " "),
+  });
+};
+
+const getTranslatedColor = (color) =>
+  translateTaxonomy(color);
+
   const getTranslatedName = (item, itemId) => {
     const lang = i18n.language || "en";
     const translated = translations[itemId]?.[lang]?.name;
-    const fallback = item?.name || "Product";
+   const fallback =
+  item?.name || t("product");
     const nameToShow = translated || fallback;
 
     return nameToShow.length > 20
@@ -376,18 +555,30 @@ function TopItem() {
       : nameToShow;
   };
 
-  const getEstimatedDeliveryDay = (daysToAdd = 7) => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysToAdd);
+ const getEstimatedDeliveryDay = (
+  daysToAdd = 7
+) => {
+  const date = new Date();
 
-    const weekday = date.toLocaleDateString("en-US", {
+  date.setDate(
+    date.getDate() + daysToAdd
+  );
+
+  const locale =
+    currentLang === "fr"
+      ? "fr-FR"
+      : currentLang === "br"
+        ? "pt-BR"
+        : "en-US";
+
+  return date.toLocaleDateString(
+    locale,
+    {
       weekday: "long",
-    });
-
-    const day = date.getDate();
-
-    return `${weekday} ${day}`;
-  };
+      day: "numeric",
+    }
+  );
+};
 
   const handleVideoPlay = (id, e) => {
     e.stopPropagation();
@@ -405,9 +596,17 @@ function TopItem() {
 
     if (!currentUser) {
       const currentPath =
-        typeof window !== "undefined" ? window.location.pathname : "/topItem";
+  typeof window !== "undefined"
+    ? window.location.pathname
+    : withCountry("/topItem");
 
-      router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+router.push(
+  withCountry(
+    `/auth?redirect=${encodeURIComponent(
+      currentPath
+    )}`
+  )
+);
       return;
     }
 
@@ -454,21 +653,37 @@ function TopItem() {
 
       if (response.status === 200 || response.status === 201) {
         await fetchUserBasket();
-        messageApi.success(`${item.name} added to cart`);
+       messageApi.success(
+        t("item_added_to_cart", {
+          name:
+            getTranslatedName(
+              item,
+              itemData.itemId
+            ) || t("product"),
+        })
+      );
       } else {
-        messageApi.error("Failed to add to cart");
+       messageApi.error(
+          t("failed_to_add_to_cart")
+        );
       }
     } catch (error) {
       console.error("Error adding item to basket:", error);
-      messageApi.error("Error adding to cart");
+     messageApi.error(
+        t("error_adding_to_cart")
+      );
     }
   };
 
-  const handleItemClick = (id) => {
-    if (id) router.push(`/product/${id}`);
-  };
+ const handleItemClick = (id) => {
+  if (id) {
+    router.push(
+      withCountry(`/product/${id}`)
+    );
+  }
+};
 
-  if (loading) return <div className="topitem-loading-message">Loading...</div>;
+  if (loading) return <div className="topitem-loading-message"> {t("loading")}</div>;
 
   return (
     <>
@@ -495,9 +710,13 @@ function TopItem() {
 
                 setSelectedBrandName(brand.brandName);
 
-                router.push(
-                  `/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`
-                );
+               router.push(
+                withCountry(
+                  `/brand/${themeRoute}/${encodeURIComponent(
+                    brand.brandName
+                  )}`
+                )
+              );
               }}
             >
               <img src={brand.logo} alt={`${brand.brandName} logo`} />
@@ -507,11 +726,13 @@ function TopItem() {
 
         <div className="topitem-hero-row">
           <div>
-            <div className="topitem-eyebrow">Malidag Marketplace</div>
-            <h1>Top Items</h1>
+            <div className="topitem-eyebrow"> {t("top_items_marketplace")}</div>
+            <h1>{t("top_items")}</h1>
           </div>
 
-          <div className="topitem-count">{filteredItems.length} items</div>
+          <div className="topitem-count">  {t("items_count", {
+    count: filteredItems.length,
+  })}</div>
         </div>
 
         <div className="mobile-filters-wrapper topitem-mobile-filters">
@@ -520,7 +741,7 @@ function TopItem() {
               className={selectedBrand === "all" ? "active-filter" : ""}
               onClick={() => setSelectedBrand("all")}
             >
-              All Brands
+              {t("all_brands")}
             </button>
 
             {brands.map((brand) => (
@@ -541,7 +762,7 @@ function TopItem() {
               className={selectedType === "all" ? "active-filter" : ""}
               onClick={() => setSelectedType("all")}
             >
-              All Types
+              {t("all_types")}
             </button>
 
             {types.map((type) => (
@@ -552,7 +773,7 @@ function TopItem() {
                 }
                 onClick={() => setSelectedType(normalizeText(type))}
               >
-                {String(type).replaceAll("_", " ")}
+               {translateTaxonomy(type)}
               </button>
             ))}
           </div>
@@ -564,7 +785,7 @@ function TopItem() {
               }`}
               onClick={() => setSelectedColor("all")}
             >
-              All
+              {t("all")}
             </button>
 
             {colors.map((color) => {
@@ -577,8 +798,10 @@ function TopItem() {
                   className={`mobile-color-circle ${
                     selectedColor === color ? "active" : ""
                   }`}
-                  title={color}
-                  aria-label={`Filter ${color}`}
+                  title={getTranslatedColor(color)}
+                  aria-label={t("filter_by_color", {
+                    color: getTranslatedColor(color),
+                  })}
                   style={
                     swatchColor
                       ? { background: swatchColor }
@@ -598,14 +821,23 @@ function TopItem() {
               value={Math.min(priceRange[1], maxPrice)}
               onChange={(e) => setPriceRange([0, Number(e.target.value)])}
             />
-            <span>Max: ${Math.min(priceRange[1], maxPrice)}</span>
+           <span>
+            {t("max_price", {
+              price: formatPrice(
+                Math.min(
+                  priceRange[1],
+                  maxPrice
+                )
+              ),
+            })}
+          </span>
           </div>
         </div>
 
         <div className="topitem-layout">
           <aside className="topitem-sidebar">
             <div className="sidebar-section">
-              <h3>Brands</h3>
+              <h3>{t("brands")}</h3>
 
               <button
                 className={`sidebar-btn ${
@@ -613,7 +845,7 @@ function TopItem() {
                 }`}
                 onClick={() => setSelectedBrand("all")}
               >
-                All
+                {t("all")}
               </button>
 
               {brands.map((brand) => (
@@ -630,7 +862,7 @@ function TopItem() {
             </div>
 
             <div className="sidebar-section">
-              <h3>Types</h3>
+              <h3>{t("types")}</h3>
 
               <button
                 className={`sidebar-btn ${
@@ -638,7 +870,7 @@ function TopItem() {
                 }`}
                 onClick={() => setSelectedType("all")}
               >
-                All
+               {t("all")}
               </button>
 
               {types.map((type) => (
@@ -649,13 +881,13 @@ function TopItem() {
                   }`}
                   onClick={() => setSelectedType(normalizeText(type))}
                 >
-                  {String(type).replaceAll("_", " ")}
+                 {translateTaxonomy(type)}
                 </button>
               ))}
             </div>
 
             <div className="sidebar-section">
-              <h3>Colors</h3>
+              <h3>{t("colors")}</h3>
 
               <div className="sidebar-color-options">
                 <button
@@ -664,7 +896,7 @@ function TopItem() {
                   }`}
                   onClick={() => setSelectedColor("all")}
                 >
-                  All
+                  {t("all")}
                 </button>
 
                 {colors.map((color) => {
@@ -677,8 +909,10 @@ function TopItem() {
                       className={`sidebar-color-circle ${
                         selectedColor === color ? "active" : ""
                       }`}
-                      title={color}
-                      aria-label={`Filter ${color}`}
+                      title={getTranslatedColor(color)}
+                      aria-label={t("filter_by_color", {
+                        color: getTranslatedColor(color),
+                      })}
                       style={
                         swatchColor
                           ? { background: swatchColor }
@@ -692,7 +926,7 @@ function TopItem() {
             </div>
 
             <div className="sidebar-section">
-              <h3>Price</h3>
+              <h3>{t("price")}</h3>
 
               <input
                 type="range"
@@ -702,7 +936,16 @@ function TopItem() {
                 onChange={(e) => setPriceRange([0, Number(e.target.value)])}
               />
 
-              <span>Up to ${Math.min(priceRange[1], maxPrice)}</span>
+              <span>
+                {t("up_to_price", {
+                  price: formatPrice(
+                    Math.min(
+                      priceRange[1],
+                      maxPrice
+                    )
+                  ),
+                })}
+              </span>
             </div>
           </aside>
 
@@ -763,7 +1006,7 @@ function TopItem() {
                             <button
                               type="button"
                               className="image-arrow image-arrow-left"
-                              aria-label="Previous image"
+                             aria-label={t("previous_image")}
                               onClick={(e) =>
                                 handleImageArrow(itemData, "prev", e)
                               }
@@ -774,7 +1017,10 @@ function TopItem() {
 
                           <img
                             src={displayImage}
-                            alt={name || "Product"}
+                           alt={
+                                getTranslatedName(item, itemId) ||
+                                t("product")
+                              }
                             onError={(e) => {
                               e.currentTarget.onerror = null;
                               e.currentTarget.src = "/fallback.png";
@@ -785,7 +1031,7 @@ function TopItem() {
                             <button
                               type="button"
                               className="image-arrow image-arrow-right"
-                              aria-label="Next image"
+                             aria-label={t("next_image")}
                               onClick={(e) =>
                                 handleImageArrow(itemData, "next", e)
                               }
@@ -798,7 +1044,7 @@ function TopItem() {
                             <button
                               type="button"
                               className="topitem-play-button"
-                              aria-label="Play product video"
+                             aria-label={t("play_product_video")}
                               onClick={(e) => handleVideoPlay(id, e)}
                             >
                               ▶
@@ -824,7 +1070,9 @@ function TopItem() {
                         className="topitem-stars"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/product/${id}/review`);
+                         router.push(
+                          withCountry(`/product/${id}/review`)
+                        );
                         }}
                         title={t("view_reviews")}
                       >
@@ -838,7 +1086,12 @@ function TopItem() {
                         </span>
 
                         <span className="topitem-review-count">
-                          ({reviewsData?.reviewsArray?.length || 0} reviews)
+                          (
+                            {t("reviews_count", {
+                              count:
+                                reviewsData?.reviewsArray?.length || 0,
+                            })}
+                            )
                         </span>
                       </div>
                     )}
@@ -865,8 +1118,10 @@ function TopItem() {
                               className={`topitem-color-circle ${
                                 selectedColorForItem === color ? "active" : ""
                               }`}
-                              title={color}
-                              aria-label={`Select ${color}`}
+                              title={getTranslatedColor(color)}
+                                aria-label={t("select_color", {
+                                  color: getTranslatedColor(color),
+                                })}
                               onClick={(e) => handleColorSelect(id, color, e)}
                               style={
                                 swatchColor
@@ -888,7 +1143,9 @@ function TopItem() {
                               handleItemClick(id);
                             }}
                           >
-                            +{hiddenColorCount} colors more
+                           {t("more_colors", {
+                              count: hiddenColorCount,
+                            })}
                           </button>
                         )}
                       </div>
@@ -897,38 +1154,44 @@ function TopItem() {
                     <div className="topitem-delivery-info">
                       {brandDelivery?.isFree && (
                         <div className="topitem-free-delivery">
-                          Free delivery
+                         {t("free_delivery")}
                         </div>
                       )}
 
                       <div className="topitem-delivery-date">
-                        Get it by{" "}
-                        {getEstimatedDeliveryDay(
-                          brandDelivery?.estimatedDaysMin || 7
-                        )}
+                       {t("get_it_by", {
+                          date: getEstimatedDeliveryDay(
+                            brandDelivery?.estimatedDaysMin || 7
+                          ),
+                        })}
                       </div>
                     </div>
 
                     <div className="topitem-price-row">
                       <div className="topitem-price">
-                        <span>$</span>
-                        {usdPrice || 0}
+                        {formatPrice(usdPrice)}
                       </div>
 
-                      {Number(originalPrice) > 0 && (
+                     {Number(originalPrice) > 0 &&
+                      Number(originalPrice) >
+                        Number(usdPrice || 0) && (
                         <div className="topitem-original-price">
-                          ${originalPrice}
+                          {formatPrice(originalPrice)}
                         </div>
                       )}
                     </div>
 
                     <div className="topitem-sold-row">
-                      {Number(sold || 0)} sold
+                     {t("sold_count", {
+                        count: Number(sold || 0),
+                      })}
                     </div>
 
                     {numberOfItems && Number(numberOfItems) > 0 && (
                       <div className="topitem-stock-badge">
-                        {numberOfItems} items in stock
+                       {t("items_in_stock", {
+                          count: numberOfItems,
+                        })}
                       </div>
                     )}
 
@@ -938,7 +1201,9 @@ function TopItem() {
                         className="topitem-added-cart-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push("/basket");
+                          router.push(
+                            withCountry("/basket")
+                          );
                         }}
                       >
                         <span className="topitem-cart-icon">🛒</span>
@@ -952,14 +1217,14 @@ function TopItem() {
                         className="topitem-add-cart-btn"
                         onClick={(e) => handleAddToBasket(itemData, e)}
                       >
-                        Add to cart
+                       {t("add_to_cart")}
                       </button>
                     )}
                   </div>
                 );
               })
             ) : (
-              <div className="topitem-no-items">No items found.</div>
+              <div className="topitem-no-items">{t("no_items_found")}</div>
             )}
           </div>
         </div>

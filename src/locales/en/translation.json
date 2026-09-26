@@ -1330,5 +1330,41 @@
   "close_modal": "Close",
   "fashion_item": "Fashion item",
   "price_unavailable": "Price unavailable",
-  "no_reviews_yet": "No reviews yet"
+  "no_reviews_yet": "No reviews yet",
+
+  "fashion_loading_title": "Finding products for {{country}}",
+  "fashion_loading_description": "We are checking brands, prices, availability, and delivery options for your selected location.",
+
+  "fashion_no_filter_results": "No products match your filters",
+  "fashion_no_country_products": "No products available for delivery to {{country}}",
+  "fashion_change_filters": "Try changing your brand, type, color, or price filters to see more products.",
+  "fashion_no_country_products_description": "We do not currently have fashion products available for delivery to {{country}}.",
+  "fashion_choose_different_location": "You can choose a different delivery location from the selector above.",
+  "clear_filters": "Clear filters",
+
+  "all_brands": "All Brands",
+  "all_types": "All Types",
+  "all": "All",
+  "brands": "Brands",
+  "types": "Types",
+  "colors": "Colors",
+  "price": "Price",
+
+  "filter_by_color": "Filter by {{color}}",
+  "select_color": "Select {{color}}",
+  "max_price": "Max: {{price}}",
+  "up_to_price": "Up to {{price}}",
+
+  "previous_image": "Previous image",
+  "next_image": "Next image",
+  "more_colors": "+{{count}} more colors",
+
+  "free_delivery": "Free delivery",
+  "get_it_by": "Get it by {{date}}",
+  "sold_worldwide": "{{count}}+ sold worldwide",
+  "top_items_marketplace": "Malidag Marketplace",
+  "no_items_found": "No items found.",
+  "item_added_to_cart": "{{name}} added to cart",
+  "failed_to_add_to_cart": "Failed to add to cart",
+  "error_adding_to_cart": "Error adding to cart"
 }

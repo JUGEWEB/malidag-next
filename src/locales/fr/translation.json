@@ -1187,6 +1187,33 @@
   "women_top_empty_description": "Nous n’avons trouvé aucun article {{type}} parmi les meilleures ventes actuellement disponible dans le pays sélectionné.",
   "women_top_sold": "{{count}} vendus",
   "review_modal_description": "Consultez les notes et les avis des clients sur ce produit.",
-  "close_modal": "Fermer"
+  "close_modal": "Fermer",
+
+  "fashion_loading_title": "Recherche de produits pour {{country}}",
+  "fashion_loading_description": "Nous vérifions les marques, les prix, la disponibilité et les options de livraison pour le lieu sélectionné.",
+
+  "fashion_no_filter_results": "Aucun produit ne correspond à vos filtres",
+  "fashion_no_country_products": "Aucun produit disponible pour une livraison en {{country}}",
+  "fashion_change_filters": "Essayez de modifier les filtres de marque, de type, de couleur ou de prix pour afficher plus de produits.",
+  "fashion_no_country_products_description": "Nous n’avons actuellement aucun article de mode disponible pour une livraison en {{country}}.",
+  "fashion_choose_different_location": "Vous pouvez choisir un autre lieu de livraison à l’aide du sélecteur ci-dessus.",
+  "clear_filters": "Effacer les filtres",
+
+  "all_brands": "Toutes les marques",
+  "all_types": "Tous les types",
+  "types": "Types",
+
+  "filter_by_color": "Filtrer par {{color}}",
+  "max_price": "Maximum : {{price}}",
+
+  "previous_image": "Image précédente",
+  "next_image": "Image suivante",
+  "sold_worldwide": "{{count}}+ vendus dans le monde",
+
+  "top_items_marketplace": "Marketplace Malidag",
+  "no_items_found": "Aucun article trouvé.",
+  "item_added_to_cart": "{{name}} a été ajouté au panier",
+  "failed_to_add_to_cart": "Impossible d’ajouter l’article au panier",
+  "error_adding_to_cart": "Erreur lors de l’ajout au panier"
 
 }

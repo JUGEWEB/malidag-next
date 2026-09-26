@@ -5,10 +5,11 @@ import axios from "axios";
 import "./fashionForAllPage.css";
 import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
-import i18n from "i18next";
 import { useCheckoutStore } from "./checkoutStore";
 import colorSwatches from "../../lib/colors.json";
 import { usePathname, useRouter } from "next/navigation";
+
+const BASE_URL = "https://api.malidag.com";
 
 function ItemFashionPage() {
   const [brandGroups, setBrandGroups] = useState([]);
@@ -19,14 +20,16 @@ function ItemFashionPage() {
    const [reviews, setReviews] = useState({}); // Store reviews data
   const [brandThemes, setBrandThemes] = useState([]);
   const [translations, setTranslations] = useState({});
-  const { t } = useTranslation();
+ const { t, i18n } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
   const setSelectedBrandName = useCheckoutStore((state) => state.setSelectedBrandName);
   const [selectedBrand, setSelectedBrand] = useState("all");
 const [selectedType, setSelectedType] = useState("all");
 const [selectedColor, setSelectedColor] = useState("all");
 const [priceRange, setPriceRange] = useState([0, 10000]);
-
+const [rates, setRates] = useState({});
+const [ratesLoading, setRatesLoading] =
+  useState(true);
 const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
 const { push } = useRouter();
@@ -38,8 +41,27 @@ const countryCode = routeCountryCode;
 
 const countryName = countryCode?.toUpperCase() || "your country";
 
+const currencyByCountry = {
+  fr: "EUR",
+  gb: "GBP",
+  br: "BRL",
+  us: "USD",
+  de: "EUR",
+  ie: "EUR",
+  be: "EUR",
+  au: "AUD",
+};
+
+const currency =
+  currencyByCountry[countryCode] || "USD";
+
   console.log("Selected country code in fashion page:", countryCode);
 const hasCountry = Boolean(countryCode);
+
+const currentLang =
+  ["en", "fr", "br"].includes(i18n.language)
+    ? i18n.language
+    : "en";
 
 const fetchTranslation = async (productId, lang) => {
   if (translations[productId]?.[lang]) return;
@@ -80,6 +102,26 @@ const fetchTranslation = async (productId, lang) => {
                     console.error("Error fetching reviews:", error);
                   }
                 };
+
+                const translateTaxonomy = (value = "") => {
+  if (!value) return "";
+
+  const key = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return t(key, {
+    defaultValue: value
+      .replace(/_/g, " ")
+      .replace(/-/g, " "),
+  });
+};
+
+const getTranslatedColor = (color) =>
+  translateTaxonomy(color);
 
                 useEffect(() => {
   const fetchBrandThemes = async () => {
@@ -202,6 +244,104 @@ useEffect(() => {
     fetchTopItemsAndBestSellers();
   }
 }, [brandGroups, countryCode]);
+
+useEffect(() => {
+  const fetchRates = async () => {
+    try {
+      setRatesLoading(true);
+
+      const response = await fetch(
+        `${BASE_URL}/prices/rates`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch rates: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setRates(data?.rates || {});
+    } catch (error) {
+      console.error(
+        "Error fetching exchange rates:",
+        error
+      );
+    } finally {
+      setRatesLoading(false);
+    }
+  };
+
+  fetchRates();
+}, []);
+
+const convertUsdToLocal = (usdValue) => {
+  const usdPrice = Number(usdValue || 0);
+
+  if (!usdPrice) return 0;
+
+  if (currency === "USD") {
+    return usdPrice;
+  }
+
+  const rate = Number(rates?.[currency]);
+
+  if (!rate) {
+    return null;
+  }
+
+  return usdPrice * rate;
+};
+
+const formatPrice = (usdValue) => {
+  const usdPrice = Number(usdValue || 0);
+
+  if (!usdPrice) {
+    return new Intl.NumberFormat(
+      currentLang === "fr"
+        ? "fr-FR"
+        : currentLang === "br"
+          ? "pt-BR"
+          : "en-US",
+      {
+        style: "currency",
+        currency,
+      }
+    ).format(0);
+  }
+
+  if (
+    currency !== "USD" &&
+    ratesLoading
+  ) {
+    return "—";
+  }
+
+  const converted =
+    convertUsdToLocal(usdPrice);
+
+  if (converted === null) {
+    return t("price_unavailable");
+  }
+
+  const locale =
+    currentLang === "fr"
+      ? "fr-FR"
+      : currentLang === "br"
+        ? "pt-BR"
+        : "en-US";
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(converted);
+};
 
   useEffect(() => {
   const lang = i18n.language || "en";
@@ -407,18 +547,29 @@ const handleImageArrow = (product, direction, e) => {
   });
 };
 
-const getEstimatedDeliveryDay = (daysToAdd = 7) => {
+const getEstimatedDeliveryDay = (
+  daysToAdd = 7
+) => {
   const date = new Date();
 
-  date.setDate(date.getDate() + daysToAdd);
+  date.setDate(
+    date.getDate() + daysToAdd
+  );
 
-  const weekday = date.toLocaleDateString("en-US", {
-    weekday: "long",
-  });
+  const locale =
+    currentLang === "fr"
+      ? "fr-FR"
+      : currentLang === "br"
+        ? "pt-BR"
+        : "en-US";
 
-  const day = date.getDate();
-
-  return `${weekday} ${day}`;
+  return date.toLocaleDateString(
+    locale,
+    {
+      weekday: "long",
+      day: "numeric",
+    }
+  );
 };
 
 
@@ -432,11 +583,14 @@ if (loading) {
       <div className="fashion-loading-state">
         <div className="fashion-loading-spinner" />
 
-        <h2>Finding products for {countryName}</h2>
+       <h2>
+          {t("fashion_loading_title", {
+            country: countryName,
+          })}
+        </h2>
 
         <p>
-          We are checking brands, prices, availability, and delivery options for
-          your selected location.
+          {t("fashion_loading_description")}
         </p>
       </div>
     </div>
@@ -450,20 +604,24 @@ if (loading) {
         <div className="country-empty-icon">📍</div>
 
         <h2>
-          {hasLoadedItems
-            ? "No products match your filters"
-            : `No products available for delivery to ${countryName}`}
-        </h2>
+  {hasLoadedItems
+    ? t("fashion_no_filter_results")
+    : t("fashion_no_country_products", {
+        country: countryName,
+      })}
+</h2>
 
-        <p>
-          {hasLoadedItems
-            ? "Try changing your brand, type, color, or price filters to see more products."
-            : `We do not currently have fashion products available for delivery to ${countryName}.`}
-        </p>
+<p>
+  {hasLoadedItems
+    ? t("fashion_change_filters")
+    : t("fashion_no_country_products_description", {
+        country: countryName,
+      })}
+</p>
 
         {!hasLoadedItems && (
           <p>
-            You can choose a different delivery location from the selector above.
+             {t("fashion_choose_different_location")}
           </p>
         )}
 
@@ -478,7 +636,7 @@ if (loading) {
               setPriceRange([0, maxPrice]);
             }}
           >
-            Clear filters
+           {t("clear_filters")}
           </button>
         )}
       </div>
@@ -520,7 +678,7 @@ if (loading) {
           className={selectedBrand === "all" ? "active-filter" : ""}
           onClick={() => setSelectedBrand("all")}
         >
-          All Brands
+        {t("all_brands")}
         </button>
 
         {brands.map((brand) => (
@@ -539,7 +697,7 @@ if (loading) {
           className={selectedType === "all" ? "active-filter" : ""}
           onClick={() => setSelectedType("all")}
         >
-          All Types
+         {t("all_types")}
         </button>
 
         {types.map((type) => (
@@ -548,7 +706,7 @@ if (loading) {
             className={selectedType === type ? "active-filter" : ""}
             onClick={() => setSelectedType(type)}
           >
-            {type.replaceAll("_", " ")}
+          {translateTaxonomy(type)}
           </button>
         ))}
       </div>
@@ -558,7 +716,7 @@ if (loading) {
           className={`mobile-color-circle all ${selectedColor === "all" ? "active" : ""}`}
           onClick={() => setSelectedColor("all")}
         >
-          All
+         {t("all")}
         </button>
 
        {colors.map((color) => {
@@ -571,8 +729,10 @@ if (loading) {
               className={`mobile-color-circle ${
                 selectedColor === color ? "active" : ""
               }`}
-              title={color}
-              aria-label={`Filter ${color}`}
+              title={getTranslatedColor(color)}
+              aria-label={t("filter_by_color", {
+                color: getTranslatedColor(color),
+              })}
               style={
               swatchColor
                 ? { background: swatchColor }
@@ -597,20 +757,29 @@ if (loading) {
           value={Math.min(priceRange[1], maxPrice)}
           onChange={(e) => setPriceRange([0, Number(e.target.value)])}
         />
-        <span>Max: ${Math.min(priceRange[1], maxPrice)}</span>
+        <span>
+        {t("max_price", {
+          price: formatPrice(
+            Math.min(
+              priceRange[1],
+              maxPrice
+            )
+          ),
+        })}
+      </span>
       </div>
     </div>
 
     <div className="fashion-layout">
       <aside className="fashion-sidebar">
         <div className="sidebar-section">
-          <h3>Brands</h3>
+          <h3>{t("brands")}</h3>
 
           <button
             className={`sidebar-btn ${selectedBrand === "all" ? "active" : ""}`}
             onClick={() => setSelectedBrand("all")}
           >
-            All
+           {t("all")}
           </button>
 
           {brands.map((brand) => (
@@ -627,13 +796,13 @@ if (loading) {
         </div>
 
         <div className="sidebar-section">
-          <h3>Types</h3>
+          <h3>{t("types")}</h3>
 
           <button
             className={`sidebar-btn ${selectedType === "all" ? "active" : ""}`}
             onClick={() => setSelectedType("all")}
           >
-            All
+           {t("all")}
           </button>
 
           {types.map((type) => (
@@ -642,13 +811,13 @@ if (loading) {
               className={`sidebar-btn ${selectedType === type ? "active" : ""}`}
               onClick={() => setSelectedType(type)}
             >
-              {type.replaceAll("_", " ")}
+             {translateTaxonomy(type)}
             </button>
           ))}
         </div>
 
         <div className="sidebar-section">
-          <h3>Colors</h3>
+          <h3>{t("colors")}</h3>
 
           <div className="sidebar-color-options">
             <button
@@ -657,7 +826,7 @@ if (loading) {
               }`}
               onClick={() => setSelectedColor("all")}
             >
-              All
+             {t("all")}
             </button>
 
            {colors.map((color) => {
@@ -670,8 +839,10 @@ if (loading) {
                 className={`sidebar-color-circle ${
                   selectedColor === color ? "active" : ""
                 }`}
-                title={color}
-                aria-label={`Filter ${color}`}
+                title={getTranslatedColor(color)}
+                aria-label={t("select_color", {
+                  color: getTranslatedColor(color),
+                })}
                 style={
                   swatchColor
                     ? { background: swatchColor }
@@ -690,7 +861,7 @@ if (loading) {
         </div>
 
         <div className="sidebar-section">
-          <h3>Price</h3>
+          <h3>{t("price")}</h3>
 
           <input
             type="range"
@@ -700,7 +871,16 @@ if (loading) {
             onChange={(e) => setPriceRange([0, Number(e.target.value)])}
           />
 
-          <span>Up to ${Math.min(priceRange[1], maxPrice)}</span>
+         <span>
+        {t("up_to_price", {
+          price: formatPrice(
+            Math.min(
+              priceRange[1],
+              maxPrice
+            )
+          ),
+        })}
+      </span>
         </div>
       </aside>
 
@@ -750,7 +930,7 @@ if (loading) {
                 <button
                   type="button"
                   className="image-arrow image-arrow-left"
-                  aria-label="Previous image"
+                  aria-label={t("previous_image")}
                   onClick={(e) => handleImageArrow(itemData, "prev", e)}
                 >
                   ‹
@@ -776,7 +956,7 @@ if (loading) {
                 <button
                   type="button"
                   className="image-arrow image-arrow-right"
-                  aria-label="Next image"
+                 aria-label={t("next_image")}
                   onClick={(e) => handleImageArrow(itemData, "next", e)}
                 >
                   ›
@@ -840,7 +1020,9 @@ if (loading) {
                       handleItemClick(id);
                     }}
                   >
-                    +{hiddenColorCount} colors more
+                  {t("more_colors", {
+                    count: hiddenColorCount,
+                  })}
                   </button>
                 )}
                 </div>
@@ -849,25 +1031,27 @@ if (loading) {
               {brandDelivery?.isFree && (
               <div className="fashion-delivery-info">
                 <div className="fashion-free-delivery">
-                  Free delivery
+                 {t("free_delivery")}
                 </div>
 
                 <div className="fashion-delivery-date">
-                  Get it by{" "}
-                  {getEstimatedDeliveryDay(
+                 {t("get_it_by", {
+                  date: getEstimatedDeliveryDay(
                     brandDelivery?.estimatedDaysMax || 7
-                  )}
+                  ),
+                })}
                 </div>
               </div>
             )}
-             <div className="item-price">
-              <span className="price-currency">$</span>
-              {item.usdPrice}
+            <div className="item-price">
+              {formatPrice(item.usdPrice)}
             </div>
 
             {item?.sold && Number(item.sold) > 0 && (
               <div className="fashion-sold-badge">
-                {item.sold}+ sold out worldwide
+               {t("sold_worldwide", {
+                  count: item.sold,
+                })}
               </div>
             )}
 

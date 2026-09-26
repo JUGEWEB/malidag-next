@@ -1366,5 +1366,21 @@
   "no_items_found": "No items found.",
   "item_added_to_cart": "{{name}} added to cart",
   "failed_to_add_to_cart": "Failed to add to cart",
-  "error_adding_to_cart": "Error adding to cart"
+  "error_adding_to_cart": "Error adding to cart",
+  "browsing_for_you": "For you",
+  "browsing_title": "Inspired by your searches",
+  "browsing_description": "Explore products related to what you’ve been searching for on Malidag.",
+  "browsing_items": "items",
+  "browsing_loading_title": "Finding products for you",
+  "browsing_loading_description": "We’re checking products related to your recent searches.",
+  "browsing_no_history_title": "Start exploring",
+  "browsing_no_history_description": "Search for products you like and we’ll use your searches to help you discover related items here.",
+  "browsing_start_exploring": "Start exploring",
+  "browsing_no_filter_results": "No products match your filters",
+  "browsing_change_filters": "Try changing your brand, type, color, or price filters to see more products.",
+  "browsing_no_recommendations_title": "No recommendations yet",
+  "browsing_no_recommendations_description": "We couldn’t find currently available products related to your recent searches.",
+  "recommended_for_you": "For you",
+  "browse_brand": "Browse {{brand}}",
+  "filters": "Filters"
 }

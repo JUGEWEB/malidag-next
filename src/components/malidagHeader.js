@@ -209,7 +209,7 @@ const savedCountryCode = getSavedCountryCode();
 
       <img
         onClick={home}
-        src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_07_42%20AM.png?alt=media&token=f7513811-116e-49bd-ae3d-594454fab30b"
+        src="https://cdn.malidag.com/themes/1790434520397-7d89b2f9-476c-498a-bd4d-9eabfea46700.webp"
         alt="Malidag Logo"
         style={{
           width: "30px",

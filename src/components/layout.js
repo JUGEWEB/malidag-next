@@ -236,7 +236,7 @@ if (
         }}
       >
         <img
-          src="https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FChatGPT%20Image%20May%206%2C%202026%2C%2012_09_22%20AM.png?alt=media&token=19d4b065-b842-4e9a-81be-028450001cad"
+          src="https://cdn.malidag.com/themes/1790434520397-7d89b2f9-476c-498a-bd4d-9eabfea46700.webp"
           alt="Malidag"
           style={{
             width: "120px",
@@ -259,17 +259,6 @@ if (
             }}
           />
         )}
-
-        <div
-          style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#222",
-            marginBottom: "8px",
-          }}
-        >
-         {t("loading_malidag")}
-        </div>
 
         {bootProduct?.item?.name && (
           <div

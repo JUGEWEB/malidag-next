@@ -1,16 +1,41 @@
-// src/i18nServer.js
-import i18n from "i18next";
-import Backend from "i18next-fs-backend";
-import path from "path";
+// src/components/i18nServer.js
 
-const initI18n = async (lng) => {
-  const instance = i18n.createInstance();
-  await instance.use(Backend).init({
-    lng,
+import i18next from "i18next";
+
+import en from "@/locales/en/translation.json";
+import fr from "@/locales/fr/translation.json";
+import br from "@/locales/br/translation.json";
+
+const resources = {
+  en: {
+    translation: en,
+  },
+
+  fr: {
+    translation: fr,
+  },
+
+  br: {
+    translation: br,
+  },
+};
+
+const initI18n = async (lng = "en") => {
+  const language =
+    resources[lng]
+      ? lng
+      : "en";
+
+  const instance =
+    i18next.createInstance();
+
+  await instance.init({
+    lng: language,
+
     fallbackLng: "en",
-    backend: {
-      loadPath: path.resolve("./src/locales/{{lng}}/translation.json"),
-    },
+
+    resources,
+
     interpolation: {
       escapeValue: false,
     },

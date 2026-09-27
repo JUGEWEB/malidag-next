@@ -1,105 +1,109 @@
-"use client";
+import { redirect } from "next/navigation";
+import initI18n from "@/components/i18nServer";
+import SearchInfoPage from "@/components/SearchInfoPage";
 
-import React from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
-import "./searchInfo.css";
+const BASE_URL = "https://web.malidag.com";
 
-export default function SearchInfoPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const { t } = useTranslation();
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
 
-  const query = searchParams.get("q") || "";
-  const searchTerm = searchParams.get("term") || query;
+  gb: {
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
 
-  return (
-    <main className="search-info-page">
-      <div className="search-info-container">
-        <button
-          type="button"
-          className="search-info-back"
-          onClick={() => router.back()}
-        >
-          ← {t("search_info_back")}
-        </button>
+  br: {
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
 
-        <h1 className="search-info-title">
-          {t("search_info_title")}
-        </h1>
+/* =========================================
+   SEO
+========================================= */
 
-        <p className="search-info-intro">
-          {t("search_info_intro")}
-        </p>
+export async function generateMetadata({
+  params,
+}) {
+  const { country } = await params;
 
-        {query && (
-          <div className="search-info-query-box">
-            <span className="search-info-query-label">
-              {t("search_info_your_search")}
-            </span>
+  const countryCode =
+    country?.toLowerCase();
 
-            <strong className="search-info-query">
-              “{query}”
-            </strong>
-          </div>
-        )}
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
 
-        <section className="search-info-section">
-          <h2>{t("search_info_how_title")}</h2>
+  if (!selectedCountry) {
+    return {};
+  }
 
-          <p>
-            {t("search_info_how_description")}
-          </p>
-
-          {searchTerm && (
-            <div className="search-info-term">
-              <span>{t("search_info_search_term")}</span>
-              <strong>{searchTerm}</strong>
-            </div>
-          )}
-        </section>
-
-        <section className="search-info-section">
-          <h2>{t("search_info_match_title")}</h2>
-
-          <p>
-            {t("search_info_match_description")}
-          </p>
-
-          <ul>
-            <li>{t("search_info_match_name")}</li>
-            <li>{t("search_info_match_category")}</li>
-            <li>{t("search_info_match_type")}</li>
-            <li>{t("search_info_match_gender")}</li>
-            <li>{t("search_info_match_brand")}</li>
-            <li>{t("search_info_match_product_info")}</li>
-          </ul>
-        </section>
-
-        <section className="search-info-section">
-          <h2>{t("search_info_country_title")}</h2>
-
-          <p>
-            {t("search_info_country_description")}
-          </p>
-        </section>
-
-        <section className="search-info-section">
-          <h2>{t("search_info_results_title")}</h2>
-
-          <p>
-            {t("search_info_results_description")}
-          </p>
-        </section>
-
-        <section className="search-info-section">
-          <h2>{t("search_info_change_title")}</h2>
-
-          <p>
-            {t("search_info_change_description")}
-          </p>
-        </section>
-      </div>
-    </main>
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
   );
+
+  const t = i18n.t.bind(i18n);
+
+  const title =
+    `${t("search_info_seo_title")} | Malidag`;
+
+  const description =
+    t("search_info_seo_description");
+
+  /*
+    IMPORTANT:
+    Do NOT include ?q= or ?term= in canonical.
+  */
+  const url =
+    `${BASE_URL}/${countryCode}/search-info`;
+
+  return {
+    title,
+    description,
+
+    alternates: {
+      canonical: url,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+    },
+
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Malidag",
+      type: "website",
+      locale: selectedCountry.locale,
+    },
+
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  };
+}
+
+/* =========================================
+   PAGE
+========================================= */
+
+export default async function Page({
+  params,
+}) {
+  const { country } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  if (!SUPPORTED_COUNTRIES[countryCode]) {
+    redirect("/");
+  }
+
+  return <SearchInfoPage />;
 }

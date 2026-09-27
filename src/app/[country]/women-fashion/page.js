@@ -1,43 +1,97 @@
-// app/women-fashion/page.js
-import { headers } from "next/headers";
+// app/[country]/women-fashion/page.js
+
+import { redirect } from "next/navigation";
 import initI18n from "@/components/i18nServer";
 import WoFashion from "@/components/woFashion";
 
 export const dynamic = "force-dynamic";
 
-// ✅ SEO Metadata with translations
-export async function generateMetadata({ params }) {
-  const { country } = await params;
-  const countryCode = country;
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+const BASE_URL = "https://web.malidag.com";
 
-  const i18n = await initI18n(lang);
+const OG_IMAGE =
+  "https://cdn.malidag.com/themes/1790434520397-7d89b2f9-476c-498a-bd4d-9eabfea46700.webp";
+
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    name: "France",
+    code: "fr",
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
+
+  gb: {
+    name: "United Kingdom",
+    code: "gb",
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
+
+  br: {
+    name: "Brazil",
+    code: "br",
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
+
+/* =========================================
+   SEO METADATA
+========================================= */
+
+export async function generateMetadata({
+  params,
+}) {
+  const { country } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    return {};
+  }
+
+  /*
+    SEO language comes from the country route.
+
+    /fr -> French
+    /gb -> English
+    /br -> Brazilian Portuguese
+  */
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
   const t = i18n.t.bind(i18n);
 
-  const title = `${t("women_fashion_title", { defaultValue: "Women's Fashion" })} | Malidag`;
-  const description = t("women_fashion_description", {
-    defaultValue:
-      "Shop the latest trends in women's fashion including dresses, tops, accessories and more at Malidag.",
-  });
+  const title =
+    `${t("women_fashion_title")} | Malidag`;
 
-  const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/${countryCode}/women-fashion`;
-  const ogImage = "https://api.malidag.com/images/1752764163519-steptodown.com980265.webp";
+  const description =
+    t("women_fashion_description");
 
   const keywordsCsv =
-    t("women_fashion_keywords", {
-      defaultValue:
-        "women's fashion, ladies clothes, trendy outfits, online shopping, Malidag fashion, dresses, tops, skirts, pants, affordable fashion",
-    }) || "";
-  const keywords = keywordsCsv.split(",").map((k) => k.trim()).filter(Boolean);
+    t("women_fashion_keywords") || "";
+
+  const keywords = keywordsCsv
+    .split(",")
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+
+  const url =
+    `${BASE_URL}/${countryCode}/women-fashion`;
 
   return {
     title,
     description,
     keywords,
-    alternates: { canonical: url },
+
+    alternates: {
+      canonical: url,
+    },
+
     robots: {
       index: true,
       follow: true,
@@ -45,50 +99,100 @@ export async function generateMetadata({ params }) {
       "max-image-preview": "large",
       "max-video-preview": -1,
     },
+
     openGraph: {
       title,
       description,
       url,
       siteName: "Malidag",
       type: "website",
-      locale: lang,
+      locale: selectedCountry.locale,
+
       images: [
         {
-          url: ogImage,
+          url: OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: "Stylish women's fashion banner",
+          alt: title,
         },
       ],
     },
+
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [ogImage],
+      images: [OG_IMAGE],
     },
   };
 }
 
-// ✅ Page
-export default async function Page({ params }) {
+/* =========================================
+   PAGE
+========================================= */
 
-   const { country } = await params;
-  const countryCode = country;
-  const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/${countryCode}/women-fashion`;
+export default async function Page({
+  params,
+}) {
+  const { country } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    redirect("/");
+  }
+
+  /*
+    Structured data follows the same
+    country-specific SEO language.
+  */
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
+  const t = i18n.t.bind(i18n);
+
+  const url =
+    `${BASE_URL}/${countryCode}/women-fashion`;
+
+  const countryHome =
+    `${BASE_URL}/${countryCode}`;
+
+  const pageName =
+    `${t("women_fashion_title")} | Malidag`;
+
+  const description =
+    t("women_fashion_description");
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Women's Fashion | Malidag",
+
+    name: pageName,
     url,
-    description: "Shop premium and affordable women's fashion on Malidag with crypto or USD.",
+    description,
+
     breadcrumb: {
       "@type": "BreadcrumbList",
+
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: `${baseUrl}/` },
-        { "@type": "ListItem", position: 2, name: "Women's Fashion", item: url },
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: t("home"),
+          item: countryHome,
+        },
+
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: t("women_fashion_title"),
+          item: url,
+        },
       ],
     },
   };
@@ -97,9 +201,15 @@ export default async function Page({ params }) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd)
+            .replace(/</g, "\\u003c"),
+        }}
       />
-      <WoFashion countryCode={countryCode} />
+
+      <WoFashion
+        countryCode={countryCode}
+      />
     </>
   );
 }

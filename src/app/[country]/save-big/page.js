@@ -1,82 +1,161 @@
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import initI18n from "@/components/i18nServer";
 import SaveBig from "@/components/saveBig";
 
 export const dynamic = "force-dynamic";
 
-// ✅ SEO Metadata
-export async function generateMetadata({ params }) {
-  const { country } = await params;
-  const countryCode = country;
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+const BASE_URL = "https://web.malidag.com";
 
-  const i18n = await initI18n(lang);
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    name: "France",
+    code: "fr",
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
+
+  gb: {
+    name: "United Kingdom",
+    code: "gb",
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
+
+  br: {
+    name: "Brazil",
+    code: "br",
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
+
+/* =========================================
+   SEO METADATA
+========================================= */
+
+export async function generateMetadata({
+  params,
+}) {
+  const { country } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    return {};
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
   const t = i18n.t.bind(i18n);
 
-  const title = `${t("crypto_discount_title")} | Malidag`;
-  const description = t("crypto_discount_description");
-  const baseUrl = "https://web.malidag.com";
-   const url = `${baseUrl}/${countryCode}/save-big`;
-  const ogImage = `${baseUrl}/og/discount-crypto.jpg`;
+  const title =
+    `${t("save_big_seo_title")} | Malidag`;
+
+  const description =
+    t("save_big_seo_description");
+
+  const url =
+    `${BASE_URL}/${countryCode}/save-big`;
 
   return {
     title,
     description,
-    alternates: { canonical: url },
+
+    alternates: {
+      canonical: url,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+    },
+
     openGraph: {
       title,
       description,
       url,
       siteName: "Malidag",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
       type: "website",
-      locale: lang,
+      locale: selectedCountry.locale,
     },
+
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title,
       description,
-      images: [ogImage],
     },
   };
 }
 
-// ✅ Page with structured data
-export default async function SaveBigPage({ params }) {
+/* =========================================
+   PAGE + STRUCTURED DATA
+========================================= */
 
+export default async function SaveBigPage({
+  params,
+}) {
   const { country } = await params;
-  const countryCode = country;
-  const baseUrl = "https://web.malidag.com";
-  const url = `${baseUrl}/${countryCode}/save-big`;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    redirect("/");
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
+  const t = i18n.t.bind(i18n);
+
+  const url =
+    `${BASE_URL}/${countryCode}/save-big`;
+
+  const countryHome =
+    `${BASE_URL}/${countryCode}`;
+
+  const pageName =
+    `${t("save_big_seo_title")} | Malidag`;
+
+  const description =
+    t("save_big_seo_description");
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "Save Big | Malidag",
+
+    name: pageName,
     url,
-    description:
-      "Exclusive discounts on Malidag . Save big and more.",
+    description,
+
     breadcrumb: {
       "@type": "BreadcrumbList",
+
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: `${baseUrl}/` },
-        { "@type": "ListItem", position: 2, name: "Save Big", item: url },
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: t("home"),
+          item: countryHome,
+        },
+
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: t("save_big_seo_title"),
+          item: url,
+        },
       ],
-    },
-    offers: {
-      "@type": "SpecialOffer",
-      name: "Crypto Discounts - Save Big",
-      url,
-      priceCurrency: "USD",
-      price: "0",
-      eligibleRegion: {
-        "@type": "Place",
-        name: "Worldwide",
-      },
-      availability: "https://schema.org/InStock",
-      validFrom: new Date().toISOString(),
     },
   };
 
@@ -84,9 +163,17 @@ export default async function SaveBigPage({ params }) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(
+            /</g,
+            "\\u003c"
+          ),
+        }}
       />
-      <SaveBig countryCode={countryCode}/>
+
+      <SaveBig
+        countryCode={countryCode}
+      />
     </>
   );
 }

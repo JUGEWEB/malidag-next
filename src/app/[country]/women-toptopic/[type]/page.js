@@ -1,69 +1,205 @@
 import WomenTopTopic from "@/components/womentoptopic";
 import initI18n from "@/components/i18nServer";
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export async function generateMetadata({ params }) {
+const BASE_URL = "https://web.malidag.com";
+
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    name: "France",
+    code: "fr",
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
+
+  gb: {
+    name: "United Kingdom",
+    code: "gb",
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
+
+  br: {
+    name: "Brazil",
+    code: "br",
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
+
+const OG_IMAGE =
+  "https://cdn.malidag.com/themes/1790434520397-7d89b2f9-476c-498a-bd4d-9eabfea46700.webp";
+
+/* =========================================
+   HELPERS
+========================================= */
+
+/* =========================================
+   HELPERS
+========================================= */
+
+const getReadableType = (type) => {
+  return String(type || "")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase()
+    );
+};
+
+const getTaxonomyKey = (value) => {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+};
+
+const translateTaxonomy = (
+  value,
+  t
+) => {
+  const readableValue =
+    getReadableType(value);
+
+  const key =
+    getTaxonomyKey(value);
+
+  return t(key, {
+    defaultValue: readableValue,
+  });
+};
+
+/* =========================================
+   SEO METADATA
+========================================= */
+
+export async function generateMetadata({
+  params,
+}) {
   const resolvedParams = await params;
-  const type = resolvedParams?.type || "women-fashion";
 
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+  const countryCode =
+    resolvedParams?.country?.toLowerCase();
 
-  const i18n = await initI18n(lang);
+  const type =
+    resolvedParams?.type ||
+    "women-fashion";
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    return {};
+  }
+
+  /*
+    SEO language comes from the country route.
+
+    /fr -> French
+    /gb -> English
+    /br -> Brazilian Portuguese
+  */
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
   const t = i18n.t.bind(i18n);
 
-  const readableType = type
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+ const translatedType =
+  translateTaxonomy(type, t);
 
-  const title = t("women_top_topic_title", { type: readableType });
-  const description = t("women_top_topic_description", { type: readableType });
+const title = t(
+  "women_top_topic_title",
+  {
+    type: translatedType,
+  }
+);
+
+const description = t(
+  "women_top_topic_description",
+  {
+    type: translatedType,
+  }
+);
+
+  const translatedKeywords = t(
+    "women_top_topic_keywords"
+  )
+    .split(",")
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+
+  const canonicalUrl =
+    `${BASE_URL}/${countryCode}/women-toptopic/${encodeURIComponent(type)}`;
 
   return {
     title,
     description,
-    keywords: [
-      readableType,
-      ...t("women_top_topic_keywords")
-        .split(",")
-        .map((k) => k.trim()),
-    ],
+
+   keywords: [
+  translatedType,
+  ...translatedKeywords,
+],
+
+    alternates: {
+      canonical: canonicalUrl,
+    },
+
     openGraph: {
       title,
       description,
-      url: `https://malidag.com/women-fashion/${type}`,
+      url: canonicalUrl,
       siteName: "Malidag",
+      locale: selectedCountry.locale,
+      type: "website",
+
       images: [
         {
-          url: "https://api.malidag.com/images/1752764163519-steptodown.com980265.webp",
+          url: OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: `Top ${readableType} products on Malidag`,
+          alt: title,
         },
       ],
-      type: "website",
     },
+
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [
-        "https://api.malidag.com/images/1752764163519-steptodown.com980265.webp",
-      ],
+      images: [OG_IMAGE],
     },
-    alternates: {
-      canonical: `https://malidag.com/women-fashion/${type}`,
-    },
+
     robots: {
       index: true,
       follow: true,
-      nocache: false,
     },
   };
 }
 
-export default async function Page({ params }) {
+/* =========================================
+   PAGE
+========================================= */
+
+export default async function Page({
+  params,
+}) {
   const resolvedParams = await params;
-  return <WomenTopTopic params={resolvedParams} />;
+
+  const countryCode =
+    resolvedParams?.country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    redirect("/");
+  }
+
+  return (
+    <WomenTopTopic
+      params={resolvedParams}
+    />
+  );
 }

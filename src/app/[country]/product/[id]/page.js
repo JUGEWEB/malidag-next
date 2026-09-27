@@ -1,157 +1,413 @@
+import { cache } from "react";
+import { notFound } from "next/navigation";
+
 import ProductDetails from "@/components/itemLastPage.js";
 import initI18n from "@/components/i18nServer";
-import { headers as nextHeaders } from "next/headers";
 import clientPromise from "../../../../../lib/mongodb";
 
 export const revalidate = 60;
 
-const norm = (v) => (v == null ? null : String(v));
+const BASE_URL = "https://web.malidag.com";
+const API_URL = "https://api.malidag.com";
 
-async function findProduct(idParam) {
-  const wanted = norm(decodeURIComponent(idParam));
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
 
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB);
+  gb: {
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
 
-  const product = await db.collection("products").findOne({ id: wanted });
-  if (!product) return null;
+  br: {
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
 
-  const { _id, ...rest } = product;
-  return rest;
+/* =========================================
+   HELPERS
+========================================= */
+
+const norm = (value) =>
+  value == null ? null : String(value);
+
+const cleanDescription = (value) => {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
+};
+
+/* =========================================
+   PRODUCT
+========================================= */
+
+const findProduct = cache(
+  async (idParam) => {
+    const wanted = norm(
+      decodeURIComponent(idParam)
+    );
+
+    const client = await clientPromise;
+
+    const db = client.db(
+      process.env.MONGODB_DB
+    );
+
+    const product = await db
+      .collection("products")
+      .findOne({
+        id: wanted,
+      });
+
+    if (!product) {
+      return null;
+    }
+
+    const { _id, ...rest } = product;
+
+    return rest;
+  }
+);
+
+/* =========================================
+   PRODUCT TRANSLATION
+========================================= */
+
+const getProductTranslation = cache(
+  async (itemId, lang) => {
+    /*
+      English is the original product language,
+      so no translation request is needed.
+    */
+
+    if (
+      lang === "en" ||
+      !itemId
+    ) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_URL}/translate/product/translate/${encodeURIComponent(
+          itemId
+        )}/${encodeURIComponent(lang)}`,
+        {
+          next: {
+            revalidate: 3600,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error(
+          "Product translation request failed:",
+          response.status
+        );
+
+        return null;
+      }
+
+      const data =
+        await response.json();
+
+      return data?.translation || null;
+    } catch (error) {
+      console.error(
+        "Product SEO translation error:",
+        error
+      );
+
+      return null;
+    }
+  }
+);
+
+/* =========================================
+   PRODUCT SEO DATA
+========================================= */
+
+async function getProductSeo(
+  product,
+  lang
+) {
+  const translation =
+    await getProductTranslation(
+      product.itemId,
+      lang
+    );
+
+  const name =
+    translation?.name ||
+    product.item?.name ||
+    "Product";
+
+  const description =
+    cleanDescription(
+      translation?.text ||
+      product.item?.description ||
+      product.item?.text ||
+      ""
+    );
+
+  return {
+    name,
+    description,
+  };
 }
 
-// -----------------
-// Metadata from MongoDB
-// -----------------
-export async function generateMetadata(context) {
-  const params = await context.params;
-  const { id } = params;
+/* =========================================
+   METADATA
+========================================= */
 
-  const headers = await nextHeaders();
-  const acceptLanguage = headers.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+export async function generateMetadata({
+  params,
+}) {
+  const {
+    country,
+    id,
+  } = await params;
 
-  const i18nInstance = await initI18n(lang);
-  const translations = i18nInstance.getDataByLanguage(lang)?.translation || {};
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    return {};
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
+  const t = i18n.t.bind(i18n);
 
   try {
-    const product = await findProduct(id);
+    const product =
+      await findProduct(id);
 
     if (!product) {
       return {
-        title: "Product Not Found | Malidag",
-        description: translations.default_product_description || "",
+        title:
+          `${t("product_not_found")} | Malidag`,
+
+        description:
+          t("default_product_description"),
+
+        robots: {
+          index: false,
+          follow: false,
+        },
       };
     }
 
-    const title = `${product.item?.name ?? "Product"} | Malidag`;
-    const description =
-      product.item?.description ||
-      product.item?.text ||
-      translations.default_product_description ||
-      "";
+    const {
+      name,
+      description,
+    } = await getProductSeo(
+      product,
+      selectedCountry.seoLanguage
+    );
+
+    const url =
+      `${BASE_URL}/${countryCode}/product/${encodeURIComponent(
+        product.id
+      )}`;
+
     const image =
-      product.item?.images?.[0] || "https://web.malidag.com/malidag.png";
+      product.item?.images?.[0] ||
+      `${BASE_URL}/og/malidag.png`;
+
+    const title =
+      `${name} | Malidag`;
 
     return {
       title,
       description,
+
       alternates: {
-        canonical: `https://web.malidag.com/product/${encodeURIComponent(product.id)}`,
+        canonical: url,
       },
+
+      robots: {
+        index: true,
+        follow: true,
+        "max-snippet": -1,
+        "max-image-preview": "large",
+        "max-video-preview": -1,
+      },
+
       openGraph: {
         title,
         description,
-        url: `https://web.malidag.com/product/${encodeURIComponent(product.id)}`,
-        type: "article",
+        url,
+        siteName: "Malidag",
+        type: "website",
+        locale:
+          selectedCountry.locale,
+
         images: [
           {
             url: image,
-            width: 1200,
-            height: 630,
-            alt: product.item?.name ?? "Product image",
+            alt: name,
           },
         ],
       },
+
       twitter: {
         card: "summary_large_image",
         title,
         description,
         images: [image],
-        site: "@malidag",
-        creator: "@malidag",
       },
     };
-  } catch (err) {
-    console.error("Metadata generation error:", err);
+  } catch (error) {
+    console.error(
+      "Metadata generation error:",
+      error
+    );
+
     return {
-      title: "Product | Malidag",
-      description: translations.default_product_description || "",
+      title: "Malidag",
+
+      description:
+        t("default_product_description"),
     };
   }
 }
 
-// -----------------
-// Page Render
-// -----------------
-export default async function Page(context) {
-  const params = await context.params;
-  const { id } = params;
+/* =========================================
+   PAGE
+========================================= */
 
-  const headers = await nextHeaders();
-  const acceptLanguage = headers.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+export default async function Page({
+  params,
+}) {
+  const {
+    country,
+    id,
+  } = await params;
 
-  await initI18n(lang);
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    notFound();
+  }
 
   let product = null;
 
   try {
-    product = await findProduct(id);
-  } catch (err) {
-    console.error("Page fetch error (MongoDB):", err);
-  }
-
-  if (!product) {
-    return (
-      <div style={{ padding: 24 }}>
-        <h1>Product temporarily unavailable</h1>
-        <p>We couldn’t load this product right now. Please refresh in a moment.</p>
-      </div>
+    product =
+      await findProduct(id);
+  } catch (error) {
+    console.error(
+      "Page fetch error (MongoDB):",
+      error
     );
   }
 
-  const image =
-    product.item?.images?.[0] || "https://web.malidag.com/malidag.png";
+  if (!product) {
+    notFound();
+  }
+
+  const {
+    name,
+    description,
+  } = await getProductSeo(
+    product,
+    selectedCountry.seoLanguage
+  );
+
+  const url =
+    `${BASE_URL}/${countryCode}/product/${encodeURIComponent(
+      product.id
+    )}`;
+
+  const images =
+    product.item?.images?.length
+      ? product.item.images
+      : [
+          `${BASE_URL}/og/malidag.png`,
+        ];
+
+  const price =
+    Number(product.item?.usdPrice);
+
+  /* =========================================
+     PRODUCT STRUCTURED DATA
+  ========================================= */
+
+  const jsonLd = {
+    "@context":
+      "https://schema.org",
+
+    "@type":
+      "Product",
+
+    name,
+
+    image:
+      images,
+
+    description,
+
+    sku:
+      product.itemId,
+
+    ...(product.item?.brand && {
+      brand: {
+        "@type": "Brand",
+        name:
+          product.item.brand,
+      },
+    }),
+
+    ...(Number.isFinite(price) &&
+      price > 0 && {
+        offers: {
+          "@type": "Offer",
+
+          url,
+
+          priceCurrency:
+            "USD",
+
+          price:
+            price.toFixed(2),
+
+          availability:
+            "https://schema.org/InStock",
+        },
+      }),
+  };
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: product.item?.name,
-            image: product.item?.images || [image],
-            description: product.item?.description || product.item?.text,
-            sku: product.itemId,
-            mpn: product.itemId,
-            brand: {
-              "@type": "Brand",
-              name: "Malidag",
-            },
-            offers: {
-              "@type": "Offer",
-              url: `https://web.malidag.com/product/${encodeURIComponent(product.id)}`,
-              priceCurrency: "USD",
-              price: product.item?.usdPrice || "0",
-              availability: "https://schema.org/InStock",
-            },
-          }),
+          __html: JSON.stringify(
+            jsonLd
+          ).replace(
+            /</g,
+            "\\u003c"
+          ),
         }}
       />
-      <ProductDetails product={product} />
+
+      <ProductDetails
+        product={product}
+      />
     </>
   );
 }

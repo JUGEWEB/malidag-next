@@ -1,3 +1,5 @@
+/*
+
 import KidFashionTypePage from "@/components/KidFashionTypePage";
 
 export default async function Page({ params }) {
@@ -6,3 +8,4 @@ export default async function Page({ params }) {
 
   return <KidFashionTypePage typeSlug={type} />;
 }
+  */

@@ -1,77 +1,183 @@
-// app/itemPage/[searchTerm]/page.js
+// app/[country]/itemPage/[searchTerm]/page.js
+
 import ItemPage from "@/components/itemPage";
 import initI18n from "@/components/i18nServer";
-import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }) {
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+const BASE_URL = "https://web.malidag.com";
 
-  const i18n = await initI18n(lang, ["translation", "keywords"]);
-  const t = i18n.t.bind(i18n);
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    code: "fr",
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
 
-  const { searchTerm } = await params;
+  gb: {
+    code: "gb",
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
 
-  const decodedSearchTerm = decodeURIComponent(searchTerm || "");
-  const parts = decodedSearchTerm.split(/[-+\s]+/).filter(Boolean);
+  br: {
+    code: "br",
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
 
-  const translatedParts = parts.map((p) =>
-    t(p.toLowerCase(), { ns: ["keywords", "translation"], defaultValue: p })
+const cleanSearchValue = (value) => {
+  return String(value || "")
+    .replace(/[-+]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}) {
+  const {
+    country,
+    searchTerm,
+  } = await params;
+
+  const query = await searchParams;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    return {};
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
   );
 
-  const translatedSearch = translatedParts.join(" ");
+  /*
+    searchTerm = canonical English lookup term
+    q          = localized customer-facing term
+  */
 
-  const url = `https://www.malidag.com/itemPage/${encodeURIComponent(searchTerm)}`;
-  const ogImage = "https://www.malidag.com/images/malidag.png";
+  const canonicalSearchTerm =
+    cleanSearchValue(
+      decodeURIComponent(
+        searchTerm || ""
+      )
+    );
+
+  const localizedQuery =
+    cleanSearchValue(
+      query?.q
+        ? decodeURIComponent(query.q)
+        : ""
+    );
+
+  /*
+    Prefer q for what the customer searched.
+
+    Fall back to translating the canonical
+    English term when q isn't present.
+  */
+  const displaySearch =
+    localizedQuery ||
+    i18n.t(
+      canonicalSearchTerm
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_"),
+      {
+        defaultValue:
+          canonicalSearchTerm,
+      }
+    );
+
+  const title = i18n.t(
+    "search_results_seo_title",
+    {
+      term: displaySearch,
+    }
+  );
+
+  const description = i18n.t(
+    "search_results_seo_description",
+    {
+      term: displaySearch,
+    }
+  );
+
+  /*
+    Deliberately exclude ?q= from canonical.
+
+    q is presentation/search context.
+    searchTerm identifies the result set.
+  */
+  const url =
+    `${BASE_URL}/${countryCode}/itemPage/${encodeURIComponent(
+      searchTerm
+    )}`;
 
   return {
-    title: `${t("malidag", { ns: "translation" })} - ${t("search_results_for", { ns: "translation" })} "${translatedSearch}"`,
-    description: `${t("browse_crypto_results_for", { ns: "translation" })} "${translatedSearch}" ${t("find_top_rated_with_reviews", { ns: "translation" })}`,
-    keywords: [
-      ...translatedParts,
-      "crypto shopping",
-      "USD shopping",
-      t("online_marketplace", { ns: "translation" }),
-      t("reviews", { ns: "translation" }),
-      "Malidag",
-    ],
-    alternates: { canonical: url },
+    title,
+    description,
+
+    alternates: {
+      canonical: url,
+    },
+
+    robots: {
+      index: false,
+      follow: true,
+    },
+
     openGraph: {
-      title: `${t("search", { ns: "translation" })} "${translatedSearch}" ${t("on_malidag", { ns: "translation" })}`,
-      description: `${t("find_crypto_results_for", { ns: "translation" })} "${translatedSearch}" ${t("with_real_time_pricing", { ns: "translation" })}`,
+      title,
+      description,
       url,
       siteName: "Malidag",
-      locale: lang,
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: `${t("search_result_page_for", { ns: "translation" })} ${translatedSearch}`,
-        },
-      ],
+      locale: selectedCountry.locale,
       type: "website",
     },
+
     twitter: {
-      card: "summary_large_image",
-      title: `${t("malidag", { ns: "translation" })} - "${translatedSearch}"`,
-      description: `${t("explore_best_items_for", { ns: "translation" })} "${translatedSearch}" ${t("with_ratings_and_deals", { ns: "translation" })}`,
-      images: [ogImage],
-    },
-    robots: {
-      index: true,
-      follow: true,
-      "max-snippet": -1,
-      "max-image-preview": "large",
-      "max-video-preview": -1,
+      card: "summary",
+      title,
+      description,
     },
   };
 }
 
-export default async function Page({ params }) {
-  const { searchTerm } = await params;
-  return <ItemPage searchTerm={searchTerm} />;
+export default async function Page({
+  params,
+  searchParams,
+}) {
+  const {
+    country,
+    searchTerm,
+  } = await params;
+
+  const query = await searchParams;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  if (!SUPPORTED_COUNTRIES[countryCode]) {
+    return null;
+  }
+
+  const localizedQuery =
+    query?.q
+      ? decodeURIComponent(query.q)
+      : "";
+
+  return (
+    <ItemPage
+      searchTerm={searchTerm}
+      q={localizedQuery}
+    />
+  );
 }

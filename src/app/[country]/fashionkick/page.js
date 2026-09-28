@@ -1,111 +1,226 @@
 import FashionKick from "@/components/fashionkick";
 import initI18n from "@/components/i18nServer";
-import { headers } from "next/headers";
 
-const BASE_URLs = "https://api.malidag.com";
-const BASE_URL = "https://api.malidag.com";
+const API_URL = "https://api.malidag.com";
+const BASE_URL = "https://web.malidag.com";
 
-export async function generateMetadata({ params }) {
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    code: "fr",
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
+
+  gb: {
+    code: "gb",
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
+
+  br: {
+    code: "br",
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
+
+export async function generateMetadata({
+  params,
+}) {
   const { country } = await params;
-  const countryCode = country;
 
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+  const countryCode =
+    country?.toLowerCase();
 
-  const i18n = await initI18n(lang);
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
 
-  const title = i18n.t("fashionkick_title") || "Top Fashion Items | Malidag";
+  if (!selectedCountry) {
+    return {};
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
+  const title =
+    i18n.t("fashionkick_title");
+
   const description =
-    i18n.t("fashionkick_description") ||
-    "Explore the best-selling fashion items, sneakers and boots for men and women.";
+    i18n.t("fashionkick_description");
+
+  const keywordsCsv =
+    i18n.t("fashionkick_keywords") || "";
+
+  const keywords = keywordsCsv
+    .split(",")
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+
+  const url =
+    `${BASE_URL}/${countryCode}/fashionkick`;
+
+  /*
+    Keep only if this exact image exists
+    on web.malidag.com.
+  */
+  const ogImage =
+    `${BASE_URL}/og/malidag.png`;
 
   return {
     title,
     description,
-    keywords: i18n.t("fashionkick_keywords", {
-      defaultValue: "fashion, sneakers, boots, shoes, buy online",
-    }),
+    keywords,
+
     alternates: {
-      canonical: `https://www.malidag.com/${countryCode}/fashionkick`,
+      canonical: url,
     },
+
+    robots: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+
     openGraph: {
       title,
       description,
-      url: `https://www.malidag.com/${countryCode}/fashionkick`,
+      url,
       siteName: "Malidag",
+      locale: selectedCountry.locale,
+      type: "website",
+
       images: [
         {
-          url: "https://www.malidag.com/og/fashionKick.jpg",
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: title,
         },
       ],
-      locale: lang,
-      type: "website",
     },
+
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: ["https://www.malidag.com/og/fashionKick.jpg"],
+      images: [ogImage],
     },
   };
 }
 
-export default async function Page({ params }) {
-  const { country } = await params;
-  const countryCode = country;
-
-  let mtypes = [];
-
+async function safeJson(response) {
   try {
-    const categoriesRes = await fetch(`${BASE_URLs}/categories/FashionKick`, {
-      cache: "no-store",
-    });
-
-    if (categoriesRes.ok) {
-      mtypes = await categoriesRes.json();
-    }
-  } catch (err) {
-    console.error("FashionKick categories error:", err);
+    return await response.json();
+  } catch {
+    return null;
   }
+}
 
-  let types = {};
+async function getData(countryCode) {
+  const [
+    categoriesRes,
+    itemsRes,
+  ] = await Promise.allSettled([
+    fetch(
+      `${API_URL}/categories/FashionKick`,
+      {
+        cache: "no-store",
+      }
+    ),
 
-  try {
-    const itemsRes = await fetch(
-      `${BASE_URL}/items?country=${encodeURIComponent(countryCode)}`,
-      { cache: "no-store" }
-    );
+    fetch(
+      `${API_URL}/items?country=${encodeURIComponent(
+        countryCode
+      )}`,
+      {
+        cache: "no-store",
+      }
+    ),
+  ]);
 
-    if (itemsRes.ok) {
-      const data = await itemsRes.json();
+  const categoriesOk =
+    categoriesRes.status === "fulfilled" &&
+    categoriesRes.value.ok;
 
-      const items = Array.isArray(data?.items)
-        ? data.items
-        : Array.isArray(data)
-        ? data
+  const itemsOk =
+    itemsRes.status === "fulfilled" &&
+    itemsRes.value.ok;
+
+  const categoriesData =
+    categoriesOk
+      ? await safeJson(categoriesRes.value)
+      : [];
+
+  const itemsData =
+    itemsOk
+      ? await safeJson(itemsRes.value)
+      : [];
+
+  const mtypes =
+    Array.isArray(categoriesData)
+      ? categoriesData
+      : [];
+
+  const items =
+    Array.isArray(itemsData?.items)
+      ? itemsData.items
+      : Array.isArray(itemsData)
+        ? itemsData
         : [];
 
-      const filteredData = items.filter((item) => {
-        const category = (item?.category || "").toLowerCase();
-        const sold = Number(item?.item?.sold || 0);
+  /*
+    FashionKick currently means:
+    - shoes
+    - 100+ sold
+  */
+  const filteredData =
+    items.filter((item) => {
+      const category = String(
+        item?.category || ""
+      )
+        .toLowerCase()
+        .trim();
 
-        return category === "shoes" && sold >= 100;
-      });
+      const sold =
+        Number(
+          item?.item?.sold || 0
+        );
 
-      types = filteredData.reduce((acc, item) => {
-        const type = item?.item?.type || "Other";
-        const genre = item?.item?.genre || "General";
+      return (
+        category === "shoes" &&
+        sold >= 100
+      );
+    });
 
-        if (!acc[type]) acc[type] = {};
-        if (!acc[type][genre]) {
-          acc[type][genre] = { genre, items: [] };
+  const types =
+    filteredData.reduce(
+      (acc, item) => {
+        const type =
+          item?.item?.type ||
+          "Other";
+
+        const genre =
+          item?.item?.genre ||
+          "General";
+
+        if (!acc[type]) {
+          acc[type] = {};
         }
 
-        if (acc[type][genre].items.length < 10) {
+        if (!acc[type][genre]) {
+          acc[type][genre] = {
+            genre,
+            items: [],
+          };
+        }
+
+        if (
+          acc[type][genre].items.length <
+          10
+        ) {
           acc[type][genre].items.push({
             id: item.id,
             itemId: item.itemId,
@@ -114,11 +229,37 @@ export default async function Page({ params }) {
         }
 
         return acc;
-      }, {});
-    }
-  } catch (err) {
-    console.error("FashionKick items error:", err);
+      },
+      {}
+    );
+
+  return {
+    mtypes,
+    types,
+  };
+}
+
+export default async function Page({
+  params,
+}) {
+  const { country } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  if (!SUPPORTED_COUNTRIES[countryCode]) {
+    return null;
   }
 
-  return <FashionKick initialMTypes={mtypes} initialTypes={types} />;
+  const {
+    mtypes,
+    types,
+  } = await getData(countryCode);
+
+  return (
+    <FashionKick
+      initialMTypes={mtypes}
+      initialTypes={types}
+    />
+  );
 }

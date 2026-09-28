@@ -1,52 +1,93 @@
-// app/brand/[themeRoute]/[brandName]/page.js
 import initI18n from "@/components/i18nServer";
-import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+
 import Theme1 from "@/components/Brands/Theme1/Theme1";
 import Theme2 from "@/components/Brands/theme2/theme2";
 import Theme3 from "@/components/Brands/theme3/theme3";
 
+const BASE_URL = "https://web.malidag.com";
+
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
+  gb: {
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
+  br: {
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
+
+const THEMES = {
+  theme1: Theme1,
+  theme2: Theme2,
+  theme3: Theme3,
+};
+
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const { themeRoute = "theme1", brandName = "unknown" } = await params;
+  const { country, themeRoute, brandName } =
+    await params;
 
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+  const countryCode = country?.toLowerCase();
 
-  const i18n = await initI18n(lang);
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (
+    !selectedCountry ||
+    !THEMES[themeRoute] ||
+    !brandName?.trim()
+  ) {
+    notFound();
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
   const t = i18n.t.bind(i18n);
 
-  const url = `https://web.malidag.com/brand/${encodeURIComponent(themeRoute)}/${encodeURIComponent(brandName)}`;
-  const ogImage = "https://web.malidag.com/og/brand-default.jpg";
+  const url =
+    `${BASE_URL}/${countryCode}/brand/` +
+    `${encodeURIComponent(themeRoute)}/` +
+    `${encodeURIComponent(brandName)}`;
+
+  const title = t("brand_meta_title", {
+    brand: brandName,
+  });
+
+  const description = t("brand_meta_description", {
+    brand: brandName,
+  });
+
+  const ogTitle = t("brand_og_title", {
+    brand: brandName,
+  });
+
+  const ogDescription = t("brand_og_description", {
+    brand: brandName,
+  });
 
   return {
-    title: t("brand_meta_title", { brand: brandName }),
-    description: t("brand_meta_description", { brand: brandName }),
-    keywords: [brandName, "brand", "shopping", "reviews", "Malidag"],
-    alternates: { canonical: url },
-    openGraph: {
-      title: t("brand_og_title", { brand: brandName }),
-      description: t("brand_og_description", { brand: brandName }),
-      url,
-      siteName: "Malidag",
-      locale: lang,
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: t("brand_og_alt", { brand: brandName }),
-        },
-      ],
-      type: "website",
+    title,
+    description,
+
+    keywords: [
+      brandName,
+      `${brandName} products`,
+      "Malidag",
+    ],
+
+    alternates: {
+      canonical: url,
     },
-    twitter: {
-      card: "summary_large_image",
-      title: t("brand_twitter_title", { brand: brandName }),
-      description: t("brand_twitter_description", { brand: brandName }),
-      images: [ogImage],
-    },
+
     robots: {
       index: true,
       follow: true,
@@ -54,23 +95,47 @@ export async function generateMetadata({ params }) {
       "max-image-preview": "large",
       "max-video-preview": -1,
     },
+
+    openGraph: {
+      title: ogTitle,
+      description: ogDescription,
+      url,
+      siteName: "Malidag",
+      locale: selectedCountry.locale,
+      type: "website",
+    },
+
+    twitter: {
+      card: "summary",
+      title: t("brand_twitter_title", {
+        brand: brandName,
+      }),
+      description: t("brand_twitter_description", {
+        brand: brandName,
+      }),
+    },
   };
 }
 
 export default async function Page({ params }) {
-  const { themeRoute = "theme1", brandName = "unknown" } = await params;
+  const { country, themeRoute, brandName } =
+    await params;
 
-  switch (themeRoute) {
-    case "theme1":
-      return <Theme1 brandName={brandName} />;
+  const countryCode = country?.toLowerCase();
 
-    case "theme2":
-      return <Theme2 brandName={brandName} />;
-
-      case "theme3":
-    return <Theme3 brandName={brandName} />;
-
-    default:
-      return <p className="p-6 text-red-600">Unknown theme: {themeRoute}</p>;
+  if (
+    !SUPPORTED_COUNTRIES[countryCode] ||
+    !THEMES[themeRoute] ||
+    !brandName?.trim()
+  ) {
+    notFound();
   }
+
+  const BrandTheme = THEMES[themeRoute];
+
+  return (
+    <BrandTheme
+      brandName={brandName}
+    />
+  );
 }

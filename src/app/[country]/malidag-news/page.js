@@ -1,125 +1,158 @@
-// app/the-crypto-shop/page.js
-import { headers } from "next/headers";
+// app/[country]/malidag-news/page.js
+
 import initI18n from "@/components/i18nServer";
 import MalidagNews from "@/components/malidagNews";
 
-export const dynamic = "force-dynamic";
+const BASE_URL = "https://web.malidag.com";
 
-// 🔎 Fetch live prices from your API
-async function fetchPrices() {
-  try {
-    const res = await fetch("https://api.malidag.com/crypto-prices", {
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return {};
-    return await res.json();
-  } catch {
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    code: "fr",
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
+
+  gb: {
+    code: "gb",
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
+
+  br: {
+    code: "br",
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
+
+export async function generateMetadata({
+  params,
+}) {
+  const { country } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
     return {};
   }
-}
 
-// 🔎 SEO Metadata
-export async function generateMetadata() {
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
 
-  const i18n = await initI18n(lang);
-  const t = i18n.t.bind(i18n);
+  const title =
+    i18n.t("malidag_news_seo_title");
 
-  const prices = await fetchPrices();
-
-  const priceText = [
-    prices.bnb ? `BNB: $${prices.bnb}` : null,
-    prices.eth ? `ETH: $${prices.eth}` : null,
-    prices.usdt ? `USDT: $${prices.usdt}` : null,
-    prices.sol ? `SOL: $${prices.sol}` : null,
-    prices.usdc ? `USDC: $${prices.usdc}` : null,
-  ]
-    .filter(Boolean)
-    .join(" • ");
-
-  const title = `The Crypto Shop | Malidag`;
   const description =
-    priceText.length > 0
-      ? `Live crypto prices today — ${priceText}. Explore and buy verified tokens directly on Malidag.`
-      : `Explore and buy verified crypto assets directly from Malidag. Integrated with Binege — your trusted token directory.`;
+    i18n.t("malidag_news_seo_description");
+
+  const keywordsCsv =
+    i18n.t("malidag_news_seo_keywords") || "";
+
+  const keywords = keywordsCsv
+    .split(",")
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+
+  const url =
+    `${BASE_URL}/${countryCode}/malidag-news`;
 
   return {
     title,
     description,
-    keywords: [
-      "crypto shop",
-      "Malidag crypto",
-      "buy tokens",
-      "Binege",
-      "BNB price",
-      "ETH price",
-      "USDT price",
-      "SOL price",
-      "USDC price",
-      "crypto ecommerce",
-      "web3 shopping",
-    ],
+    keywords,
+
+    alternates: {
+      canonical: url,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+
     openGraph: {
       title,
       description,
-      url: "https://www.malidag.com/the-crypto-shop",
+      url,
       siteName: "Malidag",
-      images: [
-        {
-          url: "https://www.malidag.com/og/crypto-shop.png",
-          width: 1200,
-          height: 630,
-          alt: "The Crypto Shop by Malidag",
-        },
-      ],
+      locale: selectedCountry.locale,
       type: "website",
     },
+
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title,
       description,
-      images: ["https://www.malidag.com/og/crypto-shop.png"],
     },
   };
 }
 
-// 🔎 Page Component with JSON-LD schema
-export default async function Page() {
-  const prices = await fetchPrices();
-  const baseUrl = "https://www.malidag.com";
+export default async function Page({
+  params,
+}) {
+  const { country } = await params;
 
-  const today = new Date();
-  const nextMonth = new Date();
-  nextMonth.setMonth(today.getMonth() + 1);
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    return null;
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
+  const title =
+    i18n.t("malidag_news_seo_title");
+
+  const description =
+    i18n.t("malidag_news_seo_description");
+
+  const url =
+    `${BASE_URL}/${countryCode}/malidag-news`;
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@graph": Object.entries(prices).map(([symbol, price]) => ({
-      "@type": "Product",
-      name: `${symbol.toUpperCase()} Price on Malidag`,
-      description: `Live price of ${symbol.toUpperCase()} on Malidag.`,
-      image: `${baseUrl}/og/crypto-shop.png`,
-      brand: { "@type": "Brand", name: "Malidag" },
-      offers: {
-        "@type": "Offer",
-        url: `${baseUrl}/the-crypto-shop`,
-        price: price,
-        priceCurrency: "USD",
-        availability: "https://schema.org/InStock",
-        itemCondition: "https://schema.org/NewCondition",
-        priceValidUntil: nextMonth.toISOString().split("T")[0],
-      },
-    })),
+
+    "@type": "WebPage",
+
+    name: title,
+    description,
+    url,
+
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Malidag",
+      url: BASE_URL,
+    },
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            jsonLd
+          ).replace(
+            /</g,
+            "\\u003c"
+          ),
+        }}
       />
+
       <MalidagNews />
     </>
   );

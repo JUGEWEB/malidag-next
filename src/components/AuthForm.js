@@ -14,6 +14,9 @@ import {
   reload,
 } from "firebase/auth";
 
+import { auth } from "@/components/firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+
 import { message } from "antd";
 
 import {
@@ -25,7 +28,7 @@ import {
 import { useTranslation } from "react-i18next";
 import "./AuthForm.css";
 
-const AuthForm = ({ auth, user }) => {
+const AuthForm = () => {
   const { t } = useTranslation();
 
   const router = useRouter();
@@ -79,6 +82,20 @@ const AuthForm = ({ auth, user }) => {
     isTablet,
     isVerySmall,
   } = useScreenSize();
+
+   const [user, setUser] = useState(null);
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(
+    auth,
+    (firebaseUser) => {
+      setUser(firebaseUser);
+    }
+  );
+
+  return () => unsubscribe();
+}, []);
+  
 
   const countryCode = String(
     params?.country || ""

@@ -1,3 +1,5 @@
+/*
+
 // app/itemHome/page.js
 import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
@@ -97,3 +99,4 @@ export default async function Page() {
     </>
   );
 }
+  */

@@ -1,3 +1,5 @@
+/*
+
 // app/itemOfKids/[gender]/[type]/page.js
 import ItemOfKids from "@/components/itemOfKids";
 import initI18n from "@/components/i18nServer";
@@ -72,3 +74,5 @@ export default function Page({ params }) {
   const { gender = "kids", type = "clothing" } = params;
   return <ItemOfKids gender={gender} type={type} />;
 }
+
+*/

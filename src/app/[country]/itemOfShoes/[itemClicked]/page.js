@@ -1,64 +1,141 @@
-// app/itemOfShoes/[itemClicked]/page.js
+// app/[country]/itemOfShoes/[itemClicked]/page.js
+
 import ItemOfShoes from "@/components/itemsOfShoes";
 import initI18n from "@/components/i18nServer";
-import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }) {
-  const h = await headers();
-  const acceptLanguage = h.get("accept-language") || "en";
-  const lang = acceptLanguage.split(",")[0].split("-")[0] || "en";
+const BASE_URL = "https://web.malidag.com";
 
-  const { country, itemClicked } = await params;
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    code: "fr",
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
 
-   const countryCode = country;
+  gb: {
+    code: "gb",
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
 
-  const i18n = await initI18n(lang);
+  br: {
+    code: "br",
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
+
+const getReadableValue = (value) => {
+  return String(value || "")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase()
+    );
+};
+
+const getTaxonomyKey = (value) => {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+};
+
+const translateTaxonomy = (value, t) => {
+  const readableValue =
+    getReadableValue(value);
+
+  const key =
+    getTaxonomyKey(value);
+
+  return t(key, {
+    defaultValue: readableValue,
+  });
+};
+
+export async function generateMetadata({
+  params,
+}) {
+  const {
+    country,
+    itemClicked,
+  } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    return {};
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
   const t = i18n.t.bind(i18n);
 
-  const translatedItem = t(itemClicked, { defaultValue: itemClicked });
+  /*
+    itemClicked remains the canonical
+    English taxonomy value in the URL.
 
- const url = `https://www.malidag.com/${countryCode}/itemOfShoes/${encodeURIComponent(itemClicked)}`;
-  const ogImage = `https://www.malidag.com/${countryCode}/images/og/shoes-default.jpg`;
+    Only the SEO presentation is translated.
+  */
+  const translatedItem =
+    translateTaxonomy(
+      itemClicked,
+      t
+    );
+
+  const title = t(
+    "shoes_category_seo_title",
+    {
+      type: translatedItem,
+    }
+  );
+
+  const description = t(
+    "shoes_category_seo_description",
+    {
+      type: translatedItem,
+    }
+  );
+
+  const keywordsCsv = t(
+    "shoes_category_seo_keywords",
+    {
+      type: translatedItem,
+    }
+  );
+
+  const keywords = String(
+    keywordsCsv || ""
+  )
+    .split(",")
+    .map((keyword) =>
+      keyword.trim()
+    )
+    .filter(Boolean);
+
+  const url =
+    `${BASE_URL}/${countryCode}/itemOfShoes/${encodeURIComponent(
+      itemClicked
+    )}`;
 
   return {
-    title: `${t("malidag")} ${translatedItem} - ${t("explore_trendy_shoes")}`,
-    description: `${t("browse_latest")} ${translatedItem} ${t("crypto_shoes_description")}`,
-    keywords: [
-      translatedItem,
-      "shoes",
-      "sneakers",
-      "boots",
-      "sandals",
-      "crypto shopping",
-      "USD shopping",
-      t("footwear"),
-      "Malidag",
-    ],
-    alternates: { canonical: url },
-    openGraph: {
-      title: `${t("malidag")} ${translatedItem}`,
-      description: `${t("discover_shoes")} ${translatedItem} ${t("shoes_crypto_discover")}`,
-      url,
-      siteName: "Malidag",
-      locale: lang,
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: `${t("malidag")} ${t("shoes_collection")}`,
-        },
-      ],
-      type: "website",
+    title,
+    description,
+    keywords,
+
+    alternates: {
+      canonical: url,
     },
-    twitter: {
-      card: "summary_large_image",
-      title: `${t("malidag")} ${translatedItem}`,
-      description: `${t("find_top_rated")} ${translatedItem} ${t("shoes_items")}`,
-      images: [ogImage],
-    },
+
     robots: {
       index: true,
       follow: true,
@@ -66,10 +143,43 @@ export async function generateMetadata({ params }) {
       "max-image-preview": "large",
       "max-video-preview": -1,
     },
+
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Malidag",
+      locale: selectedCountry.locale,
+      type: "website",
+    },
+
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 
-export default async function Page({ params }) {
- const { country, itemClicked } = await params;
-  return <ItemOfShoes countryCode={country} itemClicked={itemClicked} />;
+export default async function Page({
+  params,
+}) {
+  const {
+    country,
+    itemClicked,
+  } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  if (!SUPPORTED_COUNTRIES[countryCode]) {
+    return null;
+  }
+
+  return (
+    <ItemOfShoes
+      countryCode={countryCode}
+      itemClicked={itemClicked}
+    />
+  );
 }

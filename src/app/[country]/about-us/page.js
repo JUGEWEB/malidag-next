@@ -1,106 +1,162 @@
-"use client";
+import About from "@/components/About";
+import initI18n from "@/components/i18nServer";
+import { notFound } from "next/navigation";
 
-import React from "react";
-import { useTranslation } from "react-i18next";
+const BASE_URL = "https://web.malidag.com";
 
-export default function About() {
-  const { t } = useTranslation();
+const SUPPORTED_COUNTRIES = {
+  fr: {
+    seoLanguage: "fr",
+    locale: "fr_FR",
+  },
+
+  gb: {
+    seoLanguage: "en",
+    locale: "en_GB",
+  },
+
+  br: {
+    seoLanguage: "br",
+    locale: "pt_BR",
+  },
+};
+
+export async function generateMetadata({
+  params,
+}) {
+  const { country } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    return {};
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
+  const title =
+    i18n.t("about_seo_title");
+
+  const description =
+    i18n.t("about_seo_description");
+
+  const url =
+    `${BASE_URL}/${countryCode}/about-us`;
+
+  return {
+    title,
+    description,
+
+    alternates: {
+      canonical: url,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Malidag",
+      locale: selectedCountry.locale,
+      type: "website",
+    },
+
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  };
+}
+
+export default async function Page({
+  params,
+}) {
+  const { country } = await params;
+
+  const countryCode =
+    country?.toLowerCase();
+
+  const selectedCountry =
+    SUPPORTED_COUNTRIES[countryCode];
+
+  if (!selectedCountry) {
+    notFound();
+  }
+
+  const i18n = await initI18n(
+    selectedCountry.seoLanguage
+  );
+
+  const t = i18n.t.bind(i18n);
+
+  const url =
+    `${BASE_URL}/${countryCode}/about`;
+
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      name: t("about_title"),
+      description: t(
+        "about_seo_description"
+      ),
+      url,
+      isPartOf: {
+        "@type": "WebSite",
+        name: "Malidag",
+        url: BASE_URL,
+      },
+    },
+
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: t("home"),
+          item:
+            `${BASE_URL}/${countryCode}`,
+        },
+
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: t("about_title"),
+          item: url,
+        },
+      ],
+    },
+  ];
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">
-        {t("about_title")}
-      </h1>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            jsonLd
+          ).replace(/</g, "\\u003c"),
+        }}
+      />
 
-      <p className="mb-4">
-        {t("about_intro")}
-      </p>
-
-      <h2 className="text-xl font-semibold mt-6 mb-2">
-        {t("about_what_we_do_title")}
-      </h2>
-
-      <p className="mb-4">
-        {t("about_what_we_do_1")}
-      </p>
-
-      <p className="mb-4">
-        {t("about_what_we_do_2")}
-      </p>
-
-      <h2 className="text-xl font-semibold mt-6 mb-2">
-        {t("about_mission_title")}
-      </h2>
-
-      <p className="mb-4">
-        {t("about_mission_1")}
-      </p>
-
-      <p className="mb-4">
-        {t("about_mission_2")}
-      </p>
-
-      <h2 className="text-xl font-semibold mt-6 mb-2">
-        {t("about_payments_title")}
-      </h2>
-
-      <p className="mb-4">
-        {t("about_payments_1")}
-      </p>
-
-      <p className="mb-4">
-        {t("about_payments_2")}
-      </p>
-
-      <h2 className="text-xl font-semibold mt-6 mb-2">
-        {t("about_delivery_title")}
-      </h2>
-
-      <p className="mb-4">
-        {t("about_delivery_1")}
-      </p>
-
-      <p className="mb-4">
-        {t("about_delivery_2")}
-      </p>
-
-      <h2 className="text-xl font-semibold mt-6 mb-2">
-        {t("about_returns_title")}
-      </h2>
-
-      <p className="mb-4">
-        {t("about_returns_1")}
-      </p>
-
-      <h2 className="text-xl font-semibold mt-6 mb-2">
-        {t("about_support_title")}
-      </h2>
-
-      <p className="mb-4">
-        {t("about_support_1")}
-      </p>
-
-      <p className="mb-4">
-        <strong>{t("email")}:</strong>{" "}
-        <a
-          href="mailto:support@malidag.com"
-          className="underline"
-        >
-          support@malidag.com
-        </a>
-      </p>
-
-      <h2 className="text-xl font-semibold mt-6 mb-2">
-        {t("about_business_title")}
-      </h2>
-
-      <p className="mb-4">
-        {t("about_business_1")}
-      </p>
-
-      <p className="mb-4">
-        {t("about_business_2")}
-      </p>
-    </div>
+      <About />
+    </>
   );
 }

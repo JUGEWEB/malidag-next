@@ -1,3 +1,5 @@
+/*
+
 import ElectronicPage from "@/components/electronicPage";
 import initI18n from "@/components/i18nServer"; // assuming you already have this
 
@@ -44,3 +46,4 @@ export async function generateMetadata({ params, locale = "en" }) {
 export default function Page() {
   return <ElectronicPage />;
 }
+  */

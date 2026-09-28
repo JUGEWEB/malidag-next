@@ -1,3 +1,5 @@
+/*
+
 import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import PersonalCare from "@/components/persCareFY";
@@ -94,3 +96,4 @@ export default async function BeautyPage() {
     </>
   );
 }
+  */

@@ -1,3 +1,5 @@
+/*
+
 import JewelryPage from "@/components/jewelryPage.js";
 import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
@@ -69,3 +71,5 @@ export async function generateMetadata({ params }) {
 export default function Page() {
   return <JewelryPage />;
 }
+
+*/

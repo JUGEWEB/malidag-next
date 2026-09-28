@@ -1,3 +1,5 @@
+/*
+
 import { headers } from "next/headers";
 import initI18n from "@/components/i18nServer";
 import KidFashion from "@/components/kidFashion";
@@ -252,3 +254,4 @@ export default async function KidFashionPage() {
     </>
   );
 }
+*/

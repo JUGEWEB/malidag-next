@@ -90,9 +90,16 @@ export async function generateMetadata({ params }) {
     description,
     keywords,
 
-    alternates: {
-      canonical: countryUrl,
-    },
+   alternates: {
+  canonical: countryUrl,
+
+  languages: {
+    "fr-FR": `${BASE_URL}/fr`,
+    "en-GB": `${BASE_URL}/gb`,
+    "pt-BR": `${BASE_URL}/br`,
+    "x-default": BASE_URL,
+  },
+},
 
     openGraph: {
       title,

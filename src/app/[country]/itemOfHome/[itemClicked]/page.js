@@ -1,3 +1,5 @@
+/*
+
 // app/itemOfHome/page.js
 import ItemOfHome from "@/components/itemOfHome";
 import initI18n from "@/components/i18nServer";
@@ -72,3 +74,4 @@ export default function Page({ params }) {
   const { itemClicked } = params;
   return <ItemOfHome itemClicked={itemClicked} />;
 }
+  */

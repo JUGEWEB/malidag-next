@@ -1,3 +1,5 @@
+/*
+
 // app/itemOfElectronic/page.js
 import React from "react";
 import ItemOfElectronic from "@/components/itemOfElectronic";
@@ -90,3 +92,4 @@ export default function Page({ params }) {
     </>
   );
 }
+ */

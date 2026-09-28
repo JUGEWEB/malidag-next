@@ -1,3 +1,5 @@
+/*
+
 import BeautyTopTopic from "@/components/beautyTopTopic";
 import initI18n from "@/components/i18nServer";
 import { headers } from "next/headers";
@@ -105,3 +107,4 @@ export default async function Page({ params }) {
     </>
   );
 }
+  */

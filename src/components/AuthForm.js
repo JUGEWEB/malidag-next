@@ -29,7 +29,7 @@ import { useTranslation } from "react-i18next";
 import "./AuthForm.css";
 
 const AuthForm = () => {
-  const { t } = useTranslation();
+ const { t, i18n } = useTranslation();
 
   const router = useRouter();
   const params = useParams();
@@ -84,6 +84,27 @@ const AuthForm = () => {
   } = useScreenSize();
 
    const [user, setUser] = useState(null);
+
+   const setFirebaseEmailLanguage = () => {
+  const currentLanguage =
+    String(i18n.resolvedLanguage || i18n.language || "en")
+      .toLowerCase();
+
+  if (
+    currentLanguage === "br" ||
+    currentLanguage.startsWith("pt")
+  ) {
+    auth.languageCode = "pt-BR";
+    return;
+  }
+
+  if (currentLanguage.startsWith("fr")) {
+    auth.languageCode = "fr";
+    return;
+  }
+
+  auth.languageCode = "en";
+};
 
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(
@@ -255,6 +276,10 @@ useEffect(() => {
         });
 
         /* Send verification email */
+
+       /* Send verification email in the current Malidag language */
+
+        setFirebaseEmailLanguage();
 
         await sendEmailVerification(
           newUser
@@ -463,7 +488,9 @@ useEffect(() => {
         return;
       }
 
-      try {
+          try {
+        setFirebaseEmailLanguage();
+
         await sendPasswordResetEmail(
           auth,
           email.trim()

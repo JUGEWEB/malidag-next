@@ -19,6 +19,7 @@ import {
   useTranslation
 } from "react-i18next";
 import './reviewPage.css'
+import { ProductOutlined } from "@ant-design/icons";
 
 const BASE_URL =
   "https://api.malidag.com";
@@ -512,7 +513,7 @@ const currentProductName =
 
             {(!(isDesktop || isTablet)) && (
                
-            <div className="productIDSmall" onClick={() => goToProduct(productId)} style={{border: "2px solid #222", borderRadius: "5px", marginTop: "20px", alignItems: "center", display: "flex", justifyContent: "center", maxWidth: "100%", marginRight: "20px", cursor: "pointer"}}>
+            <div className="productIDSmall" onClick={() => goToProduct(product?.id)} style={{border: "2px solid #222", borderRadius: "5px", marginTop: "20px", alignItems: "center", display: "flex", justifyContent: "center", maxWidth: "100%", marginRight: "20px", cursor: "pointer"}}>
                 <img style={{maxWidth: "100px"}} src={product?.images[0]} alt={currentProductName}/>
                 <div style={{color: "#222",  textOverflow: "ellipsis" , maxWidth: "100%"}}>{currentProductName}</div>
             </div>

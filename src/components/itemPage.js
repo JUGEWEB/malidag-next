@@ -561,6 +561,20 @@ useEffect(() => {
 
   const isSmallScreen = isMobile || isTablet || isVerySmall || isSmallMobile;
 
+  useEffect(() => {
+  if (!menuOpen) return;
+
+  const previousOverflow =
+    document.body.style.overflow;
+
+  document.body.style.overflow = "hidden";
+
+  return () => {
+    document.body.style.overflow =
+      previousOverflow;
+  };
+}, [menuOpen]);
+
   if (loading) return <div className="loading-message">{t("loading")}</div>;
 
   if (!items || items.length === 0) {
@@ -675,6 +689,14 @@ const colorFilterOptions = Array.from(
   )
 );
 
+const openMobileFilters = () => {
+  setMenuOpen(true);
+};
+
+const closeMobileFilters = () => {
+  setMenuOpen(false);
+};
+
 const convertedPrices = items
   .map((x) => convertUsd(x?.item?.usdPrice))
   .filter((price) => price !== null);
@@ -739,57 +761,111 @@ const filteredItems = items.filter((itemData) => {
             {t("search_results")}
           </div>
 
-          <button
-            className="mobile-menu-icon-button-cc"
-            onClick={() => setMenuOpen((prev) => !prev)}
-            aria-label={t("filters")}
-          >
-            {t("filters")}
-          </button>
+         <button
+        type="button"
+        className="mobile-menu-icon-button-cc"
+        onClick={openMobileFilters}
+        aria-label={t("filters")}
+        aria-expanded={menuOpen}
+      >
+        {t("filters")}
+      </button>
         </div>
       )}
 
-      <aside
-        className={`sidebar-filters-cc ${isSmallScreen ? "mobile-sidebar-cc" : ""} ${
-          menuOpen ? "open" : ""
-        }`}
-      >
+     {/* MOBILE FILTER DRAWER */}
+{isSmallScreen ? (
+  <div
+    className={`item-filter-drawer-wrap-cc ${
+      menuOpen ? "open" : ""
+    }`}
+  >
+    {/* Backdrop */}
+    <div
+      className="item-filter-backdrop-cc"
+      onClick={closeMobileFilters}
+    />
+
+    {/* Drawer */}
+    <aside
+      className="item-filter-drawer-cc"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("filters")}
+    >
+      {/* Drawer header */}
+      <div className="item-filter-head-cc">
+        <h3>{t("filters")}</h3>
+
+        <button
+          type="button"
+          className="item-filter-close-cc"
+          onClick={closeMobileFilters}
+          aria-label={t("close")}
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Scrollable drawer content */}
+      <div className="item-filter-content-cc">
+        {/* RELATED TYPES */}
         <div className="sidebar-block-cc">
-          <div className="sidebar-title-cc">{t("related_types")}</div>
+          <div className="sidebar-title-cc">
+            {t("related_types")}
+          </div>
+
           <div className="sidebar-links-cc">
-          {categoryTypes.map((firstItem, index) => {
-            const gender = firstItem?.item?.genre || "";
-            const type = firstItem?.item?.type || "";
+            {categoryTypes.map((firstItem, index) => {
+              const gender =
+                firstItem?.item?.genre || "";
 
-           const translatedLabel = translateTaxonomyPhrase(
-              gender,
-              type
-            );
+              const type =
+                firstItem?.item?.type || "";
 
-            return (
-              <div
-                key={`${gender}-${type}-${index}`}
-                className="sidebar-main-link-cc"
-                onClick={() =>
-                  handleLinkClick("type", type, firstItem)
-                }
-              >
-               {translatedLabel}
-              </div>
-            );
-          })}
+              const translatedLabel =
+                translateTaxonomyPhrase(
+                  gender,
+                  type
+                );
+
+              return (
+                <div
+                  key={`${gender}-${type}-${index}`}
+                  className="sidebar-main-link-cc"
+                  onClick={() =>
+                    handleLinkClick(
+                      "type",
+                      type,
+                      firstItem
+                    )
+                  }
+                >
+                  {translatedLabel}
+                </div>
+              );
+            })}
           </div>
         </div>
 
+        {/* RELATED BRANDS */}
         {brands.length > 0 && (
           <div className="sidebar-block-cc">
-            <div className="sidebar-title-cc"> {t("related_brands")}</div>
+            <div className="sidebar-title-cc">
+              {t("related_brands")}
+            </div>
+
             <div className="sidebar-links-cc">
               {brands.map((brand, index) => (
                 <div
                   key={index}
                   className="sidebar-main-link-cc"
-                  onClick={() => handleLinkClick("brand", brand)}
+                  onClick={() =>
+                    handleLinkClick(
+                      "brand",
+                      brand
+                    )
+                  }
                 >
                   {brand}
                 </div>
@@ -798,110 +874,396 @@ const filteredItems = items.filter((itemData) => {
           </div>
         )}
 
+        {/* BRAND TYPES */}
         {brandTypes.length > 0 && (
           <div className="sidebar-block-cc">
-            <div className="sidebar-title-cc"> {t("brand_types")}</div>
+            <div className="sidebar-title-cc">
+              {t("brand_types")}
+            </div>
+
             <div className="sidebar-links-cc">
-            {brandTypes.map(([label, sourceItem], index) => {
-  const brandType = sourceItem?.item?.brandType || "";
-  const brand = sourceItem?.item?.brand || "";
+              {brandTypes.map(
+                ([label, sourceItem], index) => {
+                  const brandType =
+                    sourceItem?.item?.brandType || "";
 
-  const translatedBrandType = translateTaxonomy(brandType);
+                  const brand =
+                    sourceItem?.item?.brand || "";
 
-  return (
-    <div
-      key={index}
-      className="sidebar-main-link-cc"
-      onClick={() =>
-        handleLinkClick(
-          "brandType",
-          brandType,
-          sourceItem
-        )
-      }
-    >
-      {translatedBrandType} {brand}
-    </div>
-  );
-})}
+                  const translatedBrandType =
+                    translateTaxonomy(brandType);
+
+                  return (
+                    <div
+                      key={index}
+                      className="sidebar-main-link-cc"
+                      onClick={() =>
+                        handleLinkClick(
+                          "brandType",
+                          brandType,
+                          sourceItem
+                        )
+                      }
+                    >
+                      {translatedBrandType}{" "}
+                      {brand}
+                    </div>
+                  );
+                }
+              )}
             </div>
           </div>
         )}
 
+        {/* FILTERS */}
         <div className="sidebar-block-cc filter-section-cc">
-  <div className="sidebar-title-cc">{t("filters")}</div>
+          <div className="sidebar-title-cc">
+            {t("filters")}
+          </div>
 
-  <select value={selectedSize} onChange={(e) => setSelectedSize(e.target.value)}>
-    <option value="all"> {t("all_sizes")}</option>
-    {sizes.map((size) => (
-      <option key={size} value={normalizeText(size)}>
-        {size}
-      </option>
-    ))}
-  </select>
+          {/* SIZE */}
+          <select
+            value={selectedSize}
+            onChange={(e) =>
+              setSelectedSize(e.target.value)
+            }
+          >
+            <option value="all">
+              {t("all_sizes")}
+            </option>
 
- <div className="filter-colors-cc">
-  <button
-    type="button"
-    className={`filter-color-circle-cc ${
-      selectedColor === "all" ? "active" : ""
-    }`}
-    onClick={() => setSelectedColor("all")}
-    title={t("all_colors")}
-  >
-    {t("all")}
-  </button>
+            {sizes.map((size) => (
+              <option
+                key={size}
+                value={normalizeText(size)}
+              >
+                {size}
+              </option>
+            ))}
+          </select>
 
-  {colorFilterOptions.map((color) => {
-    const swatch = getColorSwatch(color);
-
-    return (
-      <button
-        key={color}
-        type="button"
-        className={`filter-color-circle-cc ${
-          selectedColor === color ? "active" : ""
-        }`}
-        onClick={() => setSelectedColor(color)}
-       title={translateColor(color)}
-        style={
-          swatch
-            ? { background: swatch }
-            : {
-                backgroundImage: `url(${getImageUrl(
-                  items.find((x) =>
-                    x?.item?.imagesVariants?.[color]
-                  )?.item?.imagesVariants?.[color]?.[0]
-                )})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+          {/* COLORS */}
+          <div className="filter-colors-cc">
+            <button
+              type="button"
+              className={`filter-color-circle-cc ${
+                selectedColor === "all"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setSelectedColor("all")
               }
+              title={t("all_colors")}
+            >
+              {t("all")}
+            </button>
+
+            {colorFilterOptions.map((color) => {
+              const swatch =
+                getColorSwatch(color);
+
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  className={`filter-color-circle-cc ${
+                    selectedColor === color
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setSelectedColor(color)
+                  }
+                  title={translateColor(color)}
+                  style={
+                    swatch
+                      ? {
+                          background: swatch,
+                        }
+                      : {
+                          backgroundImage: `url(${getImageUrl(
+                            items.find(
+                              (x) =>
+                                x?.item
+                                  ?.imagesVariants?.[
+                                  color
+                                ]
+                            )?.item
+                              ?.imagesVariants?.[
+                              color
+                            ]?.[0]
+                          )})`,
+                          backgroundSize:
+                            "cover",
+                          backgroundPosition:
+                            "center",
+                        }
+                  }
+                />
+              );
+            })}
+          </div>
+
+          {/* PRICE */}
+          <input
+            type="range"
+            min="0"
+            max={maxPrice}
+            value={Math.min(
+              priceRange[1],
+              maxPrice
+            )}
+            onChange={(e) =>
+              setPriceRange([
+                0,
+                Number(e.target.value),
+              ])
+            }
+          />
+
+          <span>
+            {t("up_to_price", {
+              price: `${
+                currencyConfig?.symbol || ""
+              }${Math.min(
+                priceRange[1],
+                maxPrice
+              ).toFixed(2)}`,
+            })}
+          </span>
+        </div>
+      </div>
+    </aside>
+  </div>
+) : (
+  /* DESKTOP SIDEBAR */
+  <aside className="sidebar-filters-cc">
+    {/* RELATED TYPES */}
+    <div className="sidebar-block-cc">
+      <div className="sidebar-title-cc">
+        {t("related_types")}
+      </div>
+
+      <div className="sidebar-links-cc">
+        {categoryTypes.map((firstItem, index) => {
+          const gender =
+            firstItem?.item?.genre || "";
+
+          const type =
+            firstItem?.item?.type || "";
+
+          const translatedLabel =
+            translateTaxonomyPhrase(
+              gender,
+              type
+            );
+
+          return (
+            <div
+              key={`${gender}-${type}-${index}`}
+              className="sidebar-main-link-cc"
+              onClick={() =>
+                handleLinkClick(
+                  "type",
+                  type,
+                  firstItem
+                )
+              }
+            >
+              {translatedLabel}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    {/* RELATED BRANDS */}
+    {brands.length > 0 && (
+      <div className="sidebar-block-cc">
+        <div className="sidebar-title-cc">
+          {t("related_brands")}
+        </div>
+
+        <div className="sidebar-links-cc">
+          {brands.map((brand, index) => (
+            <div
+              key={index}
+              className="sidebar-main-link-cc"
+              onClick={() =>
+                handleLinkClick(
+                  "brand",
+                  brand
+                )
+              }
+            >
+              {brand}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* BRAND TYPES */}
+    {brandTypes.length > 0 && (
+      <div className="sidebar-block-cc">
+        <div className="sidebar-title-cc">
+          {t("brand_types")}
+        </div>
+
+        <div className="sidebar-links-cc">
+          {brandTypes.map(
+            ([label, sourceItem], index) => {
+              const brandType =
+                sourceItem?.item?.brandType || "";
+
+              const brand =
+                sourceItem?.item?.brand || "";
+
+              const translatedBrandType =
+                translateTaxonomy(brandType);
+
+              return (
+                <div
+                  key={index}
+                  className="sidebar-main-link-cc"
+                  onClick={() =>
+                    handleLinkClick(
+                      "brandType",
+                      brandType,
+                      sourceItem
+                    )
+                  }
+                >
+                  {translatedBrandType}{" "}
+                  {brand}
+                </div>
+              );
+            }
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* FILTERS */}
+    <div className="sidebar-block-cc filter-section-cc">
+      <div className="sidebar-title-cc">
+        {t("filters")}
+      </div>
+
+      {/* SIZE */}
+      <select
+        value={selectedSize}
+        onChange={(e) =>
+          setSelectedSize(e.target.value)
+        }
+      >
+        <option value="all">
+          {t("all_sizes")}
+        </option>
+
+        {sizes.map((size) => (
+          <option
+            key={size}
+            value={normalizeText(size)}
+          >
+            {size}
+          </option>
+        ))}
+      </select>
+
+      {/* COLORS */}
+      <div className="filter-colors-cc">
+        <button
+          type="button"
+          className={`filter-color-circle-cc ${
+            selectedColor === "all"
+              ? "active"
+              : ""
+          }`}
+          onClick={() =>
+            setSelectedColor("all")
+          }
+          title={t("all_colors")}
+        >
+          {t("all")}
+        </button>
+
+        {colorFilterOptions.map((color) => {
+          const swatch =
+            getColorSwatch(color);
+
+          return (
+            <button
+              key={color}
+              type="button"
+              className={`filter-color-circle-cc ${
+                selectedColor === color
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setSelectedColor(color)
+              }
+              title={translateColor(color)}
+              style={
+                swatch
+                  ? {
+                      background: swatch,
+                    }
+                  : {
+                      backgroundImage: `url(${getImageUrl(
+                        items.find(
+                          (x) =>
+                            x?.item
+                              ?.imagesVariants?.[
+                              color
+                            ]
+                        )?.item
+                          ?.imagesVariants?.[
+                          color
+                        ]?.[0]
+                      )})`,
+                      backgroundSize: "cover",
+                      backgroundPosition:
+                        "center",
+                    }
+              }
+            />
+          );
+        })}
+      </div>
+
+      {/* PRICE */}
+      <input
+        type="range"
+        min="0"
+        max={maxPrice}
+        value={Math.min(
+          priceRange[1],
+          maxPrice
+        )}
+        onChange={(e) =>
+          setPriceRange([
+            0,
+            Number(e.target.value),
+          ])
         }
       />
-    );
-  })}
-</div>
 
-  <input
-  type="range"
-  min="0"
-  max={maxPrice}
-  value={Math.min(priceRange[1], maxPrice)}
-  onChange={(e) =>
-    setPriceRange([0, Number(e.target.value)])
-  }
-/>
-
-  <span>
-  {t("up_to_price", {
-    price: `${currencyConfig?.symbol || ""}${Math.min(
-      priceRange[1],
-      maxPrice
-    ).toFixed(2)}`,
-  })}
-</span>
-</div>
-      </aside>
+      <span>
+        {t("up_to_price", {
+          price: `${
+            currencyConfig?.symbol || ""
+          }${Math.min(
+            priceRange[1],
+            maxPrice
+          ).toFixed(2)}`,
+        })}
+      </span>
+    </div>
+  </aside>
+)}
 
       <main className="item-page-container-cc">
         {!isSmallScreen && (

@@ -201,6 +201,29 @@ const [mobileZoomOpen, setMobileZoomOpen] = useState(false);
     }
   };
 
+  const normalizeVariantKey = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+const getValueByNormalizedKey = (object, key) => {
+  if (!object || !key) return undefined;
+
+  // Exact match first
+  if (Object.prototype.hasOwnProperty.call(object, key)) {
+    return object[key];
+  }
+
+  const normalizedKey = normalizeVariantKey(key);
+
+  const matchingKey = Object.keys(object).find(
+    (objectKey) => normalizeVariantKey(objectKey) === normalizedKey
+  );
+
+  return matchingKey ? object[matchingKey] : undefined;
+};
+
   const getOptionLabel = () => {
   const category =
     details?.category?.toLowerCase() ||
@@ -495,20 +518,21 @@ useEffect(() => {
   fetchTranslation(itemsd, i18n.language);
 }, [itemsd, i18n.language]);
 
-  const getOptionsForColor = (color) => {
-  const options = product?.size?.[color] || [];
+ const getOptionsForColor = (color) => {
+  const options =
+    getValueByNormalizedKey(product?.size, color) || [];
 
   if (!Array.isArray(options)) return [];
 
-  // New format: [{ value: "256GB", price: 1199 }]
+  // New format
   if (typeof options[0] === "object") {
     return options;
   }
 
-  // Old format: ["S, M, L"] or ["256GB, 512GB"]
+  // Old format
   if (typeof options[0] === "string") {
-    return options[0]
-      .split(",")
+    return options
+      .flatMap((entry) => entry.split(","))
       .map((value) => value.trim())
       .filter(Boolean)
       .map((value) => ({
@@ -539,33 +563,55 @@ const getCurrentPrice = () => {
       setItem(foundProduct);
 
       if (foundProduct?.item) {
-       const variantMap = foundProduct.item.imagesVariants || {};
-                const initialColor = Object.keys(variantMap)[0] || null;
 
-                setItemId(foundProduct.itemId);
-                setProduct(foundProduct.item);
-                setDetails(foundProduct.details);
+      const variantMap = foundProduct.item.imagesVariants || {};
+const initialColor = Object.keys(variantMap)[0] || null;
 
-                setSelectedColor(initialColor);
+setItemId(foundProduct.itemId);
+setProduct(foundProduct.item);
+setDetails(foundProduct.details);
 
-                if (initialColor) {
-                  setSelectedImage(getFirstVariantImageUrl(variantMap[initialColor]));
-                } else {
-                  setSelectedImage(getImageUrl(foundProduct.item.images?.[0]) || null);
-                }
+setSelectedColor(initialColor);
 
-       const options = foundProduct.item.size?.[initialColor] || [];
+if (initialColor) {
+  const variantImages =
+    getValueByNormalizedKey(variantMap, initialColor) || [];
 
-        let initialSize = null;
+  setSelectedImage(
+    getFirstVariantImageUrl(variantImages) || null
+  );
+} else {
+  setSelectedImage(
+    getImageUrl(foundProduct.item.images?.[0]) || null
+  );
+}
 
-        if (Array.isArray(options) && typeof options[0] === "object") {
-          initialSize = options[0]?.value || null;
-        } else if (Array.isArray(options) && typeof options[0] === "string") {
-          initialSize = options[0].split(",")[0]?.trim() || null;
-        }
+const sizeMap = foundProduct.item.size || {};
 
-        setSelectedSize(initialSize);
+const initialRawOptions =
+  getValueByNormalizedKey(sizeMap, initialColor) || [];
+
+let initialSize = null;
+
+if (
+  Array.isArray(initialRawOptions) &&
+  typeof initialRawOptions[0] === "object"
+) {
+  initialSize = initialRawOptions[0]?.value || null;
+} else if (
+  Array.isArray(initialRawOptions) &&
+  typeof initialRawOptions[0] === "string"
+) {
+  initialSize =
+    initialRawOptions
+      .flatMap((entry) => entry.split(","))
+      .map((value) => value.trim())
+      .find(Boolean) || null;
+}
+
+setSelectedSize(initialSize);
       }
+      
     } catch (error) {
       console.error("Error fetching product details:", error);
     }
@@ -609,21 +655,18 @@ const getCurrentPrice = () => {
  const handleColorChange = (color) => {
   setSelectedColor(color);
 
-  const variantImages = product?.imagesVariants?.[color] || [];
-  setSelectedImage(getFirstVariantImageUrl(variantImages) || "/fallback.png");
+  const variantImages =
+    getValueByNormalizedKey(product?.imagesVariants, color) || [];
+
+  setSelectedImage(
+    getFirstVariantImageUrl(variantImages) || "/fallback.png"
+  );
+
   setSelectedImageNumber(0);
 
- const options = product?.size?.[color] || [];
+  const options = getOptionsForColor(color);
 
-let firstOption = null;
-
-if (Array.isArray(options) && typeof options[0] === "object") {
-  firstOption = options[0]?.value || null;
-} else if (Array.isArray(options) && typeof options[0] === "string") {
-  firstOption = options[0].split(",")[0]?.trim() || null;
-}
-
-setSelectedSize(firstOption || t("no_size_available"));
+  setSelectedSize(options[0]?.value || null);
 };
 
  const handleImageChange = (image, index) => {

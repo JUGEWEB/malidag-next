@@ -1386,141 +1386,159 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
         )}
       </div>
 
-    <div onClick={() => handleItemClick(id)} className="item-details-cc">
+   <div onClick={() => handleItemClick(id)} className="item-details-cc">
 
-      {colorOptions.length > 0 && (
-  <div className="item-color-block-cc">
-    <div className="item-color-label-cc">
-     {t("color")}: <span>{translateColor(selectedColor)}</span>
-    </div>
-
-   <div className="item-color-options-cc">
-    {visibleColorOptions.map((color) => {
-  const swatch = getColorSwatch(color);
-
-  return (
-    <button
-      key={color}
-      type="button"
-      className={`item-color-circle-cc ${
-        selectedColor === color ? "active" : ""
-      }`}
-      onClick={(e) => handleColorSelect(id, color, e)}
-      title={translateColor(color)}
-      aria-label={t("select_color", {
-        color: translateColor(color),
-      })}
-      style={
-        swatch
-          ? { background: swatch }
-          : {
-              backgroundImage: `url(${getImageUrl(
-                item?.imagesVariants?.[color]?.[0]
-              )})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }
-      }
-    />
-  );
-})}
-
-{hiddenColorCount > 0 && (
-  <button
-    type="button"
-    className="more-colors-btn-cc"
-    onClick={(e) => {
-      e.stopPropagation();
-      handleItemClick(id);
-    }}
-  >
-   {t("more_colors", {
-  count: hiddenColorCount,
-})}
-  </button>
-)}
-    </div>
+  {/* BRAND */}
+  <div className="item-brand-cc">
+    {item.brand || details.brand || ""}
   </div>
-)}
+
+  {/* PRODUCT NAME */}
   <div className="item-name-cc" title={name}>
     {name.length > 40 ? `${name.substring(0, 40)}...` : name}
   </div>
 
- <div className="item-service-row-cc">
-  {hasFreeDelivery && (
-    <span className="item-service-pill-cc"> {t("free_delivery")}</span>
-  )}
-
-  <span className="item-service-pill-cc item-service-muted-cc">
-    {t("easy_returns")}
-  </span>
-</div>
-
-  <div className="item-prices-cc">
-    <div className="item-price-row-cc">
-    <span className="item-price-cc">
-  {displayPrice}
-</span>
-
-{originalPrice > 0 && displayOriginalPrice && (
-  <span className="item-original-price-cc">
-    {displayOriginalPrice}
-  </span>
-)}
-
-      {reductionPercentage > 0 && (
-        <span className="item-reduction-cc">
-  {t("discount_off", {
-    percent: reductionPercentage,
-  })}
-</span>
-      )}
-    </div>
-  </div>
-
- {hasSold && (
-  <div className="item-meta-row-cc">
-    <span className="item-sold-cc">
-      {numericSold} <span className="sold-label-cc">{t("sold")}</span>
-    </span>
-  </div>
-)}
-
+  {/* RATING */}
   <div
     className="item-type-stars-cc"
     onClick={(e) => {
       e.stopPropagation();
       setItemData(itemData);
-     router.push(withCountry(`/product/${id}/review`));
+      router.push(withCountry(`/product/${id}/review`));
     }}
     title={t("view_reviews")}
   >
-    {finalRating
-      ? "★".repeat(Math.round(finalRating)) +
-        "☆".repeat(5 - Math.round(finalRating))
-      : t("no_rating")}
+    <span className="item-rating-number-cc">
+      {reviewsData?.averageRating || ""}
+    </span>
+
+    <span className="item-rating-stars-cc">
+      {reviewsData?.averageRating
+        ? "★".repeat(Math.round(reviewsData.averageRating)) +
+          "☆".repeat(5 - Math.round(reviewsData.averageRating))
+        : "☆☆☆☆☆"}
+    </span>
+
+    <span className="item-review-count-cc">
+      ({reviewsData?.reviewsArray?.length || 0})
+    </span>
   </div>
 
- {isItemInBasket(itemId) ? (
-  <button
-    type="button"
-    className="added-to-basket-btn-cc"
-    onClick={(e) => {
-      e.stopPropagation();
-      router.push(withCountry("/basket"));
-    }}
-  >
-    🛒 {getBasketQuantity(itemId)}
-  </button>
-) : (
-  <button
-    type="button"
-    className="add-to-basket-btn-cc"
-    onClick={(e) => handleAddToBasket(itemData, e)}
-  >
-    {t("add_to_cart")}
-  </button>
-)}
+  {/* COLORS */}
+  {colorOptions.length > 0 && (
+    <div className="item-color-block-cc">
+      <div className="item-color-options-cc">
+        {visibleColorOptions.map((color) => {
+          const swatch = getColorSwatch(color);
+
+          return (
+            <button
+              key={color}
+              type="button"
+              className={`item-color-circle-cc ${
+                selectedColor === color ? "active" : ""
+              }`}
+              onClick={(e) => handleColorSelect(id, color, e)}
+              title={translateColor(color)}
+              aria-label={t("select_color", {
+                color: translateColor(color),
+              })}
+              style={
+                swatch
+                  ? { background: swatch }
+                  : {
+                      backgroundImage: `url(${getImageUrl(
+                        item?.imagesVariants?.[color]?.[0]
+                      )})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }
+              }
+            />
+          );
+        })}
+
+        {hiddenColorCount > 0 && (
+          <button
+            type="button"
+            className="more-colors-btn-cc"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleItemClick(id);
+            }}
+          >
+            {t("more_colors", {
+              count: hiddenColorCount,
+            })}
+          </button>
+        )}
+      </div>
+    </div>
+  )}
+
+  {/* DELIVERY */}
+  {hasFreeDelivery && (
+    <div className="item-delivery-info-cc">
+      <div className="item-free-delivery-cc">
+        {t("free_delivery")}
+      </div>
+    </div>
+  )}
+
+  {/* PRICE */}
+  <div className="item-prices-cc">
+    <div className="item-price-row-cc">
+      <span className="item-price-cc">
+        {displayPrice}
+      </span>
+
+      {originalPrice > 0 && displayOriginalPrice && (
+        <span className="item-original-price-cc">
+          {displayOriginalPrice}
+        </span>
+      )}
+
+      {reductionPercentage > 0 && (
+        <span className="item-reduction-cc">
+          {t("discount_off", {
+            percent: reductionPercentage,
+          })}
+        </span>
+      )}
+    </div>
+  </div>
+
+  {/* SOLD */}
+  {hasSold && (
+    <div className="item-meta-row-cc">
+      <span className="item-sold-cc">
+        {numericSold} {t("sold")}
+      </span>
+    </div>
+  )}
+
+  {/* CART */}
+  {isItemInBasket(itemId) ? (
+    <button
+      type="button"
+      className="added-to-basket-btn-cc"
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(withCountry("/basket"));
+      }}
+    >
+      <span className="item-cart-icon-cc">🛒</span>
+      <span>{getBasketQuantity(itemId)} {t("in_cart") || ""}</span>
+    </button>
+  ) : (
+    <button
+      type="button"
+      className="add-to-basket-btn-cc"
+      onClick={(e) => handleAddToBasket(itemData, e)}
+    >
+      {t("add_to_cart")}
+    </button>
+  )}
 </div>
 </div>
   );

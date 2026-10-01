@@ -1124,34 +1124,55 @@ const translateColor = (color) => {
               : getTranslatedName(item, item.itemId)}
           </div>
 
-          {colorOptions.length > 0 && (
-            <div className="th1-color-block" onClick={(e) => e.stopPropagation()}>
-              <div className="th1-color-label">
-               {t("color")}:{" "}
-              <span>
-                {translateColor(selectedColor)}
-              </span>
-              </div>
+         {colorOptions.length > 0 && (
+  <div
+    className="th1-color-block"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <div className="th1-color-label">
+      {t("color")}:{" "}
+      <span>{translateColor(selectedColor)}</span>
+    </div>
 
-              <div className="th1-color-options">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`th1-color-circle ${
-                      selectedColor === color ? "active" : ""
-                    }`}
-                    title={translateColor(color)}
-                    aria-label={t("select_color", {
-                        color: translateColor(color),
-                      })}
-                    style={{ background: getColorSwatch(color) }}
-                    onClick={(e) => handleColorSelect(item.id, color, e)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+    <div className="th1-color-options">
+      {colorOptions.slice(0, 3).map((color) => (
+        <button
+          key={color}
+          type="button"
+          className={`th1-color-circle ${
+            selectedColor === color ? "active" : ""
+          }`}
+          title={translateColor(color)}
+          aria-label={t("select_color", {
+            color: translateColor(color),
+          })}
+          style={{
+            background: getColorSwatch(color),
+          }}
+          onClick={(e) =>
+            handleColorSelect(item.id, color, e)
+          }
+        />
+      ))}
+
+      {colorOptions.length > 3 && (
+        <button
+          type="button"
+          className="th1-more-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(
+              withCountry(`/product/${item.id}`)
+            );
+          }}
+          aria-label={`${colorOptions.length - 3} more colors`}
+        >
+          +{colorOptions.length - 3}
+        </button>
+      )}
+    </div>
+  </div>
+)}
 
           <div className="th1-item-rating">
             {renderStars(productReview.rating, item)}

@@ -805,34 +805,51 @@ const getDisplayImage = (product) => {
   return getImageUrl(product?.images?.[0]) || "/fallback.png";
 };
 
-  const getFirstValidVideo = (product) => {
-    if (!Array.isArray(product?.videos)) return null;
+  const getFirstVideoUrl = (product) => {
+  if (!Array.isArray(product?.videos)) {
+    return null;
+  }
 
-    return (
-      product.videos.find((video) => {
-        if (typeof video !== "string") return false;
+  for (const video of product.videos) {
+    let url = "";
 
-        const cleanVideo = video.trim();
-        const lowerVideo = cleanVideo.toLowerCase();
+    // Current format: videos: ["https://..."]
+    if (typeof video === "string") {
+      url = video.trim();
+    }
 
-        if (!cleanVideo) return false;
-        if (lowerVideo === "null") return false;
-        if (lowerVideo === "undefined") return false;
-        if (lowerVideo === "false") return false;
-        if (lowerVideo === "n/a") return false;
+    // Also support future/object format:
+    // videos: [{ url: "https://..." }]
+    if (
+      typeof video === "object" &&
+      video !== null &&
+      typeof video.url === "string"
+    ) {
+      url = video.url.trim();
+    }
 
-        return (
-          cleanVideo.startsWith("http://") ||
-          cleanVideo.startsWith("https://") ||
-          cleanVideo.startsWith("/")
-        );
-      }) || null
-    );
-  };
+    if (!url) continue;
+
+    const normalized = url.toLowerCase();
+
+    if (
+      normalized === "null" ||
+      normalized === "undefined" ||
+      normalized === "false" ||
+      normalized === "n/a"
+    ) {
+      continue;
+    }
+
+    return url;
+  }
+
+  return null;
+};
 
   const bestSellerVideo = useMemo(() => {
-    return bestSeller ? getFirstValidVideo(bestSeller) : null;
-  }, [bestSeller]);
+  return bestSeller ? getFirstVideoUrl(bestSeller) : null;
+}, [bestSeller]);
 
   const shouldShowLargeBestSeller = !!bestSellerVideo && !hideBestSellerVideo;
 
@@ -1229,6 +1246,7 @@ const translateColor = (color) => {
               ))}
           >
             <video
+             src={bestSellerVideo}
               autoPlay
               muted
               loop
@@ -1236,7 +1254,6 @@ const translateColor = (color) => {
               controls
               onError={() => setHideBestSellerVideo(true)}
             >
-              <source src={bestSellerVideo} type="video/mp4" />
                {t("video_not_supported")}
             </video>
           </div>

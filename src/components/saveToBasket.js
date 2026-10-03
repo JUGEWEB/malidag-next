@@ -369,41 +369,140 @@ useEffect(() => {
 };
 
   // Remove item from basket using API
-  const removeFromBasket = async (itemId) => {
-    try {
-      const response = await axios.delete(`${BASKET_API}/remove-from-basket/${user?.uid}/${itemId}`);
+ const removeFromBasket = async (
+  basketItem
+) => {
+  if (!user?.uid || !basketItem) {
+    return;
+  }
 
-      if (response.status === 200) {
-       setBasket((prevBasket) => prevBasket.filter((item) => item.itemId !== itemId));
-       messageApi.success("Item removed from basket!");
-      }
-    } catch (error) {
-      console.error("Error removing item from basket:", error);
+  try {
+    const response =
+      await axios.delete(
+        `${BASKET_API}/remove-from-basket/${user.uid}`,
+        {
+          data: {
+            id: basketItem.id,
+            color:
+              basketItem.color ?? null,
+            size:
+              basketItem.size ?? null,
+          },
+        }
+      );
+
+    if (
+      response.status === 200 &&
+      response.data?.success === true
+    ) {
+      /*
+       * Use the persisted basket returned
+       * directly by MongoDB/backend.
+       */
+      setBasket(
+        Array.isArray(
+          response.data?.basket
+        )
+          ? response.data.basket
+          : []
+      );
+
+      messageApi.success(
+        "Item removed from basket!"
+      );
+
+      return;
     }
-  };
+
+    messageApi.error(
+      "Unable to remove item."
+    );
+  } catch (error) {
+    console.error(
+      "Error removing item from basket:",
+      error?.response?.data ||
+        error
+    );
+
+    messageApi.error(
+      error?.response?.data?.error ||
+        "Unable to remove item."
+    );
+  }
+};
 
    // Update item quantity in the basket
-   const updateQuantity = async (id, newQuantity) => {
-    if (!user || newQuantity < 1) return; // Prevent quantity from being less than 1
-    try {
-      setLoading(true);
-      const response = await axios.put(`${BASKET_API}/update-quantity/${user?.uid}/${id}`, {
-        quantity: newQuantity,
-      });
+  const updateQuantity = async (
+  basketItem,
+  newQuantity
+) => {
+  if (
+    !user?.uid ||
+    !basketItem ||
+    newQuantity < 1
+  ) {
+    return;
+  }
 
-      if (response.status === 200) {
-        setBasket((prevBasket) =>
-          prevBasket.map((item) =>
-            item.id === id ? { ...item, quantity: newQuantity } : item
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error updating quantity:", error);
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+
+    const response =
+      await axios.put(
+        `${BASKET_API}/update-quantity/${user.uid}`,
+        {
+          id: basketItem.id,
+
+          color:
+            basketItem.color ?? null,
+
+          size:
+            basketItem.size ?? null,
+
+          quantity:
+            newQuantity,
+        }
+      );
+
+    if (
+      response.status === 200 &&
+      response.data?.success === true
+    ) {
+      /*
+       * Backend already returned the
+       * persisted MongoDB basket.
+       *
+       * Don't refetch.
+       */
+      setBasket(
+        Array.isArray(
+          response.data?.basket
+        )
+          ? response.data.basket
+          : []
+      );
+
+      return;
     }
-  };
+
+    messageApi.error(
+      "Unable to update quantity."
+    );
+  } catch (error) {
+    console.error(
+      "Error updating quantity:",
+      error?.response?.data ||
+        error
+    );
+
+    messageApi.error(
+      error?.response?.data?.error ||
+        "Unable to update quantity."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
  const totalPrice = basket.reduce((sum, item) => {
   const localizedPrice = getLocalizedBasketItemPrice(item);
@@ -588,7 +687,15 @@ const slicedName =
               </div>
               <div>
               <Popover content={t('basket_remove_item')} trigger="hover">
-              <button className="remove-btn" onClick={() => removeFromBasket(itemId)}>🗑️</button>
+             <button
+                type="button"
+                className="remove-btn"
+                onClick={() =>
+                  removeFromBasket(item)
+                }
+              >
+                🗑️
+              </button>
               </Popover>
               </div>
               </div>
@@ -694,7 +801,12 @@ const slicedName =
                   borderRadius: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100px", height: "30px"}}>
                 <div
                   className="quantity-btn"
-                  onClick={() => updateQuantity(id, quantity - 1)}
+                 onClick={() =>
+                  updateQuantity(
+                    item,
+                    quantity - 1
+                  )
+                }
                   disabled={quantity <= 1 || loading}
                 >
                   -
@@ -702,7 +814,12 @@ const slicedName =
                 <span style={{ margin: "0 10px", fontSize: "18px" , fontWeight: "bold"}}>{quantity}</span>
                 <div
                   className="quantity-btn"
-                  onClick={() => updateQuantity(id, quantity + 1)}
+                 onClick={() =>
+                  updateQuantity(
+                    item,
+                    quantity + 1
+                  )
+                }
                   disabled={loading}
                 >
                   +

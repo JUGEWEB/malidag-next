@@ -134,7 +134,7 @@
 }
 
 .bbe-item-brand {
-  font-size: 0.76rem;
+  font-size: 0.86rem;
   font-weight: 900;
   color: #111827;
   text-transform: uppercase;
@@ -157,12 +157,12 @@
   flex-wrap: wrap;
   gap: 7px;
   width: 100%;
-  margin-top: 2px;
+  margin-top: 0px;
 }
 
 .bbe-item-price {
-  font-size: 1.12rem;
-  font-weight: 900;
+  font-size: 1.72rem;
+  font-weight: 700;
   color: #111827;
   letter-spacing: -0.03em;
 }
@@ -439,11 +439,11 @@
 
   .bbe-item-info {
     padding: 9px 8px 12px;
-    gap: 5px;
+    gap: 0px;
   }
 
   .bbe-item-brand {
-    font-size: 0.68rem;
+    font-size: 0.78rem;
   }
 
   .bbe-item-name {
@@ -451,7 +451,10 @@
   }
 
   .bbe-item-price {
-    font-size: 1rem;
+    font-size: 1.42rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.03em;
   }
 
   .bbe-review-count {

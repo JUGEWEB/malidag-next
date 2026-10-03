@@ -263,12 +263,11 @@ const addBasketVariant = async (
 
   const item = itemData?.item || {};
 
-  const variantImages =
-    item?.imagesVariants?.[selectedColorForBasket] || [];
-
-  const basketImage =
-    getImageUrl(variantImages?.[0]) ||
-    getImageUrl(item?.images?.[0]);
+ const basketImage =
+  getDisplayImageForColor(
+    itemData,
+    selectedColorForBasket
+  );
 
   const finalPrice =
     variantPrice !== null &&
@@ -934,23 +933,32 @@ const getImageUrl = (imageEntry) => {
   return "";
 };
 
-const getDisplayImage = (itemData) => {
-  const selectedColor = selectedColorByItem[itemData.id];
-  const variants = itemData?.item?.imagesVariants || {};
+const getDisplayImageForColor = (itemData, color) => {
+  const item = itemData?.item || {};
+  const variants = item?.imagesVariants || {};
 
-  if (selectedColor && variants[selectedColor]?.length > 0) {
-    const sortedImages = [...variants[selectedColor]].sort((a, b) => {
+  const variantImages =
+    color && Array.isArray(variants[color])
+      ? variants[color]
+      : [];
+
+  if (variantImages.length > 0) {
+    const sortedImages = [...variantImages].sort((a, b) => {
       const posA =
-        typeof a === "object" && typeof a?.position === "number"
+        typeof a === "object" &&
+        typeof a?.position === "number"
           ? a.position
           : 999999;
 
       const posB =
-        typeof b === "object" && typeof b?.position === "number"
+        typeof b === "object" &&
+        typeof b?.position === "number"
           ? b.position
           : 999999;
 
-      if (posA !== posB) return posA - posB;
+      if (posA !== posB) {
+        return posA - posB;
+      }
 
       const nameA =
         typeof a === "object"
@@ -968,10 +976,26 @@ const getDisplayImage = (itemData) => {
       });
     });
 
-    return getImageUrl(sortedImages[0]) || "/fallback.png";
+    return (
+      getImageUrl(sortedImages[0]) ||
+      getImageUrl(item?.images?.[0]) ||
+      ""
+    );
   }
 
-  return getImageUrl(itemData?.item?.images?.[0]) || "/fallback.png";
+  return getImageUrl(item?.images?.[0]) || "";
+};
+
+const getDisplayImage = (itemData) => {
+  const selectedColor =
+    selectedColorByItem[itemData.id];
+
+  return (
+    getDisplayImageForColor(
+      itemData,
+      selectedColor
+    ) || "/fallback.png"
+  );
 };
 
 const getColorSwatch = (colorName = "") => {

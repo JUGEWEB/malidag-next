@@ -375,6 +375,82 @@ const isItemInBasket = (
   return getImageUrl(product?.item?.images?.[0]) || "/fallback.png";
 };
 
+const getVariantImage = (
+  product,
+  color,
+  preferredImage = ""
+) => {
+  // The image currently shown on the card always wins.
+  if (preferredImage) {
+    return preferredImage;
+  }
+
+  const variants =
+    product?.item?.imagesVariants || {};
+
+  if (
+    color &&
+    Array.isArray(variants[color]) &&
+    variants[color].length > 0
+  ) {
+    const sortedImages = [
+      ...variants[color],
+    ].sort((a, b) => {
+      const posA =
+        typeof a === "object" &&
+        typeof a?.position === "number"
+          ? a.position
+          : 999999;
+
+      const posB =
+        typeof b === "object" &&
+        typeof b?.position === "number"
+          ? b.position
+          : 999999;
+
+      if (posA !== posB) {
+        return posA - posB;
+      }
+
+      const nameA =
+        typeof a === "object"
+          ? a?.filename || ""
+          : String(a || "")
+              .split("/")
+              .pop() || "";
+
+      const nameB =
+        typeof b === "object"
+          ? b?.filename || ""
+          : String(b || "")
+              .split("/")
+              .pop() || "";
+
+      return nameA.localeCompare(
+        nameB,
+        undefined,
+        {
+          numeric: true,
+          sensitivity: "base",
+        }
+      );
+    });
+
+    const variantImage =
+      getImageUrl(sortedImages[0]);
+
+    if (variantImage) {
+      return variantImage;
+    }
+  }
+
+  return (
+    getImageUrl(
+      product?.item?.images?.[0]
+    ) || ""
+  );
+};
+
 const getColorSwatch = (colorName = "") => {
   const color = colorName.trim().toLowerCase();
 
@@ -736,9 +812,11 @@ const addBasketVariant = async ({
       size:
         selectedSize || null,
 
-      image:
-        selectedImage ||
-        getDisplayImage(product),
+     image: getVariantImage(
+  product,
+  selectedColor,
+  selectedImage
+),
 
       brand:
         item.brand ||

@@ -308,84 +308,65 @@
   color: #c2410c;
 }
 
+/* =========================================================
+   ADD TO BASKET — SAME STYLE AS ITEMPAGE
+   ========================================================= */
+
 .bbe-add-basket-btn {
   width: 100%;
+
+  height: 42px;
   min-height: 42px;
-  margin-top: 6px;
+
+  margin-top: 12px;
 
   border: 1px solid #111827;
-  border-radius: 10px;
+  border-radius: 999px;
 
+  background: #fff;
+  color: #111827;
+
+  font-size: 0.82rem;
+  font-weight: 900;
+
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.bbe-add-basket-btn:hover:not(:disabled) {
   background: #111827;
-  color: #ffffff;
-
-  font-size: 0.86rem;
-  font-weight: 900;
-  letter-spacing: 0.01em;
-
-  cursor: pointer;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.15s ease,
-    box-shadow 0.2s ease;
+  color: #fff;
 }
 
-.bbe-add-basket-btn:hover {
-  background: #000000;
-  border-color: #000000;
-  transform: translateY(-1px);
-  box-shadow: 0 5px 12px rgba(17, 24, 39, 0.16);
+.bbe-add-basket-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
-.bbe-add-basket-btn:active {
-  transform: translateY(0) scale(0.99);
-  box-shadow: none;
+.bbe-add-basket-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
-.bbe-added-basket-btn {
-  width: 100%;
-  min-height: 42px;
-  margin-top: 6px;
 
-  border: 1px solid #15803d;
-  border-radius: 10px;
+/* MOBILE — SAME AS ITEMPAGE */
+@media (max-width: 640px) {
+  .bbe-add-basket-btn {
+    height: 40px;
+    min-height: 40px;
 
-  background: #15803d;
-  color: #ffffff;
-
-  font-size: 0.88rem;
-  font-weight: 900;
-
-  cursor: pointer;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.15s ease,
-    box-shadow 0.2s ease;
-}
-
-.bbe-added-basket-btn:hover {
-  background: #166534;
-  border-color: #166534;
-  transform: translateY(-1px);
-  box-shadow: 0 5px 12px rgba(21, 128, 61, 0.18);
-}
-
-.bbe-added-basket-btn:active {
-  transform: translateY(0) scale(0.99);
-  box-shadow: none;
+    font-size: 0.76rem;
+  }
 }
 
 .item-spinner-wrapper {
@@ -482,11 +463,6 @@
     height: 19px;
   }
 
-  .bbe-add-basket-btn {
-    min-height: 37px;
-    font-size: 0.8rem;
-  }
-
   .bbe-image-badge {
     top: 8px;
     padding: 5px 7px;
@@ -513,26 +489,6 @@
   }
 }
 
-.bbe-added-basket-btn {
-  width: 100%;
-  min-height: 40px;
-  margin-top: 4px;
-  border: none;
-  background: #15803d;
-  color: #ffffff;
-  font-size: 0.88rem;
-  font-weight: 900;
-  cursor: pointer;
-  transition: 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.bbe-added-basket-btn:hover {
-  background: #166534;
-}
 
 .bbe-cart-icon {
   font-size: 1rem;
@@ -680,5 +636,670 @@
 
   .bbe-skeleton-image {
     height: 250px;
+  }
+}
+
+
+/* =========================================================
+   SAVE BIG — SIZE / QUANTITY MODAL
+   ========================================================= */
+
+.bbe-size-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(15, 15, 15, 0.48);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  animation: bbeModalFadeIn 0.18s ease-out;
+}
+
+.bbe-size-modal {
+  position: relative;
+
+  width: 100%;
+  max-width: 440px;
+  max-height: min(680px, calc(100vh - 40px));
+
+  padding: 24px;
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 22px;
+
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.08);
+
+  animation: bbeModalEnter 0.22s ease-out;
+}
+
+/* ---------- CLOSE ---------- */
+
+.bbe-size-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+
+  z-index: 3;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid #e8e8e8;
+  border-radius: 50%;
+
+  background: #f7f7f7;
+  color: #222;
+
+  font-family: inherit;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.bbe-size-modal-close:hover:not(:disabled) {
+  background: #ededed;
+  border-color: #dedede;
+  transform: rotate(4deg);
+}
+
+.bbe-size-modal-close:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   PRODUCT HEADER
+   ========================================================= */
+
+.bbe-size-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding-right: 38px;
+  padding-bottom: 20px;
+
+  border-bottom: 1px solid #eeeeee;
+}
+
+.bbe-size-modal-image {
+  width: 74px;
+  height: 74px;
+
+  flex: 0 0 74px;
+
+  object-fit: contain;
+
+  padding: 5px;
+
+  background: #f7f7f7;
+  border: 1px solid #ededed;
+  border-radius: 14px;
+}
+
+.bbe-size-modal-header > div {
+  min-width: 0;
+}
+
+.bbe-size-modal-title {
+  display: -webkit-box;
+
+  overflow: hidden;
+
+  color: #171717;
+
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.bbe-size-modal-color {
+  margin-top: 6px;
+
+  color: #777;
+
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.bbe-size-modal-color strong {
+  color: #333;
+  font-weight: 650;
+}
+
+
+/* =========================================================
+   MODAL SECTIONS
+   ========================================================= */
+
+.bbe-size-modal-section {
+  margin-top: 21px;
+}
+
+.bbe-size-modal-label {
+  margin-bottom: 11px;
+
+  color: #222;
+
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+
+/* =========================================================
+   SIZE OPTIONS
+   ========================================================= */
+
+.bbe-size-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bbe-size-option {
+  min-width: 0;
+  min-height: 52px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 2px;
+
+  padding: 7px 5px;
+
+  border: 1px solid #dedede;
+  border-radius: 10px;
+
+  background: #fff;
+  color: #222;
+
+  font-family: inherit;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.bbe-size-option > span {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bbe-size-option small {
+  max-width: 100%;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #777;
+
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.bbe-size-option:hover {
+  border-color: #999;
+  background: #fafafa;
+
+  transform: translateY(-1px);
+}
+
+.bbe-size-option.active {
+  border-color: #171717;
+
+  background: #171717;
+  color: #fff;
+
+  box-shadow:
+    0 5px 14px rgba(0, 0, 0, 0.12);
+}
+
+.bbe-size-option.active small {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+
+/* =========================================================
+   QUANTITY
+   ========================================================= */
+
+.bbe-modal-quantity {
+  width: 136px;
+  height: 42px;
+
+  display: grid;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+
+  overflow: hidden;
+
+  border: 1px solid #dedede;
+  border-radius: 11px;
+
+  background: #fff;
+}
+
+.bbe-modal-quantity button {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: none;
+
+  background: transparent;
+  color: #222;
+
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
+}
+
+.bbe-modal-quantity button:hover:not(:disabled) {
+  background: #f2f2f2;
+}
+
+.bbe-modal-quantity button:active:not(:disabled) {
+  background: #e9e9e9;
+}
+
+.bbe-modal-quantity button:disabled {
+  color: #c7c7c7;
+  cursor: not-allowed;
+}
+
+.bbe-modal-quantity strong {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 100%;
+
+  border-left: 1px solid #ededed;
+  border-right: 1px solid #ededed;
+
+  color: #171717;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   SELECTED VARIANT PRICE
+   ========================================================= */
+
+.bbe-modal-selected-price {
+  margin-top: 20px;
+
+  padding: 12px 14px;
+
+  background: #f7f7f7;
+  border: 1px solid #ededed;
+  border-radius: 11px;
+
+  color: #111;
+
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+
+/* =========================================================
+   CONFIRM BUTTON
+   ========================================================= */
+
+.bbe-size-modal-confirm {
+  width: 100%;
+  min-height: 48px;
+
+  margin-top: 14px;
+  padding: 12px 18px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: #171717;
+  color: #fff;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.12);
+
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.bbe-size-modal-confirm:hover:not(:disabled) {
+  background: #000;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.bbe-size-modal-confirm:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.bbe-size-modal-confirm:disabled {
+  background: #d7d7d7;
+  color: #999;
+
+  box-shadow: none;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   ADD TO BASKET + FLOATING BASKET COUNT
+   ========================================================= */
+
+.bbe-basket-actions {
+  position: relative;
+  width: 100%;
+  margin-top: auto;
+}
+
+
+/* ADD TO BASKET — FULL WIDTH */
+.bbe-basket-actions .bbe-add-basket-btn {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* =========================================================
+   BASKET COUNT — FLOATS ABOVE BUTTON
+   ========================================================= */
+
+.bbe-basket-actions .bbe-added-basket-btn {
+  position: absolute;
+
+  /* RIGHT SIDE OF ADD BUTTON */
+  right: 10px;
+
+  /* PUT IT ABOVE THE BUTTON */
+  top: 0;
+  transform: translateY(-65%);
+
+  z-index: 50;
+
+  min-width: 54px;
+  height: 36px;
+
+  padding: 0 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #111827;
+  color: #fff;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+
+.bbe-basket-actions .bbe-added-basket-btn:hover {
+  transform: translateY(-70%);
+
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.24);
+}
+
+
+/* ICON */
+.bbe-basket-actions .bbe-cart-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+
+/* QUANTITY */
+.bbe-basket-actions .bbe-cart-count {
+  color: #fff;
+
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+  .bbe-basket-actions .bbe-added-basket-btn {
+    right: 8px;
+
+    top: 0;
+    transform: translateY(-65%);
+
+    z-index: 50;
+
+    min-width: 52px;
+    height: 35px;
+
+    padding: 0 9px;
+  }
+
+  .bbe-basket-actions .bbe-added-basket-btn:hover {
+    transform: translateY(-65%);
+  }
+
+  .bbe-basket-actions .bbe-cart-icon {
+    font-size: 15px;
+  }
+
+  .bbe-basket-actions .bbe-cart-count {
+    font-size: 12px;
+  }
+}
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes bbeModalFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bbeModalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* =========================================================
+   TABLET / SMALL SCREENS
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .bbe-size-modal-overlay {
+    align-items: flex-end;
+
+    padding: 0;
+
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .bbe-size-modal {
+    max-width: none;
+    max-height: 86vh;
+
+    padding:
+      22px
+      18px
+      calc(18px + env(safe-area-inset-bottom));
+
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+
+    border-radius: 22px 22px 0 0;
+
+    animation: bbeModalMobileEnter 0.24s ease-out;
+  }
+
+  .bbe-size-modal-header {
+    padding-right: 34px;
+    padding-bottom: 17px;
+  }
+
+  .bbe-size-modal-image {
+    width: 66px;
+    height: 66px;
+
+    flex-basis: 66px;
+  }
+
+  .bbe-size-options {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .bbe-size-option {
+    min-height: 50px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 360px) {
+  .bbe-size-modal {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .bbe-size-options {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .bbe-size-modal-title {
+    font-size: 14px;
+  }
+}
+
+
+@keyframes bbeModalMobileEnter {
+  from {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .bbe-size-modal-overlay,
+  .bbe-size-modal {
+    animation: none;
+  }
+
+  .bbe-size-option,
+  .bbe-size-modal-confirm,
+  .bbe-size-modal-close,
+  .bbe-added-basket-btn {
+    transition: none;
   }
 }

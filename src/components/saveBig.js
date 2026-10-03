@@ -33,6 +33,44 @@ const [reviews, setReviews] = useState({});
 const [rates, setRates] = useState({});
 const [translations, setTranslations] = useState({});
 
+const [sizeModalOpen, setSizeModalOpen] =
+  useState(false);
+
+const [
+  pendingBasketProduct,
+  setPendingBasketProduct,
+] = useState(null);
+
+const [
+  pendingBasketColor,
+  setPendingBasketColor,
+] = useState(null);
+
+const [
+  pendingBasketImage,
+  setPendingBasketImage,
+] = useState("");
+
+const [
+  pendingSizes,
+  setPendingSizes,
+] = useState([]);
+
+const [
+  selectedModalSize,
+  setSelectedModalSize,
+] = useState(null);
+
+const [
+  modalQuantity,
+  setModalQuantity,
+] = useState(1);
+
+const [
+  addingToBasket,
+  setAddingToBasket,
+] = useState(false);
+
 const lang = ["en", "fr", "br"].includes(i18n.language)
   ? i18n.language
   : "en";
@@ -218,16 +256,36 @@ const hasItems = allItems.length > 0;
   }
 };
 
-const getBasketQuantity = (itemId) => {
-  const basketItem = basketItems.find(
-    (item) => item.itemId === itemId
-  );
-
-  return Number(basketItem?.quantity || 0);
+const getBasketQuantity = (
+  itemId
+) => {
+  return basketItems
+    .filter(
+      (basketItem) =>
+        String(
+          basketItem?.itemId
+        ) === String(itemId)
+    )
+    .reduce(
+      (total, basketItem) =>
+        total +
+        Number(
+          basketItem?.quantity ||
+            0
+        ),
+      0
+    );
 };
 
-const isItemInBasket = (itemId) => {
-  return getBasketQuantity(itemId) > 0;
+
+const isItemInBasket = (
+  itemId
+) => {
+  return (
+    getBasketQuantity(
+      itemId
+    ) > 0
+  );
 };
 
  const fetchReviews = async (productId) => {
@@ -331,7 +389,221 @@ const getColorSwatch = (colorName = "") => {
   return Math.round(((original - current) / original) * 100);
 };
 
- const handleAddToBasketPreview = async (
+const getVariantData = (
+  product,
+  color
+) => {
+  const sizeMap =
+    product?.item?.size ||
+    product?.details?.sizes ||
+    {};
+
+  if (
+    !sizeMap ||
+    typeof sizeMap !== "object" ||
+    Array.isArray(sizeMap) ||
+    !color
+  ) {
+    return [];
+  }
+
+  const normalizedSelectedColor =
+    String(color)
+      .trim()
+      .toLowerCase();
+
+  const actualColorKey =
+    Object.keys(sizeMap).find(
+      (key) =>
+        String(key)
+          .trim()
+          .toLowerCase() ===
+        normalizedSelectedColor
+    );
+
+  if (!actualColorKey) {
+    return [];
+  }
+
+  const entries =
+    sizeMap[actualColorKey];
+
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  const normalizedSizes =
+    entries.flatMap((entry) => {
+      // FORMAT:
+      // "40, 42, 45"
+      if (typeof entry === "string") {
+        return entry
+          .split(",")
+          .map((size) =>
+            size.trim()
+          )
+          .filter(Boolean)
+          .map((size) => ({
+            size,
+            price: null,
+          }));
+      }
+
+      // FORMAT:
+      // {
+      //   value: "40, 42, 43",
+      //   price: 42.99
+      // }
+      if (
+        entry &&
+        typeof entry === "object" &&
+        !Array.isArray(entry)
+      ) {
+        const sizeValues =
+          String(
+            entry.value ?? ""
+          )
+            .split(",")
+            .map((size) =>
+              size.trim()
+            )
+            .filter(Boolean);
+
+        let specialPrice = null;
+
+        if (
+          entry.price !== undefined &&
+          entry.price !== null &&
+          entry.price !== ""
+        ) {
+          const parsedPrice =
+            Number(entry.price);
+
+          if (
+            Number.isFinite(
+              parsedPrice
+            )
+          ) {
+            specialPrice =
+              parsedPrice;
+          }
+        }
+
+        return sizeValues.map(
+          (size) => ({
+            size,
+            price: specialPrice,
+          })
+        );
+      }
+
+      return [];
+    });
+
+  // Remove duplicate sizes.
+  // If duplicate exists and one has
+  // a special price, keep priced one.
+  const uniqueSizes = new Map();
+
+  normalizedSizes.forEach(
+    (option) => {
+      const key =
+        String(option.size)
+          .trim()
+          .toLowerCase();
+
+      if (!key) {
+        return;
+      }
+
+      const existing =
+        uniqueSizes.get(key);
+
+      if (!existing) {
+        uniqueSizes.set(
+          key,
+          option
+        );
+
+        return;
+      }
+
+      if (
+        existing.price == null &&
+        option.price != null
+      ) {
+        uniqueSizes.set(
+          key,
+          option
+        );
+      }
+    }
+  );
+
+  return Array.from(
+    uniqueSizes.values()
+  );
+};
+
+const getVariantPrice = (
+  product,
+  color,
+  size = null
+) => {
+  const mainPrice =
+    Number(
+      product?.item?.usdPrice || 0
+    );
+
+  const variants =
+    getVariantData(
+      product,
+      color
+    );
+
+  if (!variants.length) {
+    return mainPrice;
+  }
+
+  /*
+   * Exact selected size wins.
+   */
+  if (size != null) {
+    const exactVariant =
+      variants.find(
+        (variant) =>
+          String(variant.size) ===
+          String(size)
+      );
+
+    if (
+      exactVariant &&
+      Number.isFinite(
+        exactVariant.price
+      )
+    ) {
+      return exactVariant.price;
+    }
+  }
+
+  /*
+   * For the card, before size is selected,
+   * use the first valid price belonging to
+   * the selected color.
+   */
+  const pricedVariant =
+    variants.find((variant) =>
+      Number.isFinite(
+        variant.price
+      )
+    );
+
+  return pricedVariant
+    ? pricedVariant.price
+    : mainPrice;
+};
+
+ const handleAddToBasketPreview = (
   product,
   selectedColor,
   selectedImage,
@@ -339,50 +611,220 @@ const getColorSwatch = (colorName = "") => {
 ) => {
   e.stopPropagation();
 
-  const currentUser = auth?.currentUser;
+  const currentUser =
+    auth?.currentUser;
 
   if (!currentUser) {
     router.push(
-  withCountry(`/auth?redirect=${encodeURIComponent(`/${countryCode}/save-big`)}`)
-);
+      withCountry(
+        `/auth?redirect=${encodeURIComponent(
+          `/${countryCode}/save-big`
+        )}`
+      )
+    );
+
     return;
   }
 
+  const variants =
+    getVariantData(
+      product,
+      selectedColor
+    );
+
+  /*
+   * If this product/color has sizes,
+   * require the customer to choose one.
+   */
+  if (variants.length > 0) {
+    setPendingBasketProduct(
+      product
+    );
+
+    setPendingBasketColor(
+      selectedColor || null
+    );
+
+    setPendingBasketImage(
+      selectedImage || ""
+    );
+
+    setPendingSizes(
+      variants
+    );
+
+    setSelectedModalSize(null);
+    setModalQuantity(1);
+    setSizeModalOpen(true);
+
+    return;
+  }
+
+  /*
+   * No sizes:
+   * add immediately.
+   */
+  addBasketVariant({
+    product,
+    selectedColor:
+      selectedColor || null,
+    selectedImage,
+    selectedSize: null,
+    quantity: 1,
+  });
+};
+
+const addBasketVariant = async ({
+  product,
+  selectedColor,
+  selectedImage,
+  selectedSize,
+  quantity,
+}) => {
+  const currentUser =
+    auth?.currentUser;
+
+  if (!currentUser || !product) {
+    return;
+  }
+
+  const safeQuantity =
+    Math.max(
+      1,
+      Number(quantity) || 1
+    );
+
+  const item =
+    product?.item || {};
+
+  const details =
+    product?.details || {};
+
+  /*
+   * CRITICAL:
+   * determine price from the exact
+   * color + size combination.
+   */
+  const variantPrice =
+    getVariantPrice(
+      product,
+      selectedColor,
+      selectedSize
+    );
+
+  const basketItem = {
+    userId: currentUser.uid,
+
+    item: {
+      id: product.id,
+      itemId: product.itemId,
+
+      name:
+        item.name ||
+        details.itemName ||
+        "",
+
+      /*
+       * Save the VARIANT price.
+       */
+      price: variantPrice,
+      usdPrice: variantPrice,
+
+      color:
+        selectedColor || null,
+
+      size:
+        selectedSize || null,
+
+      image:
+        selectedImage ||
+        getDisplayImage(product),
+
+      brand:
+        item.brand ||
+        details.brand,
+
+      brandPrice:
+        item.brandPrice ||
+        details.brandPrice,
+
+      quantity:
+        safeQuantity,
+
+      shippingCountry:
+        details?.country || "",
+
+      selectedCountry: "",
+
+      eurText:
+        details?.eurText || "",
+
+      poundText:
+        details?.poundText || "",
+
+      brlText:
+        details?.brlText || "",
+
+      tryText:
+        details?.tryText || "",
+
+      audText:
+        details?.audText || "",
+
+      sarText:
+        details?.sarText || "",
+    },
+  };
+
   try {
-    const item = product?.item || {};
-    const details = product?.details || {};
+    setAddingToBasket(true);
 
-    const basketItem = {
-      userId: currentUser.uid,
-      item: {
-        id: product.id,
-        itemId: product.itemId,
-        name: item.name,
-        price: Number(item.usdPrice || 0),
-        color: selectedColor || null,
-        size: null,
-        image: selectedImage,
-        brand: item.brand || details.brand,
-        brandPrice: item.brandPrice || details.brandPrice,
-        quantity: 1,
-        shippingCountry: details?.country || "",
-        selectedCountry: "",
-        eurText: details?.eurText || "",
-        poundText: details?.poundText || "",
-        brlText: details?.brlText || "",
-        tryText: details?.tryText || "",
-        audText: details?.audText || "",
-        sarText: details?.sarText || "",
-      },
-    };
+    const response =
+      await axios.post(
+        BASKET_API,
+        basketItem
+      );
 
-   const response = await axios.post(BASKET_API, basketItem);
+    if (
+      (response.status === 200 ||
+        response.status === 201) &&
+      response.data?.success === true
+    ) {
+      /*
+       * Use backend persisted basket
+       * directly instead of POST → GET.
+       */
+      setBasketItems(
+        Array.isArray(
+          response.data?.basket
+        )
+          ? response.data.basket
+          : []
+      );
 
-if (response.status === 200 || response.status === 201) {
-  await fetchUserBasket();
-}
+      setSizeModalOpen(false);
+      setPendingBasketProduct(null);
+      setPendingBasketColor(null);
+      setPendingBasketImage("");
+      setPendingSizes([]);
+      setSelectedModalSize(null);
+      setModalQuantity(1);
+
+      return;
+    }
+
+    console.error(
+      "Basket API did not confirm success:",
+      response.data
+    );
   } catch (error) {
-    console.error("Error adding item to basket:", error);
+    console.error(
+      "Error adding item to basket:",
+      error?.response?.data ||
+        error
+    );
+  } finally {
+    setAddingToBasket(false);
   }
 };
 
@@ -640,8 +1082,17 @@ const displayName =
           const selectedColor = selectedColorByItem[id];
           const colorOptions = getColorOptions(product);
           const displayImage = getDisplayImage(product);
+          const displayedUsdPrice =
+  getVariantPrice(
+    product,
+    selectedColor
+  );
           const isBestSeller = id === bestSellerId;
-          const discountPercentage = getDiscountPercentage(item?.usdPrice, item?.originalPrice);
+         const discountPercentage =
+        getDiscountPercentage(
+          displayedUsdPrice,
+          item?.originalPrice
+        );
 
           return (
            <div key={id} className="bbe-item-card">
@@ -682,7 +1133,11 @@ const displayName =
 </div>
 
 <div className="bbe-item-price-row">
-  <span className="bbe-item-price"> {formatPrice(item?.usdPrice)}</span>
+  <span className="bbe-item-price">
+      {formatPrice(
+    displayedUsdPrice
+  )}
+  </span>
 
   <span className="bbe-deals-badge">{t("deal")}</span>
 
@@ -787,25 +1242,16 @@ const displayName =
   </div>
 )}
 
-{isItemInBasket(product.itemId) ? (
-  <button
-    type="button"
-    className="bbe-added-basket-btn"
-    onClick={(e) => {
-      e.stopPropagation();
-     router.push(withCountry("/basket"));
-    }}
-  >
-    <span className="bbe-cart-icon">🛒</span>
-
-    <span className="bbe-cart-count">
-      {getBasketQuantity(product.itemId)}
-    </span>
-  </button>
-) : (
+<div
+  className="bbe-basket-actions"
+  onClick={(e) =>
+    e.stopPropagation()
+  }
+>
   <button
     type="button"
     className="bbe-add-basket-btn"
+    disabled={addingToBasket}
     onClick={(e) =>
       handleAddToBasketPreview(
         product,
@@ -815,15 +1261,248 @@ const displayName =
       )
     }
   >
-   {t("add_to_basket")}
+    {addingToBasket
+      ? t("adding")
+      : t("add_to_basket")}
   </button>
-)}
+
+  {getBasketQuantity(
+    product.itemId
+  ) > 0 && (
+    <button
+      type="button"
+      className="bbe-added-basket-btn"
+      onClick={(e) => {
+        e.stopPropagation();
+
+        router.push(
+          withCountry(
+            "/basket"
+          )
+        );
+      }}
+      aria-label="Open basket"
+    >
+      <span className="bbe-cart-icon">
+        🛒
+      </span>
+
+      <span className="bbe-cart-count">
+        {getBasketQuantity(
+          product.itemId
+        )}
+      </span>
+    </button>
+  )}
+</div>
 
   </div>
 </div>
           );
         })}
       </div>
+
+       {sizeModalOpen &&
+  pendingBasketProduct && (
+    <div
+      className="bbe-size-modal-overlay"
+      onClick={() => {
+        if (!addingToBasket) {
+          setSizeModalOpen(false);
+        }
+      }}
+    >
+      <div
+        className="bbe-size-modal"
+        onClick={(e) =>
+          e.stopPropagation()
+        }
+      >
+        <button
+          type="button"
+          className="bbe-size-modal-close"
+          disabled={addingToBasket}
+          onClick={() =>
+            setSizeModalOpen(false)
+          }
+        >
+          ×
+        </button>
+
+        <div className="bbe-size-modal-header">
+          <img
+            src={
+              pendingBasketImage ||
+              getDisplayImage(
+                pendingBasketProduct
+              )
+            }
+            alt=""
+            className="bbe-size-modal-image"
+          />
+
+          <div>
+            <div className="bbe-size-modal-title">
+              {pendingBasketProduct
+                ?.item?.name ||
+                pendingBasketProduct
+                  ?.details?.itemName ||
+                t("product")}
+            </div>
+
+            {pendingBasketColor && (
+              <div className="bbe-size-modal-color">
+                {t("color")}:{" "}
+                <strong>
+                  {translateColor(
+                    pendingBasketColor
+                  )}
+                </strong>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bbe-size-modal-section">
+          <div className="bbe-size-modal-label">
+            {t("choose_size")}
+          </div>
+
+          <div className="bbe-size-options">
+            {pendingSizes.map(
+              (variant) => {
+                const active =
+                  String(
+                    selectedModalSize
+                  ) ===
+                  String(
+                    variant.size
+                  );
+
+                return (
+                  <button
+                    key={
+                      variant.size
+                    }
+                    type="button"
+                    className={`bbe-size-option ${
+                      active
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setSelectedModalSize(
+                        variant.size
+                      )
+                    }
+                  >
+                    <span>
+                      {variant.size}
+                    </span>
+
+                    {Number.isFinite(
+                      variant.price
+                    ) && (
+                      <small>
+                        {formatPrice(
+                          variant.price
+                        )}
+                      </small>
+                    )}
+                  </button>
+                );
+              }
+            )}
+          </div>
+        </div>
+
+        <div className="bbe-size-modal-section">
+          <div className="bbe-size-modal-label">
+            {t("quantity")}
+          </div>
+
+          <div className="bbe-modal-quantity">
+            <button
+              type="button"
+              disabled={
+                modalQuantity <= 1
+              }
+              onClick={() =>
+                setModalQuantity(
+                  (prev) =>
+                    Math.max(
+                      1,
+                      prev - 1
+                    )
+                )
+              }
+            >
+              −
+            </button>
+
+            <strong>
+              {modalQuantity}
+            </strong>
+
+            <button
+              type="button"
+              onClick={() =>
+                setModalQuantity(
+                  (prev) =>
+                    prev + 1
+                )
+              }
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {selectedModalSize && (
+          <div className="bbe-modal-selected-price">
+            {formatPrice(
+              getVariantPrice(
+                pendingBasketProduct,
+                pendingBasketColor,
+                selectedModalSize
+              )
+            )}
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="bbe-size-modal-confirm"
+          disabled={
+            !selectedModalSize ||
+            addingToBasket
+          }
+          onClick={() =>
+            addBasketVariant({
+              product:
+                pendingBasketProduct,
+
+              selectedColor:
+                pendingBasketColor,
+
+              selectedImage:
+                pendingBasketImage,
+
+              selectedSize:
+                selectedModalSize,
+
+              quantity:
+                modalQuantity,
+            })
+          }
+        >
+          {addingToBasket
+            ? t("adding")
+            : t("add_to_basket")}
+        </button>
+      </div>
+    </div>
+  )}
     </div>
   );
 }

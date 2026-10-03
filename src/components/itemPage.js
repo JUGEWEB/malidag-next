@@ -55,6 +55,283 @@ const [brandThemes, setBrandThemes] = useState([]);
 const [messageApi, contextHolder] = message.useMessage();
 const [basketItems, setBasketItems] = useState([]);
 const [rates, setRates] = useState(null);
+const [sizeModalOpen, setSizeModalOpen] = useState(false);
+const [pendingBasketItem, setPendingBasketItem] = useState(null);
+const [pendingSizes, setPendingSizes] = useState([]);
+const [selectedModalSize, setSelectedModalSize] = useState(null);
+const [addingToBasket, setAddingToBasket] = useState(false);
+const [modalQuantity, setModalQuantity] = useState(1);
+
+const getSizesForColor = (itemData, color) => {
+  // IMPORTANT:
+  // itemData is the whole product object.
+  // The actual size map lives inside itemData.item.size.
+  const sizeMap =
+    itemData?.item?.size ||
+    itemData?.details?.sizes ||
+    {};
+
+  if (
+    !sizeMap ||
+    typeof sizeMap !== "object" ||
+    Array.isArray(sizeMap) ||
+    !color
+  ) {
+    return [];
+  }
+
+  // Normalize selected color.
+  // imagesVariants and size can use slightly different casing.
+  const normalizedSelectedColor = String(color)
+    .trim()
+    .toLowerCase();
+
+  // Find the corresponding color inside the size object.
+  const actualColorKey = Object.keys(sizeMap).find(
+    (key) =>
+      String(key).trim().toLowerCase() ===
+      normalizedSelectedColor
+  );
+
+  if (!actualColorKey) {
+    return [];
+  }
+
+  const entries = sizeMap[actualColorKey];
+
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  const normalizedSizes = entries.flatMap((entry) => {
+    /*
+      FORMAT 1
+
+      "Navy Blazer": [
+        "40, 42, 45"
+      ]
+
+      No special price.
+    */
+    if (typeof entry === "string") {
+      return entry
+        .split(",")
+        .map((size) => size.trim())
+        .filter(Boolean)
+        .map((size) => ({
+          value: size,
+          price: null,
+        }));
+    }
+
+    /*
+      FORMAT 2
+
+      "Vapor Blue": [
+        {
+          value: "40, 42, 43, 44, 45, 46",
+          price: 42.99
+        }
+      ]
+
+      Every size contained in value uses the
+      special price from the object.
+    */
+    if (
+      entry &&
+      typeof entry === "object" &&
+      !Array.isArray(entry)
+    ) {
+      const sizeValues = String(
+        entry.value ?? ""
+      )
+        .split(",")
+        .map((size) => size.trim())
+        .filter(Boolean);
+
+      let specialPrice = null;
+
+      if (
+        entry.price !== undefined &&
+        entry.price !== null &&
+        entry.price !== ""
+      ) {
+        const parsedPrice = Number(entry.price);
+
+        if (Number.isFinite(parsedPrice)) {
+          specialPrice = parsedPrice;
+        }
+      }
+
+      return sizeValues.map((size) => ({
+        value: size,
+        price: specialPrice,
+      }));
+    }
+
+    return [];
+  });
+
+  /*
+    Remove duplicates just in case the database contains
+    the same size more than once.
+
+    If one duplicate has a special price, prefer that one.
+  */
+  const uniqueSizes = new Map();
+
+  normalizedSizes.forEach((option) => {
+    const key = String(option.value)
+      .trim()
+      .toLowerCase();
+
+    if (!key) {
+      return;
+    }
+
+    const existing = uniqueSizes.get(key);
+
+    if (!existing) {
+      uniqueSizes.set(key, option);
+      return;
+    }
+
+    if (
+      existing.price == null &&
+      option.price != null
+    ) {
+      uniqueSizes.set(key, option);
+    }
+  });
+
+  return Array.from(uniqueSizes.values());
+};
+
+const getPriceForSelectedColor = (itemData, color) => {
+  const item = itemData?.item || {};
+
+  const mainPrice = Number(
+    item.usdPrice ||
+    itemData?.details?.usdText ||
+    0
+  );
+
+  if (!color) {
+    return mainPrice;
+  }
+
+  const sizes = getSizesForColor(itemData, color);
+
+  if (!sizes.length) {
+    return mainPrice;
+  }
+
+  // Get every valid special price belonging to this color.
+  const specialPrices = sizes
+    .map((option) => Number(option?.price))
+    .filter(
+      (price) =>
+        Number.isFinite(price) &&
+        price > 0
+    );
+
+  // No special price for this color.
+  if (!specialPrices.length) {
+    return mainPrice;
+  }
+
+  /*
+    If all priced sizes have the same price,
+    this simply returns that price.
+
+    If sizes have multiple prices, show the
+    lowest price on the card.
+  */
+  return Math.min(...specialPrices);
+};
+
+const addBasketVariant = async (
+  itemData,
+  selectedColorForBasket,
+  selectedSizeForBasket = null,
+  variantPrice = null,
+  quantity = 1
+) => {
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) return;
+
+  const item = itemData?.item || {};
+
+  const variantImages =
+    item?.imagesVariants?.[selectedColorForBasket] || [];
+
+  const basketImage =
+    getImageUrl(variantImages?.[0]) ||
+    getImageUrl(item?.images?.[0]);
+
+  const finalPrice =
+    variantPrice !== null &&
+    variantPrice !== undefined &&
+    Number.isFinite(Number(variantPrice))
+      ? Number(variantPrice)
+      : Number(item.usdPrice || 0);
+
+  const basketItem = {
+    userId: currentUser.uid,
+    item: {
+      id: itemData.id,
+      itemId: itemData.itemId,
+      name: item.name,
+
+      // Snapshot exact selected variant price
+      price: finalPrice,
+
+      color: selectedColorForBasket,
+      size: selectedSizeForBasket,
+      image: basketImage,
+      brand: item.brand,
+      brandPrice: item.brandPrice,
+     quantity: Math.max(1, Number(quantity) || 1),
+    },
+  };
+
+  try {
+    setAddingToBasket(true);
+
+    const response = await axios.post(
+      BASKET_API,
+      basketItem
+    );
+
+    if (
+      response.status === 200 ||
+      response.status === 201
+    ) {
+      await fetchUserBasket();
+
+      setSizeModalOpen(false);
+      setPendingBasketItem(null);
+      setPendingSizes([]);
+      setSelectedModalSize(null);
+
+      messageApi.success(
+        `${item.name} added to cart`
+      );
+    } else {
+      messageApi.error(t("basket_add_failed"));
+    }
+  } catch (error) {
+    console.error(
+      "Error adding item to basket:",
+      error
+    );
+
+    messageApi.error(t("basket_add_error"));
+  } finally {
+    setAddingToBasket(false);
+  }
+};
 
 const currencyConfig = useMemo(
   () => getCountryConfig(country?.name || ""),
@@ -178,8 +455,25 @@ useEffect(() => {
 }, []);
 
 const getBasketQuantity = (itemId) => {
-  const basketItem = basketItems.find((item) => item.itemId === itemId);
-  return Number(basketItem?.quantity || 0);
+  return basketItems
+    .filter((basketItem) => {
+      const basketProductId =
+        basketItem?.itemId ??
+        basketItem?.item?.itemId;
+
+      return String(basketProductId) === String(itemId);
+    })
+    .reduce((total, basketItem) => {
+      const quantity = Number(
+        basketItem?.quantity ??
+        basketItem?.item?.quantity ??
+        1
+      );
+
+      return total + (
+        Number.isFinite(quantity) ? quantity : 0
+      );
+    }, 0);
 };
 
 const isItemInBasket = (itemId) => {
@@ -378,59 +672,95 @@ const formatPrice = (usdAmount) => {
   fetchTranslations();
 }, [items, currentLanguage]);
 
-  const handleAddToBasket = async (itemData, e) => {
+ const handleAddToBasket = async (itemData, e) => {
   e.stopPropagation();
 
   const currentUser = auth?.currentUser;
 
   if (!currentUser) {
     const currentPath =
-      typeof window !== "undefined" ? window.location.pathname : "/";
+      typeof window !== "undefined"
+        ? window.location.pathname
+        : "/";
 
-   router.push(withCountry(`/auth?redirect=${encodeURIComponent(currentPath)}`));
+    router.push(
+      withCountry(
+        `/auth?redirect=${encodeURIComponent(currentPath)}`
+      )
+    );
+
     return;
   }
 
-  try {
-    const item = itemData?.item || {};
-    const colorOptions = getColorOptions(itemData);
+  const item = itemData?.item || {};
+  const colorOptions = getColorOptions(itemData);
 
-    const selectedColorForBasket =
-      selectedColorByItem[itemData.id] || colorOptions?.[0] || null;
+  const selectedColorForBasket =
+    selectedColorByItem[itemData.id] ||
+    colorOptions?.[0] ||
+    null;
 
-    const variantImages = item?.imagesVariants?.[selectedColorForBasket] || [];
+  // Only get sizes belonging to THIS color.
+  const colorSizes = getSizesForColor(
+    itemData,
+    selectedColorForBasket
+  );
 
-    const basketImage =
-      getImageUrl(variantImages?.[0]) || getImageUrl(item?.images?.[0]);
+  // This variant has sizes -> user must choose one.
+  if (colorSizes.length > 0) {
+    setPendingBasketItem({
+      itemData,
+      color: selectedColorForBasket,
+    });
 
-    const basketItem = {
-      userId: currentUser.uid,
-      item: {
-        id: itemData.id,
-        itemId: itemData.itemId,
-        name: item.name,
-        price: Number(item.usdPrice || 0),
-        color: selectedColorForBasket,
-        size: null,
-        image: basketImage,
-        brand: item.brand,
-        brandPrice: item.brandPrice,
-        quantity: 1,
-      },
-    };
+   setPendingSizes(colorSizes);
+setSelectedModalSize(null);
+setModalQuantity(1);
+setSizeModalOpen(true);
 
-    const response = await axios.post(BASKET_API, basketItem);
-
-    if (response.status === 200 || response.status === 201) {
-      await fetchUserBasket();
-      messageApi.success(`${item.name} added to cart`);
-    } else {
-     messageApi.error(t("basket_add_failed"));
-    }
-  } catch (error) {
-    console.error("Error adding item to basket:", error);
-   messageApi.error(t("basket_add_error"));
+    return;
   }
+
+  // No sizes exist for this color/product.
+  // Add normally using main product price.
+  await addBasketVariant(
+    itemData,
+    selectedColorForBasket,
+    null,
+    Number(item.usdPrice || 0)
+  );
+};
+
+const handleModalSizeSelect = (sizeOption) => {
+  setSelectedModalSize(sizeOption);
+};
+
+const handleConfirmSize = async () => {
+  if (
+    !pendingBasketItem ||
+    !selectedModalSize
+  ) {
+    return;
+  }
+
+  const { itemData, color } =
+    pendingBasketItem;
+
+  const item = itemData?.item || {};
+
+  const finalPrice =
+    selectedModalSize.price !== null &&
+    selectedModalSize.price !== undefined
+      ? selectedModalSize.price
+      : Number(item.usdPrice || 0);
+
+  await addBasketVariant(
+  itemData,
+  color,
+  selectedModalSize.value,
+  finalPrice,
+  modalQuantity
+);
 };
 
   const brands = Array.from(
@@ -747,6 +1077,150 @@ const filteredItems = items.filter((itemData) => {
   return (
     <div className="page-layout-cc">
       {contextHolder}
+
+      {sizeModalOpen && pendingBasketItem && (
+  <div
+    className="size-modal-overlay-cc"
+    onClick={() => {
+      if (!addingToBasket) {
+        setSizeModalOpen(false);
+      }
+    }}
+  >
+    <div
+      className="size-modal-cc"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="size-modal-title"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="size-modal-close-cc"
+        onClick={() => {
+          if (!addingToBasket) {
+            setSizeModalOpen(false);
+          }
+        }}
+        disabled={addingToBasket}
+        aria-label={t("close")}
+      >
+        ×
+      </button>
+
+      <div className="size-modal-header-cc">
+        <div className="size-modal-eyebrow-cc">
+          {translateColor(
+            pendingBasketItem.color
+          )}
+        </div>
+
+        <h3 id="size-modal-title">
+          {t("choose_size") || "Choose your size"}
+        </h3>
+
+        <p>
+          {t("choose_size_description") ||
+            "Select a size before adding this item to your cart."}
+        </p>
+      </div>
+
+      <div className="size-modal-options-cc">
+        {pendingSizes.map((sizeOption) => {
+          const active =
+            selectedModalSize?.value ===
+            sizeOption.value;
+
+          return (
+            <button
+              key={sizeOption.value}
+              type="button"
+              className={`size-modal-option-cc ${
+                active ? "active" : ""
+              }`}
+              onClick={() =>
+                handleModalSizeSelect(
+                  sizeOption
+                )
+              }
+            >
+              <span className="size-modal-size-cc">
+                {sizeOption.value}
+              </span>
+
+              {sizeOption.price !== null && (
+                <span className="size-modal-price-cc">
+                  {formatPrice(
+                    sizeOption.price
+                  )}
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {/* QUANTITY */}
+<div className="size-modal-quantity-section-cc">
+  <div className="size-modal-quantity-label-cc">
+    {t("quantity") || "Quantity"}
+  </div>
+
+  <div className="size-modal-quantity-control-cc">
+    <button
+      type="button"
+      className="size-modal-quantity-btn-cc"
+      onClick={() =>
+        setModalQuantity((prev) =>
+          Math.max(1, prev - 1)
+        )
+      }
+      disabled={
+        modalQuantity <= 1 ||
+        addingToBasket
+      }
+      aria-label={t("decrease_quantity") || "Decrease quantity"}
+    >
+      −
+    </button>
+
+    <span className="size-modal-quantity-value-cc">
+      {modalQuantity}
+    </span>
+
+    <button
+      type="button"
+      className="size-modal-quantity-btn-cc"
+      onClick={() =>
+        setModalQuantity((prev) =>
+          prev + 1
+        )
+      }
+      disabled={addingToBasket}
+      aria-label={t("increase_quantity") || "Increase quantity"}
+    >
+      +
+    </button>
+  </div>
+</div>
+      </div>
+
+      <button
+        type="button"
+        className="size-modal-confirm-cc"
+        disabled={
+          !selectedModalSize ||
+          addingToBasket
+        }
+        onClick={handleConfirmSize}
+      >
+        {addingToBasket
+          ? t("adding") || "Adding..."
+          : t("add_to_cart")}
+      </button>
+    </div>
+  </div>
+)}
+
       {isSmallScreen && (
         <div className="mobile-top-bar-cc">
           <div className="mobile-results-title-cc"  onClick={() =>
@@ -1298,10 +1772,27 @@ const filteredItems = items.filter((itemData) => {
     ? originalName
     : translatedName || originalName;
 
-  const usdPrice = parseFloat(item.usdPrice || details.usdText || 0);
-  const originalPrice = parseFloat(
-    item.originalPrice || details.originalPrice || 0
-  );
+ const mainUsdPrice = parseFloat(
+  item.usdPrice ||
+  details.usdText ||
+  0
+);
+
+const selectedColor =
+  selectedColorByItem[id] ||
+  getColorOptions(itemData)?.[0] ||
+  null;
+
+const usdPrice = getPriceForSelectedColor(
+  itemData,
+  selectedColor
+);
+
+const originalPrice = parseFloat(
+  item.originalPrice ||
+  details.originalPrice ||
+  0
+);
 
  const sold = item.sold || details.soldText || "";
 const numericSold = Number(sold) || 0;
@@ -1334,7 +1825,7 @@ const displayOriginalPrice =
 
  const firstImage = getDisplayImage(itemData);
 const colorOptions = getColorOptions(itemData);
-const selectedColor = selectedColorByItem[id];
+
 const visibleColorOptions = colorOptions.slice(0, 4);
 const hiddenColorCount = Math.max(colorOptions.length - 4, 0);
 const brandDelivery =
@@ -1345,7 +1836,7 @@ const brandDelivery =
   )?.delivery || null;
 
 const hasFreeDelivery = Boolean(brandDelivery?.isFree);
-
+const basketQuantity = getBasketQuantity(itemId);
   return (
     <div key={id} className="item-card-cc">
       <div className="item-media-box-cc">
@@ -1518,27 +2009,47 @@ const hasFreeDelivery = Boolean(brandDelivery?.isFree);
   )}
 
   {/* CART */}
-  {isItemInBasket(itemId) ? (
+  {/* CART */}
+<div className="item-cart-area-cc">
+
+  {/* This button ALWAYS stays available */}
+  <button
+    type="button"
+    className="add-to-basket-btn-cc"
+    onClick={(e) =>
+      handleAddToBasket(itemData, e)
+    }
+  >
+    {t("add_to_cart")}
+  </button>
+
+  {/* Only appears after this product exists in basket */}
+  {basketQuantity > 0 && (
     <button
       type="button"
-      className="added-to-basket-btn-cc"
+      className="item-cart-count-cc"
       onClick={(e) => {
         e.stopPropagation();
-        router.push(withCountry("/basket"));
+        router.push(
+          withCountry("/basket")
+        );
       }}
+      aria-label={`${basketQuantity} ${
+        t("in_cart") || "in cart"
+      }`}
+      title={t("in_cart") || "In cart"}
     >
-      <span className="item-cart-icon-cc">🛒</span>
-      <span>{getBasketQuantity(itemId)} {t("in_cart") || ""}</span>
-    </button>
-  ) : (
-    <button
-      type="button"
-      className="add-to-basket-btn-cc"
-      onClick={(e) => handleAddToBasket(itemData, e)}
-    >
-      {t("add_to_cart")}
+      <span className="item-cart-count-icon-cc">
+        🛒
+      </span>
+
+      <span className="item-cart-count-number-cc">
+        {basketQuantity}
+      </span>
     </button>
   )}
+
+</div>
 </div>
 </div>
   );

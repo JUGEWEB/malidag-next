@@ -369,64 +369,58 @@ useEffect(() => {
 };
 
   // Remove item from basket using API
- const removeFromBasket = async (
-  basketItem
-) => {
+const removeFromBasket = async (basketItem) => {
   if (!user?.uid || !basketItem) {
     return;
   }
 
   try {
-    const response =
-      await axios.delete(
-        `${BASKET_API}/remove-from-basket/${user.uid}`,
-        {
-          data: {
-            id: basketItem.id,
-            color:
-              basketItem.color ?? null,
-            size:
-              basketItem.size ?? null,
-          },
-        }
-      );
+    const response = await axios.delete(
+      `${BASKET_API}/remove-from-basket/${user.uid}`,
+      {
+        data: {
+          id: basketItem.id,
+          color: basketItem.color ?? null,
+          size: basketItem.size ?? null,
+        },
+      }
+    );
 
+    // Backend must explicitly confirm the delete
     if (
-      response.status === 200 &&
-      response.data?.success === true
+      response.status !== 200 ||
+      response.data?.success !== true ||
+      !Array.isArray(response.data?.basket)
     ) {
-      /*
-       * Use the persisted basket returned
-       * directly by MongoDB/backend.
-       */
-      setBasket(
-        Array.isArray(
-          response.data?.basket
-        )
-          ? response.data.basket
-          : []
+      throw new Error(
+        response.data?.error ||
+        "Server did not confirm basket deletion."
       );
-
-      messageApi.success(
-        "Item removed from basket!"
-      );
-
-      return;
     }
 
-    messageApi.error(
-      "Unable to remove item."
+    /*
+     * IMPORTANT:
+     * basket.js already reads MongoDB AFTER $pull
+     * and returns the persisted basket.
+     *
+     * So use that result directly.
+     * DO NOT call fetchBasket() here.
+     */
+    setBasket(response.data.basket);
+
+    messageApi.success(
+      "Item removed from basket!"
     );
   } catch (error) {
     console.error(
       "Error removing item from basket:",
-      error?.response?.data ||
-        error
+      error?.response?.data || error
     );
 
     messageApi.error(
       error?.response?.data?.error ||
-        "Unable to remove item."
+      error?.message ||
+      "Unable to remove item."
     );
   }
 };

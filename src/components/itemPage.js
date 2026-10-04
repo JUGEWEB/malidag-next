@@ -61,6 +61,8 @@ const [pendingSizes, setPendingSizes] = useState([]);
 const [selectedModalSize, setSelectedModalSize] = useState(null);
 const [addingToBasket, setAddingToBasket] = useState(false);
 const [modalQuantity, setModalQuantity] = useState(1);
+const [currentUser, setCurrentUser] = useState(null);
+const [authReady, setAuthReady] = useState(false);
 
 const getSizesForColor = (itemData, color) => {
   // IMPORTANT:
@@ -257,9 +259,10 @@ const addBasketVariant = async (
   variantPrice = null,
   quantity = 1
 ) => {
-  const currentUser = auth?.currentUser;
-
-  if (!currentUser) return;
+ if (!authReady || !currentUser?.uid) {
+    messageApi.error("Please wait a moment and try again.");
+    return;
+  }
 
   const item = itemData?.item || {};
 
@@ -303,21 +306,30 @@ const addBasketVariant = async (
       basketItem
     );
 
-    if (
-      response.status === 200 ||
-      response.status === 201
-    ) {
-      await fetchUserBasket();
+   if (
+  response.status === 200 ||
+  response.status === 201
+) {
+  const persistedBasket =
+    Array.isArray(response.data?.basket)
+      ? response.data.basket
+      : [];
 
-      setSizeModalOpen(false);
-      setPendingBasketItem(null);
-      setPendingSizes([]);
-      setSelectedModalSize(null);
+  // IMPORTANT:
+  // Use the basket returned by the successful POST.
+  // Do NOT immediately GET /basket again.
+  setBasketItems(persistedBasket);
 
-      messageApi.success(
-        `${item.name} added to cart`
-      );
-    } else {
+  setSizeModalOpen(false);
+  setPendingBasketItem(null);
+  setPendingSizes([]);
+  setSelectedModalSize(null);
+  setModalQuantity(1);
+
+  messageApi.success(
+    `${item.name} added to cart`
+  );
+}else {
       messageApi.error(t("basket_add_failed"));
     }
   } catch (error) {
@@ -428,26 +440,42 @@ const translateTaxonomyPhrase = (gender, type) => {
 const BASE_URL = "https://api.malidag.com";
 const BASKET_API = "https://api.malidag.com/add-to-basket";
 
-const fetchUserBasket = async () => {
-  const currentUser = auth?.currentUser;
-
-  if (!currentUser) {
+const fetchUserBasket = async (user = currentUser) => {
+  if (!user?.uid) {
     setBasketItems([]);
     return;
   }
 
   try {
-    const response = await axios.get(`${BASE_URL}/basket/${currentUser.uid}`);
-    setBasketItems(response.data.basket || []);
+    const response = await axios.get(
+      `${BASE_URL}/basket/${user.uid}`
+    );
+
+    setBasketItems(
+      Array.isArray(response.data?.basket)
+        ? response.data.basket
+        : []
+    );
   } catch (error) {
     console.error("Error fetching basket:", error);
-    setBasketItems([]);
   }
 };
 
 useEffect(() => {
-  const unsubscribe = auth.onAuthStateChanged(() => {
-    fetchUserBasket();
+  if (!authReady) return;
+
+  if (!currentUser?.uid) {
+    setBasketItems([]);
+    return;
+  }
+
+  fetchUserBasket(currentUser);
+}, [authReady, currentUser?.uid]);
+
+useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged((user) => {
+    setCurrentUser(user || null);
+    setAuthReady(true);
   });
 
   return () => unsubscribe();
@@ -674,7 +702,9 @@ const formatPrice = (usdAmount) => {
  const handleAddToBasket = async (itemData, e) => {
   e.stopPropagation();
 
-  const currentUser = auth?.currentUser;
+  if (!authReady) {
+    return;
+  }
 
   if (!currentUser) {
     const currentPath =

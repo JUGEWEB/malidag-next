@@ -613,3 +613,604 @@
     font-size: 1.38rem;
   }
 }
+
+/* =========================================================
+   SIZE SELECTION MODAL
+========================================================= */
+
+.size-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  animation: sizeModalOverlayIn 0.2s ease;
+}
+
+.size-modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 40px);
+
+  overflow-y: auto;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+
+  padding: 22px;
+
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.18),
+    0 8px 20px rgba(15, 23, 42, 0.08);
+
+  animation: sizeModalIn 0.22s ease;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.size-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 20px;
+}
+
+.size-modal-header h2 {
+  margin: 0;
+
+  font-size: 1.2rem;
+  line-height: 1.25;
+
+  font-weight: 900;
+  letter-spacing: -0.03em;
+
+  color: #111827;
+}
+
+.size-modal-close {
+  flex-shrink: 0;
+
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.size-modal-close:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.size-modal-close:active {
+  transform: scale(0.94);
+}
+
+
+/* =========================================================
+   SIZE OPTIONS
+========================================================= */
+
+.size-modal-options {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-bottom: 22px;
+}
+
+.size-modal-option {
+  min-width: 0;
+  min-height: 72px;
+
+  padding: 11px 8px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+
+  background: #ffffff;
+  color: #111827;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.size-modal-option:hover {
+  border-color: #111827;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.size-modal-option span {
+  display: block;
+
+  max-width: 100%;
+
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1.15;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.size-modal-option small {
+  display: block;
+
+  max-width: 100%;
+
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.2;
+
+  color: #6b7280;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  transition: color 0.18s ease;
+}
+
+
+/* SELECTED SIZE */
+
+.size-modal-option.active {
+  background: #111827;
+  border-color: #111827;
+  color: #ffffff;
+
+  box-shadow:
+    0 5px 14px rgba(17, 24, 39, 0.16);
+}
+
+.size-modal-option.active small {
+  color: #d1d5db;
+}
+
+.size-modal-option.active:hover {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+
+
+/* =========================================================
+   ADD TO CART BUTTON
+========================================================= */
+
+.size-modal-add {
+  width: 100%;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #111827;
+  border-radius: 999px;
+
+  background: #111827;
+  color: #ffffff;
+
+  font-size: 0.84rem;
+  font-weight: 900;
+
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.size-modal-add:not(:disabled):hover {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+
+.size-modal-add:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+
+/* Nothing selected yet */
+
+.size-modal-add:disabled {
+  background: #e5e7eb;
+  border-color: #e5e7eb;
+
+  color: #9ca3af;
+
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+
+/* =========================================================
+   ACCESSIBILITY / FOCUS
+========================================================= */
+
+.size-modal-option:focus-visible,
+.size-modal-close:focus-visible,
+.size-modal-add:focus-visible {
+  outline: 3px solid rgba(17, 24, 39, 0.2);
+  outline-offset: 3px;
+}
+
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+@keyframes sizeModalOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sizeModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 640px) {
+  .size-modal-overlay {
+    align-items: flex-end;
+
+    padding: 0;
+
+    background: rgba(15, 23, 42, 0.5);
+  }
+
+  .size-modal {
+    max-width: none;
+    max-height: 82vh;
+
+    padding: 20px 16px 18px;
+
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+
+    border-radius: 22px 22px 0 0;
+
+    animation: sizeModalMobileIn 0.25s ease;
+  }
+
+  .size-modal-header {
+    margin-bottom: 18px;
+  }
+
+  .size-modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .size-modal-options {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-bottom: 18px;
+  }
+
+  .size-modal-option {
+    min-height: 68px;
+
+    padding: 10px 5px;
+
+    border-radius: 10px;
+  }
+
+  .size-modal-option span {
+    font-size: 0.9rem;
+  }
+
+  .size-modal-option small {
+    font-size: 0.7rem;
+  }
+
+  .size-modal-add {
+    height: 50px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+  .size-modal {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .size-modal-options {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* =========================================================
+   MOBILE ANIMATION
+========================================================= */
+
+@keyframes sizeModalMobileIn {
+  from {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .size-modal-overlay,
+  .size-modal {
+    animation: none;
+  }
+
+  .size-modal-option,
+  .size-modal-close,
+  .size-modal-add {
+    transition: none;
+  }
+}
+
+/* =========================================================
+   PRODUCT CARD — ADD TO CART + CART QUANTITY
+========================================================= */
+
+.topitem-cart-actions {
+  position: relative;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* Main ADD TO CART button */
+.topitem-cart-actions .topitem-add-cart-btn {
+  width: 100%;
+  margin-top: 0;
+  height: 42px;
+
+  padding: 0 72px 0 18px;
+
+  border: 1px solid #111827;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.topitem-cart-actions .topitem-add-cart-btn:hover {
+  background: #111827;
+  color: #ffffff;
+}
+
+.topitem-cart-actions .topitem-add-cart-btn:active {
+  transform: scale(0.98);
+}
+
+
+/* Small black cart counter overlapping the right side */
+.topitem-cart-actions .topitem-added-cart-btn {
+  position: absolute;
+
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+
+  width: auto;
+  min-width: 62px;
+  height: 46px;
+
+  margin: 0;
+  padding: 0 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #111827;
+  color: #ffffff;
+
+  font-size: 0.9rem;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  z-index: 3;
+
+  box-shadow:
+    0 3px 8px rgba(15, 23, 42, 0.18),
+    0 1px 3px rgba(15, 23, 42, 0.12);
+
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.topitem-cart-actions .topitem-added-cart-btn:hover {
+  background: #020617;
+  transform: translateY(-50%) scale(1.04);
+
+  box-shadow:
+    0 5px 12px rgba(15, 23, 42, 0.24),
+    0 2px 4px rgba(15, 23, 42, 0.14);
+}
+
+.topitem-cart-actions .topitem-added-cart-btn:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+
+/* Cart icon */
+.topitem-cart-actions .topitem-cart-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 1rem;
+  line-height: 1;
+}
+
+
+/* Quantity */
+.topitem-cart-actions .topitem-cart-added-text {
+  display: block;
+
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+
+  color: #ffffff;
+}
+
+
+/* Keyboard accessibility */
+.topitem-cart-actions .topitem-add-cart-btn:focus-visible,
+.topitem-cart-actions .topitem-added-cart-btn:focus-visible {
+  outline: 3px solid rgba(17, 24, 39, 0.2);
+  outline-offset: 3px;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+  .topitem-cart-actions {
+    margin-top: 10px;
+  }
+
+  .topitem-cart-actions .topitem-add-cart-btn {
+    height: 40px;
+
+    padding-left: 12px;
+    padding-right: 58px;
+
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+  }
+
+  .topitem-cart-actions .topitem-added-cart-btn {
+    right: 7px;
+
+    min-width: 50px;
+    height: 42px;
+
+    padding: 0 10px;
+    gap: 5px;
+  }
+
+  .topitem-cart-actions .topitem-cart-icon {
+    font-size: 0.85rem;
+  }
+
+  .topitem-cart-actions .topitem-cart-added-text {
+    font-size: 0.8rem;
+  }
+}

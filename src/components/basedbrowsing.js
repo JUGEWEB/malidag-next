@@ -797,6 +797,179 @@ function Browsing() {
     priceRange,
   ]);
 
+  const getProductSizes = useCallback(
+  (product, selectedColor) => {
+    const sizeMap =
+      product?.item?.size ||
+      product?.details?.sizes ||
+      {};
+
+    if (
+      !sizeMap ||
+      typeof sizeMap !== "object" ||
+      Array.isArray(sizeMap) ||
+      !selectedColor
+    ) {
+      return [];
+    }
+
+    const normalizedSelectedColor = String(
+      selectedColor
+    )
+      .trim()
+      .toLowerCase();
+
+    const actualColorKey = Object.keys(
+      sizeMap
+    ).find(
+      (key) =>
+        String(key).trim().toLowerCase() ===
+        normalizedSelectedColor
+    );
+
+    if (!actualColorKey) {
+      return [];
+    }
+
+    const entries = sizeMap[actualColorKey];
+
+    if (!Array.isArray(entries)) {
+      return [];
+    }
+
+    return entries.flatMap((entry) => {
+      /*
+        Normal size entry:
+        "40, 42, 45"
+
+        No variant price.
+      */
+      if (
+        typeof entry === "string" ||
+        typeof entry === "number"
+      ) {
+        return String(entry)
+          .split(",")
+          .map((size) => size.trim())
+          .filter(Boolean)
+          .map((size) => ({
+            value: size,
+            price: null,
+          }));
+      }
+
+      /*
+        Priced variant:
+
+        {
+          value: "40, 42, 43",
+          price: 42.99
+        }
+      */
+      if (
+        entry &&
+        typeof entry === "object" &&
+        !Array.isArray(entry)
+      ) {
+        const rawValue =
+          entry.value ??
+          entry.size ??
+          entry.name ??
+          "";
+
+        const rawPrice =
+          entry.price ??
+          entry.usdPrice ??
+          entry.variantPrice ??
+          null;
+
+        let variantPrice = null;
+
+        if (
+          rawPrice !== null &&
+          rawPrice !== undefined &&
+          rawPrice !== ""
+        ) {
+          const parsedPrice = Number(rawPrice);
+
+          if (Number.isFinite(parsedPrice)) {
+            variantPrice = parsedPrice;
+          }
+        }
+
+        return String(rawValue)
+          .split(",")
+          .map((size) => size.trim())
+          .filter(Boolean)
+          .map((size) => ({
+            value: size,
+            price: variantPrice,
+          }));
+      }
+
+      return [];
+    });
+  },
+  []
+);
+
+
+const getProductPriceForColor = useCallback(
+  (product, selectedColor) => {
+    const mainPrice = Number(
+      product?.item?.usdPrice || 0
+    );
+
+    if (!selectedColor) {
+      return mainPrice;
+    }
+
+    const sizes = getProductSizes(
+      product,
+      selectedColor
+    );
+
+    const variantPrices = sizes
+      .map((sizeOption) => {
+        if (
+          sizeOption?.price === null ||
+          sizeOption?.price === undefined ||
+          sizeOption?.price === ""
+        ) {
+          return null;
+        }
+
+        const price = Number(
+          sizeOption.price
+        );
+
+        return Number.isFinite(price) &&
+          price > 0
+          ? price
+          : null;
+      })
+      .filter(
+        (price) => price !== null
+      );
+
+    /*
+      Selected color has no special price,
+      so fall back to the normal product price.
+    */
+    if (!variantPrices.length) {
+      return mainPrice;
+    }
+
+    /*
+      If multiple sizes have different prices,
+      show the lowest available variant price
+      on this browsing card.
+    */
+    return Math.min(...variantPrices);
+  },
+  [getProductSizes]
+);
+
   /* ---------------------------------
      PRODUCT IMAGES
   ---------------------------------- */
@@ -1546,6 +1719,12 @@ function Browsing() {
                       id
                     ];
 
+                    const displayedUsdPrice =
+                    getProductPriceForColor(
+                      itemData,
+                      selectedProductColor
+                    );
+
                   const displayImage =
                     getDisplayImage(
                       itemData
@@ -1842,8 +2021,8 @@ function Browsing() {
                         <div className="browsing-card-bottom">
                           <div>
                             <div className="browsing-card-price">
-                              {formatPrice(
-                                item?.usdPrice
+                             {formatPrice(
+                                displayedUsdPrice
                               )}
                             </div>
 

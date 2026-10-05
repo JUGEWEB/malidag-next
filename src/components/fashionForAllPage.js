@@ -366,16 +366,17 @@ const allFashionItems = useMemo(() => {
       id: rawItem.id,
       itemId: rawItem.itemId,
       brand,
-      item: {
-        name: rawItem.name,
-        brand,
-        type: rawItem.type,
-        images: rawItem.images || [],
-        imagesVariants: rawItem.imagesVariants || {},
-        usdPrice: rawItem.usdPrice,
-        cryptocurrency: rawItem.cryptocurrency,
-        sold: rawItem.sold,
-      },
+     item: {
+      name: rawItem.name,
+      brand,
+      type: rawItem.type,
+      images: rawItem.images || [],
+      imagesVariants: rawItem.imagesVariants || {},
+      size: rawItem.size || {},
+      usdPrice: rawItem.usdPrice,
+      cryptocurrency: rawItem.cryptocurrency,
+      sold: rawItem.sold,
+    },
     }))
   );
 }, [topItemsPerBrand]);
@@ -476,6 +477,97 @@ const sortImages = (images = []) => {
 
 const getColorOptions = (product) => {
   return Object.keys(product?.item?.imagesVariants || {});
+};
+
+const getProductPriceForColor = (
+  product,
+  selectedColor
+) => {
+  const mainPrice = Number(
+    product?.item?.usdPrice || 0
+  );
+
+  if (!selectedColor) {
+    return mainPrice;
+  }
+
+  const sizeMap =
+    product?.item?.size || {};
+
+  if (
+    !sizeMap ||
+    typeof sizeMap !== "object" ||
+    Array.isArray(sizeMap)
+  ) {
+    return mainPrice;
+  }
+
+  const normalizedSelectedColor =
+    String(selectedColor)
+      .trim()
+      .toLowerCase();
+
+  const actualColorKey = Object.keys(
+    sizeMap
+  ).find(
+    (key) =>
+      String(key)
+        .trim()
+        .toLowerCase() ===
+      normalizedSelectedColor
+  );
+
+  if (!actualColorKey) {
+    return mainPrice;
+  }
+
+  const entries =
+    sizeMap[actualColorKey];
+
+  if (!Array.isArray(entries)) {
+    return mainPrice;
+  }
+
+  const variantPrices = entries
+    .map((entry) => {
+      if (
+        !entry ||
+        typeof entry !== "object" ||
+        Array.isArray(entry)
+      ) {
+        return null;
+      }
+
+      const rawPrice =
+        entry.price ??
+        entry.usdPrice ??
+        entry.variantPrice ??
+        null;
+
+      if (
+        rawPrice === null ||
+        rawPrice === undefined ||
+        rawPrice === ""
+      ) {
+        return null;
+      }
+
+      const price = Number(rawPrice);
+
+      return Number.isFinite(price) &&
+        price > 0
+        ? price
+        : null;
+    })
+    .filter(
+      (price) => price !== null
+    );
+
+  if (!variantPrices.length) {
+    return mainPrice;
+  }
+
+  return Math.min(...variantPrices);
 };
 
 const getCurrentImages = (product) => {
@@ -890,10 +982,23 @@ if (loading) {
           const reviewsData = reviews[itemId] || {};
           const finalRating = reviewsData?.averageRating || null;
           const isBestSeller = id === bestSellersByBrand[brand];
-          const colorOptions = getColorOptions(itemData);
-          const selectedColorForItem = selectedColorByItem[id];
-          const displayImage = getDisplayImage(itemData);
-          const currentImages = getCurrentImages(itemData);
+         const colorOptions =
+  getColorOptions(itemData);
+
+const selectedColorForItem =
+  selectedColorByItem[id];
+
+const displayedUsdPrice =
+  getProductPriceForColor(
+    itemData,
+    selectedColorForItem
+  );
+
+const displayImage =
+  getDisplayImage(itemData);
+
+const currentImages =
+  getCurrentImages(itemData);
 
           const brandDelivery =
           brandThemes?.find(
@@ -1044,7 +1149,7 @@ if (loading) {
               </div>
             )}
             <div className="item-price">
-              {formatPrice(item.usdPrice)}
+              {formatPrice(displayedUsdPrice)}
             </div>
 
             {item?.sold && Number(item.sold) > 0 && (

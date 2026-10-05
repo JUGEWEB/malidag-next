@@ -112,6 +112,12 @@ function MenFashion({ mtypes, groupedTypes, countryCode }) {
    const router = useRouter();
 const [messageApi, contextHolder] = message.useMessage();
 const [basketItems, setBasketItems] = useState([]);
+const [sizeModalOpen, setSizeModalOpen] = useState(false);
+const [pendingBasketItem, setPendingBasketItem] = useState(null);
+const [pendingSizes, setPendingSizes] = useState([]);
+const [selectedModalSize, setSelectedModalSize] = useState(null);
+const [modalQuantity, setModalQuantity] = useState(1);
+const [addingToBasket, setAddingToBasket] = useState(false);
 const { country } = useAppContext();
 
 const currentLang = isSupportedLanguage(i18n.language)
@@ -440,12 +446,42 @@ useEffect(() => {
 }, []);
 
 const getBasketQuantity = (itemId) => {
-  const basketItem = basketItems.find((item) => item.itemId === itemId);
-  return Number(basketItem?.quantity || 0);
+  return (basketItems || [])
+    .filter(
+      (basketItem) =>
+        String(basketItem?.itemId) === String(itemId)
+    )
+    .reduce(
+      (total, basketItem) =>
+        total + Number(basketItem?.quantity || 0),
+      0
+    );
 };
 
-const isItemInBasket = (itemId) => {
-  return getBasketQuantity(itemId) > 0;
+const getBasketVariantQuantity = (itemId, color, size) => {
+  return (basketItems || [])
+    .filter((basketItem) => {
+      return (
+        String(basketItem?.itemId) === String(itemId) &&
+        String(basketItem?.color || "")
+          .trim()
+          .toLowerCase() ===
+          String(color || "")
+            .trim()
+            .toLowerCase() &&
+        String(basketItem?.size || "")
+          .trim()
+          .toLowerCase() ===
+          String(size || "")
+            .trim()
+            .toLowerCase()
+      );
+    })
+    .reduce(
+      (total, basketItem) =>
+        total + Number(basketItem?.quantity || 0),
+      0
+    );
 };
 
   const getDiscountPercentage = (usdPrice, originalPrice) => {
@@ -456,7 +492,240 @@ const isItemInBasket = (itemId) => {
     return Math.round(((original - current) / original) * 100);
   };
 
- const handleAddToBasket = async (product, selectedColor, selectedImage, e) => {
+ const getProductSizes = (product, selectedColor) => {
+  // IMPORTANT:
+  // Database uses item.size (singular), not item.sizes.
+  const sizeMap =
+    product?.item?.size ||
+    product?.details?.sizes ||
+    {};
+
+  if (
+    !sizeMap ||
+    typeof sizeMap !== "object" ||
+    Array.isArray(sizeMap) ||
+    !selectedColor
+  ) {
+    return [];
+  }
+
+  const normalizedSelectedColor = String(selectedColor)
+    .trim()
+    .toLowerCase();
+
+  // imagesVariants uses lowercase colors while size keys
+  // may use title case, e.g.
+  // "navy blazer" -> "Navy Blazer"
+  const actualColorKey = Object.keys(sizeMap).find(
+    (key) =>
+      String(key).trim().toLowerCase() ===
+      normalizedSelectedColor
+  );
+
+  if (!actualColorKey) {
+    return [];
+  }
+
+  const entries = sizeMap[actualColorKey];
+
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  const normalizedSizes = entries.flatMap((entry) => {
+    /*
+      FORMAT 1:
+
+      "Navy Blazer": [
+        "40, 42, 45"
+      ]
+
+      This MUST become:
+      [
+        { value: "40", price: null },
+        { value: "42", price: null },
+        { value: "45", price: null }
+      ]
+    */
+    if (
+      typeof entry === "string" ||
+      typeof entry === "number"
+    ) {
+      return String(entry)
+        .split(",")
+        .map((size) => size.trim())
+        .filter(Boolean)
+        .map((size) => ({
+          value: size,
+          price: null,
+        }));
+    }
+
+    /*
+      FORMAT 2:
+
+      "Vapor Blue": [
+        {
+          value: "40, 42, 43, 44, 45, 46",
+          price: 42.99
+        }
+      ]
+
+      This becomes individual sizes, all carrying
+      the variant price of 42.99.
+    */
+    if (
+      entry &&
+      typeof entry === "object" &&
+      !Array.isArray(entry)
+    ) {
+      const rawValue =
+        entry.value ??
+        entry.size ??
+        entry.name ??
+        "";
+
+      const sizeValues = String(rawValue)
+        .split(",")
+        .map((size) => size.trim())
+        .filter(Boolean);
+
+      let specialPrice = null;
+
+      const rawPrice =
+        entry.price ??
+        entry.usdPrice ??
+        entry.variantPrice ??
+        null;
+
+      if (
+        rawPrice !== null &&
+        rawPrice !== undefined &&
+        rawPrice !== ""
+      ) {
+        const parsedPrice = Number(rawPrice);
+
+        if (Number.isFinite(parsedPrice)) {
+          specialPrice = parsedPrice;
+        }
+      }
+
+      return sizeValues.map((size) => ({
+        value: size,
+        price: specialPrice,
+      }));
+    }
+
+    /*
+      Defensive support for:
+      ["40", "41", "42"]
+    */
+    if (Array.isArray(entry)) {
+      return entry.flatMap((value) =>
+        String(value)
+          .split(",")
+          .map((size) => size.trim())
+          .filter(Boolean)
+          .map((size) => ({
+            value: size,
+            price: null,
+          }))
+      );
+    }
+
+    return [];
+  });
+
+  // Remove duplicate sizes.
+  // If duplicate entries exist and one has a special
+  // price, keep the priced version.
+  const uniqueSizes = new Map();
+
+  normalizedSizes.forEach((option) => {
+    const key = String(option.value)
+      .trim()
+      .toLowerCase();
+
+    if (!key) return;
+
+    const existing = uniqueSizes.get(key);
+
+    if (!existing) {
+      uniqueSizes.set(key, option);
+      return;
+    }
+
+    if (
+      existing.price == null &&
+      option.price != null
+    ) {
+      uniqueSizes.set(key, option);
+    }
+  });
+
+  return Array.from(uniqueSizes.values());
+};
+
+const getProductPriceForColor = (product, selectedColor) => {
+  const mainPrice = Number(
+    product?.item?.usdPrice ||
+    product?.details?.usdText ||
+    0
+  );
+
+  if (!selectedColor) {
+    return mainPrice;
+  }
+
+  const sizes = getProductSizes(
+    product,
+    selectedColor
+  );
+
+  if (!sizes.length) {
+    return mainPrice;
+  }
+
+  const variantPrices = sizes
+    .map((sizeOption) => {
+      if (
+        sizeOption?.price === null ||
+        sizeOption?.price === undefined ||
+        sizeOption?.price === ""
+      ) {
+        return null;
+      }
+
+      const price = Number(sizeOption.price);
+
+      return Number.isFinite(price) && price > 0
+        ? price
+        : null;
+    })
+    .filter((price) => price !== null);
+
+  // Selected color has no special variant price.
+  if (!variantPrices.length) {
+    return mainPrice;
+  }
+
+  /*
+    If the selected color has a variant price,
+    display it on the product card.
+
+    If different sizes somehow have different prices,
+    use the lowest one until the customer chooses
+    a specific size.
+  */
+  return Math.min(...variantPrices);
+};
+
+ const handleAddToBasket = async (
+  product,
+  selectedColor,
+  selectedImage,
+  e
+) => {
   e.preventDefault();
   e.stopPropagation();
 
@@ -468,53 +737,196 @@ const isItemInBasket = (itemId) => {
         ? window.location.pathname
         : "/men-fashion";
 
-    router.push(withCountry(`/auth?redirect=${encodeURIComponent(currentPath)}`));
+    router.push(
+      withCountry(
+        `/auth?redirect=${encodeURIComponent(currentPath)}`
+      )
+    );
+
+    return;
+  }
+
+  const sizes = getProductSizes(
+    product,
+    selectedColor
+  );
+
+  const pendingItem = {
+    product,
+    selectedColor: selectedColor || null,
+    selectedImage:
+      selectedImage ||
+      getImageUrl(product?.item?.images?.[0]),
+  };
+
+  // Product has sizes → user must choose one
+  if (sizes.length > 0) {
+    setPendingBasketItem(pendingItem);
+    setPendingSizes(sizes);
+    setSelectedModalSize(null);
+    setModalQuantity(1);
+    setSizeModalOpen(true);
+    return;
+  }
+
+  // No sizes → add directly
+  await addBasketVariant({
+    ...pendingItem,
+    sizeOption: null,
+    quantity: 1,
+  });
+};
+
+const addBasketVariant = async ({
+  product,
+  selectedColor,
+  selectedImage,
+  sizeOption,
+  quantity = 1,
+}) => {
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser || addingToBasket) {
     return;
   }
 
   try {
+    setAddingToBasket(true);
+
     const item = product?.item || {};
     const details = product?.details || {};
 
+    const variantPrice =
+      sizeOption?.price !== null &&
+      sizeOption?.price !== undefined &&
+      Number.isFinite(Number(sizeOption.price))
+        ? Number(sizeOption.price)
+        : Number(item?.usdPrice || 0);
+
     const basketItem = {
       userId: currentUser.uid,
+
       item: {
         id: product.id,
         itemId: product.itemId,
         name: item.name,
-        price: Number(item.usdPrice || 0),
+        price: variantPrice,
         color: selectedColor || null,
-        size: null,
-        image: selectedImage || getImageUrl(item?.images?.[0]),
-        brand: item.brand || details.brand,
+        size: sizeOption?.value || null,
+        image:
+          selectedImage ||
+          getImageUrl(item?.images?.[0]),
+        brand:
+          item.brand ||
+          details.brand,
         brandPrice: item.brandPrice,
-        quantity: 1,
-        shippingCountry: details?.country || "",
+        quantity: Math.max(
+          1,
+          Number(quantity) || 1
+        ),
+        shippingCountry:
+          details?.country || "",
         selectedCountry: "",
       },
     };
 
-    const response = await axios.post(BASKET_API, basketItem);
-
-    if (response.status === 200 || response.status === 201) {
-      await fetchUserBasket();
-     messageApi.success(
-        t("basket_add_success", {
-          product: getProductName(product),
-        })
-      );
-    } else {
-     messageApi.error(
-        t("basket_add_failed")
-      );
-    }
-  } catch (error) {
-    console.error("Error adding item to basket:", error);
-   messageApi.error(
-  t("basket_add_error")
+    const response = await axios.post(
+      BASKET_API,
+      basketItem
     );
+
+    if (
+      response.status !== 200 &&
+      response.status !== 201
+    ) {
+      throw new Error("Failed to add item to basket.");
+    }
+
+    // IMPORTANT:
+    // use the basket returned by the POST itself.
+    // No extra GET needed.
+    setBasketItems(
+      Array.isArray(response.data?.basket)
+        ? response.data.basket
+        : []
+    );
+
+    messageApi.success(
+      t("basket_add_success", {
+        product: getProductName(product),
+      })
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      "Error adding item to basket:",
+      error
+    );
+
+    messageApi.error(
+      t("basket_add_error")
+    );
+
+    return false;
+  } finally {
+    setAddingToBasket(false);
   }
 };
+
+const handleConfirmSize = async () => {
+  if (
+    !pendingBasketItem ||
+    !selectedModalSize ||
+    addingToBasket
+  ) {
+    return;
+  }
+
+  const success = await addBasketVariant({
+    product:
+      pendingBasketItem.product,
+
+    selectedColor:
+      pendingBasketItem.selectedColor,
+
+    selectedImage:
+      pendingBasketItem.selectedImage,
+
+    sizeOption:
+      selectedModalSize,
+
+    quantity:
+      modalQuantity,
+  });
+
+  if (success) {
+    setSizeModalOpen(false);
+    setPendingBasketItem(null);
+    setPendingSizes([]);
+    setSelectedModalSize(null);
+    setModalQuantity(1);
+  }
+};
+
+const selectedVariantBasketQuantity =
+  selectedModalSize &&
+  pendingBasketItem
+    ? getBasketVariantQuantity(
+        pendingBasketItem.product?.itemId,
+        pendingBasketItem.selectedColor,
+        selectedModalSize.value
+      )
+    : 0;
+
+    const selectedModalVariantPrice =
+  selectedModalSize?.price !== null &&
+  selectedModalSize?.price !== undefined &&
+  Number.isFinite(Number(selectedModalSize.price))
+    ? Number(selectedModalSize.price)
+    : Number(
+        pendingBasketItem?.product?.item?.usdPrice || 0
+      );
 
 if (!hasItems) {
   return (
@@ -619,14 +1031,32 @@ if (!hasItems) {
 
         <div className="men-products-grid">
           {allItems.map((product) => {
-            const { id, item } = product;
-            const selectedColor = selectedColorByItem[id];
-            const colorOptions = getColorOptions(product);
-            const displayImage = getDisplayImage(product);
-            const discountPercentage = getDiscountPercentage(
-              item?.usdPrice,
-              item?.originalPrice
-            );
+           const { id, item } = product;
+
+const selectedColor =
+  selectedColorByItem[id];
+
+const colorOptions =
+  getColorOptions(product);
+
+const displayImage =
+  getDisplayImage(product);
+
+/*
+  Main card price follows the currently
+  selected color/variant.
+*/
+const displayedUsdPrice =
+  getProductPriceForColor(
+    product,
+    selectedColor
+  );
+
+const discountPercentage =
+  getDiscountPercentage(
+    displayedUsdPrice,
+    item?.originalPrice
+  );
             const productName =
             getProductName(product);
             const brandKey = getBrandKey(product);
@@ -670,11 +1100,11 @@ if (!hasItems) {
 
                  <div className="product-price-row">
                   <span className="product-price">
-                    {formatPrice(item?.usdPrice)}
+                    {formatPrice(displayedUsdPrice)}
                   </span>
 
-                  {Number(item?.originalPrice || 0) >
-                    Number(item?.usdPrice || 0) && (
+                 {Number(item?.originalPrice || 0) >
+                    Number(displayedUsdPrice || 0) && (
                     <span className="product-old-price">
                       {formatPrice(item?.originalPrice)}
                     </span>
@@ -763,39 +1193,200 @@ if (!hasItems) {
                     </div>
                   )}
 
-                 {isItemInBasket(product.itemId) ? (
-                <button
-                  type="button"
-                  className="product-added-basket-btn"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                   router.push(withCountry("/basket"));
-                  }}
-                >
-                  🛒 {getBasketQuantity(product.itemId)}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="product-add-basket-btn"
-                  onClick={(e) =>
-                    handleAddToBasket(product, selectedColor, displayImage, e)
-                  }
-                >
-                {t("add_to_basket")}
-                </button>
-              )}
+                <div className="product-basket-actions">
+  <button
+    type="button"
+    className="product-add-basket-btn"
+    disabled={addingToBasket}
+    onClick={(e) =>
+      handleAddToBasket(
+        product,
+        selectedColor,
+        displayImage,
+        e
+      )
+    }
+  >
+    {addingToBasket
+      ? t("adding") || "Adding..."
+      : t("add_to_basket")}
+  </button>
+
+  {getBasketQuantity(product.itemId) > 0 && (
+    <button
+      type="button"
+      className="product-added-basket-btn"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        router.push(
+          withCountry("/basket")
+        );
+      }}
+    >
+      🛒 {getBasketQuantity(product.itemId)}
+    </button>
+  )}
+</div>
                 </div>
               </a>
             );
           })}
+
         </div>
       </section>
 
       <section className="recommended-section">
         <MenFaRecommended />
       </section>
+
+       {sizeModalOpen && pendingBasketItem && (
+  <div
+    className="size-modal-overlay-cc"
+    onClick={() => {
+      if (!addingToBasket) {
+        setSizeModalOpen(false);
+      }
+    }}
+  >
+    <div
+      className="size-modal-card-cc"
+      onClick={(e) =>
+        e.stopPropagation()
+      }
+    >
+      <button
+        type="button"
+        className="size-modal-close-cc"
+        disabled={addingToBasket}
+        onClick={() =>
+          setSizeModalOpen(false)
+        }
+      >
+        ×
+      </button>
+
+      <h3>
+        {t("choose_size") || "Choose size"}
+      </h3>
+
+      {selectedModalSize && (
+  <div className="size-modal-selected-price-cc">
+    {formatPrice(selectedModalVariantPrice)}
+  </div>
+)}
+
+      <div className="size-modal-options-cc">
+        {pendingSizes.map((sizeOption) => {
+          const active =
+            selectedModalSize?.value ===
+            sizeOption.value;
+
+          const basketQuantity =
+            getBasketVariantQuantity(
+              pendingBasketItem.product?.itemId,
+              pendingBasketItem.selectedColor,
+              sizeOption.value
+            );
+
+          return (
+            <button
+              key={sizeOption.value}
+              type="button"
+              className={`size-modal-option-cc ${
+                active ? "active" : ""
+              } ${
+                basketQuantity > 0
+                  ? "already-added"
+                  : ""
+              }`}
+              onClick={() => {
+                setSelectedModalSize(
+                  sizeOption
+                );
+
+                setModalQuantity(1);
+              }}
+            >
+              <span className="size-modal-size-cc">
+                {sizeOption.value}
+              </span>
+
+              {sizeOption.price !== null && (
+                <span className="size-modal-price-cc">
+                  {formatPrice(
+                    sizeOption.price
+                  )}
+                </span>
+              )}
+
+              {basketQuantity > 0 && (
+                <span className="size-modal-added-cc">
+                  {basketQuantity > 1
+                    ? `Added ×${basketQuantity}`
+                    : "Added"}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedModalSize && (
+        <div className="size-modal-quantity-cc">
+          <span>
+            {t("quantity") || "Quantity"}
+          </span>
+
+          <div className="size-modal-quantity-controls-cc">
+            <button
+              type="button"
+              onClick={() =>
+                setModalQuantity((q) =>
+                  Math.max(1, q - 1)
+                )
+              }
+            >
+              −
+            </button>
+
+            <strong>
+              {modalQuantity}
+            </strong>
+
+            <button
+              type="button"
+              onClick={() =>
+                setModalQuantity(
+                  (q) => q + 1
+                )
+              }
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="size-modal-confirm-cc"
+        disabled={
+          !selectedModalSize ||
+          addingToBasket
+        }
+        onClick={handleConfirmSize}
+      >
+        {addingToBasket
+          ? t("adding") || "Adding..."
+          : selectedVariantBasketQuantity > 0
+            ? `Increase Quantity +${modalQuantity}`
+            : t("add_to_basket")}
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 }

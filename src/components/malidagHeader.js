@@ -135,6 +135,24 @@ const savedCountryCode = getSavedCountryCode();
   return null;
 }
 
+const basketCount = (basketItems || []).reduce(
+  (total, basketItem) => {
+    const quantity = Number(
+      basketItem?.quantity ??
+      basketItem?.item?.quantity ??
+      1
+    );
+
+    return (
+      total +
+      (Number.isFinite(quantity) && quantity > 0
+        ? quantity
+        : 0)
+    );
+  },
+  0
+);
+
   return (
     <div
       style={{
@@ -350,7 +368,7 @@ const savedCountryCode = getSavedCountryCode();
      <LanguageSelector />
 
 
-{basketItems?.length > 0 && savedCountryCode && (
+{basketCount > 0 && savedCountryCode && (
           <div
     style={{
       backgroundColor: isTablet || isDesktop ? "black" : "#333",
@@ -384,7 +402,7 @@ const savedCountryCode = getSavedCountryCode();
               marginRight: isCheckoutPage ? "150px" : "0px", // Adjust marginRight for checkout page
             }}
           >
-            {basketItems.length}
+           {basketCount}
           </span>
         </div>
         </Link>

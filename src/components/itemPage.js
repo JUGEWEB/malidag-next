@@ -503,6 +503,59 @@ const getBasketQuantity = (itemId) => {
     }, 0);
 };
 
+const getBasketVariantQuantity = (
+  itemId,
+  color,
+  size
+) => {
+  return basketItems
+    .filter((basketItem) => {
+      const basketProductId =
+        basketItem?.itemId ??
+        basketItem?.item?.itemId;
+
+      const basketColor =
+        basketItem?.color ??
+        basketItem?.item?.color ??
+        null;
+
+      const basketSize =
+        basketItem?.size ??
+        basketItem?.item?.size ??
+        null;
+
+      return (
+        String(basketProductId) === String(itemId) &&
+        String(basketColor ?? "")
+          .trim()
+          .toLowerCase() ===
+          String(color ?? "")
+            .trim()
+            .toLowerCase() &&
+        String(basketSize ?? "")
+          .trim()
+          .toLowerCase() ===
+          String(size ?? "")
+            .trim()
+            .toLowerCase()
+      );
+    })
+    .reduce((total, basketItem) => {
+      const quantity = Number(
+        basketItem?.quantity ??
+        basketItem?.item?.quantity ??
+        1
+      );
+
+      return (
+        total +
+        (Number.isFinite(quantity)
+          ? quantity
+          : 0)
+      );
+    }, 0);
+};
+
 const isItemInBasket = (itemId) => {
   return getBasketQuantity(itemId) > 0;
 };
@@ -1128,6 +1181,19 @@ const filteredItems = items.filter((itemData) => {
   );
 });
 
+const selectedVariantBasketQuantity =
+  selectedModalSize &&
+  pendingBasketItem
+    ? getBasketVariantQuantity(
+        pendingBasketItem?.itemData?.itemId,
+        pendingBasketItem?.color,
+        selectedModalSize.value
+      )
+    : 0;
+
+const selectedVariantAlreadyAdded =
+  selectedVariantBasketQuantity > 0;
+
   return (
     <div className="page-layout-cc">
       {contextHolder}
@@ -1180,38 +1246,55 @@ const filteredItems = items.filter((itemData) => {
       </div>
 
       <div className="size-modal-options-cc">
-        {pendingSizes.map((sizeOption) => {
-          const active =
-            selectedModalSize?.value ===
-            sizeOption.value;
+       {pendingSizes.map((sizeOption) => {
+  const active =
+    selectedModalSize?.value ===
+    sizeOption.value;
 
-          return (
-            <button
-              key={sizeOption.value}
-              type="button"
-              className={`size-modal-option-cc ${
-                active ? "active" : ""
-              }`}
-              onClick={() =>
-                handleModalSizeSelect(
-                  sizeOption
-                )
-              }
-            >
-              <span className="size-modal-size-cc">
-                {sizeOption.value}
-              </span>
+  const basketQuantity =
+    getBasketVariantQuantity(
+      pendingBasketItem?.itemData?.itemId,
+      pendingBasketItem?.color,
+      sizeOption.value
+    );
 
-              {sizeOption.price !== null && (
-                <span className="size-modal-price-cc">
-                  {formatPrice(
-                    sizeOption.price
-                  )}
-                </span>
-              )}
-            </button>
-          );
-        })}
+  const alreadyAdded =
+    basketQuantity > 0;
+
+  return (
+    <button
+      key={sizeOption.value}
+      type="button"
+      className={`size-modal-option-cc ${
+        active ? "active" : ""
+      } ${
+        alreadyAdded ? "already-added" : ""
+      }`}
+      onClick={() => {
+        handleModalSizeSelect(sizeOption);
+        setModalQuantity(1);
+      }}
+    >
+      <span className="size-modal-size-cc">
+        {sizeOption.value}
+      </span>
+
+      {sizeOption.price !== null && (
+        <span className="size-modal-price-cc">
+          {formatPrice(sizeOption.price)}
+        </span>
+      )}
+
+      {alreadyAdded && (
+        <span className="size-modal-added-cc">
+          {basketQuantity > 1
+            ? `Added ×${basketQuantity}`
+            : "Added"}
+        </span>
+      )}
+    </button>
+  );
+})}
 
         {/* QUANTITY */}
 <div className="size-modal-quantity-section-cc">
@@ -1258,19 +1341,21 @@ const filteredItems = items.filter((itemData) => {
 </div>
       </div>
 
-      <button
-        type="button"
-        className="size-modal-confirm-cc"
-        disabled={
-          !selectedModalSize ||
-          addingToBasket
-        }
-        onClick={handleConfirmSize}
-      >
-        {addingToBasket
-          ? t("adding") || "Adding..."
-          : t("add_to_cart")}
-      </button>
+     <button
+  type="button"
+  className="size-modal-confirm-cc"
+  disabled={
+    !selectedModalSize ||
+    addingToBasket
+  }
+  onClick={handleConfirmSize}
+>
+  {addingToBasket
+    ? t("adding") || "Adding..."
+    : selectedVariantAlreadyAdded
+      ? `Increase Quantity +${modalQuantity}`
+      : t("add_to_cart")}
+</button>
     </div>
   </div>
 )}

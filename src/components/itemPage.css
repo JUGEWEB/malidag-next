@@ -1638,3 +1638,34 @@
   font-weight: 700;
   color: #111;
 }
+
+.size-modal-option-cc {
+  position: relative;
+}
+
+.size-modal-option-cc.already-added {
+  border-color: #111;
+}
+
+.size-modal-added-cc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 5px;
+  padding: 3px 7px;
+
+  border-radius: 999px;
+
+  background: #111;
+  color: #fff;
+
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.size-modal-option-cc.active .size-modal-added-cc {
+  background: #fff;
+  color: #111;
+}

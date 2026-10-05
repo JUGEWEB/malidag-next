@@ -60,6 +60,11 @@ const [brandThemes, setBrandThemes] = useState([]);
 const [filtersOpen, setFiltersOpen] = useState(false);
 const [basketItems, setBasketItems] = useState([]);
 const [messageApi, contextHolder] = message.useMessage();
+const [sizeModalOpen, setSizeModalOpen] = useState(false);
+const [pendingBasketItem, setPendingBasketItem] = useState(null);
+const [pendingSizes, setPendingSizes] = useState([]);
+const [pendingSize, setPendingSize] = useState(null);
+const [addingToBasket, setAddingToBasket] = useState(false);
 
 const getColorSwatch = (colorName = "") => {
   const color = colorName.trim().toLowerCase();
@@ -336,17 +341,58 @@ const formatPrice = (usdAmount) => {
   return `${currencyConfig.symbol}${converted.toFixed(2)}`;
 };
 
-  const getAllSizes = (itemsList) => {
-    const allSizes = itemsList.map((entry) => {
-      const sizes = Object.values(entry?.item?.size || {});
-      return sizes
-        .flat()
-        .map((size) => String(size).split(",").map((s) => s.trim()))
-        .flat();
-    });
+const normalizeSizes = (value) => {
+  if (value == null) return [];
 
-    return [...new Set(allSizes.flat().filter(Boolean))];
-  };
+  const values = Array.isArray(value) ? value : [value];
+
+  return [
+    ...new Set(
+      values.flatMap((entry) => {
+        // OLD FORMAT
+        if (typeof entry === "string" || typeof entry === "number") {
+          return String(entry)
+            .split(",")
+            .map((size) => size.trim())
+            .filter(Boolean);
+        }
+
+        // NEW FORMAT
+        if (
+          entry &&
+          typeof entry === "object" &&
+          !Array.isArray(entry)
+        ) {
+          return String(entry.value ?? "")
+            .split(",")
+            .map((size) => size.trim())
+            .filter(Boolean);
+        }
+
+        return [];
+      })
+    ),
+  ];
+};
+
+const getAllSizes = (itemsList) => {
+  const allSizes = itemsList.flatMap((entry) =>
+    Object.values(entry?.item?.size || {}).flatMap((value) =>
+      normalizeSizes(value)
+    )
+  );
+
+  return [...new Set(allSizes)].sort((a, b) => {
+    const numberA = Number(a);
+    const numberB = Number(b);
+
+    if (Number.isFinite(numberA) && Number.isFinite(numberB)) {
+      return numberA - numberB;
+    }
+
+    return String(a).localeCompare(String(b));
+  });
+};
 
   const filterItemsBySize = (size) => {
     return items.filter((entry) => {
@@ -505,16 +551,11 @@ const handleImageArrow = (itemData, direction, e) => {
 
  const displayedItems = useMemo(() => {
   return items.filter((itemData) => {
-    const matchesSize =
-      !selectedSize ||
-      Object.values(itemData?.item?.size || {})
-        .flat()
-        .some((s) =>
-          String(s)
-            .split(",")
-            .map((x) => x.trim())
-            .includes(selectedSize)
-        );
+   const matchesSize =
+  !selectedSize ||
+  Object.values(itemData?.item?.size || {}).some((value) =>
+    normalizeSizes(value).includes(selectedSize)
+  );
 
     const matchesColor =
       selectedColor === "all" ||
@@ -581,11 +622,297 @@ useEffect(() => {
 }, []);
 
 const getBasketQuantity = (itemId) => {
-  const basketItem = basketItems.find((item) => item.itemId === itemId);
-  return Number(basketItem?.quantity || 0);
+  return basketItems
+    .filter((basketItem) => basketItem.itemId === itemId)
+    .reduce(
+      (total, basketItem) =>
+        total + Number(basketItem?.quantity || 0),
+      0
+    );
 };
 
-const isItemInBasket = (itemId) => getBasketQuantity(itemId) > 0;
+const isItemInBasket = (itemId) => {
+  return getBasketQuantity(itemId) > 0;
+};
+
+const findVariantKey = (object = {}, selectedColor) => {
+  if (!selectedColor) return null;
+
+  const wanted = String(selectedColor).trim().toLowerCase();
+
+  return (
+    Object.keys(object).find(
+      (key) => String(key).trim().toLowerCase() === wanted
+    ) || null
+  );
+};
+
+const getSizesForColor = (itemData, color) => {
+  const sizeMap = itemData?.item?.size || {};
+
+  // Prefer the size entry belonging to the selected color.
+  const colorKey = findVariantKey(sizeMap, color);
+
+  if (colorKey) {
+    return normalizeSizes(sizeMap[colorKey]);
+  }
+
+  // Some products may not store size by color.
+  // In that case use all product sizes.
+  return [
+    ...new Set(
+      Object.values(sizeMap).flatMap((value) =>
+        normalizeSizes(value)
+      )
+    ),
+  ];
+};
+
+const getSizeOptionsForColor = (itemData, color) => {
+  const sizeMap = itemData?.item?.size || {};
+
+  if (
+    !sizeMap ||
+    typeof sizeMap !== "object" ||
+    Array.isArray(sizeMap) ||
+    !color
+  ) {
+    return [];
+  }
+
+  const normalizedColor = String(color)
+    .trim()
+    .toLowerCase();
+
+  const actualColorKey = Object.keys(sizeMap).find(
+    (key) =>
+      String(key).trim().toLowerCase() ===
+      normalizedColor
+  );
+
+  if (!actualColorKey) {
+    return [];
+  }
+
+  const entries = Array.isArray(sizeMap[actualColorKey])
+    ? sizeMap[actualColorKey]
+    : [sizeMap[actualColorKey]];
+
+  return entries.flatMap((entry) => {
+    // Old format:
+    // ["40, 41, 42"]
+    if (typeof entry === "string") {
+      return entry
+        .split(",")
+        .map((size) => size.trim())
+        .filter(Boolean)
+        .map((size) => ({
+          value: size,
+          price: null,
+        }));
+    }
+
+    // New format:
+    // [{ value: "40, 41, 42", price: 42.99 }]
+    if (
+      entry &&
+      typeof entry === "object" &&
+      !Array.isArray(entry)
+    ) {
+      const sizes = String(entry.value ?? "")
+        .split(",")
+        .map((size) => size.trim())
+        .filter(Boolean);
+
+      const parsedPrice = Number(entry.price);
+
+      const price =
+        entry.price !== undefined &&
+        entry.price !== null &&
+        entry.price !== "" &&
+        Number.isFinite(parsedPrice) &&
+        parsedPrice > 0
+          ? parsedPrice
+          : null;
+
+      return sizes.map((size) => ({
+        value: size,
+        price,
+      }));
+    }
+
+    return [];
+  });
+};
+
+
+const getVariantPrice = (itemData, color, size = null) => {
+  const item = itemData?.item || {};
+  const mainPrice = Number(item.usdPrice || 0);
+
+  const options = getSizeOptionsForColor(
+    itemData,
+    color
+  );
+
+  if (!options.length) {
+    return mainPrice;
+  }
+
+  // If an exact size was selected, return its
+  // variant price when one exists.
+  if (size !== null && size !== undefined) {
+    const selectedOption = options.find(
+      (option) =>
+        String(option.value).trim() ===
+        String(size).trim()
+    );
+
+    if (
+      selectedOption &&
+      selectedOption.price !== null &&
+      Number.isFinite(Number(selectedOption.price))
+    ) {
+      return Number(selectedOption.price);
+    }
+
+    return mainPrice;
+  }
+
+  // Product card:
+  // show the lowest variant price for this color.
+  const specialPrices = options
+    .map((option) => Number(option.price))
+    .filter(
+      (price) =>
+        Number.isFinite(price) &&
+        price > 0
+    );
+
+  if (specialPrices.length) {
+    return Math.min(...specialPrices);
+  }
+
+  return mainPrice;
+};
+
+
+const getDisplayVariantPrice = (itemData) => {
+  const colorOptions = getColorOptions(itemData);
+
+  const currentColor =
+    selectedColorByItem[itemData.id] ||
+    colorOptions?.[0] ||
+    null;
+
+  return getVariantPrice(
+    itemData,
+    currentColor
+  );
+};
+
+const addBasketVariant = async (
+  itemData,
+  selectedColorForBasket,
+  selectedSizeForBasket
+) => {
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    const currentPath =
+      typeof window !== "undefined"
+        ? window.location.pathname
+        : "/";
+
+    router.push(
+      withCountry(
+        `/auth?redirect=${encodeURIComponent(currentPath)}`
+      )
+    );
+
+    return false;
+  }
+
+  try {
+    setAddingToBasket(true);
+
+    const item = itemData?.item || {};
+
+    const variantImages =
+      item?.imagesVariants?.[selectedColorForBasket] || [];
+
+    const basketImage =
+      getImageUrl(sortImages(variantImages)?.[0]) ||
+      getImageUrl(item?.images?.[0]);
+
+    const finalPrice = getVariantPrice(
+      itemData,
+      selectedColorForBasket,
+      selectedSizeForBasket
+    );
+
+    const basketItem = {
+      userId: currentUser.uid,
+
+      item: {
+        id: itemData.id,
+        itemId: itemData.itemId,
+
+        name: item.name,
+        price: finalPrice,
+
+        color: selectedColorForBasket,
+        size: selectedSizeForBasket || null,
+
+        image: basketImage,
+        brand: item.brand,
+        brandPrice: item.brandPrice,
+        quantity: 1,
+      },
+    };
+
+    const productName =
+      currentLanguage === "en"
+        ? item.name
+        : translations?.[itemData.itemId]?.name ||
+          item.name;
+
+    const response = await axios.post(
+      BASKET_API,
+      basketItem
+    );
+
+    if (
+      response.status === 200 ||
+      response.status === 201
+    ) {
+      await fetchUserBasket();
+
+      messageApi.success(
+        t("basket_add_success", {
+          product: productName,
+        })
+      );
+
+      return true;
+    }
+
+    messageApi.error(t("basket_add_failed"));
+    return false;
+  } catch (error) {
+    console.error(
+      "Error adding item to basket:",
+      error
+    );
+
+    messageApi.error(t("basket_add_error"));
+
+    return false;
+  } finally {
+    setAddingToBasket(false);
+  }
+};
+
 
 const handleAddToBasket = async (itemData, e) => {
   e.stopPropagation();
@@ -607,84 +934,88 @@ const handleAddToBasket = async (itemData, e) => {
     return;
   }
 
-  try {
-    const item = itemData?.item || {};
-    const colorOptions = getColorOptions(itemData);
+  const item = itemData?.item || {};
+  const colorOptions = getColorOptions(itemData);
 
-    const selectedColorForBasket =
-      selectedColorByItem[itemData.id] ||
-      colorOptions?.[0] ||
-      null;
+  const selectedColorForBasket =
+    selectedColorByItem[itemData.id] ||
+    colorOptions?.[0] ||
+    null;
 
-    const variantImages =
-      item?.imagesVariants?.[selectedColorForBasket] || [];
+  const availableSizes = getSizesForColor(
+    itemData,
+    selectedColorForBasket
+  );
 
-    const basketImage =
-      getImageUrl(sortImages(variantImages)?.[0]) ||
-      getImageUrl(item?.images?.[0]);
-
-    const basketItem = {
-      userId: currentUser.uid,
-      item: {
-        id: itemData.id,
-        itemId: itemData.itemId,
-
-        // keep canonical DB values in basket
-        name: item.name,
-        price: Number(item.usdPrice || 0),
-
-        color: selectedColorForBasket,
-        size: selectedSize || null,
-        image: basketImage,
-        brand: item.brand,
-        brandPrice: item.brandPrice,
-        quantity: 1,
-      },
-    };
-
-    // translated name only for visible UI message
-    const productName =
-      currentLanguage === "en"
-        ? item.name
-        : translations?.[itemData.itemId]?.name ||
-          item.name;
-
-    const response = await axios.post(
-      BASKET_API,
-      basketItem
+  /*
+   * No size variants:
+   * add immediately.
+   */
+  if (availableSizes.length === 0) {
+    await addBasketVariant(
+      itemData,
+      selectedColorForBasket,
+      null
     );
 
-    if (
-      response.status === 200 ||
-      response.status === 201
-    ) {
-      await fetchUserBasket();
+    return;
+  }
 
-      setTimeout(() => {
-        messageApi.success(
-          t("basket_add_success", {
-            product: productName,
-          })
-        );
-      }, 0);
-    } else {
-      setTimeout(() => {
-        messageApi.error(
-          t("basket_add_failed")
-        );
-      }, 0);
-    }
-  } catch (error) {
-    console.error(
-      "Error adding item to basket:",
-      error
+  /*
+   * Exactly one size:
+   * no reason to show modal.
+   */
+  if (availableSizes.length === 1) {
+    await addBasketVariant(
+      itemData,
+      selectedColorForBasket,
+      availableSizes[0]
     );
 
-    setTimeout(() => {
-      messageApi.error(
-        t("basket_add_error")
-      );
-    }, 0);
+    return;
+  }
+
+  /*
+   * Multiple sizes:
+   * user must choose.
+   */
+  setPendingBasketItem({
+    itemData,
+    color: selectedColorForBasket,
+  });
+
+  setPendingSizes(availableSizes);
+  setPendingSize(null);
+  setSizeModalOpen(true);
+};
+
+const closeSizeModal = () => {
+  if (addingToBasket) return;
+
+  setSizeModalOpen(false);
+  setPendingBasketItem(null);
+  setPendingSizes([]);
+  setPendingSize(null);
+};
+
+
+const handleConfirmSize = async () => {
+  if (
+    !pendingBasketItem ||
+    !pendingSize ||
+    addingToBasket
+  ) {
+    return;
+  }
+
+  const success = await addBasketVariant(
+    pendingBasketItem.itemData,
+    pendingBasketItem.color,
+    pendingSize
+  );
+
+  if (success) {
+    closeSizeModal();
   }
 };
 
@@ -1035,12 +1366,26 @@ return (
                 ? Math.round(Number(finalRating))
                 : 0;
 
-                const colorOptions = getColorOptions(itemData);
-                  const selectedColorForItem = selectedColorByItem[id];
-                  const displayImage = getDisplayImage(itemData);
-                  const currentImages = getCurrentImages(itemData);
-                  const visibleColorOptions = colorOptions.slice(0, 4);
-              const hiddenColorCount = Math.max(colorOptions.length - 4, 0);
+               const colorOptions = getColorOptions(itemData);
+
+              const selectedColorForItem =
+                selectedColorByItem[id];
+
+              const displayImage =
+                getDisplayImage(itemData);
+
+              const currentImages =
+                getCurrentImages(itemData);
+
+              const displayPrice =
+                getDisplayVariantPrice(itemData);
+
+              const visibleColorOptions =
+                colorOptions.slice(0, 4);
+
+              const hiddenColorCount =
+                Math.max(colorOptions.length - 4, 0);
+                 
 
               const brandDelivery =
                 brandThemes?.find(
@@ -1182,7 +1527,7 @@ return (
 
                       <div className="shoe-card-price-row">
                        <div className="shoe-card-price-main">
-                          {formatPrice(usdPrice)}
+                         {formatPrice(displayPrice)}
                         </div>
 
                         {Number(originalPrice) > 0 &&
@@ -1232,28 +1577,32 @@ return (
                     </div>
 
                     <div className="shoe-card-actions">
-
-                     {isItemInBasket(itemId) ? (
-  <button
-    type="button"
-    className="shoe-added-cart-btn"
-    onClick={(e) => {
-      e.stopPropagation();
-      router.push(withCountry("/basket"));
-    }}
-  >
-    🛒 {getBasketQuantity(itemId)}
-  </button>
-) : (
   <button
     type="button"
     className="shoe-primary-btn"
     onClick={(e) => handleAddToBasket(itemData, e)}
   >
-   {t("add_to_cart")}
+    {t("add_to_cart")}
   </button>
-)}
-                    </div>
+
+  {isItemInBasket(itemId) && (
+    <button
+      type="button"
+      className="shoe-added-cart-btn"
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(withCountry("/basket"));
+      }}
+      aria-label={`${t("cart")} ${getBasketQuantity(itemId)}`}
+    >
+      <span className="shoe-cart-icon">🛒</span>
+
+      <span className="shoe-cart-quantity">
+        {getBasketQuantity(itemId)}
+      </span>
+    </button>
+  )}
+</div>
                   </div>
                 </article>
               );
@@ -1262,6 +1611,63 @@ return (
         )}
       </section>
     </div>
+
+    {sizeModalOpen && pendingBasketItem && (
+  <div
+    className="shoe-size-modal-overlay"
+    onClick={closeSizeModal}
+  >
+    <div
+      className="shoe-size-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shoe-size-modal-title"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="shoe-size-modal-header">
+        <h2 id="shoe-size-modal-title">
+          {t("choose_size")}
+        </h2>
+
+        <button
+          type="button"
+          className="shoe-size-modal-close"
+          onClick={closeSizeModal}
+          disabled={addingToBasket}
+          aria-label={t("close")}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="shoe-size-modal-options">
+        {pendingSizes.map((size) => (
+          <button
+            key={size}
+            type="button"
+            className={`shoe-size-modal-option ${
+              pendingSize === size ? "active" : ""
+            }`}
+            onClick={() => setPendingSize(size)}
+          >
+            {size}
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className="shoe-size-modal-add"
+        disabled={!pendingSize || addingToBasket}
+        onClick={handleConfirmSize}
+      >
+        {addingToBasket
+          ? t("adding")
+          : t("add_to_cart")}
+      </button>
+    </div>
+  </div>
+)}
   </div>
 );
 }

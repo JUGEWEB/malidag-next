@@ -788,17 +788,30 @@ button {
 }
 
 .shoe-card-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  display: flex;
+  align-items: center;
+  width: 100%;
   margin-top: 16px;
 }
 
 .shoe-secondary-btn,
 .shoe-primary-btn {
   min-height: 46px;
+  padding: 0 18px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+  white-space: nowrap;
+
   border-radius: 14px;
   cursor: pointer;
+
+  font-size: 0.88rem;
+  line-height: 1;
+
   transition:
     transform 0.22s ease,
     box-shadow 0.22s ease,
@@ -819,6 +832,8 @@ button {
 }
 
 .shoe-primary-btn {
+  flex: 1;
+
   border: 1px solid var(--shoe-dark);
   background: var(--shoe-dark);
   color: #fff;
@@ -1281,4 +1296,496 @@ button {
   color: white;
   font-weight: 700;
   cursor: pointer;
+}
+
+
+/* =========================================================
+   PRODUCT CARD — ADD TO CART + CART QUANTITY
+========================================================= */
+
+.shoe-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+
+/* Main add-to-cart button */
+.shoe-card-actions .shoe-primary-btn {
+  width: 100%;
+  height: 46px;
+  margin: 0;
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1.5px solid #111827;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s ease,
+    box-shadow 0.18s ease;
+}
+
+.shoe-card-actions .shoe-primary-btn:hover {
+  background: #111827;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.shoe-card-actions .shoe-primary-btn:active {
+  transform: scale(0.985);
+}
+
+
+/* =========================================================
+   CART QUANTITY PILL
+========================================================= */
+
+.shoe-card-actions .shoe-added-cart-btn {
+  width: 100%;
+  height: 46px;
+  margin: 0;
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  position: static;
+
+  border: 1px solid #111827;
+  border-radius: 999px;
+
+  background: #111827;
+  color: #ffffff;
+
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+
+  cursor: pointer;
+
+  box-shadow: none;
+
+  transition:
+    background 0.18s ease,
+    transform 0.15s ease,
+    box-shadow 0.18s ease;
+}
+
+.shoe-card-actions .shoe-added-cart-btn:hover {
+  background: #020617;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.15);
+}
+
+.shoe-card-actions .shoe-added-cart-btn:active {
+  transform: scale(0.985);
+}
+
+.shoe-cart-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.shoe-cart-quantity {
+  display: block;
+
+  color: #ffffff;
+
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+
+/* Keyboard focus */
+
+.shoe-card-actions .shoe-primary-btn:focus-visible,
+.shoe-card-actions .shoe-added-cart-btn:focus-visible {
+  outline: 3px solid rgba(17, 24, 39, 0.2);
+  outline-offset: 3px;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+  .shoe-card-actions {
+    position: relative;
+
+    width: 100%;
+    margin-top: 12px;
+
+    display: block;
+  }
+
+  /* ADD TO CART — stays full width */
+  .shoe-card-actions .shoe-primary-btn {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+
+    margin: 0;
+    padding: 0 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  /*
+   * ITEMPAGE STYLE:
+   * quantity pill floats over the right side
+   * instead of consuming another row
+   */
+  .shoe-card-actions .shoe-added-cart-btn {
+    position: absolute;
+
+    right: -2px;
+    top: 50%;
+
+    width: auto;
+    min-width: 78px;
+    height: 42px;
+
+    margin: 0;
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    border-radius: 999px;
+
+    transform: translateY(-50%);
+
+    z-index: 3;
+  }
+
+  .shoe-card-actions .shoe-added-cart-btn:hover {
+    transform: translateY(-50%);
+  }
+
+  .shoe-card-actions .shoe-added-cart-btn:active {
+    transform: translateY(-50%) scale(0.97);
+  }
+
+  .shoe-cart-icon {
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+
+  .shoe-cart-quantity {
+    font-size: 0.78rem;
+    line-height: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .shoe-card-actions:has(.shoe-added-cart-btn) .shoe-primary-btn {
+    padding-right: 82px;
+    justify-content: flex-start;
+    padding-left: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shoe-card-body {
+    padding: 14px 12px 16px;
+  }
+
+  .shoe-card-price-row {
+    gap: 7px;
+  }
+
+  .shoe-card-price-main {
+    font-size: 1.2rem;
+  }
+
+  .shoe-card-price-old {
+    font-size: 0.78rem;
+  }
+
+  .shoe-delivery-info {
+    font-size: 0.74rem;
+    line-height: 1.35;
+  }
+
+  .shoe-stock-badge {
+    max-width: 100%;
+    padding: 7px 10px;
+
+    font-size: 0.68rem;
+    line-height: 1.35;
+  }
+
+  .shoe-card-meta {
+    width: 100%;
+    gap: 5px;
+
+    font-size: 0.68rem;
+    line-height: 1.25;
+  }
+}
+
+/* =========================================================
+   SIZE SELECTION MODAL
+========================================================= */
+
+.shoe-size-modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(2px);
+}
+
+.shoe-size-modal {
+  width: min(100%, 560px);
+
+  padding: 30px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 28px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 30px 70px rgba(15, 23, 42, 0.22),
+    0 8px 24px rgba(15, 23, 42, 0.1);
+}
+
+.shoe-size-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 26px;
+}
+
+.shoe-size-modal-header h2 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.shoe-size-modal-close {
+  flex: 0 0 auto;
+
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 1.8rem;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.shoe-size-modal-close:hover {
+  background: #f8fafc;
+}
+
+
+/* =========================================================
+   SIZE OPTIONS
+========================================================= */
+
+.shoe-size-modal-options {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(82px, 1fr)
+  );
+
+  gap: 10px;
+
+  margin-bottom: 26px;
+}
+
+.shoe-size-modal-option {
+  min-height: 54px;
+
+  padding: 10px 14px;
+
+  border: 1px solid #dbe1e8;
+  border-radius: 14px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 0.95rem;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.shoe-size-modal-option:hover {
+  border-color: #111827;
+}
+
+.shoe-size-modal-option.active {
+  border-color: #111827;
+
+  background: #111827;
+  color: #ffffff;
+
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   MODAL ADD BUTTON
+========================================================= */
+
+.shoe-size-modal-add {
+  width: 100%;
+  height: 56px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #111827;
+  color: #ffffff;
+
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.shoe-size-modal-add:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.shoe-size-modal-add:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+  .shoe-size-modal-overlay {
+    align-items: flex-end;
+
+    padding: 12px;
+  }
+
+  .shoe-size-modal {
+    width: 100%;
+
+    padding: 22px 18px 18px;
+
+    border-radius: 24px;
+  }
+
+  .shoe-size-modal-header {
+    margin-bottom: 20px;
+  }
+
+  .shoe-size-modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .shoe-size-modal-close {
+    width: 42px;
+    height: 42px;
+
+    font-size: 1.55rem;
+  }
+
+  .shoe-size-modal-options {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .shoe-size-modal-option {
+    min-height: 50px;
+  }
+
+  .shoe-size-modal-add {
+    height: 52px;
+  }
 }

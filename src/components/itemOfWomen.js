@@ -57,6 +57,8 @@ const [basketItems, setBasketItems] = useState([]);
 const [brandThemes, setBrandThemes] = useState([]);
 const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
+const [selectedSizeByItem, setSelectedSizeByItem] = useState({});
+const [sizeModalItem, setSizeModalItem] = useState(null);
 const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 const { t, i18n } = useTranslation();
 
@@ -240,6 +242,182 @@ const colors = useMemo(() => {
   return [...new Set(allColors)];
 }, [items]);
 
+const normalizeVariantSize = (value) => {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  // Arrays may contain old strings or new objects.
+  if (Array.isArray(value)) {
+    return value.flatMap(normalizeVariantSize);
+  }
+
+  // New format:
+  // { value: "40, 41, 42", price: 48.23 }
+  if (
+    typeof value === "object" &&
+    !Array.isArray(value)
+  ) {
+    if (
+      value.value !== undefined &&
+      value.value !== null
+    ) {
+      return normalizeVariantSize(
+        value.value
+      );
+    }
+
+    // Support nested color/group objects,
+    // but never interpret price fields as sizes.
+    return Object.entries(value)
+      .filter(
+        ([key]) =>
+          ![
+            "price",
+            "usdPrice",
+            "originalPrice",
+            "brandPrice",
+          ].includes(key)
+      )
+      .flatMap(
+        ([, nestedValue]) =>
+          normalizeVariantSize(
+            nestedValue
+          )
+      );
+  }
+
+  // Old format:
+  // "40, 41, 42"
+  return String(value)
+    .split(",")
+    .map((size) => size.trim())
+    .filter(Boolean);
+};
+
+
+const getSizesForColor = (
+  itemData,
+  color
+) => {
+  const sizeData =
+    itemData?.item?.size || {};
+
+  const getUniqueSizes = (value) => [
+    ...new Set(
+      normalizeVariantSize(value)
+    ),
+  ];
+
+  if (!color) {
+    return getUniqueSizes(
+      Object.values(sizeData)
+    );
+  }
+
+  const directMatch =
+    Object.entries(sizeData).find(
+      ([key]) =>
+        normalizeText(key) ===
+        normalizeText(color)
+    );
+
+  if (directMatch) {
+    return getUniqueSizes(
+      directMatch[1]
+    );
+  }
+
+  return getUniqueSizes(
+    Object.values(sizeData)
+  );
+};
+
+
+const getVariantPrice = (
+  itemData,
+  color,
+  size
+) => {
+  const item = itemData?.item || {};
+
+  const basePrice = Number(item.usdPrice);
+
+  const variantPrices =
+    item.variantPrices ||
+    item.priceVariants ||
+    item.variantPrice ||
+    {};
+
+  const colorEntry =
+    Object.entries(variantPrices).find(
+      ([key]) =>
+        normalizeText(key) ===
+        normalizeText(color)
+    )?.[1];
+
+  if (colorEntry !== undefined) {
+    if (
+      typeof colorEntry === "number" ||
+      typeof colorEntry === "string"
+    ) {
+      const price = Number(colorEntry);
+
+      if (
+        Number.isFinite(price) &&
+        price > 0
+      ) {
+        return price;
+      }
+    }
+
+    if (
+      colorEntry &&
+      typeof colorEntry === "object"
+    ) {
+      if (size) {
+        const sizeEntry =
+          Object.entries(colorEntry).find(
+            ([key]) =>
+              normalizeText(key) ===
+              normalizeText(size)
+          )?.[1];
+
+        const sizePrice =
+          typeof sizeEntry === "object"
+            ? Number(
+                sizeEntry?.usdPrice ??
+                sizeEntry?.price
+              )
+            : Number(sizeEntry);
+
+        if (
+          Number.isFinite(sizePrice) &&
+          sizePrice > 0
+        ) {
+          return sizePrice;
+        }
+      }
+
+      const colorPrice = Number(
+        colorEntry?.usdPrice ??
+        colorEntry?.price
+      );
+
+      if (
+        Number.isFinite(colorPrice) &&
+        colorPrice > 0
+      ) {
+        return colorPrice;
+      }
+    }
+  }
+
+  return Number.isFinite(basePrice)
+    ? basePrice
+    : 0;
+};
+
 const getColorSwatch = (colorName = "") => {
   const color = colorName.trim().toLowerCase();
   return colorSwatches[color] || null;
@@ -339,21 +517,49 @@ const formatPrice = (usdAmount) => {
   )}`;
 };
 
-  const getAllSizes = (items) => {
-    const allSizes = items.map((item) => {
-      const sizes = Object.values(item?.item?.size || {});
-      return sizes.flat().map((size) => size.split(",").map((s) => s.trim())).flat();
-    });
+ const getAllSizes = (itemsList) => {
+  const allSizes = itemsList.flatMap(
+    (itemData) =>
+      Object.values(
+        itemData?.item?.size || {}
+      ).flatMap(
+        normalizeVariantSize
+      )
+  );
 
-    return [...new Set(allSizes.flat().filter(Boolean))];
-  };
+  return [
+    ...new Set(allSizes)
+  ].sort((a, b) => {
+    const numberA = Number(a);
+    const numberB = Number(b);
 
-  const filterItemsBySize = (size) => {
-    return items.filter((item) => {
-      const availableSizes = Object.values(item?.item?.size || {}).flat();
-      return availableSizes.some((s) => s.split(",").map((x) => x.trim()).includes(size));
-    });
-  };
+    if (
+      Number.isFinite(numberA) &&
+      Number.isFinite(numberB)
+    ) {
+      return numberA - numberB;
+    }
+
+    return String(a).localeCompare(
+      String(b)
+    );
+  });
+};
+
+ const filterItemsBySize = (size) => {
+  return items.filter((itemData) => {
+    const availableSizes =
+      Object.values(
+        itemData?.item?.size || {}
+      ).flatMap(
+        normalizeVariantSize
+      );
+
+    return availableSizes.includes(
+      String(size).trim()
+    );
+  });
+};
 
   const fetchUserBasket = async () => {
   const currentUser = auth?.currentUser;
@@ -376,8 +582,19 @@ useEffect(() => {
 }, []);
 
 const getBasketQuantity = (itemId) => {
-  const basketItem = basketItems.find((item) => item.itemId === itemId);
-  return Number(basketItem?.quantity || 0);
+  return basketItems
+    .filter(
+      (basketItem) =>
+        basketItem.itemId === itemId
+    )
+    .reduce(
+      (total, basketItem) =>
+        total +
+        Number(
+          basketItem?.quantity || 0
+        ),
+      0
+    );
 };
 
 const isItemInBasket = (itemId) => getBasketQuantity(itemId) > 0;
@@ -475,12 +692,21 @@ const getDisplayImage = (itemData) => {
   );
 };
 
-const handleColorSelect = (itemId, color, e) => {
+const handleColorSelect = (
+  itemId,
+  color,
+  e
+) => {
   e.stopPropagation();
 
   setSelectedColorByItem((prev) => ({
     ...prev,
     [itemId]: color,
+  }));
+
+  setSelectedSizeByItem((prev) => ({
+    ...prev,
+    [itemId]: null,
   }));
 
   setSelectedImageIndexByItem((prev) => ({
@@ -680,68 +906,157 @@ const translatedType =
    router.push(withCountry(`/product/${id}`));
   };
 
-  const handleAddToBasket = async (itemData, e) => {
-  e.stopPropagation();
+const handleAddToBasket = async (
+  itemData,
+  e,
+  explicitSize = null
+) => {
+  e?.stopPropagation();
 
   const currentUser = auth?.currentUser;
 
   if (!currentUser) {
     const currentPath =
-      typeof window !== "undefined" ? window.location.pathname : "/";
+      typeof window !== "undefined"
+        ? window.location.pathname
+        : "/";
 
-   router.push(withCountry(`/auth?redirect=${encodeURIComponent(currentPath)}`));
+    router.push(
+      withCountry(
+        `/auth?redirect=${encodeURIComponent(
+          currentPath
+        )}`
+      )
+    );
+
+    return;
+  }
+
+  const item = itemData?.item || {};
+  const details = itemData?.details || {};
+
+  const colorOptions =
+    getColorOptions(itemData);
+
+  const selectedColorForItem =
+    selectedColorByItem[itemData.id] ||
+    colorOptions[0] ||
+    null;
+
+  const availableSizes =
+    getSizesForColor(
+      itemData,
+      selectedColorForItem
+    );
+
+ const selectedSizeForItem =
+  explicitSize ||
+  selectedSizeByItem[itemData.id] ||
+  null;
+
+  /*
+   * Product has sizes but user hasn't
+   * selected one yet → open modal.
+   */
+  if (
+    availableSizes.length > 0 &&
+    !selectedSizeForItem
+  ) {
+    setSizeModalItem(itemData);
     return;
   }
 
   try {
-    const item = itemData?.item || {};
-    const details = itemData?.details || {};
+    const finalPrice =
+      getVariantPrice(
+        itemData,
+        selectedColorForItem,
+        selectedSizeForItem
+      );
+
+    const currentImages =
+      getCurrentImages(itemData);
 
     const basketItem = {
       userId: currentUser.uid,
+
       item: {
         id: itemData.id,
         itemId: itemData.itemId,
+
         name: item.name,
-        price: Number(item.usdPrice || 0),
-        color: null,
-        size: selectedSize || null,
-        image: item?.images?.[0] || "/fallback.png",
-        brand: item.brand || details.brand,
-        brandPrice: item.brandPrice || details.brandPrice,
+
+        price: finalPrice,
+
+        color:
+          selectedColorForItem,
+
+        size:
+          selectedSizeForItem,
+
+        image:
+          getImageUrl(
+            currentImages?.[0]
+          ) ||
+          getImageUrl(
+            item?.images?.[0]
+          ) ||
+          "/fallback.png",
+
+        brand:
+          item.brand ||
+          details.brand,
+
+        brandPrice:
+          item.brandPrice ||
+          details.brandPrice,
+
         quantity: 1,
-        shippingCountry: details?.country || "",
+
+        shippingCountry:
+          details?.country || "",
+
         selectedCountry: "",
-        eurText: details?.eurText || "",
-        poundText: details?.poundText || "",
-        brlText: details?.brlText || "",
-        tryText: details?.tryText || "",
-        audText: details?.audText || "",
-        sarText: details?.sarText || "",
       },
     };
 
-    const response = await axios.post(BASKET_API, basketItem);
+    const response =
+      await axios.post(
+        BASKET_API,
+        basketItem
+      );
 
-    if (response.status === 200 || response.status === 201) {
+    if (
+      response.status === 200 ||
+      response.status === 201
+    ) {
       await fetchUserBasket();
-            const productName =
-          getTranslatedName(
-            item,
-            itemData.itemId
-          );
-          
-        messageApi.success(
-          t("basket_add_success", {
-            product: productName,
-          })
+
+      const productName =
+        getTranslatedName(
+          item,
+          itemData.itemId
         );
+
+      messageApi.success(
+        t("basket_add_success", {
+          product: productName,
+        })
+      );
     } else {
-      messageApi.error("Failed to add to cart");
+      messageApi.error(
+        "Failed to add to cart"
+      );
     }
   } catch (error) {
-    console.error("Error adding item to basket:", error);
-    messageApi.error("Error adding to cart");
+    console.error(
+      "Error adding item to basket:",
+      error
+    );
+
+    messageApi.error(
+      "Error adding to cart"
+    );
   }
 };
 
@@ -1088,6 +1403,26 @@ if (!loading && !hasItems) {
                   const displayImage = getDisplayImage(itemData);
                   const currentImages = getCurrentImages(itemData);
 
+                  const effectiveColor =
+  selectedColorForItem ||
+  colorOptions[0] ||
+  null;
+
+const selectedSizeForItem =
+  selectedSizeByItem[id] || null;
+
+const availableSizes =
+  getSizesForColor(
+    itemData,
+    effectiveColor
+  );
+
+const displayUsdPrice =
+  getVariantPrice(
+    itemData,
+    effectiveColor,
+    selectedSizeForItem
+  );
                   const visibleColorOptions = colorOptions.slice(0, 4);
                   const hiddenColorCount = Math.max(colorOptions.length - 4, 0);
 
@@ -1208,7 +1543,7 @@ if (!loading && !hasItems) {
                     <div className="item-prices">
                       <div className="item-price-row">
                        <span className="item-price">
-                        {formatPrice(usdPrice)}
+                       {formatPrice(displayUsdPrice)}
                       </span>
 
                         {Number(originalPrice) > 0 &&
@@ -1241,26 +1576,41 @@ if (!loading && !hasItems) {
                       </div>
                     )}
 
-                    {isItemInBasket(itemId) ? (
-                      <button
-                        type="button"
-                        className="women-added-cart-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                         router.push(withCountry("/basket"));
-                        }}
-                      >
-                        🛒 {getBasketQuantity(itemId)}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="women-add-cart-btn"
-                        onClick={(e) => handleAddToBasket(itemData, e)}
-                      >
-                       {t("add_to_cart")}
-                      </button>
-                    )}
+                    <div
+  className="women-card-basket-actions"
+  onClick={(e) =>
+    e.stopPropagation()
+  }
+>
+  <button
+    type="button"
+    className="women-add-cart-btn"
+    onClick={(e) =>
+      handleAddToBasket(
+        itemData,
+        e
+      )
+    }
+  >
+    {t("add_to_cart")}
+  </button>
+
+  {getBasketQuantity(itemId) > 0 && (
+    <button
+      type="button"
+      className="women-added-cart-btn"
+      onClick={(e) => {
+        e.stopPropagation();
+
+        router.push(
+          withCountry("/basket")
+        );
+      }}
+    >
+      🛒 {getBasketQuantity(itemId)}
+    </button>
+  )}
+</div>
 
                     <div
                       className="item-type-stars"
@@ -1283,6 +1633,92 @@ if (!loading && !hasItems) {
           </div>
         </div>
       </div>
+
+    {sizeModalItem && (() => {
+  const modalId =
+    sizeModalItem.id;
+
+  const modalColors =
+    getColorOptions(sizeModalItem);
+
+  const modalColor =
+    selectedColorByItem[modalId] ||
+    modalColors[0] ||
+    null;
+
+  const modalSizes =
+    getSizesForColor(
+      sizeModalItem,
+      modalColor
+    );
+
+  return (
+    <div
+      className="women-size-modal-overlay"
+      onClick={() =>
+        setSizeModalItem(null)
+      }
+    >
+      <div
+        className="women-size-modal"
+        onClick={(e) =>
+          e.stopPropagation()
+        }
+      >
+        <button
+          type="button"
+          className="women-size-modal-close"
+          onClick={() =>
+            setSizeModalItem(null)
+          }
+        >
+          ×
+        </button>
+
+        <h3>
+          {t("select_size")}
+        </h3>
+
+        <div className="women-size-modal-options">
+          {modalSizes.map((size) => (
+            <button
+              type="button"
+              key={size}
+              className={
+                selectedSizeByItem[
+                  modalId
+                ] === size
+                  ? "active"
+                  : ""
+              }
+             onClick={async (e) => {
+  e.stopPropagation();
+
+  setSelectedSizeByItem(
+    (prev) => ({
+      ...prev,
+      [modalId]: size,
+    })
+  );
+
+  setSizeModalItem(null);
+
+  await handleAddToBasket(
+    sizeModalItem,
+    e,
+    size
+  );
+}}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+})()}
+
     </div>
   );
 }

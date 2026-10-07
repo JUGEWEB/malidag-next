@@ -424,6 +424,78 @@ const getColorOptions = (itemData) => {
   return Object.keys(itemData?.item?.imagesVariants || {});
 };
 
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+
+const getVariantPrice = (itemData, color) => {
+  const item = itemData?.item || {};
+
+  const basePrice = Number(
+    item.usdPrice || 0
+  );
+
+  if (!color) {
+    return basePrice;
+  }
+
+  const sizeMap = item.size || {};
+
+  const actualColorKey =
+    Object.keys(sizeMap).find(
+      (key) =>
+        normalizeText(key) ===
+        normalizeText(color)
+    );
+
+  if (!actualColorKey) {
+    return basePrice;
+  }
+
+  const entries =
+    sizeMap[actualColorKey];
+
+  const normalizedEntries =
+    Array.isArray(entries)
+      ? entries
+      : [entries];
+
+  const specialPrices =
+    normalizedEntries
+      .map((entry) => {
+        if (
+          !entry ||
+          typeof entry !== "object" ||
+          Array.isArray(entry)
+        ) {
+          return null;
+        }
+
+        const price =
+          Number(entry.price);
+
+        return (
+          Number.isFinite(price) &&
+          price > 0
+        )
+          ? price
+          : null;
+      })
+      .filter(
+        (price) => price !== null
+      );
+
+  if (!specialPrices.length) {
+    return basePrice;
+  }
+
+  return Math.min(
+    ...specialPrices
+  );
+};
+
 const getDisplayImage = (itemData) => {
   const selectedColorForItem = selectedColorByItem[itemData.id];
   const variants = itemData?.item?.imagesVariants || {};
@@ -457,14 +529,72 @@ const handleColorSelect = (itemId, color, e) => {
 };
 
 const getAllSizes = () => {
-  const allSizes = items.flatMap((itemData) => {
-    const sizes = Object.values(itemData?.item?.size || {});
-    return sizes
-      .flat()
-      .flatMap((size) => String(size).split(",").map((x) => x.trim()));
-  });
+  const allSizes = items.flatMap((itemData) =>
+    Object.values(
+      itemData?.item?.size || {}
+    ).flatMap((value) =>
+      normalizeVariantSize(value)
+    )
+  );
 
-  return [...new Set(allSizes.filter(Boolean))];
+  return [
+    ...new Set(allSizes)
+  ].sort((a, b) => {
+    const numberA = Number(a);
+    const numberB = Number(b);
+
+    if (
+      Number.isFinite(numberA) &&
+      Number.isFinite(numberB)
+    ) {
+      return numberA - numberB;
+    }
+
+    return String(a).localeCompare(
+      String(b)
+    );
+  });
+};
+
+const normalizeVariantSize = (value) => {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(normalizeVariantSize);
+  }
+
+  if (
+    typeof value === "object" &&
+    !Array.isArray(value)
+  ) {
+    if (
+      value.value !== undefined &&
+      value.value !== null
+    ) {
+      return normalizeVariantSize(value.value);
+    }
+
+    return Object.entries(value)
+      .filter(
+        ([key]) =>
+          ![
+            "price",
+            "usdPrice",
+            "originalPrice",
+            "brandPrice",
+          ].includes(key)
+      )
+      .flatMap(([, nestedValue]) =>
+        normalizeVariantSize(nestedValue)
+      );
+  }
+
+  return String(value)
+    .split(",")
+    .map((size) => size.trim())
+    .filter(Boolean);
 };
 
 const colors = useMemo(() => {
@@ -487,9 +617,12 @@ const displayedItems = useMemo(() => {
       selectedColor === "all" ||
       Object.keys(item?.imagesVariants || {}).includes(selectedColor);
 
-    const availableSizes = Object.values(item?.size || {})
-      .flat()
-      .flatMap((size) => String(size).split(",").map((x) => x.trim()));
+   const availableSizes =
+  Object.values(
+    item?.size || {}
+  ).flatMap((value) =>
+    normalizeVariantSize(value)
+  );
 
     const matchesSize =
       !selectedSize || availableSizes.includes(selectedSize);
@@ -810,6 +943,21 @@ if (!loading && items.length === 0) {
                 sold,
                 videos,
               } = item;
+
+              const colorOptions =
+                getColorOptions(itemData);
+
+              const selectedColorForItem =
+                selectedColorByItem[id] ||
+                colorOptions[0] ||
+                null;
+
+              const displayUsdPrice =
+                getVariantPrice(
+                  itemData,
+                  selectedColorForItem
+                );
+
               const translatedProduct =
               itemTranslations[String(itemId)];
 
@@ -939,7 +1087,9 @@ if (!loading && items.length === 0) {
                     <div className="item-prices">
                       <div className="item-price-row">
                        <span className="item-price">
-                        {formatUsdToLocal(usdPrice)}
+                        {formatUsdToLocal(
+                          displayUsdPrice
+                        )}
                       </span>
 
                         {originalPrice > 0 && (

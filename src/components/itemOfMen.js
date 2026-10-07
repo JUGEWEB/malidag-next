@@ -39,19 +39,57 @@ const slugify = (value) =>
     .toLowerCase()
     .replace(/\s+/g, "-");
 
+const normalizeVariantSize = (value) => {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(normalizeVariantSize);
+  }
+
+  if (
+    typeof value === "object" &&
+    !Array.isArray(value)
+  ) {
+    if (
+      value.value !== undefined &&
+      value.value !== null
+    ) {
+      return normalizeVariantSize(value.value);
+    }
+
+    return Object.entries(value)
+      .filter(
+        ([key]) =>
+          ![
+            "price",
+            "usdPrice",
+            "originalPrice",
+            "brandPrice",
+          ].includes(key)
+      )
+      .flatMap(([, nestedValue]) =>
+        normalizeVariantSize(nestedValue)
+      );
+  }
+
+  return String(value)
+    .split(",")
+    .map((size) => size.trim())
+    .filter(Boolean);
+};
+
 const parseSizes = (sizeObject) => {
-  if (!sizeObject || typeof sizeObject !== "object") return [];
+  if (!sizeObject || typeof sizeObject !== "object") {
+    return [];
+  }
 
   return [
     ...new Set(
-      Object.values(sizeObject)
-        .flat()
-        .flatMap((entry) =>
-          String(entry || "")
-            .split(",")
-            .map((size) => size.trim())
-            .filter(Boolean)
-        )
+      Object.values(sizeObject).flatMap(
+        normalizeVariantSize
+      )
     ),
   ];
 };
@@ -118,6 +156,8 @@ function ItemOfMen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
+  const [selectedSizeByItem, setSelectedSizeByItem] = useState({});
+const [sizeModalItem, setSizeModalItem] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
 const [basketItems, setBasketItems] = useState([]);
 const [brandThemes, setBrandThemes] = useState([]);
@@ -159,6 +199,156 @@ const [rates, setRates] =
   }`;
 };
 
+const getSizesForColor = (itemData, color) => {
+  const sizeData = itemData?.item?.size || {};
+
+  if (!color) {
+    return [
+      ...new Set(
+        Object.values(sizeData).flatMap(
+          normalizeVariantSize
+        )
+      ),
+    ];
+  }
+
+  const directMatch = Object.entries(sizeData).find(
+    ([key]) =>
+      normalizeText(key) === normalizeText(color)
+  );
+
+  if (directMatch) {
+    return [
+      ...new Set(
+        normalizeVariantSize(directMatch[1])
+      ),
+    ];
+  }
+
+  return [
+    ...new Set(
+      Object.values(sizeData).flatMap(
+        normalizeVariantSize
+      )
+    ),
+  ];
+};
+
+const getVariantPrice = (
+  itemData,
+  color,
+  size
+) => {
+  const item = itemData?.item || {};
+  const basePrice = Number(item.usdPrice);
+
+  const variantPrices =
+    item.variantPrices ||
+    item.priceVariants ||
+    item.variantPrice ||
+    {};
+
+  const colorEntry =
+    Object.entries(variantPrices).find(
+      ([key]) =>
+        normalizeText(key) === normalizeText(color)
+    )?.[1];
+
+  // Existing variantPrices structure
+  if (colorEntry !== undefined) {
+    if (
+      typeof colorEntry === "number" ||
+      typeof colorEntry === "string"
+    ) {
+      const price = Number(colorEntry);
+
+      if (Number.isFinite(price) && price > 0) {
+        return price;
+      }
+    }
+
+    if (
+      colorEntry &&
+      typeof colorEntry === "object"
+    ) {
+      if (size) {
+        const sizeEntry =
+          Object.entries(colorEntry).find(
+            ([key]) =>
+              normalizeText(key) ===
+              normalizeText(size)
+          )?.[1];
+
+        const sizePrice =
+          typeof sizeEntry === "object"
+            ? Number(
+                sizeEntry?.usdPrice ??
+                sizeEntry?.price
+              )
+            : Number(sizeEntry);
+
+        if (
+          Number.isFinite(sizePrice) &&
+          sizePrice > 0
+        ) {
+          return sizePrice;
+        }
+      }
+
+      const colorPrice = Number(
+        colorEntry?.usdPrice ??
+        colorEntry?.price
+      );
+
+      if (
+        Number.isFinite(colorPrice) &&
+        colorPrice > 0
+      ) {
+        return colorPrice;
+      }
+    }
+  }
+
+  /*
+   * New size format:
+   *
+   * size: {
+   *   black: {
+   *     value: "40, 41, 42",
+   *     price: 48.23
+   *   }
+   * }
+   */
+  const sizeData = item?.size || {};
+
+  const colorSizeEntry =
+    Object.entries(sizeData).find(
+      ([key]) =>
+        normalizeText(key) === normalizeText(color)
+    )?.[1];
+
+  if (
+    colorSizeEntry &&
+    typeof colorSizeEntry === "object" &&
+    !Array.isArray(colorSizeEntry)
+  ) {
+    const availableSizes =
+      normalizeVariantSize(colorSizeEntry);
+
+    if (
+      (!size || availableSizes.includes(String(size))) &&
+      Number.isFinite(Number(colorSizeEntry.price)) &&
+      Number(colorSizeEntry.price) > 0
+    ) {
+      return Number(colorSizeEntry.price);
+    }
+  }
+
+  return Number.isFinite(basePrice)
+    ? basePrice
+    : 0;
+};
+
   const fetchUserBasket = async () => {
   const currentUser = auth?.currentUser;
 
@@ -177,92 +367,182 @@ const [rates, setRates] =
 };
 
 const getBasketQuantity = (itemId) => {
-  const basketItem = basketItems.find(
-    (entry) =>
-      String(entry?.itemId || entry?.item?.itemId || entry?.id) === String(itemId)
-  );
-
-  return Number(basketItem?.quantity || basketItem?.item?.quantity || 0);
+  return basketItems
+    .filter(
+      (entry) =>
+        String(
+          entry?.itemId ||
+          entry?.item?.itemId ||
+          entry?.id
+        ) === String(itemId)
+    )
+    .reduce(
+      (total, entry) =>
+        total +
+        Number(
+          entry?.quantity ||
+          entry?.item?.quantity ||
+          0
+        ),
+      0
+    );
 };
 
 const isItemInBasket = (itemId) => {
   return getBasketQuantity(itemId) > 0;
 };
 
-const handleAddToBasket = async (itemData, e) => {
-  e.preventDefault();
-  e.stopPropagation();
+const handleAddToBasket = async (
+  itemData,
+  e,
+  explicitSize = null
+) => {
+  e?.preventDefault();
+  e?.stopPropagation();
 
   const currentUser = auth?.currentUser;
 
   if (!currentUser) {
     const currentPath =
-      typeof window !== "undefined" ? window.location.pathname : "/men";
+      typeof window !== "undefined"
+        ? window.location.pathname
+        : "/men";
 
-   router.push(
-  withCountry(
-    `/auth?redirect=${encodeURIComponent(
-      currentPath
-    )}`
-  )
-);
+    router.push(
+      withCountry(
+        `/auth?redirect=${encodeURIComponent(
+          currentPath
+        )}`
+      )
+    );
+
+    return;
+  }
+
+  const item = itemData?.item || {};
+  const details = itemData?.details || {};
+
+  const colorOptions =
+    getColorOptions(item?.imagesVariants);
+
+  const selectedColorForBasket =
+    selectedColorByItem[itemData.id] ||
+    colorOptions[0] ||
+    null;
+
+  const availableSizes =
+    getSizesForColor(
+      itemData,
+      selectedColorForBasket
+    );
+
+  const selectedSizeForBasket =
+    explicitSize ||
+    selectedSizeByItem[itemData.id] ||
+    null;
+
+  // Product has sizes → user must choose one.
+  if (
+    availableSizes.length > 0 &&
+    !selectedSizeForBasket
+  ) {
+    setSizeModalItem(itemData);
     return;
   }
 
   try {
-    const item = itemData?.item || {};
-    const colorOptions = getColorOptions(item?.imagesVariants);
-    const selectedColorForBasket =
-      selectedColorByItem[itemData.id] || colorOptions?.[0] || null;
+    const finalPrice =
+      getVariantPrice(
+        itemData,
+        selectedColorForBasket,
+        selectedSizeForBasket
+      );
 
-    const variantImages = item?.imagesVariants?.[selectedColorForBasket] || [];
+    const variantImages =
+      item?.imagesVariants?.[
+        selectedColorForBasket
+      ] || [];
 
     const basketImage =
-      getImageUrl(sortImages(variantImages)?.[0]) ||
+      getImageUrl(
+        sortImages(variantImages)?.[0]
+      ) ||
       getImageUrl(item?.images?.[0]) ||
       "/placeholder.png";
 
     const basketItem = {
       userId: currentUser.uid,
+
       item: {
         id: itemData.id,
         itemId: itemData.itemId,
-        name: item.name || itemData?.details?.itemName || "Product",
-        price: Number(item.usdPrice || 0),
-        color: selectedColorForBasket,
-        size: selectedSize || null,
-        image: basketImage,
-        brand: item.brand || itemData?.details?.brand,
-        brandPrice: item.brandPrice,
+
+        name:
+          item.name ||
+          details?.itemName ||
+          "Product",
+
+        price: finalPrice,
+
+        color:
+          selectedColorForBasket,
+
+        size:
+          selectedSizeForBasket,
+
+        image:
+          basketImage,
+
+        brand:
+          item.brand ||
+          details?.brand,
+
+        brandPrice:
+          item.brandPrice ??
+          details?.brandPrice,
+
         quantity: 1,
       },
     };
 
-    const response = await axios.post(BASKET_API, basketItem);
+    const response =
+      await axios.post(
+        BASKET_API,
+        basketItem
+      );
 
-    if (response.status === 200 || response.status === 201) {
+    if (
+      response.status === 200 ||
+      response.status === 201
+    ) {
       await fetchUserBasket();
+
       const productName =
-  getTranslatedName(
-    item,
-    itemData.itemId,
-    itemData?.details
-  );
-     messageApi.success(
-  t("basket_add_success", {
-    product: productName,
-  })
-);
+        getTranslatedName(
+          item,
+          itemData.itemId,
+          details
+        );
+
+      messageApi.success(
+        t("basket_add_success", {
+          product: productName,
+        })
+      );
     } else {
-     messageApi.error(
-  t("basket_add_failed")
-);
+      messageApi.error(
+        t("basket_add_failed")
+      );
     }
   } catch (error) {
-    console.error("Error adding item to basket:", error);
-   messageApi.error(
-  t("basket_add_error")
-);
+    console.error(
+      "Error adding item to basket:",
+      error
+    );
+
+    messageApi.error(
+      t("basket_add_error")
+    );
   }
 };
 
@@ -664,7 +944,8 @@ useEffect(() => {
     [router]
   );
 
-  const handleColorSelect = useCallback((itemId, color, e) => {
+ const handleColorSelect = useCallback(
+  (itemId, color, e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -672,7 +953,14 @@ useEffect(() => {
       ...prev,
       [itemId]: color,
     }));
-  }, []);
+
+    setSelectedSizeByItem((prev) => ({
+      ...prev,
+      [itemId]: null,
+    }));
+  },
+  []
+);
 
   const translateTaxonomy = (value) => {
   if (!value) return "";
@@ -952,6 +1240,27 @@ const pageTitle = useMemo(() => {
                 const reviewCount = reviewsData.reviewsArray?.length || 0;
                 const colorOptions = getColorOptions(imagesVariants);
                 const selectedColorForItem = selectedColorByItem[id];
+
+                const effectiveColor =
+  selectedColorForItem ||
+  colorOptions[0] ||
+  null;
+
+const selectedSizeForItem =
+  selectedSizeByItem[id] || null;
+
+const availableSizes =
+  getSizesForColor(
+    itemData,
+    effectiveColor
+  );
+
+const displayUsdPrice =
+  getVariantPrice(
+    itemData,
+    effectiveColor,
+    selectedSizeForItem
+  );
                 const displayImage = getDisplayImage(itemData);
                 const discountPercentage = getDiscountPercentage(
                   usdPrice,
@@ -1120,7 +1429,7 @@ const pageTitle = useMemo(() => {
 
                         <div className="men-list-price-row">
                           <div className="men-list-price-main">
-                            {formatPrice(usdPrice)}
+                           {formatPrice(displayUsdPrice)}
                           </div>
 
                           {Number(originalPrice) > 0 && (
@@ -1186,29 +1495,37 @@ const pageTitle = useMemo(() => {
                       </span>
                         </div>
 
-                        {isItemInBasket(itemId) ? (
-                          <button
-                            type="button"
-                            className="men-cart-action-btn added"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                             router.push(
-                                withCountry("/basket")
-                              );
-                            }}
-                          >
-                            🛒 {getBasketQuantity(itemId)}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                           className="men-cart-action-btn"
-                            onClick={(e) => handleAddToBasket(itemData, e)}
-                          >
-                           {t("add_to_cart")}
-                          </button>
-                        )}
+                       <div className="men-card-basket-actions">
+  <button
+    type="button"
+    className="men-cart-action-btn"
+    onClick={(e) =>
+      handleAddToBasket(
+        itemData,
+        e
+      )
+    }
+  >
+    {t("add_to_cart")}
+  </button>
+
+  {getBasketQuantity(itemId) > 0 && (
+    <button
+      type="button"
+      className="men-cart-action-btn added"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        router.push(
+          withCountry("/basket")
+        );
+      }}
+    >
+      🛒 {getBasketQuantity(itemId)}
+    </button>
+  )}
+</div>
                     </div>
                   </article>
                 );
@@ -1306,6 +1623,107 @@ const pageTitle = useMemo(() => {
           )}
         </aside>
       </div>
+
+      {sizeModalItem && (() => {
+  const modalId =
+    sizeModalItem.id;
+
+  const modalColors =
+    getColorOptions(
+      sizeModalItem?.item?.imagesVariants
+    );
+
+  const modalColor =
+    selectedColorByItem[modalId] ||
+    modalColors[0] ||
+    null;
+
+  const modalSizes =
+    getSizesForColor(
+      sizeModalItem,
+      modalColor
+    );
+
+  return (
+    <div
+      className="men-size-modal-overlay"
+      onClick={() =>
+        setSizeModalItem(null)
+      }
+    >
+      <div
+        className="men-size-modal"
+        onClick={(e) =>
+          e.stopPropagation()
+        }
+      >
+        <button
+          type="button"
+          className="men-size-modal-close"
+          onClick={() =>
+            setSizeModalItem(null)
+          }
+        >
+          ×
+        </button>
+
+        <h3>
+          {t("select_size")}
+        </h3>
+
+        <div className="men-size-modal-options">
+          {modalSizes.map((size) => {
+            const sizePrice =
+              getVariantPrice(
+                sizeModalItem,
+                modalColor,
+                size
+              );
+
+            return (
+              <button
+                type="button"
+                key={size}
+                className={
+                  selectedSizeByItem[
+                    modalId
+                  ] === size
+                    ? "active"
+                    : ""
+                }
+                onClick={async (e) => {
+                  e.stopPropagation();
+
+                  setSelectedSizeByItem(
+                    (prev) => ({
+                      ...prev,
+                      [modalId]: size,
+                    })
+                  );
+
+                  setSizeModalItem(null);
+
+                  await handleAddToBasket(
+                    sizeModalItem,
+                    e,
+                    size
+                  );
+                }}
+              >
+                <span>{size}</span>
+
+                <small>
+                  {formatPrice(sizePrice)}
+                </small>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+})()}
+
     </div>
   );
 }

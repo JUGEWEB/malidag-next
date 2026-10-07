@@ -436,19 +436,29 @@ const handleAddToBasket = async (
       selectedColorForBasket
     );
 
-  const selectedSizeForBasket =
-    explicitSize ||
-    selectedSizeByItem[itemData.id] ||
-    null;
+ const selectedSizeForBasket =
+  explicitSize || null;
 
-  // Product has sizes → user must choose one.
-  if (
-    availableSizes.length > 0 &&
-    !selectedSizeForBasket
-  ) {
-    setSizeModalItem(itemData);
-    return;
-  }
+/*
+ * Direct Add to Cart click:
+ * ALWAYS open the size modal when
+ * this product/color has sizes.
+ *
+ * explicitSize only exists after
+ * the user chooses a size in the modal.
+ */
+if (
+  availableSizes.length > 0 &&
+  !explicitSize
+) {
+  setSelectedSizeByItem((prev) => ({
+    ...prev,
+    [itemData.id]: null,
+  }));
+
+  setSizeModalItem(itemData);
+  return;
+}
 
   try {
     const finalPrice =
@@ -517,6 +527,15 @@ const handleAddToBasket = async (
     ) {
       await fetchUserBasket();
 
+       // Do not remember the previously added size.
+  setSelectedSizeByItem((prev) => ({
+    ...prev,
+    [itemData.id]: null,
+  }));
+
+  setSizeModalItem(null);
+
+  
       const productName =
         getTranslatedName(
           item,

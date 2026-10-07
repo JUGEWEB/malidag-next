@@ -949,22 +949,30 @@ const handleAddToBasket = async (
       selectedColorForItem
     );
 
- const selectedSizeForItem =
-  explicitSize ||
-  selectedSizeByItem[itemData.id] ||
-  null;
+const selectedSizeForItem =
+  explicitSize || null;
 
-  /*
-   * Product has sizes but user hasn't
-   * selected one yet → open modal.
-   */
-  if (
-    availableSizes.length > 0 &&
-    !selectedSizeForItem
-  ) {
-    setSizeModalItem(itemData);
-    return;
-  }
+/*
+ * Clicking Add to cart directly:
+ * if this color has sizes, ALWAYS ask the
+ * user to choose a size.
+ *
+ * explicitSize only exists when the user
+ * has just clicked a size inside the modal.
+ */
+if (
+  availableSizes.length > 0 &&
+  !explicitSize
+) {
+  // Clear any previous size selection.
+  setSelectedSizeByItem((prev) => ({
+    ...prev,
+    [itemData.id]: null,
+  }));
+
+  setSizeModalItem(itemData);
+  return;
+}
 
   try {
     const finalPrice =
@@ -1030,7 +1038,15 @@ const handleAddToBasket = async (
       response.status === 200 ||
       response.status === 201
     ) {
+     
       await fetchUserBasket();
+
+      setSelectedSizeByItem((prev) => ({
+  ...prev,
+  [itemData.id]: null,
+    }));
+
+    setSizeModalItem(null);
 
       const productName =
         getTranslatedName(

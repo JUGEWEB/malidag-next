@@ -741,14 +741,18 @@ if (!currentUser) {
 
       const response = await axios.post(BASKET_API, basketItem);
 
-      if (response.status === 200 || response.status === 201) {
-        alert(t("basket_add_success", { product: product.name }));
-      } else {
-        alert(t("basket_add_failed"));
-      }
+     if (response.status === 200 || response.status === 201) {
+  messageApi.success(
+    t("basket_add_success", {
+      product: translation?.name || product?.name || "",
+    })
+  );
+} else {
+  messageApi.error(t("basket_add_failed"));
+}
     } catch (error) {
       console.error("Error adding item to basket:", error);
-      alert(t("basket_add_error"));
+     messageApi.error(t("basket_add_error"));
     }
   };
 
@@ -804,13 +808,13 @@ if (!currentUser) {
       response.status === 200 ||
       response.status === 201
     ) {
-      alert(
-        t("like_success", {
-          product: product?.name || "",
-        })
-      );
+      messageApi.success(
+  t("like_success", {
+    product: translation?.name || product?.name || "",
+  })
+);
     } else {
-      alert(t("like_failed"));
+     messageApi.error(t("like_failed"));
     }
   } catch (error) {
     console.error(
@@ -818,7 +822,7 @@ if (!currentUser) {
       error
     );
 
-    alert(t("like_failed"));
+   messageApi.error(t("like_failed"));
   }
 };
 

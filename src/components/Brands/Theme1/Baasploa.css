@@ -1121,3 +1121,240 @@
     height: 260px;
   }
 }
+
+/* ==========================================
+   THEME 1 — ADD TO BASKET SIZE MODAL
+   ========================================== */
+
+.th1-size-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.th1-size-modal {
+  position: relative;
+
+  width: 100%;
+  max-width: 420px;
+  max-height: min(85dvh, 650px);
+  overflow-y: auto;
+
+  padding: 28px 24px 26px;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+
+  animation: th1SizeModalIn 0.2s ease-out;
+}
+
+@keyframes th1SizeModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Close button — first direct button in modal */
+
+.th1-size-modal > button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+
+  color: #374151;
+  font-size: 1.4rem;
+  line-height: 1;
+
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.th1-size-modal > button:hover {
+  background: #e5e7eb;
+}
+
+.th1-size-modal h3 {
+  margin: 0 42px 22px 0;
+
+  color: #111827;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+}
+
+/* Size selection grid */
+
+.th1-size-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.th1-size-options button {
+  min-width: 0;
+  min-height: 70px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  padding: 12px 6px;
+
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+
+  color: #111827;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.th1-size-options button:hover {
+  border-color: #111827;
+  background: #f8fafc;
+  transform: translateY(-2px);
+}
+
+.th1-size-options button.active {
+  border-color: #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.th1-size-options button span {
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.th1-size-options button small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.th1-size-options button.active small {
+  color: #e5e7eb;
+}
+
+/* Disabled states */
+
+.th1-size-options button:disabled,
+.th1-size-modal > button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Keyboard accessibility */
+
+.th1-size-modal button:focus-visible {
+  outline: 3px solid #64748b;
+  outline-offset: 3px;
+}
+
+/* Mobile */
+
+@media (max-width: 640px) {
+  .th1-size-overlay {
+    padding: 14px;
+  }
+
+  .th1-size-modal {
+    max-width: 380px;
+    max-height: 82dvh;
+
+    padding: 24px 18px 22px;
+    border-radius: 18px;
+  }
+
+  .th1-size-modal h3 {
+    font-size: 1.05rem;
+    margin-bottom: 18px;
+  }
+
+  .th1-size-options {
+    gap: 8px;
+  }
+
+  .th1-size-options button {
+    min-height: 65px;
+    padding: 10px 4px;
+    border-radius: 10px;
+  }
+
+  .th1-size-options button span {
+    font-size: 0.85rem;
+  }
+
+  .th1-size-options button small {
+    font-size: 0.67rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .th1-size-modal {
+    animation: none;
+  }
+
+  .th1-size-options button {
+    transition: none;
+  }
+}
+
+.th1-basket-count {
+  margin-left: 10px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.th1-basket-count:hover {
+  background: #374151;
+}

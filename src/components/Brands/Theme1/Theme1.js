@@ -91,7 +91,9 @@ const currencyConfig = useMemo(
   const [expandedDeptIndex, setExpandedDeptIndex] = useState(null);
   const [translations, setTranslations] = useState({});
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
-
+const [pendingBasketItem, setPendingBasketItem] = useState(null);
+const [selectedModalSize, setSelectedModalSize] = useState(null);
+const [addingToBasket, setAddingToBasket] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedBrandType, setSelectedBrandType] = useState(null);
 
@@ -103,6 +105,7 @@ const currencyConfig = useMemo(
     videos: Array.isArray(product?.videos) ? product.videos : [],
     department: product?.department || "",
     brandType: product?.brandType || "",
+    size: product?.size || {},
     usdPrice: product?.usdPrice || product?.price || 0,
     originalPrice: product?.originalPrice || 0,
     rating: product?.rating || 0,
@@ -122,6 +125,7 @@ const currencyConfig = useMemo(
       brandType: source?.brandType || product?.details?.brandType || "",
       usdPrice: source?.usdPrice || product?.usdPrice || 0,
       originalPrice: source?.originalPrice || product?.originalPrice || 0,
+      size: source?.size || {},
       rating: source?.rating || product?.rating || 0,
       imagesVariants: source?.imagesVariants || {},
       rawItem: product,
@@ -139,6 +143,7 @@ const currencyConfig = useMemo(
       videos: Array.isArray(source?.videos) ? source.videos : [],
       department: source?.department || "",
       brandType: source?.brandType || "",
+      size: source?.size || {},
       usdPrice: source?.usdPrice || product?.usdPrice || 0,
       originalPrice: source?.originalPrice || product?.originalPrice || 0,
       rating: source?.rating || product?.rating || 0,
@@ -146,6 +151,44 @@ const currencyConfig = useMemo(
       rawItem: product,
     };
   };
+
+  const getSizesForColor = (product, color) => {
+  const sizeMap = product?.size || product?.rawItem?.item?.size || {};
+
+  const key = Object.keys(sizeMap).find(
+    (key) =>
+      key.trim().toLowerCase() ===
+      String(color || "").trim().toLowerCase()
+  );
+
+  if (!key) return [];
+
+  const entries = Array.isArray(sizeMap[key])
+    ? sizeMap[key]
+    : [sizeMap[key]];
+
+  return entries.flatMap((entry) => {
+    const raw =
+      typeof entry === "object" && entry !== null
+        ? entry.value
+        : entry;
+
+    const price =
+      typeof entry === "object" && entry !== null &&
+      entry.price != null && entry.price !== ""
+        ? Number(entry.price)
+        : null;
+
+    return String(raw ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((value) => ({
+        value,
+        price: Number.isFinite(price) && price > 0 ? price : null,
+      }));
+  });
+};
 
   const fetchUserBasket = async () => {
   const currentUser = auth?.currentUser;
@@ -182,15 +225,17 @@ useEffect(() => {
   return () => unsubscribe();
 }, []);
 
-const getBasketQuantity = (itemId) => {
-  const basketItem = basketItems.find(
-    (item) => item.itemId === itemId
-  );
-
-  return Number(
-    basketItem?.quantity || 0
-  );
-};
+const getBasketQuantity = (itemId) =>
+  basketItems
+    .filter(
+      (entry) =>
+        String(entry?.itemId ?? entry?.item?.itemId) === String(itemId)
+    )
+    .reduce(
+      (total, entry) =>
+        total + Number(entry?.quantity ?? entry?.item?.quantity ?? 0),
+      0
+    );
 
 const isItemInBasket = (itemId) =>
   getBasketQuantity(itemId) > 0;
@@ -952,117 +997,90 @@ const translateColor = (color) => {
     return Math.round(((original - current) / original) * 100);
   };
 
- const handleAddToBasket = async (
-  product,
-  e
-) => {
-  e.stopPropagation();
+const handleAddToBasket = async (product, e, explicitSize = null) => {
+  e?.stopPropagation();
 
   const currentUser = auth?.currentUser;
 
   if (!currentUser) {
-    const currentPath =
-      typeof window !== "undefined"
-        ? window.location.pathname
-        : "/";
+    const currentPath = window.location.pathname;
 
     router.push(
       withCountry(
-        `/auth?redirect=${encodeURIComponent(
-          currentPath
-        )}`
+        `/auth?redirect=${encodeURIComponent(currentPath)}`
       )
     );
-
     return;
   }
 
+  const colorOptions = getColorOptions(product);
+  const color =
+    selectedColorByItem[product.id] ||
+    colorOptions[0] ||
+    null;
+
+  const sizes = getSizesForColor(product, color);
+
+  if (sizes.length > 0 && !explicitSize) {
+    setSelectedModalSize(null);
+    setPendingBasketItem({ product, color, sizes });
+    return;
+  }
+
+  if (addingToBasket) return;
+
+  const selectedOption = sizes.find(
+    (option) => option.value === explicitSize
+  );
+
+  if (sizes.length > 0 && !selectedOption) {
+    messageApi.error(t("select_size"));
+    return;
+  }
+
+  const basePrice = Number(product.usdPrice || 0);
+  const price = selectedOption?.price ?? basePrice;
+  const image = getDisplayImage(product);
+
   try {
-    const colorOptions =
-      getColorOptions(product);
+    setAddingToBasket(true);
 
-    const selectedColorForBasket =
-      selectedColorByItem[product.id] ||
-      colorOptions?.[0] ||
-      null;
-
-    const basketImage =
-      getDisplayImage(product);
-
-    const basketItem = {
+    const response = await axios.post(BASKET_API, {
       userId: currentUser.uid,
-
       item: {
         id: product.id,
         itemId: product.itemId,
-
-        // canonical DB values
         name: product.name,
-        price: Number(
-          product.usdPrice || 0
-        ),
-
-        color: selectedColorForBasket,
-        size: null,
-        image: basketImage,
-
-        brand:
-          product.brand ||
-          product.rawItem?.item?.brand ||
-          product.rawItem?.brand ||
-          brandName,
-
-        brandPrice:
-          product.brandPrice ||
-          product.rawItem?.item?.brandPrice ||
-          product.rawItem?.brandPrice,
-
+        price,
+        color,
+        size: explicitSize,
+        image,
+        brand: product.rawItem?.item?.brand || brandName,
         quantity: 1,
       },
-    };
+    });
 
-    const productName =
-      getTranslatedName(
-        product,
-        product.itemId
+    if (response.status === 200 || response.status === 201) {
+      if (Array.isArray(response.data?.basket)) {
+        setBasketItems(response.data.basket);
+      } else {
+        await fetchUserBasket();
+      }
+
+      setPendingBasketItem(null);
+      setSelectedModalSize(null);
+
+      messageApi.success(
+        t("basket_add_success", {
+          product: getTranslatedName(product, product.itemId),
+        })
       );
-
-    const response = await axios.post(
-      BASKET_API,
-      basketItem
-    );
-
-    if (
-      response.status === 200 ||
-      response.status === 201
-    ) {
-      await fetchUserBasket();
-
-      setTimeout(() => {
-        messageApi.success(
-          t("basket_add_success", {
-            product: productName,
-          })
-        );
-      }, 0);
-    } else {
-      setTimeout(() => {
-        messageApi.error(
-          t("basket_add_failed")
-        );
-      }, 0);
     }
   } catch (error) {
-    console.error(
-      "Error adding item to basket:",
-      error
-    );
-
-    setTimeout(() => {
-      messageApi.error(
-        t("basket_add_error")
-      );
-    }, 0);
+    console.error("Theme1 basket error:", error);
+    messageApi.error(t("basket_add_error"));
+  } finally {
+    setAddingToBasket(false);
   }
 };
 
@@ -1086,6 +1104,60 @@ const translateColor = (color) => {
       <div key={item.id} className="th1-item-card">
 
          {contextHolder}
+
+         {pendingBasketItem && (
+  <div
+    className="th1-size-overlay"
+    onClick={() => !addingToBasket && setPendingBasketItem(null)}
+  >
+    <div
+      className="th1-size-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("select_size")}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        onClick={() => setPendingBasketItem(null)}
+        disabled={addingToBasket}
+      >
+        ×
+      </button>
+
+      <h3>{t("select_size")}</h3>
+
+      <div className="th1-size-options">
+        {pendingBasketItem.sizes.map((option) => (
+          <button
+            type="button"
+            key={option.value}
+            disabled={addingToBasket}
+            className={
+              selectedModalSize === option.value ? "active" : ""
+            }
+            onClick={(e) => {
+              setSelectedModalSize(option.value);
+              handleAddToBasket(
+                pendingBasketItem.product,
+                e,
+                option.value
+              );
+            }}
+          >
+            <span>{option.value}</span>
+            <small>
+              {formatPrice(
+                option.price ??
+                Number(pendingBasketItem.product.usdPrice || 0)
+              )}
+            </small>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
         <div
           className="th1-item-media"
@@ -1198,31 +1270,26 @@ const translateColor = (color) => {
             )}
           </div>
 
-         {isItemInBasket(item.itemId) ? (
-                <button
-                  type="button"
-                  className="th1-add-basket-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
+        <button
+          type="button"
+          className="th1-add-basket-btn"
+          onClick={(e) => handleAddToBasket(item, e)}
+        >
+          {t("add_to_cart")}
+        </button>
 
-                    router.push(
-                      withCountry("/basket")
-                    );
-                  }}
-                >
-                  🛒 {getBasketQuantity(item.itemId)}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="th1-add-basket-btn"
-                  onClick={(e) =>
-                    handleAddToBasket(item, e)
-                  }
-                >
-                  {t("add_to_cart")}
-                </button>
-              )}
+       {getBasketQuantity(item.itemId) > 0 && (
+  <button
+    type="button"
+    className="th1-basket-count"
+    onClick={(e) => {
+      e.stopPropagation();
+      router.push(withCountry("/basket"));
+    }}
+  >
+    🛒 {getBasketQuantity(item.itemId)}
+  </button>
+)}
         </div>
       </div>
     );
@@ -1335,37 +1402,26 @@ const translateColor = (color) => {
               )}
             </div>
 
-           {isItemInBasket(bestSeller.itemId) ? (
-            <button
-              type="button"
-              className="th1-add-basket-btn"
-              onClick={(e) => {
-                e.stopPropagation();
+          <button
+            type="button"
+            className="th1-add-basket-btn"
+            onClick={(e) => handleAddToBasket(bestSeller, e)}
+          >
+            {t("add_to_cart")}
+          </button>
 
-                router.push(
-                  withCountry("/basket")
-                );
-              }}
-            >
-              🛒{" "}
-              {getBasketQuantity(
-                bestSeller.itemId
-              )}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="th1-add-basket-btn"
-              onClick={(e) =>
-                handleAddToBasket(
-                  bestSeller,
-                  e
-                )
-              }
-            >
-              {t("add_to_cart")}
-            </button>
-          )}
+         {getBasketQuantity(item.itemId) > 0 && (
+  <button
+    type="button"
+    className="th1-basket-count"
+    onClick={(e) => {
+      e.stopPropagation();
+      router.push(withCountry("/basket"));
+    }}
+  >
+    🛒 {getBasketQuantity(item.itemId)}
+  </button>
+)}
           </div>
         </div>
       </div>

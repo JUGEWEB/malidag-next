@@ -648,3 +648,184 @@
   margin-bottom: 20px;
   text-decoration: none;
 }
+
+/* =========================================
+   MALIDAG — PREMIUM PRODUCT CONTROLS
+   Desktop product page
+========================================= */
+
+/* Size + length layout */
+.pdp-desktop-variant-selectors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 480px;
+  margin: 12px 0 22px;
+}
+
+.pdp-desktop-variant-selectors .pdp-desktop-size-block {
+  min-width: 0;
+  margin: 0;
+}
+
+.pdp-desktop-variant-selectors .pdp-desktop-label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.02em;
+}
+
+.pdp-desktop-variant-selectors .pdp-desktop-size-select {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: 50px;
+  padding: 0 40px 0 15px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.pdp-desktop-variant-selectors .pdp-desktop-size-select:hover {
+  border-color: #94a3b8;
+  background-color: #f8fafc;
+}
+
+.pdp-desktop-variant-selectors .pdp-desktop-size-select:focus-visible {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+/* Action buttons */
+.pdp-desktop-action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+  margin: 16px 0 12px;
+  padding: 0;
+}
+
+.pdp-desktop-action-row .buy-now-button,
+.pdp-desktop-action-row .add-to-basket,
+.pdp-desktop-action-row .like-botton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  width: 100%;
+  min-height: 52px;
+  height: auto;
+  padding: 12px 14px;
+  border-radius: 13px;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* Buy Now */
+.pdp-desktop-action-row .buy-now-button {
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.12);
+}
+
+.pdp-desktop-action-row .buy-now-button:not(:disabled):hover {
+  background: #1e293b;
+  border-color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 9px 22px rgba(15, 23, 42, 0.2);
+}
+
+/* Add to Basket */
+.pdp-desktop-action-row .add-to-basket {
+  background: #2563eb;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+  box-shadow: 0 5px 14px rgba(37, 99, 235, 0.13);
+}
+
+.pdp-desktop-action-row .add-to-basket:not(:disabled):hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 9px 22px rgba(37, 99, 235, 0.22);
+}
+
+/* Like / favorites */
+.pdp-desktop-action-row .like-botton {
+  grid-column: 1 / -1;
+  min-height: 46px;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+}
+
+.pdp-desktop-action-row .like-botton:hover {
+  background: #fff5f6;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
+/* Active and keyboard states */
+.pdp-desktop-action-row button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.pdp-desktop-action-row button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.45);
+  outline-offset: 3px;
+}
+
+.pdp-desktop-action-row button:disabled {
+  box-shadow: none;
+  transform: none;
+}
+
+/* Narrow desktop panels */
+@media (max-width: 1100px) {
+  .pdp-desktop-action-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pdp-desktop-action-row .like-botton {
+    grid-column: auto;
+  }
+}
+
+/* Very narrow product detail panels */
+@media (max-width: 700px) {
+  .pdp-desktop-variant-selectors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdp-desktop-action-row button,
+  .pdp-desktop-variant-selectors .pdp-desktop-size-select {
+    transition: none;
+  }
+}

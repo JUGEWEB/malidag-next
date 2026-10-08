@@ -109,6 +109,7 @@ const withCountry = (path) => {
   const [details, setDetails] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedLength, setSelectedLength] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [itemsd, setItemId] = useState(null);
   const [selectedRating, setSelectedRating] = useState(null);
@@ -519,103 +520,141 @@ useEffect(() => {
 }, [itemsd, i18n.language]);
 
  const getOptionsForColor = (color) => {
-  const options =
-    getValueByNormalizedKey(product?.size, color) || [];
+  const options = getValueByNormalizedKey(product?.size, color) || [];
 
   if (!Array.isArray(options)) return [];
 
-  // New format
-  if (typeof options[0] === "object") {
-    return options;
-  }
+  return options.flatMap((option) => {
+    if (typeof option === "string") {
+      return option
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => ({
+          value,
+          length: null,
+          price: null,
+        }));
+    }
 
-  // Old format
-  if (typeof options[0] === "string") {
-    return options
-      .flatMap((entry) => entry.split(","))
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .map((value) => ({
-        value,
-        price: null,
-      }));
-  }
+    if (option && typeof option === "object") {
+      return [{
+        ...option,
+        value: String(option.value ?? "").trim(),
+        length: option.length == null
+          ? null
+          : String(option.length).trim() || null,
+      }];
+    }
 
-  return [];
+    return [];
+  }).filter((option) => option.value);
 };
 
+const selectedOptions = getOptionsForColor(selectedColor);
+
+const hasLength = selectedOptions.some((option) => option.length);
+
+const availableSizes = [
+  ...new Set(selectedOptions.map((option) => option.value)),
+];
+
+const availableLengths = [
+  ...new Set(
+    selectedOptions
+      .filter((option) => option.value === selectedSize && option.length)
+      .map((option) => option.length)
+  ),
+];
+
 const getSelectedOption = () => {
-  return getOptionsForColor(selectedColor).find(
-    (option) => option.value === selectedSize
+  return selectedOptions.find(
+    (option) =>
+      option.value === selectedSize &&
+      (!hasLength || option.length === selectedLength)
   );
 };
 
 const getCurrentPrice = () => {
   const selectedOption = getSelectedOption();
-  return Number(selectedOption?.price || product?.usdPrice || 0);
+
+  return Number(
+    selectedOption?.price ?? product?.usdPrice ?? 0
+  );
 };
 
-  const fetchAllProducts = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/item/${id}`);
-      const foundProduct = response.data;
+ const fetchAllProducts = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/item/${id}`);
+    const foundProduct = response.data;
 
-      setItem(foundProduct);
+    setItem(foundProduct);
 
-      if (foundProduct?.item) {
-
+    if (foundProduct?.item) {
       const variantMap = foundProduct.item.imagesVariants || {};
-const initialColor = Object.keys(variantMap)[0] || null;
+      const initialColor = Object.keys(variantMap)[0] || null;
 
-setItemId(foundProduct.itemId);
-setProduct(foundProduct.item);
-setDetails(foundProduct.details);
+      setItemId(foundProduct.itemId);
+      setProduct(foundProduct.item);
+      setDetails(foundProduct.details);
 
-setSelectedColor(initialColor);
+      setSelectedColor(initialColor);
 
-if (initialColor) {
-  const variantImages =
-    getValueByNormalizedKey(variantMap, initialColor) || [];
+      if (initialColor) {
+        const variantImages =
+          getValueByNormalizedKey(variantMap, initialColor) || [];
 
-  setSelectedImage(
-    getFirstVariantImageUrl(variantImages) || null
-  );
-} else {
-  setSelectedImage(
-    getImageUrl(foundProduct.item.images?.[0]) || null
-  );
-}
-
-const sizeMap = foundProduct.item.size || {};
-
-const initialRawOptions =
-  getValueByNormalizedKey(sizeMap, initialColor) || [];
-
-let initialSize = null;
-
-if (
-  Array.isArray(initialRawOptions) &&
-  typeof initialRawOptions[0] === "object"
-) {
-  initialSize = initialRawOptions[0]?.value || null;
-} else if (
-  Array.isArray(initialRawOptions) &&
-  typeof initialRawOptions[0] === "string"
-) {
-  initialSize =
-    initialRawOptions
-      .flatMap((entry) => entry.split(","))
-      .map((value) => value.trim())
-      .find(Boolean) || null;
-}
-
-setSelectedSize(initialSize);
+        setSelectedImage(
+          getFirstVariantImageUrl(variantImages) || null
+        );
+      } else {
+        setSelectedImage(
+          getImageUrl(foundProduct.item.images?.[0]) || null
+        );
       }
-      
-    } catch (error) {
-      console.error("Error fetching product details:", error);
+
+      // ✅ Initialize size and optional trouser length
+      const sizeMap = foundProduct.item.size || {};
+
+      const initialRawOptions =
+        getValueByNormalizedKey(sizeMap, initialColor) || [];
+
+      const initialOptions = Array.isArray(initialRawOptions)
+        ? initialRawOptions.flatMap((option) => {
+            if (typeof option === "string") {
+              return option
+                .split(",")
+                .map((value) => ({
+                  value: value.trim(),
+                  length: null,
+                }))
+                .filter((option) => option.value);
+            }
+
+            if (option && typeof option === "object") {
+              return [
+                {
+                  value: String(option.value ?? "").trim(),
+                  length:
+                    option.length == null
+                      ? null
+                      : String(option.length).trim() || null,
+                },
+              ];
+            }
+
+            return [];
+          })
+        : [];
+
+      // ✅ Set both from the same initial variant
+      setSelectedSize(initialOptions[0]?.value || null);
+      setSelectedLength(initialOptions[0]?.length || null);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching product details:", error);
+  }
+};
 
   useEffect(() => {
     fetchAllProducts();
@@ -666,7 +705,8 @@ setSelectedSize(initialSize);
 
   const options = getOptionsForColor(color);
 
-  setSelectedSize(options[0]?.value || null);
+setSelectedSize(options[0]?.value || null);
+setSelectedLength(options[0]?.length || null);
 };
 
  const handleImageChange = (image, index) => {
@@ -674,9 +714,21 @@ setSelectedSize(initialSize);
   setSelectedImageNumber(index);
 };
 
-  const handleSizeChange = (size) => {
-    setSelectedSize(size);
-  };
+ const handleSizeChange = (size) => {
+  setSelectedSize(size);
+
+  const options = getOptionsForColor(selectedColor);
+
+  const firstMatchingOption = options.find(
+    (option) => option.value === size
+  );
+
+  setSelectedLength(firstMatchingOption?.length || null);
+};
+
+const handleLengthChange = (length) => {
+  setSelectedLength(length);
+};
 
   const videoSliderSettings = {
     dots: true,
@@ -720,6 +772,7 @@ if (!currentUser) {
          price: getCurrentPrice(),
           color: selectedColor,
           size: selectedSize,
+          length: hasLength ? selectedLength : null,
           image: selectedImage,
           brand: product.brand,
           brandPrice: product.brandPrice,
@@ -935,6 +988,7 @@ if (!currentUser) {
     `&quantity=${quantity}` +
     `&selectedColor=${encodeURIComponent(selectedColor || "")}` +
     `&selectedSize=${encodeURIComponent(selectedSize || "")}` +
+    `&selectedLength=${encodeURIComponent(hasLength ? selectedLength || "" : "")}` +
     `&amount=${getCurrentPrice() * quantity}` +
     `&basket=false`;
 
@@ -1058,6 +1112,11 @@ if (!currentUser) {
              optionLabel={getOptionLabel()}
             currentPrice={getCurrentPrice()}
             selectedOptions={getOptionsForColor(selectedColor)}
+           selectedLength={selectedLength}
+handleLengthChange={handleLengthChange}
+hasLength={hasLength}
+availableSizes={availableSizes}
+availableLengths={availableLengths}
           />
         )}
 
@@ -1109,6 +1168,11 @@ if (!currentUser) {
             currentPrice={getCurrentPrice()}
             selectedOptions={getOptionsForColor(selectedColor)}
              setMobileZoomOpen={setMobileZoomOpen}
+             selectedLength={selectedLength}
+handleLengthChange={handleLengthChange}
+hasLength={hasLength}
+availableSizes={availableSizes}
+availableLengths={availableLengths}
           />
         )}
 
@@ -1163,6 +1227,11 @@ if (!currentUser) {
             optionLabel={getOptionLabel()}
             currentPrice={getCurrentPrice()}
             selectedOptions={getOptionsForColor(selectedColor)}
+           selectedLength={selectedLength}
+handleLengthChange={handleLengthChange}
+hasLength={hasLength}
+availableSizes={availableSizes}
+availableLengths={availableLengths}
           />
         )}
 

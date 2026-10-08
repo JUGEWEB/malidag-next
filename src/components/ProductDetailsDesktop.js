@@ -67,6 +67,11 @@ export default function ProductDetailsDesktop({
   optionLabel,
   currentPrice,
 selectedOptions,
+selectedLength,
+handleLengthChange,
+hasLength,
+availableSizes,
+availableLengths,
 }) {
   const panelWidth = 420;
   const panelHeight = 450;
@@ -676,37 +681,55 @@ const getTranslatedColor = (color) => {
                 </div>
               )}
 
-              <h1 className="pdp-desktop-meta-title">
-               {optionLabel}: {selectedSize}
-              </h1>
+             <h1 className="pdp-desktop-meta-title">
+  {optionLabel}: {selectedSize}
+  {hasLength && selectedLength && ` / ${selectedLength}`}
+</h1>
 
-              {selectedOptions?.length > 0 && (
-                <div className="pdp-desktop-size-block">
-                 <label
-                  htmlFor="size-select"
-                  className="pdp-desktop-label"
-                >
-                  {t("select_option", {
-                    option: optionLabel,
-                  })}
-                </label>
-                  <select
-                    id="size-select"
-                    value={selectedSize}
-                    onChange={(e) => handleSizeChange(e.target.value)}
-                    className="pdp-desktop-size-select"
-                  >
-                   {selectedOptions.map((option, index) => (
-                      <option key={`${option.value}-${index}`} value={option.value}>
-                        {option.value}
-                       {option.price
-                      ? ` - ${formatPrice(option.price)}`
-                      : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+<div className="pdp-desktop-variant-selectors">
+  {availableSizes?.length > 0 && (
+    <div className="pdp-desktop-size-block">
+      <label htmlFor="size-select" className="pdp-desktop-label">
+        {t("select_option", { option: optionLabel })}
+      </label>
+
+      <select
+        id="size-select"
+        value={selectedSize || ""}
+        onChange={(e) => handleSizeChange(e.target.value)}
+        className="pdp-desktop-size-select"
+      >
+        {availableSizes.map((size) => (
+          <option key={size} value={size}>
+            {size}
+          </option>
+        ))}
+      </select>
+    </div>
+  )}
+
+  {hasLength && availableLengths?.length > 0 && (
+    <div className="pdp-desktop-size-block">
+      <label htmlFor="length-select" className="pdp-desktop-label">
+        {t("length", { defaultValue: "Leg length" })}
+      </label>
+
+      <select
+        id="length-select"
+        value={selectedLength || ""}
+        onChange={(e) => handleLengthChange(e.target.value)}
+        className="pdp-desktop-size-select"
+      >
+        {availableLengths.map((length) => (
+          <option key={length} value={length}>
+            {length}
+          </option>
+        ))}
+      </select>
+    </div>
+  )}
+</div>
+
 
               <p className="pdp-desktop-detail-row">
                 <strong className="pdp-desktop-detail-label">{t("product_detail")}</strong>

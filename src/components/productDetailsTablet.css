@@ -652,3 +652,128 @@
   margin-bottom: 20px;
   text-decoration: none;
 }
+
+/* TABLET SIZE AND LENGTH */
+
+.pdp-tablet-options-area {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 12px 0 22px;
+}
+
+.pdp-tablet-options-area .pdp-tablet-size-block {
+  margin: 0;
+}
+
+.pdp-tablet-options-area .pdp-tablet-size-select {
+  width: 100%;
+  max-width: 320px;
+  height: 46px;
+  border: 1px solid #dce2ea;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 14px;
+  color: #0f172a;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pdp-tablet-options-area .pdp-tablet-size-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.pdp-tablet-option-hint {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* TABLET PREMIUM BUTTONS */
+
+.pdp-tablet-action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  padding-top: 10px;
+}
+
+.pdp-tablet-action-row .pdp-tablet-buy-button,
+.pdp-tablet-action-row .pdp-tablet-basket-button,
+.pdp-tablet-action-row .pdp-tablet-like-button {
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.pdp-tablet-buy-button {
+  background: #111827;
+  color: #fff;
+  border: 1px solid #111827;
+}
+
+.pdp-tablet-basket-button {
+  background: #2563eb;
+  color: #fff;
+  border: 1px solid #2563eb;
+}
+
+.pdp-tablet-like-button {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fff;
+  color: #111827;
+  border: 1px solid #dce2ea;
+}
+
+.pdp-tablet-like-button span {
+  font-size: 21px;
+  line-height: 1;
+}
+
+.pdp-tablet-buy-button:hover:not(:disabled) {
+  background: #273449;
+}
+
+.pdp-tablet-basket-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.pdp-tablet-like-button:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.pdp-tablet-action-row button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.pdp-tablet-action-row button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1050px) {
+  .pdp-tablet-action-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pdp-tablet-like-button {
+    grid-column: auto;
+  }
+}

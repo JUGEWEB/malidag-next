@@ -13,6 +13,7 @@ import BrandTypeItems from "./BrandTypeItems";
 import MultiRecommendedItem from "./multiRecommendedItem";
 import SimilarItemAds from "./SimilarItemAds";
 import { FaShareAlt } from "react-icons/fa";
+import { FaShoppingBag, FaArrowRight, FaHeart } from "react-icons/fa";
 import {
   getCountryConfig,
 } from "./countryUtils";
@@ -627,7 +628,8 @@ const getTranslatedColor = (color) => {
                       cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
                     }}
                   >
-                    {t("buy_now")}
+                  {t("buy_now")}
+                  <FaArrowRight aria-hidden="true" />
                   </button>
 
                   <button
@@ -639,11 +641,13 @@ const getTranslatedColor = (color) => {
                       cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
                     }}
                   >
+                   <FaShoppingBag aria-hidden="true" />
                     {t("add_to_basket")}
                   </button>
 
                   <button className="like-botton" onClick={() => handleLikeItem(product)}>
-                    {t("like")}
+                    <FaHeart aria-hidden="true" />
+                      {t("like")}
                   </button>
                 </div>
 

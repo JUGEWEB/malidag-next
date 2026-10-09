@@ -519,37 +519,52 @@ useEffect(() => {
   fetchTranslation(itemsd, i18n.language);
 }, [itemsd, i18n.language]);
 
- const getOptionsForColor = (color) => {
+ 
+const getOptionsForColor = (color) => {
   const options = getValueByNormalizedKey(product?.size, color) || [];
 
   if (!Array.isArray(options)) return [];
 
+  const splitValues = (value) =>
+    String(value ?? "")
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
   return options.flatMap((option) => {
     if (typeof option === "string") {
-      return option
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .map((value) => ({
-          value,
-          length: null,
-          price: null,
-        }));
+      return splitValues(option).map((value) => ({
+        value,
+        length: null,
+        price: null,
+      }));
     }
 
     if (option && typeof option === "object") {
-      return [{
-        ...option,
-        value: String(option.value ?? "").trim(),
-        length: option.length == null
-          ? null
-          : String(option.length).trim() || null,
-      }];
+      const sizes = splitValues(option.value);
+      const lengths = splitValues(option.length);
+
+      return sizes.flatMap((value) =>
+        lengths.length
+          ? lengths.map((length) => ({
+              ...option,
+              value,
+              length,
+            }))
+          : [
+              {
+                ...option,
+                value,
+                length: null,
+              },
+            ]
+      );
     }
 
     return [];
-  }).filter((option) => option.value);
+  });
 };
+
 
 const selectedOptions = getOptionsForColor(selectedColor);
 
@@ -619,37 +634,43 @@ const getCurrentPrice = () => {
       const initialRawOptions =
         getValueByNormalizedKey(sizeMap, initialColor) || [];
 
-      const initialOptions = Array.isArray(initialRawOptions)
-        ? initialRawOptions.flatMap((option) => {
-            if (typeof option === "string") {
-              return option
-                .split(",")
-                .map((value) => ({
-                  value: value.trim(),
-                  length: null,
-                }))
-                .filter((option) => option.value);
-            }
+     
+const splitInitialValues = (value) =>
+  String(value ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
 
-            if (option && typeof option === "object") {
-              return [
-                {
-                  value: String(option.value ?? "").trim(),
-                  length:
-                    option.length == null
-                      ? null
-                      : String(option.length).trim() || null,
-                },
-              ];
-            }
+const initialOptions = Array.isArray(initialRawOptions)
+  ? initialRawOptions.flatMap((option) => {
+      if (typeof option === "string") {
+        return splitInitialValues(option).map((value) => ({
+          value,
+          length: null,
+        }));
+      }
 
-            return [];
-          })
-        : [];
+      if (option && typeof option === "object") {
+        const sizes = splitInitialValues(option.value);
+        const lengths = splitInitialValues(option.length);
 
-      // ✅ Set both from the same initial variant
-      setSelectedSize(initialOptions[0]?.value || null);
-      setSelectedLength(initialOptions[0]?.length || null);
+        return sizes.flatMap((value) =>
+          lengths.length
+            ? lengths.map((length) => ({
+                value,
+                length,
+              }))
+            : [{ value, length: null }]
+        );
+      }
+
+      return [];
+    })
+  : [];
+
+setSelectedSize(initialOptions[0]?.value || null);
+setSelectedLength(initialOptions[0]?.length || null);
+
     }
   } catch (error) {
     console.error("Error fetching product details:", error);

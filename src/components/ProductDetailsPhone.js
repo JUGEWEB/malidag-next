@@ -23,6 +23,7 @@ import BrandTypeItems from "./BrandTypeItems";
 import MultiRecommendedItem from "./multiRecommendedItem";
 import SimilarItemAds from "./SimilarItemAds";
 import { FaShareAlt, FaSearchPlus } from "react-icons/fa";
+import { FaArrowRight, FaShoppingBag, FaHeart } from "react-icons/fa";
 
 export default function ProductDetailsPhone({
   product,
@@ -63,6 +64,11 @@ export default function ProductDetailsPhone({
   optionLabel,
 currentPrice,
 selectedOptions,
+selectedLength,
+handleLengthChange,
+hasLength,
+availableSizes,
+availableLengths,
 setMobileZoomOpen,
 }) {
   const rawShippingCountries = details?.country || "";
@@ -507,59 +513,103 @@ const handleShareProduct = async () => {
           </button>
         </div>
 
-          <div className="pdp-phone-size-summary">
-  <span className="pdp-phone-size-summary-label">
-    {optionLabel}
-  </span>
-  <span className="pdp-phone-size-summary-value">
-    {selectedSize}
-  </span>
-</div>
+          
+{selectedOptions?.length > 0 && (
+  <div className="pdp-phone-variants">
+    <div className="pdp-phone-size-summary">
+      <span className="pdp-phone-size-summary-label">
+        {optionLabel}
+      </span>
 
-         {selectedOptions?.length > 0 && (
-            <div className="pdp-phone-size-block">
-              <label
-              htmlFor="size-select"
-              className="pdp-phone-label"
-            >
-              {t("select_option", {
-                option: optionLabel,
-              })}
-            </label>
-              <select
-                id="size-select"
-                value={selectedSize}
-                onChange={(e) => handleSizeChange(e.target.value)}
-                className="pdp-phone-size-select"
-              >
-                {selectedOptions.map((option, index) => {
-               const priceText = option.price
-                ? ` (${formatPrice(option.price)})`
-                : "";
+      <span className="pdp-phone-size-summary-value">
+        {selectedSize || "—"}
+        {hasLength && selectedLength
+          ? ` / ${selectedLength}`
+          : ""}
+      </span>
+    </div>
 
-                return (
-                  <option key={`${option.value}-${index}`} value={option.value}>
-                    {option.value}{priceText}
-                  </option>
-                );
-              })}
-              </select>
-            </div>
-          )}
+    <div
+      className={`pdp-phone-variant-grid ${
+        hasLength ? "has-length" : ""
+      }`}
+    >
+      <div className="pdp-phone-size-block">
+        <label
+          htmlFor="phone-size-select"
+          className="pdp-phone-label"
+        >
+          {t("select_option", {
+            option: optionLabel,
+          })}
+        </label>
 
-         {selectedOptions.find(
-          (o) => o.value === selectedSize
-        )?.price && (
-          <div className="pdp-phone-option-hint">
-            {t("for_this_option", {
-              price: formatPrice(
-                selectedOptions.find(
-                  (o) => o.value === selectedSize
-                ).price
-              ),
+        <select
+          id="phone-size-select"
+          value={selectedSize ?? ""}
+          onChange={(e) =>
+            handleSizeChange(e.target.value)
+          }
+          className="pdp-phone-size-select"
+        >
+          {availableSizes.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {hasLength && (
+        <div className="pdp-phone-size-block">
+          <label
+            htmlFor="phone-length-select"
+            className="pdp-phone-label"
+          >
+            {t("leg_length", {
+              defaultValue: "Leg length",
             })}
-          </div>
-        )}
+          </label>
+
+          <select
+            id="phone-length-select"
+            value={selectedLength ?? ""}
+            onChange={(e) =>
+              handleLengthChange(e.target.value)
+            }
+            className="pdp-phone-size-select"
+          >
+            {availableLengths.map((length) => (
+              <option key={length} value={length}>
+                {length}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+
+       
+{(() => {
+  const selectedOption = selectedOptions.find(
+    (o) =>
+      o.value === selectedSize &&
+      (!hasLength || o.length === selectedLength)
+  );
+
+  return selectedOption?.price != null &&
+    selectedOption.price !== "" ? (
+    <div className="pdp-phone-option-hint">
+      {t("for_this_option", {
+        price: formatPrice(selectedOption.price),
+      })}
+    </div>
+  ) : null;
+})()}
+
 
          <div className="pdp-phone-price-card">
           <div className="pdp-phone-price-row">
@@ -593,38 +643,39 @@ const handleShareProduct = async () => {
             </div>
           </div>
 
-          <div className="pdp-phone-action-row">
-            <button
-              className="pdp-phone-btn pdp-phone-btn-primary"
-              onClick={() => handleBuyNowClick(id)}
-              disabled={!canShipToSelectedCountry}
-              style={{
-                opacity: canShipToSelectedCountry ? 1 : 0.5,
-                cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
-              }}
-            >
-              {t("buy_now")}
-            </button>
+          
+            <div className="pdp-phone-action-row">
+              <button
+                type="button"
+                className="pdp-phone-btn pdp-phone-btn-primary"
+                onClick={() => handleBuyNowClick(id)}
+                disabled={!canShipToSelectedCountry}
+              >
+                <span>{t("buy_now")}</span>
+                <FaArrowRight aria-hidden="true" />
+              </button>
 
-            <button
-              className="pdp-phone-btn pdp-phone-btn-secondary"
-              onClick={() => handleAddToBasket(product)}
-              disabled={!canShipToSelectedCountry}
-              style={{
-                opacity: canShipToSelectedCountry ? 1 : 0.5,
-                cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
-              }}
-            >
-              {t("add_to_basket")}
-            </button>
+              <button
+                type="button"
+                className="pdp-phone-btn pdp-phone-btn-secondary"
+                onClick={() => handleAddToBasket(product)}
+                disabled={!canShipToSelectedCountry}
+              >
+                <FaShoppingBag aria-hidden="true" />
+                <span>{t("add_to_basket")}</span>
+              </button>
 
-            <button
-              className="pdp-phone-btn pdp-phone-btn-ghost"
-              onClick={() => handleLikeItem(product)}
-            >
-              {t("like")}
-            </button>
-          </div>
+              <button
+                type="button"
+                className="pdp-phone-btn pdp-phone-btn-ghost"
+                onClick={() => handleLikeItem(product)}
+                aria-label={t("like")}
+                title={t("like")}
+              >
+                <FaHeart aria-hidden="true" />
+              </button>
+            </div>
+
 
           <p className="pdp-phone-sold-text">
             {t("items_already_sold", { count: product?.sold })}

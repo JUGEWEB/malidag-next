@@ -408,44 +408,142 @@
   font-weight: 600;
 }
 
-/* ACTION BUTTONS */
+
+/* PREMIUM MOBILE PURCHASE ACTIONS */
 
 .pdp-phone-action-row {
-  margin-top: 22px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 52px;
+  align-items: stretch;
   gap: 10px;
+  width: 100%;
+  margin-top: 24px;
 }
 
 .pdp-phone-action-row .pdp-phone-btn {
-  flex: 1; /* all buttons equal width */
-}
+  min-width: 0;
+  width: 100%;
+  height: 54px;
+  padding: 0 12px;
 
-.pdp-phone-btn {
-  height: 48px;
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border-radius: 14px;
+  border: 1px solid transparent;
+
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+
   cursor: pointer;
-  border: none;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
-/* PRIMARY = BUY */
+.pdp-phone-btn svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* BUY NOW */
+
 .pdp-phone-btn-primary {
-  background: #0f172a;
-  color: white;
+  color: #ffffff;
+  background: #111827;
+  border-color: #111827;
+
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.15);
 }
 
-/* SECONDARY = BASKET */
+.pdp-phone-btn-primary:active:not(:disabled) {
+  transform: scale(0.97);
+  background: #020617;
+}
+
+/* ADD TO BASKET */
+
 .pdp-phone-btn-secondary {
-  background: #2563eb;
-  color: white;
+  color: #0f172a;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
 }
 
-/* GHOST */
-.pdp-phone-btn-ghost {
-  background: transparent;
-  color: #0f172a;
-  border: 1px solid #e2e8f0;
+.pdp-phone-btn-secondary:active:not(:disabled) {
+  transform: scale(0.97);
+  background: #e2e8f0;
 }
+
+/* WISHLIST */
+
+.pdp-phone-btn-ghost {
+  padding: 0;
+  color: #334155;
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+.pdp-phone-btn-ghost svg {
+  width: 19px;
+  height: 19px;
+}
+
+.pdp-phone-btn-ghost:active:not(:disabled) {
+  transform: scale(0.94);
+  color: #e11d48;
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+
+/* ACCESSIBILITY */
+
+.pdp-phone-btn:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.45);
+  outline-offset: 3px;
+}
+
+.pdp-phone-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* SMALL PHONE SCREENS */
+
+@media (max-width: 370px) {
+  .pdp-phone-action-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 46px;
+    gap: 7px;
+  }
+
+  .pdp-phone-action-row .pdp-phone-btn {
+    height: 50px;
+    padding: 0 7px;
+    font-size: 11px;
+    gap: 5px;
+    border-radius: 12px;
+  }
+
+  .pdp-phone-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdp-phone-btn {
+    transition: none;
+  }
+}
+
 
 /* SOLD */
 
@@ -519,4 +617,74 @@
   font-size: 14px;
   color: #2563eb;
   cursor: pointer;
+}
+
+
+/* PHONE SIZE AND LEG LENGTH */
+
+.pdp-phone-variants {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.pdp-phone-variants .pdp-phone-size-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.pdp-phone-variant-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.pdp-phone-variant-grid.has-length {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pdp-phone-variant-grid .pdp-phone-size-block {
+  min-width: 0;
+  margin: 0;
+}
+
+.pdp-phone-variant-grid .pdp-phone-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #475569;
+}
+
+.pdp-phone-variant-grid .pdp-phone-size-select {
+  width: 100%;
+  min-width: 0;
+  height: 50px;
+  padding: 0 12px;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 650;
+  outline: none;
+  cursor: pointer;
+}
+
+.pdp-phone-variant-grid .pdp-phone-size-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+@media (max-width: 350px) {
+  .pdp-phone-variant-grid.has-length {
+    gap: 8px;
+  }
+
+  .pdp-phone-variant-grid .pdp-phone-size-select {
+    padding: 0 8px;
+    font-size: 13px;
+  }
 }

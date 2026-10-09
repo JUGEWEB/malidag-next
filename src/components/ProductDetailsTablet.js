@@ -69,6 +69,11 @@ optionLabel,
 currentPrice,
 selectedOptions,
 setMobileZoomOpen,
+selectedLength,
+handleLengthChange,
+hasLength,
+availableSizes,
+availableLengths,
 }) {
 
   const rawShippingCountries = details?.country || "";
@@ -517,37 +522,33 @@ const handleTopSectionWheel = (e) => {
                   </div>
 
                  <div className="pdp-tablet-action-row">
-                  <button
-                    className="buy-now-button"
-                    onClick={() => handleBuyNowClick(id)}
-                    disabled={!canShipToSelectedCountry}
-                    style={{
-                      opacity: canShipToSelectedCountry ? 1 : 0.5,
-                      cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
-                    }}
-                  >
-                    {t("buy_now")}
-                  </button>
+                    <button
+                      type="button"
+                      className="pdp-tablet-buy-button"
+                      onClick={() => handleBuyNowClick(id)}
+                      disabled={!canShipToSelectedCountry}
+                    >
+                      {t("buy_now")}
+                    </button>
 
-                  <button
-                    className="add-to-basket"
-                    onClick={() => handleAddToBasket(product)}
-                    disabled={!canShipToSelectedCountry}
-                    style={{
-                      opacity: canShipToSelectedCountry ? 1 : 0.5,
-                      cursor: canShipToSelectedCountry ? "pointer" : "not-allowed",
-                    }}
-                  >
-                    {t("add_to_basket")}
-                  </button>
+                    <button
+                      type="button"
+                      className="pdp-tablet-basket-button"
+                      onClick={() => handleAddToBasket(product)}
+                      disabled={!canShipToSelectedCountry}
+                    >
+                      {t("add_to_basket")}
+                    </button>
 
-                  <button
-                    className="like-botton"
-                    onClick={() => handleLikeItem(product)}
-                  >
-                    {t("like")}
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      className="pdp-tablet-like-button"
+                      onClick={() => handleLikeItem(product)}
+                    >
+                      <span aria-hidden="true">♡</span>
+                      {t("like")}
+                    </button>
+                  </div>
 
                   <p className="pdp-tablet-sold-text">
                     {t("items_already_sold", { count: product?.sold })}
@@ -587,33 +588,72 @@ const handleTopSectionWheel = (e) => {
                {optionLabel}: {selectedSize}
               </h1>
 
-             {selectedOptions?.length > 0 && (
-                <div className="pdp-tablet-size-block">
-                  <label htmlFor="size-select" className="pdp-tablet-label">
-                  {t("select_option", {
-                    option: optionLabel,
-                  })}
-                  </label>
-                  <select
-                    id="size-select"
-                    value={selectedSize}
-                    onChange={(e) => handleSizeChange(e.target.value)}
-                    className="pdp-tablet-size-select"
-                  >
-                    {selectedOptions.map((option, index) => {
-                     const priceText = option.price
-                      ? ` (${formatPrice(option.price)})`
-                      : "";
+            {selectedOptions?.length > 0 && (
+  <div className="pdp-tablet-options-area">
+    <div className="pdp-tablet-size-block">
+      <label
+        htmlFor="tablet-size-select"
+        className="pdp-tablet-label"
+      >
+        {t("select_option", { option: optionLabel })}
+      </label>
 
-                      return (
-                        <option key={`${option.value}-${index}`} value={option.value}>
-                          {option.value}{priceText}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              )}
+      <select
+        id="tablet-size-select"
+        value={selectedSize ?? ""}
+        onChange={(e) => handleSizeChange(e.target.value)}
+        className="pdp-tablet-size-select"
+      >
+        {availableSizes.map((size) => (
+          <option key={size} value={size}>
+            {size}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {hasLength && availableLengths.length > 0 && (
+      <div className="pdp-tablet-size-block">
+        <label
+          htmlFor="tablet-length-select"
+          className="pdp-tablet-label"
+        >
+          {t("leg_length", { defaultValue: "Leg length" })}
+        </label>
+
+        <select
+          id="tablet-length-select"
+          value={selectedLength ?? ""}
+          onChange={(e) => handleLengthChange(e.target.value)}
+          className="pdp-tablet-size-select"
+        >
+          {availableLengths.map((length) => (
+            <option key={length} value={length}>
+              {length}
+            </option>
+          ))}
+        </select>
+      </div>
+    )}
+
+    {(() => {
+      const selectedOption = selectedOptions.find(
+        (option) =>
+          option.value === selectedSize &&
+          (!hasLength || option.length === selectedLength)
+      );
+
+      return selectedOption?.price != null &&
+        selectedOption.price !== "" ? (
+        <div className="pdp-tablet-option-hint">
+          {t("for_this_option", {
+            price: formatPrice(selectedOption.price),
+          })}
+        </div>
+      ) : null;
+    })()}
+  </div>
+)}
 
               <p className="pdp-tablet-detail-row">
                 <strong className="pdp-tablet-detail-label">{t("product_detail")}</strong>

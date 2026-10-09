@@ -268,7 +268,6 @@ const handleShareProduct = async () => {
 
   return (
     <div className="pdp-phone-page">
-       <SimilarItemAds itemId={itemsd} />
       <div className="pdp-phone-slider-shell">
   <div className="pdp-phone-image-overlay-top">
     <div className="pdp-phone-color-badge">

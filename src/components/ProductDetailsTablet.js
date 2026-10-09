@@ -305,8 +305,6 @@ const handleTopSectionWheel = (e) => {
 
   return (
     <>
-
-     <SimilarItemAds itemId={itemsd} />
       <div className="pdp-tablet-layout" onWheel={handleTopSectionWheel}>
         <div className="pdp-tablet-left-column">
           <div className="left-thumbnails pdp-tablet-left-thumbnails">

@@ -11,7 +11,7 @@ import BrandIdPage from "./brandIdPage";
 import SimilarItemId from "./similarItemId";
 import BrandTypeItems from "./BrandTypeItems";
 import MultiRecommendedItem from "./multiRecommendedItem";
-import SimilarItemAds from "./SimilarItemAds";
+import CompleteTheLook from "./CompleteTheLook";
 import { FaShareAlt } from "react-icons/fa";
 import { FaShoppingBag, FaArrowRight, FaHeart } from "react-icons/fa";
 import {
@@ -385,8 +385,6 @@ const getTranslatedColor = (color) => {
 
   return (
    <div className={hasBasket ? "pdp-desktop-page with-basket" : "pdp-desktop-page"}>
-
-    <SimilarItemAds itemId={itemsd} />
 
       <div
      onWheel={handleTopSectionWheel}
@@ -787,6 +785,7 @@ const getTranslatedColor = (color) => {
           className={`pdp-desktop-itemid-wrapper`}
         >
           <ItemIdPageDesktop id={itemsd} />
+          <CompleteTheLook itemId={itemsd} />
            <SimilarItemId itemId={itemsd} />
           <BrandIdPage brandName={product?.brand} />
           <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />

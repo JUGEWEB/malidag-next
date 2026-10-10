@@ -785,7 +785,10 @@ const getTranslatedColor = (color) => {
           className={`pdp-desktop-itemid-wrapper`}
         >
           <ItemIdPageDesktop id={itemsd} />
-          <CompleteTheLook itemId={itemsd} />
+         <CompleteTheLook
+          itemId={itemsd}
+          selectedColor={selectedColor}
+        />
            <SimilarItemId itemId={itemsd} />
           <BrandIdPage brandName={product?.brand} />
           <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />

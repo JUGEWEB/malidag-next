@@ -21,6 +21,7 @@ import BrandTypeItems from "./BrandTypeItems";
 import MultiRecommendedItem from "./multiRecommendedItem";
 import { FaShareAlt, FaSearchPlus } from "react-icons/fa";
 import SimilarItemAds from "./SimilarItemAds";
+import CompleteTheLook from "./CompleteTheLook";
 
 export default function ProductDetailsTablet({
   basketItems,
@@ -705,6 +706,10 @@ const handleTopSectionWheel = (e) => {
           className={`pdp-tablet-itemid-wrapper`}
         >
           <ItemIdPageDesktop id={itemsd} />
+           <CompleteTheLook
+                    itemId={itemsd}
+                    selectedColor={selectedColor}
+                  />
            <SimilarItemId itemId={itemsd} />
           <BrandIdPage brandName={product?.brand} />
            <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />

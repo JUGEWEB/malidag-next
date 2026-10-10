@@ -1,7 +1,8 @@
 
 .ctl-section {
   width: 100%;
-  padding: 34px 0;
+  box-sizing: border-box;
+  padding: 40px 36px;
   margin: 16px 0 32px;
 }
 
@@ -131,7 +132,7 @@
   font-size: 12px;
   font-weight: 750;
   cursor: pointer;
-  transition: background 0.2s;
+ transition: background 0.2s ease;
 }
 
 .ctl-view-button:hover:not(:disabled) {
@@ -180,5 +181,116 @@
 @media (max-width: 380px) {
   .ctl-card {
     flex-basis: 78%;
+  }
+}
+
+
+/* ======================================
+   COMPLETE THE LOOK — MAIN PRODUCT
+====================================== */
+
+.ctl-main-card {
+  position: relative;
+  border: 2px solid #17243b;
+  background: #f8fafc;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+  cursor: default;
+}
+
+/* Main product must not behave like a link */
+.ctl-main-card:hover {
+  transform: none;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+}
+
+.ctl-main-card:hover .ctl-image {
+  transform: none;
+}
+
+.ctl-main-card .ctl-image-wrap {
+  position: relative;
+}
+
+.ctl-main-image-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 9px 12px;
+  border-radius: 7px;
+  background: #111827;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.ctl-main-eyebrow {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.ctl-current-product-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  margin-top: auto;
+  padding: 13px 0 2px;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ctl-current-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .ctl-main-image-badge {
+    top: 9px;
+    left: 9px;
+    padding: 7px 9px;
+    font-size: 9px;
+  }
+
+  .ctl-current-product-status {
+    font-size: 11px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1100px) {
+  .ctl-section {
+    padding: 32px 24px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+  .ctl-section {
+    padding: 28px 16px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+  .ctl-section {
+    padding: 24px 12px;
   }
 }

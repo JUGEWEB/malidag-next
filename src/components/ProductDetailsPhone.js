@@ -24,6 +24,7 @@ import MultiRecommendedItem from "./multiRecommendedItem";
 import SimilarItemAds from "./SimilarItemAds";
 import { FaShareAlt, FaSearchPlus } from "react-icons/fa";
 import { FaArrowRight, FaShoppingBag, FaHeart } from "react-icons/fa";
+import CompleteTheLook from "./CompleteTheLook";
 
 export default function ProductDetailsPhone({
   product,
@@ -734,6 +735,10 @@ const handleShareProduct = async () => {
 
         <div className="pdp-phone-itemid-wrapper pdp-phone-card">
           <ItemIdPage id={itemsd} />
+           <CompleteTheLook
+                    itemId={itemsd}
+                    selectedColor={selectedColor}
+                  />
           <SimilarItemId itemId={itemsd} />
           <BrandIdPage brandName={product?.brand} />
            <BrandTypeItems brandType={product?.brandType} brandName={product?.brand} />

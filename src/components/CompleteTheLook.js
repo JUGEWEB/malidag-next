@@ -49,7 +49,7 @@ const getColorImages = (product, requestedColor) => {
     .filter(Boolean);
 };
 
-export default function CompleteTheLook({ itemId }) {
+export default function CompleteTheLook({ itemId, selectedColor }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -61,28 +61,31 @@ export default function CompleteTheLook({ itemId }) {
     return `/${countryCode.toLowerCase()}${cleanPath}`;
   };
 
-  const [lookItems, setLookItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+const [lookItems, setLookItems] = useState([]);
+const [mainLookItem, setMainLookItem] = useState(null);
+const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!itemId) {
-      setLookItems([]);
-      setLoading(false);
-      return;
-    }
+useEffect(() => {
+  if (!itemId || !selectedColor) {
+    setLookItems([]);
+    setMainLookItem(null);
+    setLoading(false);
+    return;
+  }
 
-    const controller = new AbortController();
+  const controller = new AbortController();
 
     const fetchCompleteLook = async () => {
       try {
-        setLoading(true);
+       setLoading(true);
         setLookItems([]);
+        setMainLookItem(null);
 
         // 1. Get configured itemId + color pairs
-        const lookResponse = await fetch(
-          `${API_BASE}/api/complete-the-look/${encodeURIComponent(itemId)}`,
-          { signal: controller.signal }
-        );
+       const lookResponse = await fetch(
+  `${API_BASE}/api/complete-the-look/${encodeURIComponent(itemId)}?color=${encodeURIComponent(selectedColor)}`,
+  { signal: controller.signal }
+);
 
         if (!lookResponse.ok) {
           throw new Error(
@@ -131,6 +134,22 @@ export default function CompleteTheLook({ itemId }) {
           ])
         );
 
+        // Main product currently being viewed
+const mainProduct = productMap.get(String(itemId));
+
+const mainImages = mainProduct
+  ? getColorImages(mainProduct, selectedColor)
+  : [];
+
+const matchedMainItem =
+  mainProduct && mainImages.length
+    ? {
+        product: mainProduct,
+        color: selectedColor,
+        image: mainImages[0],
+      }
+    : null;
+
         // 4. Preserve saved order and exact configured colors
         const matchedItems = configuredItems
           .map(({ itemId: relatedId, color }) => {
@@ -151,9 +170,10 @@ export default function CompleteTheLook({ itemId }) {
           })
           .filter(Boolean);
 
-        if (!controller.signal.aborted) {
-          setLookItems(matchedItems);
-        }
+       if (!controller.signal.aborted) {
+  setMainLookItem(matchedMainItem);
+  setLookItems(matchedItems);
+}
       } catch (error) {
         if (error.name === "AbortError") return;
 
@@ -172,7 +192,7 @@ export default function CompleteTheLook({ itemId }) {
     fetchCompleteLook();
 
     return () => controller.abort();
-  }, [itemId]);
+ }, [itemId, selectedColor]);
 
   if (loading) {
     return (
@@ -189,13 +209,68 @@ export default function CompleteTheLook({ itemId }) {
       <div className="ctl-header">
         <span className="ctl-eyebrow">Styled together</span>
         <h2 className="ctl-title">Complete the Look</h2>
-        <p className="ctl-subtitle">
-          The finishing pieces that make the outfit.
-        </p>
+       <p className="ctl-subtitle">
+  Your selected piece, styled with the perfect matches.
+  Discover how everything comes together.
+</p>
       </div>
 
-      <div className="ctl-products">
-        {lookItems.map(({ product, color, image }) => {
+     <div className="ctl-products">
+
+  {mainLookItem && (
+    <article className="ctl-card ctl-main-card">
+      <div className="ctl-image-wrap">
+        <img
+          src={encodeURI(mainLookItem.image)}
+          alt={`${
+            mainLookItem.product.item?.name ||
+            mainLookItem.product.details?.itemName ||
+            "Main product"
+          } - ${mainLookItem.color}`}
+          className="ctl-image"
+          loading="lazy"
+        />
+
+        <span className="ctl-main-image-badge">
+          Your selected piece
+        </span>
+      </div>
+
+      <div className="ctl-card-content">
+        <p className="ctl-main-eyebrow">
+          THE STARTING PIECE
+        </p>
+
+        {(
+          mainLookItem.product.item?.brand ||
+          mainLookItem.product.details?.brand
+        ) && (
+          <p className="ctl-brand">
+            {mainLookItem.product.item?.brand ||
+              mainLookItem.product.details?.brand}
+          </p>
+        )}
+
+        <h3 className="ctl-product-name">
+          {mainLookItem.product.item?.name ||
+            mainLookItem.product.details?.itemName ||
+            "Your selected product"}
+        </h3>
+
+        <p className="ctl-color">
+          Color: <strong>{mainLookItem.color}</strong>
+        </p>
+
+        <div className="ctl-current-product-status">
+          <span className="ctl-current-check">✓</span>
+          Already viewing this piece
+        </div>
+      </div>
+    </article>
+  )}
+
+  {lookItems.map(({ product, color, image }) => {
+
           const name =
             product.item?.name ||
             product.details?.itemName ||

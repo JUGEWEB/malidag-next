@@ -47,7 +47,7 @@ const [ratesLoading, setRatesLoading] =
   const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
   const [sizeModalItem, setSizeModalItem] = useState(null);
 const [selectedSize, setSelectedSize] = useState(null);
-
+const [selectedLength, setSelectedLength] = useState(null);
   const pathname = usePathname();
 
 const routeCountryCode =
@@ -386,8 +386,11 @@ const isItemInBasket = (itemId) => {
     return Object.keys(product?.item?.imagesVariants || {});
   };
 
-  const getSizeEntriesForColor = (product, color) => {
-  const sizeMap = product?.item?.size || {};
+ const getSizeEntriesForColor = (product, color) => {
+  const sizeMap =
+    product?.item?.size ||
+    product?.details?.sizes ||
+    {};
 
   if (
     !color ||
@@ -398,134 +401,80 @@ const isItemInBasket = (itemId) => {
     return [];
   }
 
-  const normalizedColor = String(color)
-    .trim()
-    .toLowerCase();
-
   const actualColorKey = Object.keys(sizeMap).find(
     (key) =>
       String(key).trim().toLowerCase() ===
-      normalizedColor
+      String(color).trim().toLowerCase()
   );
 
-  if (!actualColorKey) {
-    return [];
-  }
+  if (!actualColorKey) return [];
 
   const entries = sizeMap[actualColorKey];
 
-  if (!Array.isArray(entries)) {
-    return [];
-  }
+  if (!Array.isArray(entries)) return [];
 
-  /*
-    Convert this:
+  const splitValues = (value) =>
+    String(value ?? "")
+      .split(/[,;]|\.(?=\s*\d)/)
+      .map((value) => value.trim())
+      .filter(Boolean);
 
-    [
-      {
-        value: "40, 41, 42, 46",
-        price: 55.17
-      }
-    ]
-
-    Into this:
-
-    [
-      { value: "40", price: 55.17 },
-      { value: "41", price: 55.17 },
-      { value: "42", price: 55.17 },
-      { value: "46", price: 55.17 }
-    ]
-  */
-
-  const normalizedSizes = entries.flatMap((entry) => {
-    // Simple DB format:
-    // ["40, 41, 42"]
-    if (
-      typeof entry === "string" ||
-      typeof entry === "number"
-    ) {
-      return String(entry)
-        .split(",")
-        .map((size) => size.trim())
-        .filter(Boolean)
-        .map((size) => ({
-          value: size,
-          price: null,
-        }));
-    }
-
-    // Object DB format:
-    // [{ value: "40, 41, 42", price: 55.17 }]
-    if (
-      entry &&
-      typeof entry === "object" &&
-      !Array.isArray(entry)
-    ) {
-      const rawSizes =
-        entry.value ??
-        entry.size ??
-        entry.label ??
-        "";
-
-      const sizes = String(rawSizes)
-        .split(",")
-        .map((size) => size.trim())
-        .filter(Boolean);
-
-      const rawPrice =
-        entry.price ??
-        entry.usdPrice ??
-        entry.variantPrice ??
-        null;
-
-      const parsedPrice = Number(rawPrice);
-
-      const price =
-        rawPrice !== null &&
-        rawPrice !== undefined &&
-        rawPrice !== "" &&
-        Number.isFinite(parsedPrice) &&
-        parsedPrice > 0
-          ? parsedPrice
-          : null;
-
-      return sizes.map((size) => ({
-        value: size,
-        price,
-      }));
-    }
-
-    return [];
-  });
-
-  // Remove duplicate sizes
   const uniqueSizes = new Map();
 
-  normalizedSizes.forEach((option) => {
-    const key = String(option.value)
-      .trim()
-      .toLowerCase();
+  entries.forEach((entry) => {
+    const data =
+      typeof entry === "string" ||
+      typeof entry === "number"
+        ? { value: String(entry) }
+        : entry;
 
-    if (!key) return;
+    if (!data || typeof data !== "object") return;
 
-    const existing = uniqueSizes.get(key);
+    const sizes = splitValues(
+      data.value ?? data.size ?? data.label
+    );
 
-    if (!existing) {
-      uniqueSizes.set(key, option);
-      return;
-    }
+    const lengths = splitValues(data.length);
 
-    // Prefer the duplicate that has a special price.
-    if (
-      existing.price == null &&
-      option.price != null
-    ) {
-      uniqueSizes.set(key, option);
-    }
+    const rawPrice =
+      data.price ??
+      data.usdPrice ??
+      data.variantPrice ??
+      null;
+
+    const parsedPrice = Number(rawPrice);
+
+    const price =
+      rawPrice !== null &&
+      rawPrice !== "" &&
+      Number.isFinite(parsedPrice) &&
+      parsedPrice > 0
+        ? parsedPrice
+        : null;
+
+    sizes.forEach((size) => {
+      const key = size.toLowerCase();
+      const existing = uniqueSizes.get(key);
+
+      if (!existing) {
+        uniqueSizes.set(key, {
+          value: size,
+          price,
+          lengths: [...new Set(lengths)],
+        });
+      } else {
+        existing.lengths = [
+          ...new Set([...existing.lengths, ...lengths]),
+        ];
+
+        if (existing.price == null && price != null) {
+          existing.price = price;
+        }
+      }
+    });
   });
 
-  return Array.from(uniqueSizes.values());
+  return [...uniqueSizes.values()];
 };
 
 
@@ -581,6 +530,58 @@ const getSizeLabel = (entry) => {
     entry.label ??
     ""
   ).trim();
+};
+
+const getLengthOptions = (
+  product,
+  color,
+  selectedSizeEntry = null
+) => {
+  const sizeEntries = getSizeEntriesForColor(
+    product,
+    color
+  );
+
+  if (selectedSizeEntry) {
+    const selectedLabel = getSizeLabel(selectedSizeEntry);
+
+    const matchingSize = sizeEntries.find(
+      (entry) => getSizeLabel(entry) === selectedLabel
+    );
+
+    return matchingSize?.lengths || [];
+  }
+
+  // When no size is selected, don't show lengths
+  // belonging to a different size.
+  if (sizeEntries.length > 0) {
+    return [];
+  }
+
+  // Fallback for products with lengths but no sizes.
+  const rawLengths =
+    product?.item?.length ??
+    product?.item?.lengths ??
+    [];
+
+  const entries = Array.isArray(rawLengths)
+    ? rawLengths
+    : [rawLengths];
+
+  return [
+    ...new Set(
+      entries.flatMap((entry) =>
+        String(
+          typeof entry === "object" && entry !== null
+            ? entry.value ?? entry.length ?? entry.label ?? ""
+            : entry ?? ""
+        )
+          .split(/[,;]|\.(?=\s*\d)/)
+          .map((value) => value.trim())
+          .filter(Boolean)
+      )
+    ),
+  ];
 };
 
 
@@ -880,27 +881,33 @@ const getTranslatedColor = (color) =>
     colorOptions?.[0] ||
     null;
 
-  const sizeEntries =
-    getSizeEntriesForColor(
-      itemData,
-      selectedColorForBasket
-    );
+ const sizeEntries = getSizeEntriesForColor(
+  itemData,
+  selectedColorForBasket
+);
+
+const lengthOptions = getLengthOptions(
+  itemData,
+  selectedColorForBasket
+);
 
   /*
    * Product has sizes:
    * open modal instead of adding immediately.
    */
-  if (sizeEntries.length > 0) {
-    setSelectedSize(null);
+  if (sizeEntries.length > 0 || lengthOptions.length > 0) {
+  setSelectedSize(null);
+  setSelectedLength(null);
 
-    setSizeModalItem({
-      itemData,
-      color: selectedColorForBasket,
-      sizes: sizeEntries,
-    });
+  setSizeModalItem({
+    itemData,
+    color: selectedColorForBasket,
+    sizes: sizeEntries,
+    lengths: lengthOptions,
+  });
 
-    return;
-  }
+  return;
+}
 
   /*
    * Product has no sizes:
@@ -916,7 +923,8 @@ const getTranslatedColor = (color) =>
 const addItemToBasket = async (
   itemData,
   selectedColorForBasket,
-  selectedSizeEntry = null
+  selectedSizeEntry = null,
+  selectedLengthValue = null
 ) => {
   const currentUser = auth?.currentUser;
 
@@ -965,6 +973,8 @@ const addItemToBasket = async (
 
         size:
           selectedSizeLabel,
+
+        length: selectedLengthValue,
 
         image: basketImage,
 
@@ -1026,6 +1036,7 @@ const addItemToBasket = async (
 
       setSizeModalItem(null);
       setSelectedSize(null);
+      setSelectedLength(null);
     } else {
       messageApi.error(
         t("failed_to_add_to_cart")
@@ -1050,6 +1061,16 @@ const addItemToBasket = async (
     );
   }
 };
+
+const availableModalLengths = sizeModalItem
+  ? getLengthOptions(
+      sizeModalItem.itemData,
+      sizeModalItem.color,
+      selectedSize !== null
+        ? sizeModalItem.sizes[selectedSize]
+        : null
+    )
+  : [];
 
   if (loading) return <div className="topitem-loading-message"> {t("loading")}</div>;
 
@@ -1121,9 +1142,10 @@ const addItemToBasket = async (
                     ? "active"
                     : ""
                 }`}
-                onClick={() =>
-                  setSelectedSize(index)
-                }
+               onClick={() => {
+                setSelectedSize(index);
+                setSelectedLength(null);
+              }}
               >
                 <span>
                   {sizeLabel}
@@ -1140,30 +1162,60 @@ const addItemToBasket = async (
         )}
       </div>
 
+      {availableModalLengths.length > 0 && (
+  <>
+    <h3>
+      {t("length", { defaultValue: "Length" })}
+    </h3>
+
+    <div className="size-modal-options">
+      {availableModalLengths.map((length, index) => (
+        <button
+          key={`${length}-${index}`}
+          type="button"
+          className={`size-modal-option ${
+            selectedLength === index ? "active" : ""
+          }`}
+          onClick={() => setSelectedLength(index)}
+        >
+          <span>{length}</span>
+        </button>
+      ))}
+    </div>
+  </>
+)}
+
       <button
         type="button"
         className="size-modal-add"
-        disabled={
-          selectedSize === null
-        }
-        onClick={async () => {
-          if (
-            selectedSize === null
-          ) {
-            return;
-          }
+      disabled={
+  (sizeModalItem.sizes.length > 0 &&
+    selectedSize === null) ||
+  (availableModalLengths.length > 0 &&
+    selectedLength === null)
+}
+       onClick={async () => {
+  const hasSizes = sizeModalItem.sizes.length > 0;
+  const hasLengths = availableModalLengths.length > 0;
 
-          const selectedEntry =
-            sizeModalItem.sizes[
-              selectedSize
-            ];
+  if (hasSizes && selectedSize === null) return;
+  if (hasLengths && selectedLength === null) return;
 
-          await addItemToBasket(
-            sizeModalItem.itemData,
-            sizeModalItem.color,
-            selectedEntry
-          );
-        }}
+  const selectedEntry = hasSizes
+    ? sizeModalItem.sizes[selectedSize]
+    : null;
+
+  const selectedLengthValue = hasLengths
+    ? availableModalLengths[selectedLength]
+    : null;
+
+  await addItemToBasket(
+    sizeModalItem.itemData,
+    sizeModalItem.color,
+    selectedEntry,
+    selectedLengthValue
+  );
+}}
       >
         {t("add_to_cart")}
       </button>

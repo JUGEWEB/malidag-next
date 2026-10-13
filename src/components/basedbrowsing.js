@@ -5,6 +5,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -42,7 +43,7 @@ function Browsing() {
 
   const [translations, setTranslations] = useState({});
   const [reviews, setReviews] = useState({});
-
+  const reviewRequestsRef = useRef(new Set());
   const [rates, setRates] = useState({});
   const [ratesLoading, setRatesLoading] = useState(true);
 
@@ -355,75 +356,82 @@ function Browsing() {
      REVIEWS
   ---------------------------------- */
 
-  const fetchReviews = useCallback(
-    async (productId) => {
-      if (!productId || reviews[productId]) {
-        return;
-      }
+ const fetchReviews = useCallback(async (productId) => {
+  if (!productId) return;
 
-      try {
-        const response = await fetch(
-          `${BASE_URL}/get-reviews/${encodeURIComponent(
-            productId
-          )}`
-        );
+  if (reviewRequestsRef.current.has(productId)) return;
 
-        if (response.status === 404) {
-          setReviews((prev) => ({
-            ...prev,
-            [productId]: {
-              averageRating: null,
-              reviewsArray: [],
-            },
-          }));
+  reviewRequestsRef.current.add(productId);
 
-          return;
-        }
+  try {
+    const response = await fetch(
+      `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
+    );
 
-        if (!response.ok) {
-          throw new Error(
-            `Reviews request failed: ${response.status}`
-          );
-        }
+    if (!response.ok && response.status !== 404) {
+      throw new Error(
+        `Reviews request failed: ${response.status}`
+      );
+    }
 
-        const data = await response.json();
+    const data =
+      response.status === 404
+        ? null
+        : await response.json();
 
-        const reviewsArray = Array.isArray(data?.reviews)
-          ? data.reviews
-          : [];
+    const reviewsArray =
+      data?.success !== false &&
+      Array.isArray(data?.reviews)
+        ? data.reviews
+        : [];
 
-        const validRatings = reviewsArray
-          .map((review) => Number(review?.rating))
-          .filter(
-            (rating) =>
-              Number.isFinite(rating) &&
-              rating >= 1 &&
-              rating <= 5
-          );
+    const validReviews = reviewsArray.filter((review) => {
+      const rawRating = review?.rating;
+      const rating = Number(rawRating);
 
-        const averageRating = validRatings.length
-          ? validRatings.reduce(
-              (sum, rating) => sum + rating,
-              0
-            ) / validRatings.length
-          : null;
+      return (
+        rawRating !== null &&
+        rawRating !== undefined &&
+        String(rawRating).trim() !== "" &&
+        Number.isFinite(rating) &&
+        rating >= 1 &&
+        rating <= 5
+      );
+    });
 
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating,
-            reviewsArray,
-          },
-        }));
-      } catch (error) {
-        console.error(
-          `Error fetching reviews for product ${productId}:`,
-          error
-        );
-      }
-    },
-    [reviews]
-  );
+    const averageRating = validReviews.length
+      ? validReviews.reduce(
+          (sum, review) => sum + Number(review.rating),
+          0
+        ) / validReviews.length
+      : null;
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating,
+        count: reviewsArray.length,
+        hasValidRating: validReviews.length > 0,
+      },
+    }));
+  } catch (error) {
+    console.error(
+      `Error fetching reviews for product ${productId}:`,
+      error
+    );
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: null,
+        count: 0,
+        hasValidRating: false,
+      },
+    }));
+  } finally {
+    reviewRequestsRef.current.delete(productId);
+  }
+}, []);
 
   /* ---------------------------------
      BRAND THEMES
@@ -1696,18 +1704,16 @@ const getProductPriceForColor = useCallback(
                     itemId,
                   } = itemData;
 
-                  const reviewsData =
-                    reviews[itemId] || {};
+                 const reviewsData = reviews[itemId];
 
-                  const finalRating =
-                    Number(
-                      reviewsData?.averageRating
-                    ) || null;
+                  const finalRating = reviewsData?.averageRating ?? null;
+                  const reviewCount = reviewsData?.count ?? 0;
 
-                  const reviewCount =
-                    reviewsData
-                      ?.reviewsArray
-                      ?.length || 0;
+                  const hasValidReviews =
+                    reviewsData?.hasValidRating === true &&
+                    reviewCount > 0 &&
+                    Number.isFinite(finalRating) &&
+                    finalRating > 0;
 
                   const colorOptions =
                     getColorOptions(
@@ -1855,58 +1861,31 @@ const getProductPriceForColor = useCallback(
                           )}
                         </h2>
 
-                        {finalRating ? (
+                       {hasValidReviews && (
                           <button
                             type="button"
                             className="browsing-rating"
-                            onClick={(
-                              event
-                            ) => {
+                            onClick={(event) => {
                               event.stopPropagation();
 
                               router.push(
-                                withCountry(
-                                  `/product/${id}/review`
-                                )
+                                withCountry(`/product/${id}/review`)
                               );
                             }}
                           >
                             <span className="browsing-stars">
-                              {"★".repeat(
-                                Math.round(
-                                  finalRating
-                                )
-                              )}
-                              {"☆".repeat(
-                                5 -
-                                  Math.round(
-                                    finalRating
-                                  )
-                              )}
+                              {"★".repeat(Math.round(finalRating))}
+                              {"☆".repeat(5 - Math.round(finalRating))}
                             </span>
 
-                            <span>
-                              {finalRating.toFixed(
-                                1
-                              )}
-                            </span>
+                            <span>{finalRating.toFixed(1)}</span>
 
                             <span className="browsing-review-count">
-                              {t(
-                                "reviews_count",
-                                {
-                                  count:
-                                    reviewCount,
-                                }
-                              )}
+                              {t("reviews_count", {
+                                count: reviewCount,
+                              })}
                             </span>
                           </button>
-                        ) : (
-                          <div className="browsing-no-rating">
-                            {t(
-                              "no_reviews_yet"
-                            )}
-                          </div>
                         )}
 
                         {colorOptions.length >

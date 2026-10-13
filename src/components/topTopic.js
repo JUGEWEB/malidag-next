@@ -38,6 +38,7 @@ function TopTopic({
 
   const [topItems, setTopItems] = useState([]);
   const [reviews, setReviews] = useState({});
+  const reviewRequestsRef = useRef(new Set());
   const [translations, setTranslations] = useState({});
   const [rates, setRates] = useState(null);
 
@@ -187,89 +188,79 @@ const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
   // REVIEWS
   // =========================================================
 
-  const fetchReviewsForItems = useCallback(
-    async (items) => {
+ const fetchReviewsForItems = useCallback(async (items) => {
+  await Promise.all(
+    items.map(async (item) => {
+      const productId = item?.itemId;
+
+      if (!productId) return;
+
+      if (reviewRequestsRef.current.has(productId)) return;
+
+      reviewRequestsRef.current.add(productId);
+
       try {
-        await Promise.all(
-          items.map(async (item) => {
-            const productId = item?.itemId;
-
-            if (!productId) return;
-
-            try {
-              const response = await axios.get(
-                `${BASE_URL}/get-reviews/${productId}`
-              );
-
-              if (response.data.success) {
-                const reviewsArray =
-                  response.data.reviews || [];
-
-                const totalRating =
-                  reviewsArray.reduce(
-                    (acc, review) => {
-                      const rating = parseFloat(
-                        review.rating
-                      );
-
-                      return (
-                        acc +
-                        (isNaN(rating)
-                          ? 4
-                          : rating)
-                      );
-                    },
-                    0
-                  );
-
-                const averageRating =
-                  reviewsArray.length > 0
-                    ? (
-                        totalRating /
-                        reviewsArray.length
-                      ).toFixed(2)
-                    : null;
-
-                setReviews((prevReviews) => ({
-                  ...prevReviews,
-
-                  [productId]: {
-                    averageRating,
-                    reviewsArray,
-                  },
-                }));
-              }
-            } catch (error) {
-              if (
-                error.response &&
-                error.response.status === 404
-              ) {
-                setReviews((prevReviews) => ({
-                  ...prevReviews,
-
-                  [productId]: {
-                    averageRating: null,
-                    reviewsArray: [],
-                  },
-                }));
-              } else {
-                console.error(
-                  "Error fetching reviews:",
-                  error
-                );
-              }
-            }
-          })
+        const response = await axios.get(
+          `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
         );
+
+        const reviewsArray =
+          response.data?.success &&
+          Array.isArray(response.data?.reviews)
+            ? response.data.reviews
+            : [];
+
+        const validReviews = reviewsArray.filter((review) => {
+          const rawRating = review?.rating;
+          const rating = Number(rawRating);
+
+          return (
+            rawRating !== null &&
+            rawRating !== undefined &&
+            String(rawRating).trim() !== "" &&
+            Number.isFinite(rating) &&
+            rating >= 1 &&
+            rating <= 5
+          );
+        });
+
+        const averageRating = validReviews.length
+          ? validReviews.reduce(
+              (sum, review) => sum + Number(review.rating),
+              0
+            ) / validReviews.length
+          : null;
+
+        setReviews((prev) => ({
+          ...prev,
+          [productId]: {
+            averageRating,
+            count: reviewsArray.length,
+            hasValidRating: validReviews.length > 0,
+          },
+        }));
       } catch (error) {
-        console.error(
-          "Error fetching review batch:",
-          error
-        );
+        if (error?.response?.status !== 404) {
+          console.error(
+            `Error fetching reviews for product ${productId}:`,
+            error
+          );
+        }
+
+        setReviews((prev) => ({
+          ...prev,
+          [productId]: {
+            averageRating: null,
+            count: 0,
+            hasValidRating: false,
+          },
+        }));
+      } finally {
+        reviewRequestsRef.current.delete(productId);
       }
-    },
-    []
+    })
   );
+}, []);
 
   // =========================================================
   // PRODUCT TRANSLATIONS
@@ -519,13 +510,15 @@ const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
             const productId =
               item?.itemId;
 
-            const ratingObj =
-              reviews[productId];
+           const ratingObj = reviews[productId];
 
-            const averageRating =
-              ratingObj
-                ? ratingObj.averageRating
-                : null;
+            const averageRating = ratingObj?.averageRating ?? null;
+
+            const hasValidReviews =
+              ratingObj?.hasValidRating === true &&
+              ratingObj?.count > 0 &&
+              Number.isFinite(averageRating) &&
+              averageRating > 0;
 
             const usdPrice =
               Number(
@@ -578,33 +571,22 @@ const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
                   {renderPrice(usdPrice)}
                 </div>
 
-                <div
-                  className="item-type-stars"
-                  onClick={() => {
-                    setItemData(item);
+               {hasValidReviews && (
+                  <div
+                    className="item-type-stars-top"
+                    onClick={() => {
+                      setItemData(item);
 
-                    router.push(
-                      withCountry(
-                        `product/${navigationId}/review`
-                      )
-                    );
-                  }}
-                  title={t("view_reviews_of_item")}
-                >
-                  {averageRating
-                    ? "★".repeat(
-                        Math.round(
-                          averageRating
-                        )
-                      ) +
-                      "☆".repeat(
-                        5 -
-                          Math.round(
-                            averageRating
-                          )
-                      )
-                    :t("no_rating")}
-                </div>
+                      router.push(
+                        withCountry(`product/${navigationId}/review`)
+                      );
+                    }}
+                    title={t("view_reviews_of_item")}
+                  >
+                    {"★".repeat(Math.round(averageRating))}
+                    {"☆".repeat(5 - Math.round(averageRating))}
+                  </div>
+                )}
 
                 <div
                  onClick={() =>

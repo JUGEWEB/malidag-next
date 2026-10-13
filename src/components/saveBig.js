@@ -61,6 +61,8 @@ const [
   setSelectedModalSize,
 ] = useState(null);
 
+const [selectedModalLength, setSelectedModalLength] = useState(null);
+
 const [
   modalQuantity,
   setModalQuantity,
@@ -292,31 +294,51 @@ const isItemInBasket = (
   if (!productId) return;
 
   try {
-    const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
+    const response = await axios.get(
+      `${BASE_URL}/get-reviews/${productId}`
+    );
 
-    if (response.data.success) {
-      const reviewsArray = response.data.reviews || [];
+    const reviewsArray =
+      response.data?.success &&
+      Array.isArray(response.data?.reviews)
+        ? response.data.reviews
+        : [];
 
-      const totalRating = reviewsArray.reduce((acc, review) => {
-        const rating = parseFloat(review.rating);
-        return acc + (isNaN(rating) ? 4 : rating);
-      }, 0);
+    const validRatings = reviewsArray
+      .map((review) => Number(review?.rating))
+      .filter(
+        (rating) =>
+          Number.isFinite(rating) &&
+          rating >= 1 &&
+          rating <= 5
+      );
 
-      const averageRating = reviewsArray.length
-        ? (totalRating / reviewsArray.length).toFixed(2)
-        : null;
+    const averageRating = validRatings.length
+      ? (
+          validRatings.reduce(
+            (sum, rating) => sum + rating,
+            0
+          ) / validRatings.length
+        ).toFixed(2)
+      : null;
 
-      setReviews((prev) => ({
-        ...prev,
-        [productId]: { averageRating, reviewsArray },
-      }));
-    }
-  } catch (error) {
     setReviews((prev) => ({
       ...prev,
       [productId]: {
-        averageRating: 4.3,
-        reviewsArray: Array(133).fill({ rating: 4.3 }),
+        averageRating,
+        reviewsArray,
+        validReviewCount: validRatings.length,
+      },
+    }));
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: null,
+        reviewsArray: [],
+        validReviewCount: 0,
       },
     }));
   }
@@ -465,10 +487,7 @@ const getColorSwatch = (colorName = "") => {
   return Math.round(((original - current) / original) * 100);
 };
 
-const getVariantData = (
-  product,
-  color
-) => {
+const getVariantData = (product, color) => {
   const sizeMap =
     product?.item?.size ||
     product?.details?.sizes ||
@@ -483,142 +502,69 @@ const getVariantData = (
     return [];
   }
 
-  const normalizedSelectedColor =
-    String(color)
-      .trim()
-      .toLowerCase();
+  const actualColorKey = Object.keys(sizeMap).find(
+    (key) =>
+      String(key).trim().toLowerCase() ===
+      String(color).trim().toLowerCase()
+  );
 
-  const actualColorKey =
-    Object.keys(sizeMap).find(
-      (key) =>
-        String(key)
-          .trim()
-          .toLowerCase() ===
-        normalizedSelectedColor
-    );
+  if (!actualColorKey) return [];
 
-  if (!actualColorKey) {
-    return [];
-  }
+  const entries = sizeMap[actualColorKey];
 
-  const entries =
-    sizeMap[actualColorKey];
+  if (!Array.isArray(entries)) return [];
 
-  if (!Array.isArray(entries)) {
-    return [];
-  }
+  const splitValues = (value) =>
+    String(value ?? "")
+      .split(/[,;]|\.(?=\s*\d)/)
+      .map((value) => value.trim())
+      .filter(Boolean);
 
-  const normalizedSizes =
-    entries.flatMap((entry) => {
-      // FORMAT:
-      // "40, 42, 45"
-      if (typeof entry === "string") {
-        return entry
-          .split(",")
-          .map((size) =>
-            size.trim()
-          )
-          .filter(Boolean)
-          .map((size) => ({
-            size,
-            price: null,
-          }));
-      }
-
-      // FORMAT:
-      // {
-      //   value: "40, 42, 43",
-      //   price: 42.99
-      // }
-      if (
-        entry &&
-        typeof entry === "object" &&
-        !Array.isArray(entry)
-      ) {
-        const sizeValues =
-          String(
-            entry.value ?? ""
-          )
-            .split(",")
-            .map((size) =>
-              size.trim()
-            )
-            .filter(Boolean);
-
-        let specialPrice = null;
-
-        if (
-          entry.price !== undefined &&
-          entry.price !== null &&
-          entry.price !== ""
-        ) {
-          const parsedPrice =
-            Number(entry.price);
-
-          if (
-            Number.isFinite(
-              parsedPrice
-            )
-          ) {
-            specialPrice =
-              parsedPrice;
-          }
-        }
-
-        return sizeValues.map(
-          (size) => ({
-            size,
-            price: specialPrice,
-          })
-        );
-      }
-
-      return [];
-    });
-
-  // Remove duplicate sizes.
-  // If duplicate exists and one has
-  // a special price, keep priced one.
   const uniqueSizes = new Map();
 
-  normalizedSizes.forEach(
-    (option) => {
-      const key =
-        String(option.size)
-          .trim()
-          .toLowerCase();
+  entries.forEach((entry) => {
+    const data =
+      typeof entry === "string"
+        ? { value: entry }
+        : entry;
 
-      if (!key) {
-        return;
-      }
+    if (!data || typeof data !== "object") return;
 
-      const existing =
-        uniqueSizes.get(key);
+    const sizes = splitValues(data.value);
+    const lengths = splitValues(data.length);
+
+    const price =
+      data.price !== undefined &&
+      data.price !== null &&
+      data.price !== "" &&
+      Number.isFinite(Number(data.price)) &&
+      Number(data.price) > 0
+        ? Number(data.price)
+        : null;
+
+    sizes.forEach((size) => {
+      const key = size.toLowerCase();
+      const existing = uniqueSizes.get(key);
 
       if (!existing) {
-        uniqueSizes.set(
-          key,
-          option
-        );
+        uniqueSizes.set(key, {
+          size,
+          price,
+          lengths: [...new Set(lengths)],
+        });
+      } else {
+        existing.lengths = [
+          ...new Set([...existing.lengths, ...lengths]),
+        ];
 
-        return;
+        if (existing.price == null && price != null) {
+          existing.price = price;
+        }
       }
+    });
+  });
 
-      if (
-        existing.price == null &&
-        option.price != null
-      ) {
-        uniqueSizes.set(
-          key,
-          option
-        );
-      }
-    }
-  );
-
-  return Array.from(
-    uniqueSizes.values()
-  );
+  return [...uniqueSizes.values()];
 };
 
 const getVariantPrice = (
@@ -729,9 +675,10 @@ const getVariantPrice = (
       variants
     );
 
-    setSelectedModalSize(null);
-    setModalQuantity(1);
-    setSizeModalOpen(true);
+   setSelectedModalSize(null);
+setSelectedModalLength(null);
+setModalQuantity(1);
+setSizeModalOpen(true);
 
     return;
   }
@@ -755,6 +702,7 @@ const addBasketVariant = async ({
   selectedColor,
   selectedImage,
   selectedSize,
+  selectedLength = null,
   quantity,
 }) => {
   const currentUser =
@@ -809,8 +757,8 @@ const addBasketVariant = async ({
       color:
         selectedColor || null,
 
-      size:
-        selectedSize || null,
+     size: selectedSize || null,
+length: selectedLength || null,
 
      image: getVariantImage(
   product,
@@ -886,6 +834,7 @@ const addBasketVariant = async ({
       setPendingBasketImage("");
       setPendingSizes([]);
       setSelectedModalSize(null);
+      setSelectedModalLength(null);
       setModalQuantity(1);
 
       return;
@@ -895,15 +844,16 @@ const addBasketVariant = async ({
       "Basket API did not confirm success:",
       response.data
     );
-  } catch (error) {
-    console.error(
-      "Error adding item to basket:",
-      error?.response?.data ||
-        error
-    );
-  } finally {
-    setAddingToBasket(false);
-  }
+ } catch (error) {
+  console.error("SAVE BIG ADD TO BASKET FAILED:", {
+    status: error.response?.status,
+    data: error.response?.data,
+    message: error.message,
+    payload: basketItem,
+  });
+} finally {
+  setAddingToBasket(false);
+}
 };
 
   const renderStars = (rating) => {
@@ -1113,6 +1063,21 @@ if (!loading && !hasItems) {
   );
 }
 
+const selectedVariant = pendingSizes.find(
+  (variant) =>
+    String(variant.size) === String(selectedModalSize)
+);
+
+const availableModalLengths = selectedVariant?.lengths || [];
+
+const lengthRequired = availableModalLengths.length > 0;
+
+const canConfirmVariant =
+  Boolean(selectedModalSize) &&
+  (!lengthRequired ||
+    availableModalLengths.includes(selectedModalLength)) &&
+  !addingToBasket;
+
   return (
     <div className="bbe-container">
       <div className="bbe-type-list">
@@ -1226,28 +1191,46 @@ const displayName =
   )}
 </div>
 
-<div
-  className="bbe-item-rating"
-  onClick={(e) => {
-    e.stopPropagation();
-   router.push(withCountry(`/product/${id}/review`));
-  }}
-  title="View reviews"
->
-  {(() => {
-    const reviewData = reviews[product.itemId] || {};
-    const rating = Number(reviewData.averageRating || 4.3);
-    const reviewCount = reviewData.reviewsArray?.length || 133;
+{(() => {
+  const reviewData = reviews[product.itemId];
 
-    return (
-      <>
-        <span className="bbe-rating-number">{rating.toFixed(1)}/5</span>
-        {renderStars(rating)}
-        <span className="bbe-review-count">{t("reviews_count", { count: reviewCount })}</span>
-      </>
-    );
-  })()}
-</div>
+  const rating = Number(reviewData?.averageRating);
+  const reviewCount = reviewData?.validReviewCount || 0;
+
+  if (
+    !reviewData ||
+    reviewCount === 0 ||
+    !Number.isFinite(rating) ||
+    rating <= 0
+  ) {
+    return null;
+  }
+
+  return (
+    <div
+      className="bbe-item-rating"
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(
+          withCountry(`/product/${id}/review`)
+        );
+      }}
+      title="View reviews"
+    >
+      <span className="bbe-rating-number">
+        {rating.toFixed(1)}/5
+      </span>
+
+      {renderStars(rating)}
+
+      <span className="bbe-review-count">
+        {t("reviews_count", {
+          count: reviewCount,
+        })}
+      </span>
+    </div>
+  );
+})()}
 
 {colorOptions.length > 1 && (
   <div className="bbe-color-block" onClick={(e) => e.stopPropagation()}>
@@ -1468,11 +1451,10 @@ const displayName =
                         ? "active"
                         : ""
                     }`}
-                    onClick={() =>
-                      setSelectedModalSize(
-                        variant.size
-                      )
-                    }
+                   onClick={() => {
+                    setSelectedModalSize(variant.size);
+                    setSelectedModalLength(null);
+                  }}
                   >
                     <span>
                       {variant.size}
@@ -1493,6 +1475,42 @@ const displayName =
             )}
           </div>
         </div>
+
+        {(() => {
+  const selectedVariant = pendingSizes.find(
+    (variant) =>
+      String(variant.size) === String(selectedModalSize)
+  );
+
+  const availableLengths = selectedVariant?.lengths || [];
+
+  if (!selectedModalSize || availableLengths.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="bbe-size-modal-section">
+      <div className="bbe-size-modal-label">
+        {t("length", { defaultValue: "Length" })}
+      </div>
+
+      <div className="bbe-size-options">
+        {availableLengths.map((length) => (
+          <button
+            key={length}
+            type="button"
+            className={`bbe-size-option ${
+              selectedModalLength === length ? "active" : ""
+            }`}
+            onClick={() => setSelectedModalLength(length)}
+          >
+            {length}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+})()}
 
         <div className="bbe-size-modal-section">
           <div className="bbe-size-modal-label">
@@ -1551,28 +1569,19 @@ const displayName =
         <button
           type="button"
           className="bbe-size-modal-confirm"
-          disabled={
-            !selectedModalSize ||
-            addingToBasket
-          }
-          onClick={() =>
-            addBasketVariant({
-              product:
-                pendingBasketProduct,
+          disabled={!canConfirmVariant}
+         onClick={() => {
+  if (!canConfirmVariant) return;
 
-              selectedColor:
-                pendingBasketColor,
-
-              selectedImage:
-                pendingBasketImage,
-
-              selectedSize:
-                selectedModalSize,
-
-              quantity:
-                modalQuantity,
-            })
-          }
+  addBasketVariant({
+    product: pendingBasketProduct,
+    selectedColor: pendingBasketColor,
+    selectedImage: pendingBasketImage,
+    selectedSize: selectedModalSize,
+    selectedLength: selectedModalLength,
+    quantity: modalQuantity,
+  });
+}}
         >
           {addingToBasket
             ? t("adding")

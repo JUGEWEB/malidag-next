@@ -285,65 +285,70 @@ const hasCategories = mtypes.length > 0;
     [translations]
   );
 
-  const fetchReviews = useCallback(async (productId) => {
-    if (!productId) return;
-    if (reviewRequestsRef.current.has(productId)) return;
-    if (reviews[productId]) return;
+ const fetchReviews = useCallback(async (productId) => {
+  if (!productId) return;
+  if (reviewRequestsRef.current.has(productId)) return;
+  if (reviews[productId]) return;
 
-    reviewRequestsRef.current.add(productId);
+  reviewRequestsRef.current.add(productId);
 
-    try {
-      const response = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
+  const saveReviews = (reviewsArray) => {
+    const validReviews = reviewsArray.filter((review) => {
+      const rating = Number(review?.rating);
 
-      if (response.data?.success) {
-        const reviewsArray = Array.isArray(response.data.reviews)
-          ? response.data.reviews
-          : [];
+      return (
+        review?.rating !== null &&
+        review?.rating !== undefined &&
+        review?.rating !== "" &&
+        Number.isFinite(rating) &&
+        rating >= 1 &&
+        rating <= 5
+      );
+    });
 
-        const totalRating = reviewsArray.reduce((acc, review) => {
-          const rating = Number(review?.rating);
-          return acc + (Number.isNaN(rating) ? 0 : rating);
-        }, 0);
+    const averageRating = validReviews.length
+      ? validReviews.reduce(
+          (sum, review) => sum + Number(review.rating),
+          0
+        ) / validReviews.length
+      : null;
 
-        const averageRating = reviewsArray.length
-          ? totalRating / reviewsArray.length
-          : null;
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating,
+        count: reviewsArray.length,
+        reviewsArray,
+        hasValidRating: validReviews.length > 0,
+      },
+    }));
+  };
 
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating,
-            count: reviewsArray.length,
-            reviewsArray,
-          },
-        }));
-      } else {
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating: null,
-            count: 0,
-            reviewsArray: [],
-          },
-        }));
-      }
-    } catch (error) {
-      if (error?.response?.status === 404) {
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating: null,
-            count: 0,
-            reviewsArray: [],
-          },
-        }));
-      } else {
-        console.error(`Review fetch error for ${productId}:`, error);
-      }
-    } finally {
-      reviewRequestsRef.current.delete(productId);
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/get-reviews/${productId}`
+    );
+
+    const reviewsArray =
+      response.data?.success &&
+      Array.isArray(response.data?.reviews)
+        ? response.data.reviews
+        : [];
+
+    saveReviews(reviewsArray);
+  } catch (error) {
+    if (error?.response?.status !== 404) {
+      console.error(
+        `Review fetch error for ${productId}:`,
+        error
+      );
     }
-  }, [reviews]);
+
+    saveReviews([]);
+  } finally {
+    reviewRequestsRef.current.delete(productId);
+  }
+}, [reviews]);
 
   const hydrateProductMeta = useCallback(
     async (groupedData, lang) => {
@@ -905,14 +910,18 @@ return (
                 )}
               </div>
 
-              <div className="fashionkick-rating-wrap">
-                <StarRating rating={averageRating || 0} />
-                <span className="fashionkick-review-text">
-                  {averageRating
-                    ? `${averageRating.toFixed(1)} (${reviewCount})`
-                    : t("no_reviews_yet") || "No reviews yet"}
-                </span>
-              </div>
+             {reviewData?.hasValidRating &&
+              reviewCount > 0 &&
+              Number.isFinite(averageRating) &&
+              averageRating > 0 && (
+                <div className="fashionkick-rating-wrap">
+                  <StarRating rating={averageRating} />
+
+                  <span className="fashionkick-review-text">
+                    {averageRating.toFixed(1)} ({reviewCount})
+                  </span>
+                </div>
+              )}
 
               <div className="fashionkick-product-footer">
                 <span className="fashionkick-product-genre">

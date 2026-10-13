@@ -59,155 +59,88 @@ const [sizeModalOpen, setSizeModalOpen] = useState(false);
 const [pendingBasketItem, setPendingBasketItem] = useState(null);
 const [pendingSizes, setPendingSizes] = useState([]);
 const [selectedModalSize, setSelectedModalSize] = useState(null);
+const [selectedModalLength, setSelectedModalLength] =
+  useState(null);
 const [addingToBasket, setAddingToBasket] = useState(false);
 const [modalQuantity, setModalQuantity] = useState(1);
 const [currentUser, setCurrentUser] = useState(null);
 const [authReady, setAuthReady] = useState(false);
 
+
 const getSizesForColor = (itemData, color) => {
-  // IMPORTANT:
-  // itemData is the whole product object.
-  // The actual size map lives inside itemData.item.size.
   const sizeMap =
     itemData?.item?.size ||
     itemData?.details?.sizes ||
     {};
 
-  if (
-    !sizeMap ||
-    typeof sizeMap !== "object" ||
-    Array.isArray(sizeMap) ||
-    !color
-  ) {
+  if (!color || typeof sizeMap !== "object") {
     return [];
   }
 
-  // Normalize selected color.
-  // imagesVariants and size can use slightly different casing.
-  const normalizedSelectedColor = String(color)
-    .trim()
-    .toLowerCase();
-
-  // Find the corresponding color inside the size object.
-  const actualColorKey = Object.keys(sizeMap).find(
+  const colorKey = Object.keys(sizeMap).find(
     (key) =>
-      String(key).trim().toLowerCase() ===
-      normalizedSelectedColor
+      key.trim().toLowerCase() ===
+      String(color).trim().toLowerCase()
   );
 
-  if (!actualColorKey) {
-    return [];
-  }
+  if (!colorKey) return [];
 
-  const entries = sizeMap[actualColorKey];
+  const entries = sizeMap[colorKey];
 
-  if (!Array.isArray(entries)) {
-    return [];
-  }
+  if (!Array.isArray(entries)) return [];
 
-  const normalizedSizes = entries.flatMap((entry) => {
-    /*
-      FORMAT 1
-
-      "Navy Blazer": [
-        "40, 42, 45"
-      ]
-
-      No special price.
-    */
-    if (typeof entry === "string") {
-      return entry
-        .split(",")
-        .map((size) => size.trim())
-        .filter(Boolean)
-        .map((size) => ({
-          value: size,
-          price: null,
-        }));
-    }
-
-    /*
-      FORMAT 2
-
-      "Vapor Blue": [
-        {
-          value: "40, 42, 43, 44, 45, 46",
-          price: 42.99
-        }
-      ]
-
-      Every size contained in value uses the
-      special price from the object.
-    */
-    if (
-      entry &&
-      typeof entry === "object" &&
-      !Array.isArray(entry)
-    ) {
-      const sizeValues = String(
-        entry.value ?? ""
-      )
-        .split(",")
-        .map((size) => size.trim())
-        .filter(Boolean);
-
-      let specialPrice = null;
-
-      if (
-        entry.price !== undefined &&
-        entry.price !== null &&
-        entry.price !== ""
-      ) {
-        const parsedPrice = Number(entry.price);
-
-        if (Number.isFinite(parsedPrice)) {
-          specialPrice = parsedPrice;
-        }
-      }
-
-      return sizeValues.map((size) => ({
-        value: size,
-        price: specialPrice,
-      }));
-    }
-
-    return [];
-  });
-
-  /*
-    Remove duplicates just in case the database contains
-    the same size more than once.
-
-    If one duplicate has a special price, prefer that one.
-  */
   const uniqueSizes = new Map();
 
-  normalizedSizes.forEach((option) => {
-    const key = String(option.value)
-      .trim()
-      .toLowerCase();
+  const splitValues = (value) =>
+    String(value ?? "")
+      .split(/[,;]|\.(?=\s*\d)/)
+      .map((v) => v.trim())
+      .filter(Boolean);
 
-    if (!key) {
-      return;
-    }
+  entries.forEach((entry) => {
+    const data =
+      typeof entry === "string"
+        ? { value: entry }
+        : entry;
 
-    const existing = uniqueSizes.get(key);
+    if (!data || typeof data !== "object") return;
 
-    if (!existing) {
-      uniqueSizes.set(key, option);
-      return;
-    }
+    const sizes = splitValues(data.value);
+    const lengths = splitValues(data.length);
 
-    if (
-      existing.price == null &&
-      option.price != null
-    ) {
-      uniqueSizes.set(key, option);
-    }
+    const price =
+      data.price != null &&
+      data.price !== "" &&
+      Number.isFinite(Number(data.price)) &&
+      Number(data.price) > 0
+        ? Number(data.price)
+        : null;
+
+    sizes.forEach((size) => {
+      const key = size.toLowerCase();
+      const existing = uniqueSizes.get(key);
+
+      if (!existing) {
+        uniqueSizes.set(key, {
+          value: size,
+          price,
+          lengths: [...new Set(lengths)],
+        });
+      } else {
+        existing.lengths = [
+          ...new Set([...existing.lengths, ...lengths]),
+        ];
+
+        if (existing.price == null && price != null) {
+          existing.price = price;
+        }
+      }
+    });
   });
 
-  return Array.from(uniqueSizes.values());
+  return [...uniqueSizes.values()];
 };
+
 
 const getPriceForSelectedColor = (itemData, color) => {
   const item = itemData?.item || {};
@@ -257,7 +190,8 @@ const addBasketVariant = async (
   selectedColorForBasket,
   selectedSizeForBasket = null,
   variantPrice = null,
-  quantity = 1
+  quantity = 1,
+  selectedLengthForBasket = null
 ) => {
  if (!authReady || !currentUser?.uid) {
     messageApi.error("Please wait a moment and try again.");
@@ -291,6 +225,7 @@ const addBasketVariant = async (
 
       color: selectedColorForBasket,
       size: selectedSizeForBasket,
+      length: selectedLengthForBasket,
       image: basketImage,
       brand: item.brand,
       brandPrice: item.brandPrice,
@@ -503,86 +438,103 @@ const getBasketQuantity = (itemId) => {
     }, 0);
 };
 
+
 const getBasketVariantQuantity = (
   itemId,
   color,
-  size
+  size,
+  length = null
 ) => {
+  const normalize = (value) =>
+    String(value ?? "").trim().toLowerCase();
+
   return basketItems
     .filter((basketItem) => {
-      const basketProductId =
+      const productId =
         basketItem?.itemId ??
         basketItem?.item?.itemId;
 
       const basketColor =
         basketItem?.color ??
-        basketItem?.item?.color ??
-        null;
+        basketItem?.item?.color;
 
       const basketSize =
         basketItem?.size ??
-        basketItem?.item?.size ??
-        null;
+        basketItem?.item?.size;
+
+      const basketLength =
+        basketItem?.length ??
+        basketItem?.item?.length;
 
       return (
-        String(basketProductId) === String(itemId) &&
-        String(basketColor ?? "")
-          .trim()
-          .toLowerCase() ===
-          String(color ?? "")
-            .trim()
-            .toLowerCase() &&
-        String(basketSize ?? "")
-          .trim()
-          .toLowerCase() ===
-          String(size ?? "")
-            .trim()
-            .toLowerCase()
+        String(productId) === String(itemId) &&
+        normalize(basketColor) === normalize(color) &&
+        normalize(basketSize) === normalize(size) &&
+        normalize(basketLength) === normalize(length)
       );
     })
-    .reduce((total, basketItem) => {
-      const quantity = Number(
-        basketItem?.quantity ??
-        basketItem?.item?.quantity ??
-        1
-      );
-
-      return (
+    .reduce(
+      (total, basketItem) =>
         total +
-        (Number.isFinite(quantity)
-          ? quantity
-          : 0)
-      );
-    }, 0);
+        (Number(basketItem.quantity) || 1),
+      0
+    );
 };
+
 
 const isItemInBasket = (itemId) => {
   return getBasketQuantity(itemId) > 0;
 };
 
-  const fetchReviews = async (productId) => {
-    try {
-      const response = await axios.get(`https://api.malidag.com/get-reviews/${productId}`);
-      if (response.data.success) {
-        const reviewsArray = response.data.reviews || [];
-        const totalRating = reviewsArray.reduce((acc, review) => {
-          const rating = parseFloat(review.rating);
-          return acc + (isNaN(rating) ? 4 : rating);
-        }, 0);
+ 
+const fetchReviews = async (productId) => {
+  try {
+    const response = await axios.get(
+      `https://api.malidag.com/get-reviews/${productId}`
+    );
 
-        const averageRating = reviewsArray.length
-          ? (totalRating / reviewsArray.length).toFixed(2)
-          : null;
+    const reviewsArray =
+      response.data?.success &&
+      Array.isArray(response.data?.reviews)
+        ? response.data.reviews
+        : [];
 
-        setReviews((prevReviews) => ({
-          ...prevReviews,
-          [productId]: { averageRating, reviewsArray },
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-    }
-  };
+    const validRatings = reviewsArray
+      .map((review) => Number(review?.rating))
+      .filter(
+        (rating) =>
+          Number.isFinite(rating) &&
+          rating >= 1 &&
+          rating <= 5
+      );
+
+    const averageRating = validRatings.length
+      ? (
+          validRatings.reduce((sum, rating) => sum + rating, 0) /
+          validRatings.length
+        ).toFixed(2)
+      : null;
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating,
+        reviewsArray,
+      },
+    }));
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: null,
+        reviewsArray: [],
+      },
+    }));
+  }
+};
+
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -797,6 +749,7 @@ const formatPrice = (usdAmount) => {
 
    setPendingSizes(colorSizes);
 setSelectedModalSize(null);
+setSelectedModalLength(null);
 setModalQuantity(1);
 setSizeModalOpen(true);
 
@@ -815,35 +768,48 @@ setSizeModalOpen(true);
 
 const handleModalSizeSelect = (sizeOption) => {
   setSelectedModalSize(sizeOption);
+  setSelectedModalLength(null);
 };
 
+
 const handleConfirmSize = async () => {
-  if (
-    !pendingBasketItem ||
-    !selectedModalSize
-  ) {
+  if (!pendingBasketItem || !selectedModalSize) {
     return;
   }
 
-  const { itemData, color } =
-    pendingBasketItem;
+  const availableLengths =
+    selectedModalSize.lengths || [];
 
+  if (
+    availableLengths.length > 0 &&
+    !availableLengths.includes(selectedModalLength)
+  ) {
+    messageApi.error("Please select a length.");
+    return;
+  }
+
+  const { itemData, color } = pendingBasketItem;
   const item = itemData?.item || {};
 
   const finalPrice =
-    selectedModalSize.price !== null &&
-    selectedModalSize.price !== undefined
+    selectedModalSize.price != null
       ? selectedModalSize.price
-      : Number(item.usdPrice || 0);
+      : Number(
+          item.usdPrice ||
+          itemData?.details?.usdText ||
+          0
+        );
 
   await addBasketVariant(
-  itemData,
-  color,
-  selectedModalSize.value,
-  finalPrice,
-  modalQuantity
-);
+    itemData,
+    color,
+    selectedModalSize.value,
+    finalPrice,
+    modalQuantity,
+    selectedModalLength
+  );
 };
+
 
   const brands = Array.from(
     new Set(items.map((item) => item?.item?.brand).filter(Boolean))
@@ -1182,12 +1148,12 @@ const filteredItems = items.filter((itemData) => {
 });
 
 const selectedVariantBasketQuantity =
-  selectedModalSize &&
-  pendingBasketItem
+  selectedModalSize && pendingBasketItem
     ? getBasketVariantQuantity(
-        pendingBasketItem?.itemData?.itemId,
-        pendingBasketItem?.color,
-        selectedModalSize.value
+        pendingBasketItem.itemData.itemId,
+        pendingBasketItem.color,
+        selectedModalSize.value,
+        selectedModalLength
       )
     : 0;
 
@@ -1296,6 +1262,41 @@ const selectedVariantAlreadyAdded =
   );
 })}
 
+
+{/* LENGTH SELECTION */}
+{selectedModalSize?.lengths?.length > 0 && (
+  <div className="size-modal-length-section-cc">
+    <div className="size-modal-quantity-label-cc">
+      Choose length
+    </div>
+
+    <div className="size-modal-options-cc">
+      {selectedModalSize.lengths.map((length) => {
+        const active =
+          selectedModalLength === length;
+
+        return (
+          <button
+            key={length}
+            type="button"
+            className={`size-modal-option-cc ${
+              active ? "active" : ""
+            }`}
+            onClick={() => {
+              setSelectedModalLength(length);
+              setModalQuantity(1);
+            }}
+            disabled={addingToBasket}
+          >
+            {length}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+)}
+
+
         {/* QUANTITY */}
 <div className="size-modal-quantity-section-cc">
   <div className="size-modal-quantity-label-cc">
@@ -1345,9 +1346,13 @@ const selectedVariantAlreadyAdded =
   type="button"
   className="size-modal-confirm-cc"
   disabled={
-    !selectedModalSize ||
-    addingToBasket
-  }
+  !selectedModalSize ||
+  (
+    selectedModalSize.lengths?.length > 0 &&
+    !selectedModalLength
+  ) ||
+  addingToBasket
+}
   onClick={handleConfirmSize}
 >
   {addingToBasket
@@ -1943,8 +1948,13 @@ const isBestSeller = id === bestSellerId;
       ? Math.round(((originalPrice - usdPrice) / originalPrice) * 100)
       : 0;
 
-  const reviewsData = reviews[itemId] || {};
-  const finalRating = reviewsData?.averageRating || t("no_rating");
+ const reviewsData = reviews[itemId] || {};
+
+const hasReviews =
+  Array.isArray(reviewsData.reviewsArray) &&
+  reviewsData.reviewsArray.length > 0 &&
+  Number.isFinite(Number(reviewsData.averageRating)) &&
+  Number(reviewsData.averageRating) > 0;
 
  const displayPrice = formatPrice(usdPrice);
 const displayOriginalPrice =
@@ -2029,6 +2039,8 @@ const basketQuantity = getBasketQuantity(itemId);
   </div>
 
   {/* RATING */}
+ {/* RATING */}
+{hasReviews && (
   <div
     className="item-type-stars-cc"
     onClick={(e) => {
@@ -2039,20 +2051,30 @@ const basketQuantity = getBasketQuantity(itemId);
     title={t("view_reviews")}
   >
     <span className="item-rating-number-cc">
-      {reviewsData?.averageRating || ""}
+      {reviewsData.averageRating}
     </span>
 
     <span className="item-rating-stars-cc">
-      {reviewsData?.averageRating
-        ? "★".repeat(Math.round(reviewsData.averageRating)) +
-          "☆".repeat(5 - Math.round(reviewsData.averageRating))
-        : "☆☆☆☆☆"}
+      {"★".repeat(
+        Math.min(
+          5,
+          Math.max(0, Math.round(Number(reviewsData.averageRating)))
+        )
+      )}
+      {"☆".repeat(
+        5 -
+        Math.min(
+          5,
+          Math.max(0, Math.round(Number(reviewsData.averageRating)))
+        )
+      )}
     </span>
 
     <span className="item-review-count-cc">
-      ({reviewsData?.reviewsArray?.length || 0})
+      ({reviewsData.reviewsArray.length})
     </span>
   </div>
+)}
 
   {/* COLORS */}
   {colorOptions.length > 0 && (

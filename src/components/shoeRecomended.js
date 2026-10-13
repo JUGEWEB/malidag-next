@@ -84,71 +84,74 @@ function ShoeRecommended() {
   /*
    * Reviews
    */
-  const fetchReviews = useCallback(async (productId) => {
-    if (!productId) return;
+ const fetchReviews = useCallback(async (productId) => {
+  if (!productId) return;
 
-    if (reviewRequestsRef.current.has(productId)) {
-      return;
-    }
+  if (reviewRequestsRef.current.has(productId)) {
+    return;
+  }
 
-    reviewRequestsRef.current.add(productId);
+  reviewRequestsRef.current.add(productId);
 
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
+    );
+
+    const reviewsArray =
+      response.data?.success &&
+      Array.isArray(response.data?.reviews)
+        ? response.data.reviews
+        : [];
+
+    const validReviews = reviewsArray.filter((review) => {
+      const rating = Number(review?.rating);
+
+      return (
+        review?.rating !== null &&
+        review?.rating !== undefined &&
+        review?.rating !== "" &&
+        Number.isFinite(rating) &&
+        rating >= 1 &&
+        rating <= 5
       );
+    });
 
-      if (response.data?.success) {
-        const reviewsArray = Array.isArray(response.data.reviews)
-          ? response.data.reviews
-          : [];
+    const averageRating = validReviews.length
+      ? validReviews.reduce(
+          (sum, review) => sum + Number(review.rating),
+          0
+        ) / validReviews.length
+      : null;
 
-        const totalRating = reviewsArray.reduce((total, review) => {
-          const rating = Number(review?.rating);
-
-          return total + (Number.isFinite(rating) ? rating : 0);
-        }, 0);
-
-        const averageRating =
-          reviewsArray.length > 0
-            ? totalRating / reviewsArray.length
-            : null;
-
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating,
-            count: reviewsArray.length,
-          },
-        }));
-      } else {
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating: null,
-            count: 0,
-          },
-        }));
-      }
-    } catch (error) {
-      if (error?.response?.status === 404) {
-        setReviews((prev) => ({
-          ...prev,
-          [productId]: {
-            averageRating: null,
-            count: 0,
-          },
-        }));
-      } else {
-        console.error(
-          `Error fetching reviews for ${productId}:`,
-          error
-        );
-      }
-    } finally {
-      reviewRequestsRef.current.delete(productId);
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating,
+        count: reviewsArray.length,
+        hasValidRating: validReviews.length > 0,
+      },
+    }));
+  } catch (error) {
+    if (error?.response?.status !== 404) {
+      console.error(
+        `Error fetching reviews for ${productId}:`,
+        error
+      );
     }
-  }, []);
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: null,
+        count: 0,
+        hasValidRating: false,
+      },
+    }));
+  } finally {
+    reviewRequestsRef.current.delete(productId);
+  }
+}, []);
 
   /*
    * Product translations
@@ -548,7 +551,7 @@ function ShoeRecommended() {
        <div className="fashionkick-section-header">
       <span>{t("fashionkick_picked_from_style")}</span>
     </div>
-    
+
       <div className="recommended-grid">
         {loadingRecommendations &&
         recommendedItems.length === 0 ? (
@@ -621,37 +624,34 @@ function ShoeRecommended() {
                     {productName}
                   </p>
 
-                  <div
-                    className="item-sta"
-                    aria-label={
-                      averageRating
-                        ? t("rating_out_of_five", {
-                            rating:
-                              averageRating.toFixed(1),
-                          })
-                        : t("no_rating")
-                    }
-                  >
-                    {averageRating
-                      ? renderStars(averageRating)
-                      : t("no_rating")}
-                  </div>
+                  {reviewData?.hasValidRating &&
+  reviewCount > 0 &&
+  Number.isFinite(averageRating) &&
+  averageRating > 0 && (
+    <>
+      <div
+        className="item-sta"
+        aria-label={t("rating_out_of_five", {
+          rating: averageRating.toFixed(1),
+        })}
+      >
+        {renderStars(averageRating)}
+      </div>
 
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#666",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {averageRating
-                      ? t("recommended_review_summary", {
-                          rating:
-                            averageRating.toFixed(1),
-                          count: reviewCount,
-                        })
-                      : t("no_reviews_yet")}
-                  </div>
+      <div
+        style={{
+          fontSize: "12px",
+          color: "#666",
+          marginBottom: "6px",
+        }}
+      >
+        {t("recommended_review_summary", {
+          rating: averageRating.toFixed(1),
+          count: reviewCount,
+        })}
+      </div>
+    </>
+  )}
 
                   <div className="recommended-price">
                     {formatPrice(currentPrice)}

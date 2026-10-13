@@ -1339,3 +1339,14 @@
 
   color: #111827;
 }
+
+.size-modal-length-section-cc {
+  margin-top: 18px;
+}
+
+.size-modal-length-section-cc h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 10px;
+}

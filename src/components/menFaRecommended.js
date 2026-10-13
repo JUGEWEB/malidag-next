@@ -73,69 +73,66 @@ const withCountry = useCallback(
     return "★".repeat(rounded) + "☆".repeat(5 - rounded);
   };
 
- const fetchReviews = useCallback(
-  async (productId) => {
-    if (!productId) return;
+ const fetchReviews = useCallback(async (productId) => {
+  if (!productId) return;
 
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/get-reviews/${productId}`
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
+    );
+
+    const reviewsArray =
+      response.data?.success &&
+      Array.isArray(response.data?.reviews)
+        ? response.data.reviews
+        : [];
+
+    const validReviews = reviewsArray.filter((review) => {
+      const rating = Number(review?.rating);
+
+      return (
+        review?.rating !== null &&
+        review?.rating !== undefined &&
+        review?.rating !== "" &&
+        Number.isFinite(rating) &&
+        rating >= 1 &&
+        rating <= 5
       );
+    });
 
-      const reviewsArray =
-        response.data?.success &&
-        Array.isArray(response.data.reviews)
-          ? response.data.reviews
-          : [];
+    const averageRating = validReviews.length
+      ? validReviews.reduce(
+          (sum, review) => sum + Number(review.rating),
+          0
+        ) / validReviews.length
+      : null;
 
-      const validRatings = reviewsArray
-        .map((review) =>
-          Number(review?.rating)
-        )
-        .filter(
-          (rating) =>
-            Number.isFinite(rating) &&
-            rating >= 1 &&
-            rating <= 5
-        );
-
-      const averageRating =
-        validRatings.length > 0
-          ? (
-              validRatings.reduce(
-                (sum, rating) =>
-                  sum + rating,
-                0
-              ) / validRatings.length
-            ).toFixed(1)
-          : null;
-
-      setReviews((prev) => ({
-        ...prev,
-        [productId]: {
-          averageRating,
-          count: validRatings.length,
-        },
-      }));
-    } catch (error) {
-      if (error?.response?.status !== 404) {
-        console.error(
-          "Error fetching reviews:",
-          error
-        );
-      }
-
-      setReviews((prev) => ({
-        ...prev,
-        [productId]: {
-          averageRating: null,
-          count: 0,
-        },
-      }));
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating,
+        count: reviewsArray.length,
+        hasValidRating: validReviews.length > 0,
+      },
+    }));
+  } catch (error) {
+    if (error?.response?.status !== 404) {
+      console.error(
+        `Error fetching reviews for ${productId}:`,
+        error
+      );
     }
-  },
-  []
-);
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: null,
+        count: 0,
+        hasValidRating: false,
+      },
+    }));
+  }
+}, []);
 
  useEffect(() => {
   let cancelled = false;
@@ -583,10 +580,17 @@ if (
           recommendedItems.map((item) => {
             const productName =
   getProductName(item);
-            const productId = item?.itemId;
-            const reviewData = reviews[productId];
-            const averageRating = reviewData?.averageRating;
-            const reviewCount = reviewData?.count || 0;
+           const productId = item?.itemId;
+const reviewData = reviews[productId];
+
+const averageRating = reviewData?.averageRating ?? null;
+const reviewCount = reviewData?.count ?? 0;
+
+const hasValidReviews =
+  reviewData?.hasValidRating === true &&
+  reviewCount > 0 &&
+  Number.isFinite(averageRating) &&
+  averageRating > 0;
 
             return (
               <div className="recommended-item" key={item?.id || productId}>
@@ -609,23 +613,25 @@ if (
                     {productName}
                   </p>
 
-                  <div className="item-sta">
-                      {averageRating
-                        ? renderStars(averageRating)
-                        : t("no_rating")}
-                    </div>
+                 {hasValidReviews && (
+  <>
+    <div
+      className="item-sta"
+      aria-label={t("rating_out_of_five", {
+        rating: averageRating.toFixed(1),
+      })}
+    >
+      {renderStars(averageRating)}
+    </div>
 
-                    <div className="recommended-review-summary">
-                      {averageRating
-                        ? t(
-                            "recommended_review_summary",
-                            {
-                              rating: averageRating,
-                              count: reviewCount,
-                            }
-                          )
-                        : t("no_reviews_yet")}
-                    </div>
+    <div className="recommended-review-summary">
+      {t("recommended_review_summary", {
+        rating: averageRating.toFixed(1),
+        count: reviewCount,
+      })}
+    </div>
+  </>
+)}
 
                   <div className="recommended-price">
                     {formatPrice(item?.item?.usdPrice)}

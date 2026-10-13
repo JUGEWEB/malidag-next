@@ -3,6 +3,7 @@
 .bbe-container {
   display: flex;
   flex-direction: row;
+  padding: 20px;
   width: 100%;
   background: #ffffff;
 }

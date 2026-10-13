@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import "./recomendedItem.css";
@@ -22,6 +23,7 @@ function RecommendedItem({ country }) {
 
   const [recommendedItems, setRecommendedItems] = useState([]);
   const [reviews, setReviews] = useState({});
+  const reviewRequestsRef = useRef(new Set());
   const [loadingRecommendations, setLoadingRecommendations] =
     useState(true);
 
@@ -154,54 +156,77 @@ const countryName = country.name;
   // REVIEWS
   // =========================================================
 
-  const fetchReviews = async (productId) => {
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/get-reviews/${productId}`
+ const fetchReviews = async (productId) => {
+  if (!productId) return;
+
+  if (reviewRequestsRef.current.has(productId)) return;
+
+reviewRequestsRef.current.add(productId);
+
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
+    );
+
+    const reviewsArray =
+      response.data?.success &&
+      Array.isArray(response.data?.reviews)
+        ? response.data.reviews
+        : [];
+
+    const validReviews = reviewsArray.filter((review) => {
+      const rating = Number(review?.rating);
+
+      return (
+        review?.rating !== null &&
+        review?.rating !== undefined &&
+        review?.rating !== "" &&
+        Number.isFinite(rating) &&
+        rating >= 1 &&
+        rating <= 5
       );
+    });
 
-      if (response.data.success) {
-        const reviewsArray =
-          response.data.reviews || [];
+    const averageRating =
+      validReviews.length > 0
+        ? validReviews.reduce(
+            (sum, review) => sum + Number(review.rating),
+            0
+          ) / validReviews.length
+        : null;
 
-        const totalRating = reviewsArray.reduce(
-          (acc, review) => {
-            const rating = parseFloat(review.rating);
-
-            return acc + (isNaN(rating) ? 4 : rating);
-          },
-          0
-        );
-
-        const averageRating = reviewsArray.length
-          ? (
-              totalRating / reviewsArray.length
-            ).toFixed(1)
-          : null;
-
-        setReviews((prev) => ({
-          ...prev,
-
-          [productId]: {
-            averageRating,
-            reviewsArray,
-          },
-        }));
-      }
-    } catch {
-      setReviews((prev) => ({
-        ...prev,
-
-        [productId]: {
-          averageRating: 4.3,
-          reviewsArray: Array(133).fill({
-            rating: 4.3,
-          }),
-          fallback: true,
-        },
-      }));
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating,
+        reviewsArray,
+        count: reviewsArray.length,
+        hasValidRating: validReviews.length > 0,
+      },
+    }));
+  } catch (error) {
+    if (error?.response?.status !== 404) {
+      console.error(
+        `Error fetching reviews for ${productId}:`,
+        error
+      );
     }
-  };
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: null,
+        reviewsArray: [],
+        count: 0,
+        hasValidRating: false,
+      },
+    }));
+  }
+
+  finally {
+  reviewRequestsRef.current.delete(productId);
+}
+};
 
   // =========================================================
   // RECOMMENDED ITEMS
@@ -475,18 +500,21 @@ const countryName = country.name;
             const productName =
               getProductName(item);
 
-            const ratingObj =
-              reviews[item.itemId];
+           const ratingObj = reviews[item.itemId];
 
-            const averageRating =
-              ratingObj?.averageRating || 4.3;
+const averageRating = ratingObj?.averageRating ?? null;
 
-            const reviewCount =
-              ratingObj?.reviewsArray?.length ||
-              133;
+const reviewCount = ratingObj?.count ?? 0;
 
-            const roundedRating =
-              Math.round(averageRating);
+const hasValidRating =
+  ratingObj?.hasValidRating === true &&
+  reviewCount > 0 &&
+  Number.isFinite(averageRating) &&
+  averageRating > 0;
+
+const roundedRating = hasValidRating
+  ? Math.max(0, Math.min(5, Math.round(averageRating)))
+  : 0;
 
             const stockText =
               getStockText(item);
@@ -534,18 +562,17 @@ const countryName = country.name;
                     {productName}
                   </p>
 
-                  <div className="item-sta">
-                    {"★".repeat(roundedRating)}
-                    {"☆".repeat(
-                      5 - roundedRating
-                    )}
+                 {hasValidRating && (
+  <div className="item-sta">
+    {"★".repeat(roundedRating)}
+    {"☆".repeat(5 - roundedRating)}
 
-                    <span className="review-count">
-                      {" "}
-                      ({reviewCount}{" "}
-                      {t("reviews")})
-                    </span>
-                  </div>
+    <span className="review-count">
+      {" "}
+      {averageRating.toFixed(1)} ({reviewCount} {t("reviews")})
+    </span>
+  </div>
+)}
 
                   {soldText && (
                     <div className="recommended-sold">

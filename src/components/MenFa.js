@@ -116,6 +116,7 @@ const [sizeModalOpen, setSizeModalOpen] = useState(false);
 const [pendingBasketItem, setPendingBasketItem] = useState(null);
 const [pendingSizes, setPendingSizes] = useState([]);
 const [selectedModalSize, setSelectedModalSize] = useState(null);
+const [selectedModalLength, setSelectedModalLength] = useState(null);
 const [modalQuantity, setModalQuantity] = useState(1);
 const [addingToBasket, setAddingToBasket] = useState(false);
 const { country } = useAppContext();
@@ -458,23 +459,22 @@ const getBasketQuantity = (itemId) => {
     );
 };
 
-const getBasketVariantQuantity = (itemId, color, size) => {
+const getBasketVariantQuantity = (
+  itemId,
+  color,
+  size,
+  length = null
+) => {
+  const normalize = (value) =>
+    String(value ?? "").trim().toLowerCase();
+
   return (basketItems || [])
     .filter((basketItem) => {
       return (
-        String(basketItem?.itemId) === String(itemId) &&
-        String(basketItem?.color || "")
-          .trim()
-          .toLowerCase() ===
-          String(color || "")
-            .trim()
-            .toLowerCase() &&
-        String(basketItem?.size || "")
-          .trim()
-          .toLowerCase() ===
-          String(size || "")
-            .trim()
-            .toLowerCase()
+        normalize(basketItem?.itemId) === normalize(itemId) &&
+        normalize(basketItem?.color) === normalize(color) &&
+        normalize(basketItem?.size) === normalize(size) &&
+        normalize(basketItem?.length) === normalize(length)
       );
     })
     .reduce(
@@ -493,8 +493,6 @@ const getBasketVariantQuantity = (itemId, color, size) => {
   };
 
  const getProductSizes = (product, selectedColor) => {
-  // IMPORTANT:
-  // Database uses item.size (singular), not item.sizes.
   const sizeMap =
     product?.item?.size ||
     product?.details?.sizes ||
@@ -509,161 +507,80 @@ const getBasketVariantQuantity = (itemId, color, size) => {
     return [];
   }
 
-  const normalizedSelectedColor = String(selectedColor)
-    .trim()
-    .toLowerCase();
-
-  // imagesVariants uses lowercase colors while size keys
-  // may use title case, e.g.
-  // "navy blazer" -> "Navy Blazer"
   const actualColorKey = Object.keys(sizeMap).find(
     (key) =>
       String(key).trim().toLowerCase() ===
-      normalizedSelectedColor
+      String(selectedColor).trim().toLowerCase()
   );
 
-  if (!actualColorKey) {
-    return [];
-  }
+  if (!actualColorKey) return [];
 
   const entries = sizeMap[actualColorKey];
 
-  if (!Array.isArray(entries)) {
-    return [];
-  }
+  if (!Array.isArray(entries)) return [];
 
-  const normalizedSizes = entries.flatMap((entry) => {
-    /*
-      FORMAT 1:
+  const splitValues = (value) =>
+    String(value ?? "")
+      .split(/[,;]|\.(?=\s*\d)/)
+      .map((value) => value.trim())
+      .filter(Boolean);
 
-      "Navy Blazer": [
-        "40, 42, 45"
-      ]
-
-      This MUST become:
-      [
-        { value: "40", price: null },
-        { value: "42", price: null },
-        { value: "45", price: null }
-      ]
-    */
-    if (
-      typeof entry === "string" ||
-      typeof entry === "number"
-    ) {
-      return String(entry)
-        .split(",")
-        .map((size) => size.trim())
-        .filter(Boolean)
-        .map((size) => ({
-          value: size,
-          price: null,
-        }));
-    }
-
-    /*
-      FORMAT 2:
-
-      "Vapor Blue": [
-        {
-          value: "40, 42, 43, 44, 45, 46",
-          price: 42.99
-        }
-      ]
-
-      This becomes individual sizes, all carrying
-      the variant price of 42.99.
-    */
-    if (
-      entry &&
-      typeof entry === "object" &&
-      !Array.isArray(entry)
-    ) {
-      const rawValue =
-        entry.value ??
-        entry.size ??
-        entry.name ??
-        "";
-
-      const sizeValues = String(rawValue)
-        .split(",")
-        .map((size) => size.trim())
-        .filter(Boolean);
-
-      let specialPrice = null;
-
-      const rawPrice =
-        entry.price ??
-        entry.usdPrice ??
-        entry.variantPrice ??
-        null;
-
-      if (
-        rawPrice !== null &&
-        rawPrice !== undefined &&
-        rawPrice !== ""
-      ) {
-        const parsedPrice = Number(rawPrice);
-
-        if (Number.isFinite(parsedPrice)) {
-          specialPrice = parsedPrice;
-        }
-      }
-
-      return sizeValues.map((size) => ({
-        value: size,
-        price: specialPrice,
-      }));
-    }
-
-    /*
-      Defensive support for:
-      ["40", "41", "42"]
-    */
-    if (Array.isArray(entry)) {
-      return entry.flatMap((value) =>
-        String(value)
-          .split(",")
-          .map((size) => size.trim())
-          .filter(Boolean)
-          .map((size) => ({
-            value: size,
-            price: null,
-          }))
-      );
-    }
-
-    return [];
-  });
-
-  // Remove duplicate sizes.
-  // If duplicate entries exist and one has a special
-  // price, keep the priced version.
   const uniqueSizes = new Map();
 
-  normalizedSizes.forEach((option) => {
-    const key = String(option.value)
-      .trim()
-      .toLowerCase();
+  entries.forEach((entry) => {
+    const data =
+      typeof entry === "string" || typeof entry === "number"
+        ? { value: entry }
+        : entry;
 
-    if (!key) return;
+    if (!data || typeof data !== "object") return;
 
-    const existing = uniqueSizes.get(key);
+    const sizes = splitValues(
+      data.value ?? data.size ?? data.name
+    );
 
-    if (!existing) {
-      uniqueSizes.set(key, option);
-      return;
-    }
+    const lengths = splitValues(data.length);
 
-    if (
-      existing.price == null &&
-      option.price != null
-    ) {
-      uniqueSizes.set(key, option);
-    }
+    const rawPrice =
+      data.price ??
+      data.usdPrice ??
+      data.variantPrice;
+
+    const price =
+      rawPrice !== null &&
+      rawPrice !== undefined &&
+      rawPrice !== "" &&
+      Number.isFinite(Number(rawPrice)) &&
+      Number(rawPrice) > 0
+        ? Number(rawPrice)
+        : null;
+
+    sizes.forEach((size) => {
+      const key = size.toLowerCase();
+      const existing = uniqueSizes.get(key);
+
+      if (!existing) {
+        uniqueSizes.set(key, {
+          value: size,
+          price,
+          lengths: [...new Set(lengths)],
+        });
+      } else {
+        existing.lengths = [
+          ...new Set([
+            ...existing.lengths,
+            ...lengths,
+          ]),
+        ];
+
+        if (existing.price == null && price != null) {
+          existing.price = price;
+        }
+      }
+    });
   });
 
-  return Array.from(uniqueSizes.values());
+  return [...uniqueSizes.values()];
 };
 
 const getProductPriceForColor = (product, selectedColor) => {
@@ -761,11 +678,12 @@ const getProductPriceForColor = (product, selectedColor) => {
 
   // Product has sizes → user must choose one
   if (sizes.length > 0) {
-    setPendingBasketItem(pendingItem);
-    setPendingSizes(sizes);
-    setSelectedModalSize(null);
-    setModalQuantity(1);
-    setSizeModalOpen(true);
+   setPendingBasketItem(pendingItem);
+setPendingSizes(sizes);
+setSelectedModalSize(null);
+setSelectedModalLength(null);
+setModalQuantity(1);
+setSizeModalOpen(true);
     return;
   }
 
@@ -773,6 +691,7 @@ const getProductPriceForColor = (product, selectedColor) => {
   await addBasketVariant({
     ...pendingItem,
     sizeOption: null,
+    selectedLength: null,
     quantity: 1,
   });
 };
@@ -782,6 +701,7 @@ const addBasketVariant = async ({
   selectedColor,
   selectedImage,
   sizeOption,
+  selectedLength = null,
   quantity = 1,
 }) => {
   const currentUser = auth?.currentUser;
@@ -811,8 +731,9 @@ const addBasketVariant = async ({
         itemId: product.itemId,
         name: item.name,
         price: variantPrice,
-        color: selectedColor || null,
+       color: selectedColor || null,
         size: sizeOption?.value || null,
+        length: selectedLength || null,
         image:
           selectedImage ||
           getImageUrl(item?.images?.[0]),
@@ -875,13 +796,17 @@ const addBasketVariant = async ({
 };
 
 const handleConfirmSize = async () => {
-  if (
-    !pendingBasketItem ||
-    !selectedModalSize ||
-    addingToBasket
-  ) {
-    return;
-  }
+ if (
+  !pendingBasketItem ||
+  !selectedModalSize ||
+  addingToBasket ||
+  (
+    selectedModalSize.lengths?.length > 0 &&
+    !selectedModalLength
+  )
+) {
+  return;
+}
 
   const success = await addBasketVariant({
     product:
@@ -898,6 +823,8 @@ const handleConfirmSize = async () => {
 
     quantity:
       modalQuantity,
+
+    selectedLength: selectedModalLength,
   });
 
   if (success) {
@@ -905,17 +832,23 @@ const handleConfirmSize = async () => {
     setPendingBasketItem(null);
     setPendingSizes([]);
     setSelectedModalSize(null);
+    setSelectedModalLength(null);
     setModalQuantity(1);
   }
 };
 
 const selectedVariantBasketQuantity =
   selectedModalSize &&
-  pendingBasketItem
+  pendingBasketItem &&
+  (
+    !selectedModalSize.lengths?.length ||
+    selectedModalLength
+  )
     ? getBasketVariantQuantity(
         pendingBasketItem.product?.itemId,
         pendingBasketItem.selectedColor,
-        selectedModalSize.value
+        selectedModalSize.value,
+        selectedModalLength
       )
     : 0;
 
@@ -1301,11 +1234,9 @@ const discountPercentage =
                   ? "already-added"
                   : ""
               }`}
-              onClick={() => {
-                setSelectedModalSize(
-                  sizeOption
-                );
-
+             onClick={() => {
+                setSelectedModalSize(sizeOption);
+                setSelectedModalLength(null);
                 setModalQuantity(1);
               }}
             >
@@ -1332,6 +1263,53 @@ const discountPercentage =
           );
         })}
       </div>
+
+      {selectedModalSize?.lengths?.length > 0 && (
+  <div className="size-modal-length-section-cc">
+    <h4>{t("choose_length", { defaultValue: "Choose length" })}</h4>
+
+    <div className="size-modal-options-cc">
+      {selectedModalSize.lengths.map((length) => {
+        const active = selectedModalLength === length;
+
+        const basketQuantity = getBasketVariantQuantity(
+          pendingBasketItem.product?.itemId,
+          pendingBasketItem.selectedColor,
+          selectedModalSize.value,
+          length
+        );
+
+        return (
+          <button
+            key={length}
+            type="button"
+            className={`size-modal-option-cc ${
+              active ? "active" : ""
+            } ${
+              basketQuantity > 0 ? "already-added" : ""
+            }`}
+            onClick={() => {
+              setSelectedModalLength(length);
+              setModalQuantity(1);
+            }}
+          >
+            <span className="size-modal-size-cc">
+              {length}
+            </span>
+
+            {basketQuantity > 0 && (
+              <span className="size-modal-added-cc">
+                {basketQuantity > 1
+                  ? `Added ×${basketQuantity}`
+                  : "Added"}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+)}
 
       {selectedModalSize && (
         <div className="size-modal-quantity-cc">
@@ -1372,10 +1350,14 @@ const discountPercentage =
       <button
         type="button"
         className="size-modal-confirm-cc"
-        disabled={
-          !selectedModalSize ||
-          addingToBasket
-        }
+       disabled={
+  !selectedModalSize ||
+  addingToBasket ||
+  (
+    selectedModalSize.lengths?.length > 0 &&
+    !selectedModalLength
+  )
+}
         onClick={handleConfirmSize}
       >
         {addingToBasket

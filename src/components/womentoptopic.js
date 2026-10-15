@@ -861,54 +861,26 @@ const WomenTopTopic = () => {
                       {productName}
                     </button>
 
-                    <button
-                      type="button"
-                      className="women-top-rating"
-                      onClick={() =>
-                        openModal(
-                          entry
-                        )
-                      }
-                      title={t(
-                        "view_reviews"
-                      )}
-                    >
-                      <span className="women-top-stars">
-                        {averageRating
-                          ? "★".repeat(
-                              Math.round(
-                                Number(
-                                  averageRating
-                                )
-                              )
-                            ) +
-                            "☆".repeat(
-                              5 -
-                                Math.round(
-                                  Number(
-                                    averageRating
-                                  )
-                                )
-                            )
-                          : "☆☆☆☆☆"}
-                      </span>
+                   {reviewCount > 0 && averageRating !== null && (
+  <button
+    type="button"
+    className="women-top-rating"
+    onClick={() => openModal(entry)}
+    title={t("view_reviews")}
+  >
+    <span className="women-top-stars">
+      {"★".repeat(Math.round(Number(averageRating))) +
+        "☆".repeat(5 - Math.round(Number(averageRating)))}
+    </span>
 
-                      <span className="women-top-review-text">
-                        {averageRating
-                          ? t(
-                              "recommended_review_summary",
-                              {
-                                rating:
-                                  averageRating,
-                                count:
-                                  reviewCount,
-                              }
-                            )
-                          : t(
-                              "no_reviews_yet"
-                            )}
-                      </span>
-                    </button>
+    <span className="women-top-review-text">
+      {t("recommended_review_summary", {
+        rating: averageRating,
+        count: reviewCount,
+      })}
+    </span>
+  </button>
+)}
 
                     <div className="women-top-card-footer">
                       <div className="women-top-sold">

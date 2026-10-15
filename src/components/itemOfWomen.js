@@ -59,6 +59,8 @@ const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
 const [selectedSizeByItem, setSelectedSizeByItem] = useState({});
 const [sizeModalItem, setSizeModalItem] = useState(null);
+const [selectedLengthByItem, setSelectedLengthByItem] = useState({});
+const [addingToBasket, setAddingToBasket] = useState(false);
 const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 const { t, i18n } = useTranslation();
 
@@ -102,29 +104,64 @@ const [rates, setRates] =
 );
 const [messageApi, contextHolder] = message.useMessage();
 
-  const fetchReviews = async (productId) => {
-    try {
-      const response = await axios.get(`https://api.malidag.com/get-reviews/${productId}`);
-      if (response.data.success) {
-        const reviewsArray = response.data.reviews || [];
-        const totalRating = reviewsArray.reduce((acc, review) => {
-          const rating = parseFloat(review.rating);
-          return acc + (isNaN(rating) ? 4 : rating);
-        }, 0);
+ const fetchReviews = async (productId) => {
+  if (!productId) return;
 
-        const averageRating = reviewsArray.length
-          ? (totalRating / reviewsArray.length).toFixed(2)
-          : null;
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
+    );
 
-        setReviews((prevReviews) => ({
-          ...prevReviews,
-          [productId]: { averageRating, reviewsArray },
-        }));
+    const reviewsArray =
+      response.data?.success !== false &&
+      Array.isArray(response.data?.reviews)
+        ? response.data.reviews
+        : [];
+
+    const validReviews = reviewsArray.filter((review) => {
+      const rawRating = review?.rating;
+
+      if (
+        rawRating === null ||
+        rawRating === undefined ||
+        String(rawRating).trim() === ""
+      ) {
+        return false;
       }
-    } catch (error) {
+
+      const rating = Number(rawRating);
+
+      return Number.isFinite(rating) && rating >= 1 && rating <= 5;
+    });
+
+    const averageRating = validReviews.length
+      ? validReviews.reduce(
+          (total, review) => total + Number(review.rating),
+          0
+        ) / validReviews.length
+      : null;
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating,
+        reviewCount: validReviews.length,
+      },
+    }));
+  } catch (error) {
+    if (error.response?.status !== 404) {
       console.error("Error fetching reviews:", error);
     }
-  };
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: null,
+        reviewCount: 0,
+      },
+    }));
+  }
+};
 
   useEffect(() => {
     const fetchBeautyImages = async () => {
@@ -331,6 +368,59 @@ const getSizesForColor = (
   return getUniqueSizes(
     Object.values(sizeData)
   );
+};
+
+const getSizeOptionsForColor = (itemData, color) => {
+  const sizeData = itemData?.item?.size || {};
+
+  const matchedEntry = Object.entries(sizeData).find(
+    ([key]) => normalizeText(key) === normalizeText(color)
+  );
+
+ const rawEntries = matchedEntry
+  ? matchedEntry[1]
+  : Object.values(sizeData);
+
+  const entries = Array.isArray(rawEntries)
+    ? rawEntries
+    : [rawEntries];
+
+  const splitValues = (value) =>
+    String(value ?? "")
+      .split(/[,;]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+  const sizeOptions = new Map();
+
+  entries.forEach((entry) => {
+    const data =
+      entry && typeof entry === "object" && !Array.isArray(entry)
+        ? entry
+        : { value: entry };
+
+    const sizes = normalizeVariantSize(data.value);
+    const lengths = splitValues(data.length);
+
+    sizes.forEach((size) => {
+      const key = String(size).trim().toLowerCase();
+
+      if (!sizeOptions.has(key)) {
+        sizeOptions.set(key, {
+          value: String(size).trim(),
+          lengths: [],
+        });
+      }
+
+      const option = sizeOptions.get(key);
+
+      option.lengths = [
+        ...new Set([...option.lengths, ...lengths]),
+      ];
+    });
+  });
+
+  return [...sizeOptions.values()];
 };
 
 
@@ -709,6 +799,11 @@ const handleColorSelect = (
     [itemId]: null,
   }));
 
+  setSelectedLengthByItem((prev) => ({
+  ...prev,
+  [itemId]: null,
+}));
+
   setSelectedImageIndexByItem((prev) => ({
     ...prev,
     [itemId]: 0,
@@ -909,7 +1004,8 @@ const translatedType =
 const handleAddToBasket = async (
   itemData,
   e,
-  explicitSize = null
+  explicitSize = null,
+  explicitLength = null
 ) => {
   e?.stopPropagation();
 
@@ -943,14 +1039,21 @@ const handleAddToBasket = async (
     colorOptions[0] ||
     null;
 
-  const availableSizes =
-    getSizesForColor(
-      itemData,
-      selectedColorForItem
-    );
+ const availableSizeOptions = getSizeOptionsForColor(
+  itemData,
+  selectedColorForItem
+);
 
-const selectedSizeForItem =
-  explicitSize || null;
+const availableSizes = availableSizeOptions.map(
+  (option) => option.value
+);
+
+const selectedSizeForItem = explicitSize || null;
+const selectedLengthForItem = explicitLength || null;
+
+const chosenSizeOption = availableSizeOptions.find(
+  (option) => option.value === selectedSizeForItem
+);
 
 /*
  * Clicking Add to cart directly:
@@ -974,9 +1077,19 @@ if (
   return;
 }
 
-  try {
-    const finalPrice =
-      getVariantPrice(
+if (
+  chosenSizeOption?.lengths.length > 0 &&
+  !selectedLengthForItem
+) {
+  setSizeModalItem(itemData);
+  return;
+}
+   if (addingToBasket) return;
+
+setAddingToBasket(true);
+
+try {
+  const finalPrice = getVariantPrice(
         itemData,
         selectedColorForItem,
         selectedSizeForItem
@@ -1001,6 +1114,8 @@ if (
 
         size:
           selectedSizeForItem,
+
+        length: selectedLengthForItem,
 
         image:
           getImageUrl(
@@ -1048,6 +1163,11 @@ if (
 
     setSizeModalItem(null);
 
+    setSelectedLengthByItem((prev) => ({
+  ...prev,
+  [itemData.id]: null,
+}));
+
       const productName =
         getTranslatedName(
           item,
@@ -1064,16 +1184,13 @@ if (
         "Failed to add to cart"
       );
     }
-  } catch (error) {
-    console.error(
-      "Error adding item to basket:",
-      error
-    );
+ } catch (error) {
+  console.error("Error adding item to basket:", error);
 
-    messageApi.error(
-      "Error adding to cart"
-    );
-  }
+  messageApi.error("Error adding to cart");
+} finally {
+  setAddingToBasket(false);
+}
 };
 
  const displayedItems = selectedSize
@@ -1406,8 +1523,16 @@ if (!loading && !hasItems) {
                   itemId
                 );
 
-              const reviewsData = reviews[itemId] || {};
-              const finalRating = reviewsData?.averageRating || null;
+             const reviewsData = reviews[itemId] || {};
+
+            const finalRating = reviewsData?.averageRating ?? null;
+            const reviewCount = reviewsData?.reviewCount ?? 0;
+
+            const hasValidReviews =
+              reviewCount > 0 &&
+              Number.isFinite(finalRating) &&
+              finalRating >= 1 &&
+              finalRating <= 5;
 
               const normalizedVideos = Array.isArray(videos) ? videos : [videos];
               const firstVideoUrl = normalizedVideos.find(
@@ -1598,18 +1723,14 @@ const displayUsdPrice =
     e.stopPropagation()
   }
 >
-  <button
-    type="button"
-    className="women-add-cart-btn"
-    onClick={(e) =>
-      handleAddToBasket(
-        itemData,
-        e
-      )
-    }
-  >
-    {t("add_to_cart")}
-  </button>
+ <button
+  type="button"
+  className="women-add-cart-btn"
+  disabled={addingToBasket}
+  onClick={(e) => handleAddToBasket(itemData, e)}
+>
+  {t("add_to_cart")}
+</button>
 
   {getBasketQuantity(itemId) > 0 && (
     <button
@@ -1628,20 +1749,26 @@ const displayUsdPrice =
   )}
 </div>
 
+                   {hasValidReviews && (
                     <div
                       className="item-type-stars"
                       onClick={(e) => {
                         e.stopPropagation();
                         setItemData(itemData);
-                       router.push(withCountry(`/product/${id}/review`));
+                        router.push(withCountry(`/product/${id}/review`));
                       }}
                       title={t("view_reviews")}
                     >
-                      {finalRating
-                        ? "★".repeat(Math.round(finalRating)) +
-                          "☆".repeat(5 - Math.round(finalRating))
-                        : t("no_rating")}
+                      <span>
+                        {"★".repeat(Math.round(finalRating))}
+                        {"☆".repeat(5 - Math.round(finalRating))}
+                      </span>
+
+                      <span>{finalRating.toFixed(1)}</span>
+
+                      <span>({reviewCount})</span>
                     </div>
+                  )}
                   </div>
                 </div>
               );
@@ -1650,86 +1777,134 @@ const displayUsdPrice =
         </div>
       </div>
 
-    {sizeModalItem && (() => {
-  const modalId =
-    sizeModalItem.id;
+   {sizeModalItem && (() => {
+  const modalId = sizeModalItem.id;
 
-  const modalColors =
-    getColorOptions(sizeModalItem);
+  const modalColors = getColorOptions(sizeModalItem);
 
   const modalColor =
     selectedColorByItem[modalId] ||
     modalColors[0] ||
     null;
 
-  const modalSizes =
-    getSizesForColor(
-      sizeModalItem,
-      modalColor
-    );
+  const modalSizeOptions = getSizeOptionsForColor(
+    sizeModalItem,
+    modalColor
+  );
+
+  const chosenSize = selectedSizeByItem[modalId] || null;
+
+  const selectedOption = modalSizeOptions.find(
+    (option) => option.value === chosenSize
+  );
+
+  const availableLengths = selectedOption?.lengths || [];
+
+  const chosenLength = selectedLengthByItem[modalId] || null;
+
+  const canAdd =
+    chosenSize &&
+    (availableLengths.length === 0 || chosenLength) &&
+    !addingToBasket;
 
   return (
     <div
       className="women-size-modal-overlay"
-      onClick={() =>
-        setSizeModalItem(null)
-      }
+      onClick={() => {
+        if (!addingToBasket) setSizeModalItem(null);
+      }}
     >
       <div
         className="women-size-modal"
-        onClick={(e) =>
-          e.stopPropagation()
-        }
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           className="women-size-modal-close"
-          onClick={() =>
-            setSizeModalItem(null)
-          }
+          onClick={() => setSizeModalItem(null)}
+          disabled={addingToBasket}
         >
           ×
         </button>
 
-        <h3>
-          {t("select_size")}
-        </h3>
+        <h3>{t("select_size")}</h3>
 
         <div className="women-size-modal-options">
-          {modalSizes.map((size) => (
+          {modalSizeOptions.map((option) => (
             <button
               type="button"
-              key={size}
+              key={option.value}
               className={
-                selectedSizeByItem[
-                  modalId
-                ] === size
-                  ? "active"
-                  : ""
+                chosenSize === option.value ? "active" : ""
               }
-             onClick={async (e) => {
-  e.stopPropagation();
+              onClick={() => {
+                setSelectedSizeByItem((prev) => ({
+                  ...prev,
+                  [modalId]: option.value,
+                }));
 
-  setSelectedSizeByItem(
-    (prev) => ({
-      ...prev,
-      [modalId]: size,
-    })
-  );
-
-  setSizeModalItem(null);
-
-  await handleAddToBasket(
-    sizeModalItem,
-    e,
-    size
-  );
-}}
+                setSelectedLengthByItem((prev) => ({
+                  ...prev,
+                  [modalId]: null,
+                }));
+              }}
+              disabled={addingToBasket}
             >
-              {size}
+              {option.value}
             </button>
           ))}
         </div>
+
+        {chosenSize && availableLengths.length > 0 && (
+          <>
+            <h3>
+              {t("select_length", {
+                defaultValue: "Select length",
+              })}
+            </h3>
+
+            <div className="women-size-modal-options">
+              {availableLengths.map((length) => (
+                <button
+                  type="button"
+                  key={length}
+                  className={
+                    chosenLength === length ? "active" : ""
+                  }
+                  onClick={() => {
+                    setSelectedLengthByItem((prev) => ({
+                      ...prev,
+                      [modalId]: length,
+                    }));
+                  }}
+                  disabled={addingToBasket}
+                >
+                  {length}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <button
+          type="button"
+          className="women-add-cart-btn"
+          disabled={!canAdd}
+          onClick={(e) =>
+            handleAddToBasket(
+              sizeModalItem,
+              e,
+              chosenSize,
+              chosenLength
+            )
+          }
+        >
+          {addingToBasket
+            ? t("adding_to_cart", {
+                defaultValue: "Adding...",
+              })
+            : t("add_to_cart")}
+        </button>
       </div>
     </div>
   );

@@ -158,6 +158,8 @@ function ItemOfMen() {
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
   const [selectedSizeByItem, setSelectedSizeByItem] = useState({});
 const [sizeModalItem, setSizeModalItem] = useState(null);
+const [selectedLengthByItem, setSelectedLengthByItem] = useState({});
+const [addingToBasket, setAddingToBasket] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 const [basketItems, setBasketItems] = useState([]);
 const [brandThemes, setBrandThemes] = useState([]);
@@ -232,6 +234,64 @@ const getSizesForColor = (itemData, color) => {
       )
     ),
   ];
+};
+
+const getSizeOptionsForColor = (itemData, color) => {
+  const sizeData = itemData?.item?.size || {};
+
+  const matchingColor = Object.entries(sizeData).find(
+    ([key]) => normalizeText(key) === normalizeText(color)
+  );
+
+  const rawEntries = matchingColor
+    ? matchingColor[1]
+    : Object.values(sizeData);
+
+  const entries = Array.isArray(rawEntries)
+    ? rawEntries
+    : [rawEntries];
+
+  const splitLengths = (value) =>
+    String(value ?? "")
+      .split(/[,;]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+  const sizeOptions = new Map();
+
+  entries.forEach((entry) => {
+    const data =
+      entry &&
+      typeof entry === "object" &&
+      !Array.isArray(entry)
+        ? entry
+        : { value: entry };
+
+    const sizes = normalizeVariantSize(
+      data.value ?? data.size ?? data.label
+    );
+
+    const lengths = splitLengths(data.length);
+
+    sizes.forEach((size) => {
+      const key = normalizeText(size);
+
+      if (!sizeOptions.has(key)) {
+        sizeOptions.set(key, {
+          value: String(size).trim(),
+          lengths: [],
+        });
+      }
+
+      const option = sizeOptions.get(key);
+
+      option.lengths = [
+        ...new Set([...option.lengths, ...lengths]),
+      ];
+    });
+  });
+
+  return [...sizeOptions.values()];
 };
 
 const getVariantPrice = (
@@ -395,7 +455,8 @@ const isItemInBasket = (itemId) => {
 const handleAddToBasket = async (
   itemData,
   e,
-  explicitSize = null
+  explicitSize = null,
+  explicitLength = null
 ) => {
   e?.preventDefault();
   e?.stopPropagation();
@@ -430,14 +491,21 @@ const handleAddToBasket = async (
     colorOptions[0] ||
     null;
 
-  const availableSizes =
-    getSizesForColor(
-      itemData,
-      selectedColorForBasket
-    );
+  const availableSizeOptions = getSizeOptionsForColor(
+  itemData,
+  selectedColorForBasket
+);
 
- const selectedSizeForBasket =
-  explicitSize || null;
+const availableSizes = availableSizeOptions.map(
+  (option) => option.value
+);
+
+const selectedSizeForBasket = explicitSize || null;
+const selectedLengthForBasket = explicitLength || null;
+
+const selectedSizeOption = availableSizeOptions.find(
+  (option) => option.value === selectedSizeForBasket
+);
 
 /*
  * Direct Add to Cart click:
@@ -459,6 +527,18 @@ if (
   setSizeModalItem(itemData);
   return;
 }
+
+if (
+  selectedSizeOption?.lengths.length > 0 &&
+  !selectedLengthForBasket
+) {
+  setSizeModalItem(itemData);
+  return;
+}
+
+if (addingToBasket) return;
+
+setAddingToBasket(true);
 
   try {
     const finalPrice =
@@ -500,6 +580,8 @@ if (
         size:
           selectedSizeForBasket,
 
+        length: selectedLengthForBasket,
+
         image:
           basketImage,
 
@@ -535,7 +617,11 @@ if (
 
   setSizeModalItem(null);
 
-  
+  setSelectedLengthByItem((prev) => ({
+  ...prev,
+  [itemData.id]: null,
+}));
+
       const productName =
         getTranslatedName(
           item,
@@ -554,15 +640,12 @@ if (
       );
     }
   } catch (error) {
-    console.error(
-      "Error adding item to basket:",
-      error
-    );
+  console.error("Error adding item to basket:", error);
 
-    messageApi.error(
-      t("basket_add_error")
-    );
-  }
+  messageApi.error(t("basket_add_error"));
+} finally {
+  setAddingToBasket(false);
+}
 };
 
   const getColorOptions = (imagesVariants) => {
@@ -583,47 +666,77 @@ if (
     return Math.round(((original - current) / original) * 100);
   };
 
-  const fetchReviews = useCallback(async (productId) => {
-    if (!productId) {
-      return [
-        productId,
-        {
-          averageRating: null,
-          reviewsArray: [],
-        },
-      ];
+ const fetchReviews = useCallback(async (productId) => {
+  if (!productId) {
+    return [
+      productId,
+      {
+        averageRating: null,
+        reviewsArray: [],
+      },
+    ];
+  }
+
+  try {
+    const { data } = await axios.get(
+      `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
+    );
+
+    const reviewsArray = Array.isArray(data?.reviews)
+      ? data.reviews
+      : [];
+
+    const validReviews = reviewsArray.filter((review) => {
+      const rawRating = review?.rating;
+
+      if (
+        rawRating === null ||
+        rawRating === undefined ||
+        String(rawRating).trim() === ""
+      ) {
+        return false;
+      }
+
+      const rating = Number(rawRating);
+
+      return (
+        Number.isFinite(rating) &&
+        rating >= 1 &&
+        rating <= 5
+      );
+    });
+
+    const averageRating = validReviews.length
+      ? validReviews.reduce(
+          (sum, review) => sum + Number(review.rating),
+          0
+        ) / validReviews.length
+      : null;
+
+    return [
+      productId,
+      {
+        averageRating,
+        reviewsArray: validReviews,
+      },
+    ];
+  } catch (error) {
+    if (error.response?.status !== 404) {
+      console.error(
+        `Error fetching reviews for product ${productId}:`,
+        error
+      );
     }
 
-    try {
-      const { data } = await axios.get(`${BASE_URL}/get-reviews/${productId}`);
-      const reviewsArray = Array.isArray(data?.reviews) ? data.reviews : [];
-
-      const totalRating = reviewsArray.reduce((sum, review) => {
-        const rating = parseFloat(review?.rating);
-        return sum + (Number.isNaN(rating) ? 4 : rating);
-      }, 0);
-
-      const averageRating =
-        reviewsArray.length > 0 ? totalRating / reviewsArray.length : null;
-
-      return [
-        productId,
-        {
-          averageRating,
-          reviewsArray,
-        },
-      ];
-    } catch (error) {
-      console.error(`Error fetching reviews for product ${productId}:`, error);
-      return [
-        productId,
-        {
-          averageRating: null,
-          reviewsArray: [],
-        },
-      ];
-    }
-  }, []);
+    return [
+      productId,
+      {
+        averageRating: null,
+        reviewsArray: [],
+      },
+    ];
+  }
+}, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -977,6 +1090,12 @@ useEffect(() => {
       ...prev,
       [itemId]: null,
     }));
+
+    setSelectedLengthByItem((prev) => ({
+  ...prev,
+  [itemId]: null,
+  }));
+
   },
   []
 );
@@ -1462,19 +1581,21 @@ const displayUsdPrice =
                           {productName?.length > 80 ? `${productName.slice(0, 80)}...` : productName}
                         </div>
 
-                        <div className="men-list-meta">
-                          <span
-                            className="men-rating-inline"
-                            onClick={(event) => handleReviewNavigate(id, event)}
-                            title={t("view_reviews")}
-                          >
-                            {ratingData.value || "—"} · {ratingData.stars}
-                            {reviewCount > 0 ? ` (${reviewCount})` : ""}
-                          </span>
-                          <span>
-                            {Number(sold || 0)} {t("sold")}
-                          </span>
-                        </div>
+                       <div className="men-list-meta">
+                      {reviewCount > 0 && ratingData.value !== null && (
+                        <span
+                          className="men-rating-inline"
+                          onClick={(event) => handleReviewNavigate(id, event)}
+                          title={t("view_reviews")}
+                        >
+                          {ratingData.value} · {ratingData.stars} ({reviewCount})
+                        </span>
+                      )}
+
+                      <span>
+                        {Number(sold || 0)} {t("sold")}
+                      </span>
+                    </div>
 
                         {Number(numberOfItems || 0) > 0 && (
                           <div className="men-list-meta">
@@ -1516,15 +1637,11 @@ const displayUsdPrice =
 
                        <div className="men-card-basket-actions">
   <button
-    type="button"
-    className="men-cart-action-btn"
-    onClick={(e) =>
-      handleAddToBasket(
-        itemData,
-        e
-      )
-    }
-  >
+  type="button"
+  className="men-cart-action-btn"
+  disabled={addingToBasket}
+  onClick={(e) => handleAddToBasket(itemData, e)}
+>
     {t("add_to_cart")}
   </button>
 
@@ -1643,101 +1760,149 @@ const displayUsdPrice =
         </aside>
       </div>
 
-      {sizeModalItem && (() => {
-  const modalId =
-    sizeModalItem.id;
+     {sizeModalItem && (() => {
+  const modalId = sizeModalItem.id;
 
-  const modalColors =
-    getColorOptions(
-      sizeModalItem?.item?.imagesVariants
-    );
+  const modalColors = getColorOptions(
+    sizeModalItem?.item?.imagesVariants
+  );
 
   const modalColor =
     selectedColorByItem[modalId] ||
     modalColors[0] ||
     null;
 
-  const modalSizes =
-    getSizesForColor(
-      sizeModalItem,
-      modalColor
-    );
+  const modalSizeOptions = getSizeOptionsForColor(
+    sizeModalItem,
+    modalColor
+  );
+
+  const chosenSize = selectedSizeByItem[modalId] || null;
+
+  const selectedOption = modalSizeOptions.find(
+    (option) => option.value === chosenSize
+  );
+
+  const availableLengths = selectedOption?.lengths || [];
+
+  const chosenLength =
+    selectedLengthByItem[modalId] || null;
+
+  const canAdd =
+    Boolean(chosenSize) &&
+    (availableLengths.length === 0 ||
+      Boolean(chosenLength)) &&
+    !addingToBasket;
 
   return (
     <div
       className="men-size-modal-overlay"
-      onClick={() =>
-        setSizeModalItem(null)
-      }
+      onClick={() => {
+        if (!addingToBasket) setSizeModalItem(null);
+      }}
     >
       <div
         className="men-size-modal"
-        onClick={(e) =>
-          e.stopPropagation()
-        }
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           className="men-size-modal-close"
-          onClick={() =>
-            setSizeModalItem(null)
-          }
+          onClick={() => setSizeModalItem(null)}
+          disabled={addingToBasket}
         >
           ×
         </button>
 
-        <h3>
-          {t("select_size")}
-        </h3>
+        <h3>{t("select_size")}</h3>
 
         <div className="men-size-modal-options">
-          {modalSizes.map((size) => {
-            const sizePrice =
-              getVariantPrice(
-                sizeModalItem,
-                modalColor,
-                size
-              );
+          {modalSizeOptions.map((option) => {
+            const sizePrice = getVariantPrice(
+              sizeModalItem,
+              modalColor,
+              option.value
+            );
 
             return (
               <button
+                key={option.value}
                 type="button"
-                key={size}
                 className={
-                  selectedSizeByItem[
-                    modalId
-                  ] === size
+                  chosenSize === option.value
                     ? "active"
                     : ""
                 }
-                onClick={async (e) => {
-                  e.stopPropagation();
+                onClick={() => {
+                  setSelectedSizeByItem((prev) => ({
+                    ...prev,
+                    [modalId]: option.value,
+                  }));
 
-                  setSelectedSizeByItem(
-                    (prev) => ({
-                      ...prev,
-                      [modalId]: size,
-                    })
-                  );
-
-                  setSizeModalItem(null);
-
-                  await handleAddToBasket(
-                    sizeModalItem,
-                    e,
-                    size
-                  );
+                  setSelectedLengthByItem((prev) => ({
+                    ...prev,
+                    [modalId]: null,
+                  }));
                 }}
+                disabled={addingToBasket}
               >
-                <span>{size}</span>
-
-                <small>
-                  {formatPrice(sizePrice)}
-                </small>
+                <span>{option.value}</span>
+                <small>{formatPrice(sizePrice)}</small>
               </button>
             );
           })}
         </div>
+
+        {chosenSize && availableLengths.length > 0 && (
+          <>
+            <h3>
+              {t("select_length", {
+                defaultValue: "Select length",
+              })}
+            </h3>
+
+            <div className="men-size-modal-options">
+              {availableLengths.map((length) => (
+                <button
+                  key={length}
+                  type="button"
+                  className={
+                    chosenLength === length ? "active" : ""
+                  }
+                  onClick={() => {
+                    setSelectedLengthByItem((prev) => ({
+                      ...prev,
+                      [modalId]: length,
+                    }));
+                  }}
+                  disabled={addingToBasket}
+                >
+                  <span>{length}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <button
+          type="button"
+          className="men-cart-action-btn"
+          disabled={!canAdd}
+          onClick={(e) =>
+            handleAddToBasket(
+              sizeModalItem,
+              e,
+              chosenSize,
+              chosenLength
+            )
+          }
+        >
+          {addingToBasket
+            ? t("adding_to_cart", {
+                defaultValue: "Adding...",
+              })
+            : t("add_to_cart")}
+        </button>
       </div>
     </div>
   );

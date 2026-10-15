@@ -1358,3 +1358,200 @@
 .th1-basket-count:hover {
   background: #374151;
 }
+
+/* ==========================================
+   THEME 1 — ADD TO BASKET MODAL IMPROVEMENTS
+   ========================================== */
+
+.th1-size-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.th1-size-modal {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: 85dvh;
+  overflow-y: auto;
+  padding: 30px 24px 24px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.22);
+  scrollbar-width: thin;
+}
+
+.th1-size-modal h3 {
+  margin: 0 40px 16px 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* Space between size and length sections */
+.th1-size-modal .th1-size-options + h3 {
+  margin-top: 26px;
+}
+
+/* Size and length options */
+.th1-size-modal .th1-size-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.th1-size-modal .th1-size-options button {
+  min-width: 0;
+  min-height: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 6px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  color: #111827;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.th1-size-modal .th1-size-options button:hover:not(:disabled) {
+  border-color: #111827;
+  background: #f8fafc;
+}
+
+.th1-size-modal .th1-size-options button.active {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.th1-size-modal .th1-size-options button.active:hover {
+  background: #111827;
+  color: #fff;
+}
+
+.th1-size-modal .th1-size-options button span {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.th1-size-modal .th1-size-options button small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.th1-size-modal .th1-size-options button.active small {
+  color: #e5e7eb;
+}
+
+/* Close button */
+.th1-size-modal > button:first-child {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  color: #111827;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.th1-size-modal > button:first-child:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+/* IMPORTANT: Modal Add to Basket button */
+.th1-size-modal .th1-add-basket-btn {
+  position: static;
+  width: 100%;
+  height: 48px;
+  min-height: 48px;
+  margin-top: 22px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111827;
+  border: 1px solid #111827;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.th1-size-modal .th1-add-basket-btn:hover:not(:disabled) {
+  background: #374151;
+  border-color: #374151;
+  color: #fff;
+}
+
+.th1-size-modal .th1-add-basket-btn:disabled {
+  background: #d1d5db;
+  border-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .th1-size-overlay {
+    padding: 12px;
+  }
+
+  .th1-size-modal {
+    max-width: 100%;
+    max-height: 85dvh;
+    padding: 26px 18px 20px;
+    border-radius: 16px;
+  }
+
+  .th1-size-modal h3 {
+    font-size: 1rem;
+    margin-bottom: 14px;
+  }
+
+  .th1-size-modal .th1-size-options {
+    gap: 8px;
+  }
+
+  .th1-size-modal .th1-size-options button {
+    min-height: 60px;
+    padding: 9px 4px;
+    border-radius: 10px;
+  }
+
+  .th1-size-modal .th1-add-basket-btn {
+    height: 46px;
+    min-height: 46px;
+    margin-top: 18px;
+  }
+}

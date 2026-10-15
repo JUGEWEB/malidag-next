@@ -47,7 +47,8 @@ const ratingFromURL = searchParams.get("rating");
     : "en";
 
   const [topShoesItems, setTopShoesItems] = useState([]);
-  const [translations, setTranslations] = useState({});
+const [translations, setTranslations] = useState({});
+const [reviews, setReviews] = useState({});
 
   const [selectedItemId, setSelectedItemId] =
     useState(null);
@@ -307,6 +308,77 @@ const ratingFromURL = searchParams.get("rating");
       cancelled = true;
     };
   }, [type, genre, countryCode]);
+
+  useEffect(() => {
+  let cancelled = false;
+
+  const fetchProductReviews = async () => {
+    const uniqueItemIds = [
+      ...new Set(
+        topShoesItems
+          .map((product) => product?.itemId)
+          .filter(Boolean)
+      ),
+    ];
+
+    if (uniqueItemIds.length === 0) return;
+
+    const results = await Promise.allSettled(
+      uniqueItemIds.map(async (itemId) => {
+        try {
+          const response = await axios.get(
+            `${BASE_URL}/get-reviews/${encodeURIComponent(itemId)}`
+          );
+
+          const reviewList = Array.isArray(response.data?.reviews)
+            ? response.data.reviews
+            : [];
+
+          const validReviews = reviewList.filter((review) => {
+            const rating = Number(review?.rating);
+            return (
+              Number.isFinite(rating) &&
+              rating >= 1 &&
+              rating <= 5
+            );
+          });
+
+          return {
+            itemId,
+            count: validReviews.length,
+          };
+        } catch (error) {
+          if (error?.response?.status !== 404) {
+            console.error("Error fetching reviews:", error);
+          }
+
+          return {
+            itemId,
+            count: 0,
+          };
+        }
+      })
+    );
+
+    if (cancelled) return;
+
+    const nextReviews = {};
+
+    results.forEach((result) => {
+      if (result.status === "fulfilled") {
+        nextReviews[result.value.itemId] = result.value.count;
+      }
+    });
+
+    setReviews(nextReviews);
+  };
+
+  fetchProductReviews();
+
+  return () => {
+    cancelled = true;
+  };
+}, [topShoesItems]);
 
   /*
    * Display helpers
@@ -584,17 +656,15 @@ const ratingFromURL = searchParams.get("rating");
                         </div>
 
                         <div className="topic-card-actions">
-                          <button
-                            type="button"
-                            className="topic-secondary-btn"
-                            onClick={() =>
-                              openModal(product)
-                            }
-                          >
-                            {t(
-                              "shoes_topic_reviews_analysis"
-                            )}
-                          </button>
+                         {(reviews[itemId] ?? 0) > 0 && (
+                        <button
+                          type="button"
+                          className="topic-secondary-btn"
+                          onClick={() => openModal(product)}
+                        >
+                          {t("shoes_topic_reviews_analysis")}
+                        </button>
+                      )}
 
                           <button
                             type="button"

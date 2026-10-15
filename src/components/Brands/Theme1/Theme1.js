@@ -93,6 +93,7 @@ const currencyConfig = useMemo(
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [pendingBasketItem, setPendingBasketItem] = useState(null);
 const [selectedModalSize, setSelectedModalSize] = useState(null);
+const [selectedModalLength, setSelectedModalLength] = useState(null);
 const [addingToBasket, setAddingToBasket] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedBrandType, setSelectedBrandType] = useState(null);
@@ -152,42 +153,71 @@ const [addingToBasket, setAddingToBasket] = useState(false);
     };
   };
 
-  const getSizesForColor = (product, color) => {
+ const getSizesForColor = (product, color) => {
   const sizeMap = product?.size || product?.rawItem?.item?.size || {};
 
-  const key = Object.keys(sizeMap).find(
+  const keys = Object.keys(sizeMap);
+
+  const key = keys.find(
     (key) =>
       key.trim().toLowerCase() ===
       String(color || "").trim().toLowerCase()
   );
 
-  if (!key) return [];
+  const selectedKey = key || (!color && keys.length === 1 ? keys[0] : null);
 
-  const entries = Array.isArray(sizeMap[key])
-    ? sizeMap[key]
-    : [sizeMap[key]];
+  if (!selectedKey) return [];
 
-  return entries.flatMap((entry) => {
-    const raw =
+  const entries = Array.isArray(sizeMap[selectedKey])
+    ? sizeMap[selectedKey]
+    : [sizeMap[selectedKey]];
+
+  const options = new Map();
+
+  const splitValues = (value) =>
+    (Array.isArray(value) ? value : String(value ?? "").split(/[,;]|\.(?=\s*\d)/))
+      .map((part) => String(part).trim())
+      .filter(Boolean);
+
+  entries.forEach((entry) => {
+    const rawSizes =
       typeof entry === "object" && entry !== null
         ? entry.value
         : entry;
 
+    const rawLengths =
+      typeof entry === "object" && entry !== null
+        ? entry.length
+        : null;
+
     const price =
-      typeof entry === "object" && entry !== null &&
-      entry.price != null && entry.price !== ""
+      typeof entry === "object" &&
+      entry !== null &&
+      entry.price != null &&
+      entry.price !== ""
         ? Number(entry.price)
         : null;
 
-    return String(raw ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .map((value) => ({
-        value,
-        price: Number.isFinite(price) && price > 0 ? price : null,
-      }));
+    const lengths = splitValues(rawLengths);
+
+    splitValues(rawSizes).forEach((value) => {
+      if (!options.has(value)) {
+        options.set(value, {
+          value,
+          price: Number.isFinite(price) && price > 0 ? price : null,
+          lengths: [...lengths],
+        });
+      } else {
+        const existing = options.get(value);
+
+        existing.lengths = [
+          ...new Set([...existing.lengths, ...lengths]),
+        ];
+      }
+    });
   });
+
+  return [...options.values()];
 };
 
   const fetchUserBasket = async () => {
@@ -997,7 +1027,12 @@ const translateColor = (color) => {
     return Math.round(((original - current) / original) * 100);
   };
 
-const handleAddToBasket = async (product, e, explicitSize = null) => {
+const handleAddToBasket = async (
+  product,
+  e,
+  explicitSize = null,
+  explicitLength = null
+) => {
   e?.stopPropagation();
 
   const currentUser = auth?.currentUser;
@@ -1014,6 +1049,7 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
   }
 
   const colorOptions = getColorOptions(product);
+
   const color =
     selectedColorByItem[product.id] ||
     colorOptions[0] ||
@@ -1021,8 +1057,10 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
 
   const sizes = getSizesForColor(product, color);
 
+  // Open the modal when the product has sizes.
   if (sizes.length > 0 && !explicitSize) {
     setSelectedModalSize(null);
+    setSelectedModalLength(null);
     setPendingBasketItem({ product, color, sizes });
     return;
   }
@@ -1035,6 +1073,16 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
 
   if (sizes.length > 0 && !selectedOption) {
     messageApi.error(t("select_size"));
+    return;
+  }
+
+  const availableLengths = selectedOption?.lengths || [];
+
+  if (
+    availableLengths.length > 0 &&
+    !availableLengths.includes(explicitLength)
+  ) {
+    messageApi.error(t("select_length", "Select a length"));
     return;
   }
 
@@ -1054,6 +1102,7 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
         price,
         color,
         size: explicitSize,
+        length: explicitLength || null,
         image,
         brand: product.rawItem?.item?.brand || brandName,
         quantity: 1,
@@ -1069,6 +1118,7 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
 
       setPendingBasketItem(null);
       setSelectedModalSize(null);
+      setSelectedModalLength(null);
 
       messageApi.success(
         t("basket_add_success", {
@@ -1105,10 +1155,16 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
 
          {contextHolder}
 
-         {pendingBasketItem && (
+        {pendingBasketItem?.product?.id === item.id && (
   <div
     className="th1-size-overlay"
-    onClick={() => !addingToBasket && setPendingBasketItem(null)}
+    onClick={() => {
+      if (!addingToBasket) {
+        setPendingBasketItem(null);
+        setSelectedModalSize(null);
+        setSelectedModalLength(null);
+      }
+    }}
   >
     <div
       className="th1-size-modal"
@@ -1119,7 +1175,11 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
     >
       <button
         type="button"
-        onClick={() => setPendingBasketItem(null)}
+        onClick={() => {
+          setPendingBasketItem(null);
+          setSelectedModalSize(null);
+          setSelectedModalLength(null);
+        }}
         disabled={addingToBasket}
       >
         ×
@@ -1137,24 +1197,86 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
               selectedModalSize === option.value ? "active" : ""
             }
             onClick={(e) => {
+              e.stopPropagation();
+
               setSelectedModalSize(option.value);
-              handleAddToBasket(
-                pendingBasketItem.product,
-                e,
-                option.value
-              );
+              setSelectedModalLength(null);
+
+              // No lengths: add immediately, like before.
+              if (!option.lengths?.length) {
+                handleAddToBasket(
+                  pendingBasketItem.product,
+                  e,
+                  option.value,
+                  null
+                );
+              }
             }}
           >
             <span>{option.value}</span>
+
             <small>
               {formatPrice(
                 option.price ??
-                Number(pendingBasketItem.product.usdPrice || 0)
+                  Number(pendingBasketItem.product.usdPrice || 0)
               )}
             </small>
           </button>
         ))}
       </div>
+
+      {(() => {
+        const selectedOption = pendingBasketItem.sizes.find(
+          (option) => option.value === selectedModalSize
+        );
+
+        const lengths = selectedOption?.lengths || [];
+
+        if (!lengths.length) return null;
+
+        return (
+          <>
+            <h3>{t("select_length", "Select length")}</h3>
+
+            <div className="th1-size-options">
+              {lengths.map((length) => (
+                <button
+                  key={length}
+                  type="button"
+                  disabled={addingToBasket}
+                  className={
+                    selectedModalLength === length ? "active" : ""
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedModalLength(length);
+                  }}
+                >
+                  <span>{length}</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="th1-add-basket-btn"
+              disabled={!selectedModalLength || addingToBasket}
+              onClick={(e) =>
+                handleAddToBasket(
+                  pendingBasketItem.product,
+                  e,
+                  selectedModalSize,
+                  selectedModalLength
+                )
+              }
+            >
+              {addingToBasket
+                ? t("loading", "Loading...")
+                : t("add_to_cart")}
+            </button>
+          </>
+        );
+      })()}
     </div>
   </div>
 )}
@@ -1263,12 +1385,14 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
   </div>
 )}
 
-          <div className="th1-item-rating">
-            {renderStars(productReview.rating, item)}
-            {productReview.count > 0 && (
-              <span className="th1-review-count">({productReview.count})</span>
-            )}
-          </div>
+          {productReview.count > 0 && (
+  <div className="th1-item-rating">
+    {renderStars(productReview.rating, item)}
+    <span className="th1-review-count">
+      ({productReview.count})
+    </span>
+  </div>
+)}
 
         <button
           type="button"
@@ -1395,12 +1519,14 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
               </div>
             )}
 
+           {bestSellerReview.count > 0 && (
             <div className="th1-item-rating">
               {renderStars(bestSellerReview.rating, bestSeller)}
-              {bestSellerReview.count > 0 && (
-                <span className="th1-review-count">({bestSellerReview.count})</span>
-              )}
+              <span className="th1-review-count">
+                ({bestSellerReview.count})
+              </span>
             </div>
+          )}
 
           <button
             type="button"
@@ -1410,7 +1536,7 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
             {t("add_to_cart")}
           </button>
 
-         {getBasketQuantity(item.itemId) > 0 && (
+        {getBasketQuantity(bestSeller.itemId) > 0 && (
   <button
     type="button"
     className="th1-basket-count"
@@ -1419,7 +1545,7 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
       router.push(withCountry("/basket"));
     }}
   >
-    🛒 {getBasketQuantity(item.itemId)}
+    🛒 {getBasketQuantity(bestSeller.itemId)}
   </button>
 )}
           </div>
@@ -1428,15 +1554,13 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
     );
   };
 
-  const renderBestSellerSmallCard = () => {
-    if (!bestSeller || shouldShowLargeBestSeller) return null;
+ const renderBestSellerSmallCard = () => {
+  if (!bestSeller || shouldShowLargeBestSeller) return null;
 
-    return (
-      <div className={`th1-item-grid ${!isDesktop ? "mobile" : ""}`}>
-        {renderProductCard(bestSeller, { badgeText: t("best_seller"), })}
-      </div>
-    );
-  };
+  return renderProductCard(bestSeller, {
+    badgeText: t("best_seller"),
+  });
+};
 
   const renderDepartmentItems = () => {
     return (
@@ -1543,22 +1667,42 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
             {selectedDepartment && selectedBrandType ? (
               renderDepartmentItems()
             ) : (
-              <>
-                {shoeItems.length > 0 && (
-                  <div className="th1-item-grid">
-                    {shoeItems.map((item) => renderProductCard(item, { isTop: true }))}
-                  </div>
-                )}
+             <>
+  {shouldShowLargeBestSeller ? (
+    <>
+      {shoeItems.length > 0 && (
+        <div className="th1-item-grid">
+          {shoeItems.map((item) =>
+            renderProductCard(item, { isTop: true })
+          )}
+        </div>
+      )}
 
-                {renderBestSellerCard()}
-                {renderBestSellerSmallCard()}
+      {renderBestSellerCard()}
 
-                {otherItems.length > 0 && (
-                  <div className="th1-item-grid">
-                    {otherItems.map((item) => renderProductCard(item, { isTop: true }))}
-                  </div>
-                )}
-              </>
+      {otherItems.length > 0 && (
+        <div className="th1-item-grid">
+          {otherItems.map((item) =>
+            renderProductCard(item, { isTop: true })
+          )}
+        </div>
+      )}
+    </>
+  ) : (
+    /* No video: best seller and top products share one grid */
+    <div className="th1-item-grid">
+      {renderBestSellerSmallCard()}
+
+      {shoeItems.map((item) =>
+        renderProductCard(item, { isTop: true })
+      )}
+
+      {otherItems.map((item) =>
+        renderProductCard(item, { isTop: true })
+      )}
+    </div>
+  )}
+</>
             )}
           </main>
         </div>
@@ -1656,26 +1800,45 @@ const handleAddToBasket = async (product, e, explicitSize = null) => {
             </>
           )}
 
-          {selectedDepartment && selectedBrandType ? (
-            renderDepartmentItems()
-          ) : (
-            <>
-              {renderBestSellerCard()}
-              {renderBestSellerSmallCard()}
+         {selectedDepartment && selectedBrandType ? (
+  renderDepartmentItems()
+) : (
+  <>
+    {shouldShowLargeBestSeller ? (
+      <>
+        {shoeItems.length > 0 && (
+          <div className="th1-item-grid mobile">
+            {shoeItems.map((item) =>
+              renderProductCard(item, { isTop: true })
+            )}
+          </div>
+        )}
 
-              {shoeItems.length > 0 && (
-                <div className="th1-item-grid mobile">
-                  {shoeItems.map((item) => renderProductCard(item, { isTop: true }))}
-                </div>
-              )}
+        {renderBestSellerCard()}
 
-              {otherItems.length > 0 && (
-                <div className="th1-item-grid mobile">
-                  {otherItems.map((item) => renderProductCard(item, { isTop: true }))}
-                </div>
-              )}
-            </>
-          )}
+        {otherItems.length > 0 && (
+          <div className="th1-item-grid mobile">
+            {otherItems.map((item) =>
+              renderProductCard(item, { isTop: true })
+            )}
+          </div>
+        )}
+      </>
+    ) : (
+      <div className="th1-item-grid mobile">
+        {renderBestSellerSmallCard()}
+
+        {shoeItems.map((item) =>
+          renderProductCard(item, { isTop: true })
+        )}
+
+        {otherItems.map((item) =>
+          renderProductCard(item, { isTop: true })
+        )}
+      </div>
+    )}
+  </>
+)}
         </div>
       )}
     </div>

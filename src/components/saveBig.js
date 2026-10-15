@@ -8,6 +8,7 @@ import { AppContext } from "./appContext";
 import { useCheckoutStore } from "./checkoutStore";
 import { auth } from "@/components/firebaseConfig";
 import { useTranslation } from "react-i18next";
+import Image from "next/image";
 import {
   getCountryConfig,
   isSupportedLanguage,
@@ -1152,16 +1153,15 @@ const displayName =
       </div>
     )}
 
-    <img
-      src={displayImage}
-     alt={displayName}
-      onClick={() => handleItemClick(id)}
-      className="bbe-item-image"
-      onError={(e) => {
-        e.target.onerror = null;
-        e.target.src = "/fallback.png";
-      }}
-    />
+    <Image
+  src={displayImage}
+  alt={displayName}
+  fill
+  sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 25vw"
+  quality={75}
+  className="bbe-item-image"
+  onClick={() => handleItemClick(id)}
+/>
   </div>
 
   <div className="bbe-item-info" onClick={() => handleItemClick(id)}>

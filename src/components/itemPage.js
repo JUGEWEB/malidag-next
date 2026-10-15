@@ -15,6 +15,7 @@ import {
   getCountryConfig,
   isSupportedLanguage,
 } from "./countryUtils";
+import Image from "next/image";
 
 function ItemPage({ searchTerm }) {
   const router = useRouter();
@@ -2002,13 +2003,22 @@ const basketQuantity = getBasketQuantity(itemId);
           />
         ) : (
           <>
-            <img
-              className="item-image-cc"
-              src={firstImage}
-              onClick={() => handleItemClick(id)}
-              alt={name}
-              style={{ width: "100%", height: "230px", objectFit: "contain" }}
-            />
+            <div className="item-image-wrap-cc">
+                  <Image
+                    src={firstImage}
+                    alt={name}
+                    fill
+                    sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 250px"
+                    quality={75}
+                    loading="lazy"
+                    className="item-image-cc"
+                    onClick={() => handleItemClick(id)}
+                    style={{
+                      objectFit: "contain",
+                      cursor: "pointer",
+                    }}
+                  />
+                </div>
             {firstVideoUrl && (
              <button
               type="button"

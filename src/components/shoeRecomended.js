@@ -14,6 +14,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { AppContext } from "./appContext";
+import Image from "next/image";
 import {
   getCountryConfig,
   isSupportedLanguage,
@@ -24,6 +25,28 @@ const BASE_URL = "https://api.malidag.com";
 const MAX_DISPLAY_ITEMS = 30;
 const MAX_CACHE_ITEMS = 20;
 const CACHE_TTL = 1000 * 60 * 30;
+
+function RecommendedProductImage({ src, alt, onClick }) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  return (
+    <Image
+      src={failed ? "/fallback.png" : src || "/fallback.png"}
+      alt={alt}
+      fill
+      sizes="(max-width: 600px) 50vw, 200px"
+      quality={75}
+      loading="lazy"
+      className="recommended-image"
+      onClick={onClick}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 function ShoeRecommended() {
   const router = useRouter();
@@ -595,23 +618,11 @@ function ShoeRecommended() {
                 key={product?.id || itemId}
               >
                 <div className="rec-img">
-                  <img
-                    src={
-                      rawItem?.images?.[0] ||
-                      "/fallback.png"
-                    }
-                    alt={productName}
-                    className="recommended-image"
-                    loading="lazy"
-                    onClick={() =>
-                      handleItemClick(product?.id)
-                    }
-                    onError={(event) => {
-                      event.currentTarget.onerror = null;
-                      event.currentTarget.src =
-                        "/fallback.png";
-                    }}
-                  />
+                <RecommendedProductImage
+                  src={rawItem?.images?.[0]}
+                  alt={productName}
+                  onClick={() => handleItemClick(product?.id)}
+                />
                 </div>
 
                 <div className="recommended-info">

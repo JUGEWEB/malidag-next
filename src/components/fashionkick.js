@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import ShoeRecommended from "./shoeRecomended";
 import { AppContext } from "./appContext";
+import Image from "next/image";
 import {
   getCountryConfig,
   isSupportedLanguage,
@@ -685,9 +686,12 @@ return (
 
           <div className="fashionkick-hero-visual">
             <div className="fashionkick-hero-visual-card fashionkick-hero-card-main">
-              <img
+              <Image
                 src="https://cdn.malidag.com/themes/1773233374853-869b7d85-8687-4f39-8301-83679b8afd83.webp"
-               alt={t("fashionkick_luxury_showcase_alt")}
+                alt={t("fashionkick_luxury_showcase_alt")}
+                fill
+                sizes="(max-width: 768px) 100vw, 45vw"
+                quality={80}
                 className="fashionkick-hero-visual-image"
               />
               <div className="fashionkick-hero-visual-overlay" />
@@ -726,12 +730,15 @@ return (
                   onClick={() => handleCategoryClick(typeObj?.type)}
                 >
                   <div className="type-image-id">
-                    <img
-                      src={typeObj?.image}
-                      alt={typeObj?.type || "Fashion category"}
-                      className="type-image-imgid"
-                      loading="lazy"
-                    />
+                   <Image
+                    src={typeObj?.image || "/placeholder.png"}
+                    alt={typeObj?.type || "Fashion category"}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    quality={75}
+                    loading="lazy"
+                    className="type-image-imgid"
+                  />
                   </div>
 
                   <div className="type-content">
@@ -766,11 +773,14 @@ return (
         </div>
 
         <section className="fashionkick-topic-banner">
-          <img
-            src="https://cdn.malidag.com/themes/1773233374853-869b7d85-8687-4f39-8301-83679b8afd83.webp"
-            alt="Fashion topics"
-            className="fashionkick-topic-banner-image"
-          />
+          <Image
+          src="https://cdn.malidag.com/themes/1773233374853-869b7d85-8687-4f39-8301-83679b8afd83.webp"
+          alt="Fashion topics"
+          fill
+          sizes="100vw"
+          quality={80}
+          className="fashionkick-topic-banner-image"
+        />
 
           <div className="fashionkick-topic-banner-overlay" />
 
@@ -871,16 +881,15 @@ return (
                 </div>
               )}
 
-              <img
-                src={item?.images?.[0] || "/placeholder.png"}
-                alt={item?.name || "Product"}
-                className="fashionkick-product-image"
-                loading="lazy"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/placeholder.png";
-                }}
-              />
+             <Image
+              src={item?.images?.[0] || "/placeholder.png"}
+              alt={item?.name || "Product"}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              quality={75}
+              loading="lazy"
+              className="fashionkick-product-image"
+            />
             </div>
 
             <div className="fashionkick-product-content fashionkick-product-content-vertical">

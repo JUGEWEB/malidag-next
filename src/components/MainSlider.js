@@ -11,6 +11,7 @@ import MalidagCategory from './malidagCategory';
 import useScreenSize from './useIsMobile';
 import { useTranslation } from 'react-i18next';
 import Head from 'next/head';
+import Image from 'next/image';
 import SlideVideo from './SlideVideo';
 import SlideOverlay from './SlideOverlay';
 
@@ -30,7 +31,11 @@ const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
   : "en";
   const { isMobile, isDesktop, isTablet } = useScreenSize();
 
-  const sliderRef = useRef(null);
+ const sliderRef = useRef(null);
+const sliderContainerRef = useRef(null);
+const firstVideoPlayedRef = useRef(false);
+
+const [isSliderVisible, setIsSliderVisible] = useState(false);
 
   const isStandardWidth = isDesktop || isTablet || isMobile;
  
@@ -333,6 +338,27 @@ const slides = useMemo(() => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [playingVideoId, setPlayingVideoId] = useState(null);
 
+  useEffect(() => {
+  const element = sliderContainerRef.current;
+  if (!element) return;
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      setIsSliderVisible(
+        entry.isIntersecting &&
+        entry.intersectionRatio >= 0.5
+      );
+    },
+    {
+      threshold: [0, 0.5, 1],
+    }
+  );
+
+  observer.observe(element);
+
+  return () => observer.disconnect();
+}, [mounted, sliderReady]);
+
   const saveSlideIndex = useCallback((index) => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(SLIDE_STORAGE_KEY, String(index));
@@ -407,6 +433,38 @@ const slides = useMemo(() => {
   );
 
   useEffect(() => {
+  if (!mounted || !sliderReady || !isHome || !isSliderVisible) {
+    return;
+  }
+
+  const firstSlide = slides[0];
+
+  if (
+    currentSlide !== 0 ||
+    firstSlide?.content !== "video" ||
+    firstVideoPlayedRef.current
+  ) {
+    return;
+  }
+
+  firstVideoPlayedRef.current = true;
+  setPlayingVideoId(firstSlide.id);
+}, [
+  mounted,
+  sliderReady,
+  isHome,
+  isSliderVisible,
+  currentSlide,
+  slides,
+]);
+
+useEffect(() => {
+  if (!isSliderVisible) {
+    setPlayingVideoId(null);
+  }
+}, [isSliderVisible]);
+
+  useEffect(() => {
     setMounted(true);
   }, []);
 
@@ -435,7 +493,13 @@ const slides = useMemo(() => {
   }, [isHome, currentSlide, saveSlideIndex, stopVideoPlayback]);
 
   useEffect(() => {
-    if (!mounted || !sliderReady || !isHome || playingVideoId) return;
+   if (
+  !mounted ||
+  !sliderReady ||
+  !isHome ||
+  !isSliderVisible ||
+  playingVideoId
+) return;
 
     const interval = setInterval(() => {
       if (!sliderRef.current) return;
@@ -444,7 +508,15 @@ const slides = useMemo(() => {
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [mounted, sliderReady, isHome, currentSlide, slides.length, playingVideoId]);
+ }, [
+  mounted,
+  sliderReady,
+  isHome,
+  isSliderVisible,
+  currentSlide,
+  slides.length,
+  playingVideoId,
+]);
 
   const Arrow = ({ direction, className, style, onClick }) => {
     const isNext = direction === 'next';
@@ -492,7 +564,7 @@ const slides = useMemo(() => {
         )}
       </Head>
 
-      <div className="main-slider">
+     <div className="main-slider" ref={sliderContainerRef}>
         <div className="main-slider__surface">
           <div
             className={`main-slider__frame ${
@@ -524,17 +596,22 @@ const slides = useMemo(() => {
                           onClick={() => goToRoute(slide.router)}
                          
                           onPlayClick={() => {
-                            setCurrentSlide(index);
-                            setPlayingVideoId(slide.id);
-                          }}
+                              if (!isSliderVisible || currentSlide !== index) return;
 
-                          onVideoEnd={() => {
-                            if (playingVideoId === slide.id) {
-                              setPlayingVideoId(null);
-                            }
-                          }}
+                              setPlayingVideoId(slide.id);
+                            }}
+
+                         onVideoEnd={() => {
+                          setPlayingVideoId((previous) =>
+                            previous === slide.id ? null : previous
+                          );
+                        }}
                           isStandardWidth={isStandardWidth}
-                          isPlaying={currentSlide === index && playingVideoId === slide.id}
+                         isPlaying={
+                            isSliderVisible &&
+                            currentSlide === index &&
+                            playingVideoId === slide.id
+                          }
                           overlay={
                             <div className="main-slider__video-overlay">
                               <h2
@@ -566,24 +643,27 @@ const slides = useMemo(() => {
                         />
                       ) : (
                         <div className="main-slider__image-wrap">
-                          <picture>
-                            <source srcSet={slide.url} type="image/webp" />
-                            <img
-                              src={slide.url}
-                              alt={`Slide ${slide.id}`}
-                              onClick={() => handleNavigation(slide.id)}
-                              loading="lazy"
-                              className={`main-slider__image ${
-                                isStandardWidth
-                                  ? 'main-slider__image--standard'
-                                  : 'main-slider__image--compact'
-                              }`}
-                              style={{ backgroundColor: slide.type }}
-                              onLoad={(e) => {
-                                e.currentTarget.classList.add('main-slider__image--loaded');
-                              }}
-                            />
-                          </picture>
+                         <Image
+                            src={slide.url}
+                            alt={slideText.headline || `Slide ${slide.id}`}
+                            fill
+                           preload={index === 0 && slide.content === "image"}
+                          loading={index === 0 && slide.content === "image" ? undefined : "lazy"}
+                            sizes="100vw"
+                            onClick={() => handleNavigation(slide.id)}
+                            className={`main-slider__image ${
+                              isStandardWidth
+                                ? "main-slider__image--standard"
+                                : "main-slider__image--compact"
+                            }`}
+                            style={{
+                              objectFit: "cover",
+                              backgroundColor: slide.type,
+                            }}
+                            onLoad={(e) => {
+                              e.currentTarget.classList.add("main-slider__image--loaded");
+                            }}
+                          />
 
                           <SlideOverlay
                             position={slide.textPosition}

@@ -15,6 +15,7 @@ import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import Image from "next/image";
 import {
   getCountryConfig,
   isSupportedLanguage,
@@ -104,6 +105,31 @@ const getColorSwatch = (colorName = "") => {
 };
 
 
+function MenProductImage({ src, alt }) {
+  const [failed, setFailed] = useState(false);
+
+  const imageSrc = failed ? "/fallback.png" : src || "/fallback.png";
+
+   useEffect(() => {
+  setFailed(false);
+}, [src]);
+
+  return (
+    <Image
+      key={src}
+      src={imageSrc}
+      alt={alt}
+      fill
+      sizes="(max-width: 480px) 50vw, (max-width: 768px) 25vw, 16vw"
+      quality={75}
+      loading="lazy"
+      className="product-image"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+
 function MenFashion({ mtypes, groupedTypes, countryCode }) {
   const setItemData = useCheckoutStore((state) => state.setItemData);
  const { t, i18n } = useTranslation();
@@ -167,6 +193,7 @@ const hasItems = allItems.length > 0;
       .trim()
       .toLowerCase();
   };
+
 
   useEffect(() => {
     const initialColors = {};
@@ -905,9 +932,13 @@ if (!hasItems) {
     <div className="men-fashion-page">
       {contextHolder}
       <section className="men-hero">
-        <img
+        <Image
           src="https://api.malidag.com/learn/videos/1754140515701-man-in-white-and-light-tan-outfit.jpg"
-         alt={t("men_fashion")}
+          alt={t("men_fashion")}
+          fill
+          sizes="100vw"
+          quality={80}
+          preload
           className="men-hero-image"
         />
         <div className="men-hero-overlay">
@@ -1012,14 +1043,9 @@ const discountPercentage =
                     </div>
                   )}
 
-                  <img
+                 <MenProductImage
                     src={displayImage}
                     alt={productName}
-                    className="product-image"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "/fallback.png";
-                    }}
                   />
                 </div>
 

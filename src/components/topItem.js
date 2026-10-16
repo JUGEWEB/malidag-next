@@ -14,6 +14,7 @@ import colorSwatches from "../../lib/colors.json";
 import { useCheckoutStore } from "./checkoutStore";
 import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
+import Image from "next/image";
 
 const BASE_URL = "https://api.malidag.com";
 const BASKET_API = "https://api.malidag.com/add-to-basket";
@@ -35,7 +36,7 @@ function TopItem() {
   const [brandThemes, setBrandThemes] = useState([]);
   const [basketItems, setBasketItems] = useState([]);
   const [activeVideoId, setActiveVideoId] = useState(null);
-
+const [failedImages, setFailedImages] = useState({});
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedColor, setSelectedColor] = useState("all");
@@ -1245,7 +1246,15 @@ const availableModalLengths = sizeModalItem
               );
               }}
             >
-              <img src={brand.logo} alt={`${brand.brandName} logo`} />
+             <Image
+                src={brand.logo || "/fallback.png"}
+                alt={`${brand.brandName} logo`}
+                width={130}
+                height={70}
+                sizes="130px"
+                quality={75}
+                loading="lazy"
+              />
             </button>
           ))}
         </div>
@@ -1552,17 +1561,27 @@ const availableModalLengths = sizeModalItem
                             </button>
                           )}
 
-                          <img
-                            src={displayImage}
-                           alt={
-                                getTranslatedName(item, itemId) ||
-                                t("product")
-                              }
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = "/fallback.png";
-                            }}
-                          />
+                         <Image
+                        src={
+                          failedImages[id] === displayImage
+                            ? "/fallback.png"
+                            : displayImage
+                        }
+                        alt={getTranslatedName(item, itemId) || t("product")}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 25vw"
+                        quality={75}
+                        loading="lazy"
+                        className="topitem-product-image"
+                        onError={() => {
+                          if (displayImage !== "/fallback.png") {
+                            setFailedImages((prev) => ({
+                              ...prev,
+                              [id]: displayImage,
+                            }));
+                          }
+                        }}
+                      />
 
                           {currentImages.length > 1 && (
                             <button

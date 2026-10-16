@@ -12,7 +12,7 @@ import "./woFashion.css";
 import WoRecommendedItem from "./woRecommendeditem";
 import { useRouter } from "next/navigation";
 import Slider from "react-slick";
-
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { AppContext } from "./appContext";
 import {
@@ -22,6 +22,27 @@ import {
 
 const BASE_URLs = "https://api.malidag.com";
 const BASE_URL = "https://api.malidag.com";
+
+function WomenProductImage({ src, alt }) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  return (
+    <Image
+      src={failed ? "/fallback.png" : src || "/fallback.png"}
+      alt={alt}
+      fill
+      sizes="(max-width: 768px) 50vw, 25vw"
+      quality={75}
+      loading="lazy"
+      className="women-product-image"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 function WoFashion({countryCode: countryCodeProp, }) {
   const router = useRouter();
@@ -490,9 +511,13 @@ const hasItems = allItems.length > 0;
             {Object.values(mtypes).map((typeObj, index) => (
               <div key={index} className="slider-card-shell">
                 <div className="slider-card">
-                  <img
-                    src={typeObj.image}
+                  <Image
+                    src={typeObj.image || "/fallback.png"}
                     alt={translateTaxonomy(typeObj.type)}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    quality={75}
+                    loading="lazy"
                     className="slider-card-image"
                     onClick={() => handleCategoryClick(typeObj.type)}
                   />
@@ -522,11 +547,15 @@ const hasItems = allItems.length > 0;
   </div>
 
   <div className="topics-center-hero">
-    <img
-      src="https://cdn.malidag.com/themes/1760454830463-0a9bff23-526a-40ba-a2b9-be41271c845f.webp"
-      alt={t("women_topics_alt")}
-      className="topics-center-image"
-    />
+    <Image
+  src="https://cdn.malidag.com/themes/1760454830463-0a9bff23-526a-40ba-a2b9-be41271c845f.webp"
+  alt={t("women_topics_alt")}
+  fill
+  sizes="(max-width: 768px) 100vw, 1280px"
+  quality={80}
+  loading="lazy"
+  className="topics-center-image"
+/>
 
     <div className="topics-center-overlay"></div>
 
@@ -632,14 +661,10 @@ const hasItems = allItems.length > 0;
                 </div>
               )}
 
-              <img
-                src={item?.images?.[0] || "/fallback.png"}
+              <WomenProductImage
+                key={item?.images?.[0] || "fallback"}
+                src={item?.images?.[0]}
                 alt={productName}
-                className="women-product-image"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/fallback.png";
-                }}
               />
             </div>
 

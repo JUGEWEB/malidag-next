@@ -15,6 +15,8 @@ import "./youMayLike.css";
 import { useTranslation } from "react-i18next";
 import { AppContext } from "./appContext";
 import { getCountryConfig } from "./countryUtils";
+import Image from "next/image";
+
 
 const BASE_URL = "https://api.malidag.com";
 
@@ -420,17 +422,7 @@ if (!user || !userSearchHistory.length) {
     <div className="you-may-like-carous">
       {suggestedItems.length > 0 ? (
         <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "10px 0",
-              fontWeight: "bold",
-              fontSize: "20px",
-              width: "100%",
-            }}
-          >
+          <div className="you-may-like-header">
             <span>
               {t("based_on_browsing_history")}
             </span>
@@ -468,30 +460,29 @@ if (!user || !userSearchHistory.length) {
           >
             {currentItems.map((item) => {
               const productName = getProductName(item);
+              const imageSrc =
+            (typeof item?.item?.images?.[0] === "string"
+              ? item.item.images[0]
+              : item?.item?.images?.[0]?.url) || "/fallback.png";
 
               return (
                 <div
                   className="carousel-it"
                   key={item.id}
                 >
-                  <img
-                    src={
-                      typeof item?.item?.images?.[0] === "string"
-                        ? item.item.images[0]
-                        : item?.item?.images?.[0]?.url ||
-                          "/fallback.png"
-                    }
-                    alt={productName}
-                    className="carousel-ima"
-                    style={{ cursor: "pointer" }}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = "/fallback.png";
-                    }}
-                    onClick={() =>
-                      handleItemClick(item.id)
-                    }
-                  />
+                 <div className="carousel-image-wrapper">
+  <Image
+    src={imageSrc}
+    alt={productName}
+    fill
+    sizes="(max-width: 768px) 50vw, 16vw"
+    quality={75}
+    loading="lazy"
+    className="carousel-ima"
+    style={{ cursor: "pointer" }}
+    onClick={() => handleItemClick(item.id)}
+  />
+</div>
 
                   <div className="reconded-price">
                     {renderPrice(item?.item?.usdPrice)}

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppContext } from "./appContext";
 import { useTranslation } from "react-i18next";
+import Image from "next/image";
+import  "./themeForWomenFashion.css"
 
 const theme = {
   id: 456,
@@ -45,7 +47,7 @@ const withCountry = useCallback(
         height: isSmallMobile || isVerySmall ? "100%" : /*"400px"*/ "600px",
         boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
         backgroundColor: "#fdfdfd",
-        borderRadius: "0px",
+       borderRadius: "16px",
         padding: isSmallMobile || isVerySmall ? "5px" : "0",
         marginTop: isSmallMobile || isVerySmall ? "0rem" : "1rem",
         marginBottom: isSmallMobile || isVerySmall ? "0rem" : "1rem",
@@ -65,29 +67,46 @@ const withCountry = useCallback(
        {t("women_fashion")}
       </div>
 
-      <div
-        style={{
-          width: "100%",
-          height: "auto",
-          backgroundColor: "#ddd5",
-        }}
-      >
-        <Link href={withCountry("/women-fashion")} onClick={() => window.scrollTo(0, 0)}>
-          <img
-            src={theme.image}
-            alt={theme.theme}
-            loading="lazy"
-            style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
-              objectFit: "cover",
-              filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
-              cursor: "pointer",
-            }}
-          />
-        </Link>
-      </div>
+     <div
+  style={{
+    width: "100%",
+    padding: isSmallMobile || isVerySmall ? "5px" : "16px",
+    backgroundColor: "#ffffff",
+  }}
+>
+  <Link
+    href={withCountry("/women-fashion")}
+    onClick={() => window.scrollTo(0, 0)}
+    style={{
+      display: "block",
+      width: "100%",
+      borderRadius: "16px",
+      overflow: "hidden",
+      boxShadow: "0 6px 24px rgba(0, 0, 0, 0.08)",
+    }}
+  >
+    <Image
+      src={theme.image}
+      alt={theme.theme}
+      width={1200}
+      height={600}
+      sizes="(max-width: 768px) 100vw, 1200px"
+      quality={85}
+      loading="lazy"
+      style={{
+        width: "100%",
+        height: "auto",
+        display: "block",
+        objectFit: "cover",
+        filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
+        borderRadius: "16px",
+        cursor: "pointer",
+        transition: "transform 0.4s ease",
+      }}
+      className="women-fashion-banner-image"
+    />
+  </Link>
+</div>
 
       {(isDesktop || isTablet || isMobile) && (
         <div

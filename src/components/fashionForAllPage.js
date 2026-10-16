@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
 import colorSwatches from "../../lib/colors.json";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
 const BASE_URL = "https://api.malidag.com";
 
@@ -34,6 +35,7 @@ const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
 const { push } = useRouter();
 const pathname = usePathname();
+const [failedImages, setFailedImages] = useState({});
 
 const routeCountryCode = pathname.split("/").filter(Boolean)[0];
 
@@ -759,7 +761,15 @@ if (loading) {
 );
               }}
           >
-            <img src={brand.logo} alt={`${brand.brandName} logo`} />
+           <Image
+            src={brand.logo || "/fallback.png"}
+            alt={`${brand.brandName} logo`}
+            width={130}
+            height={70}
+            sizes="130px"
+            quality={75}
+            loading="lazy"
+          />
           </button>
         ))}
     </div>
@@ -1042,18 +1052,24 @@ const currentImages =
                 </button>
               )}
 
-              <img
-                src={displayImage}
-                alt={item.name}
+              <Image
+                src={failedImages[id] === displayImage ? "/fallback.png" : displayImage}
+                alt={item.name || "Fashion product"}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 25vw"
+                quality={75}
+                loading="lazy"
                 style={{
-                  width: "100%",
-                  height: isVerySmall ? "230px" : "300px",
                   objectFit: "contain",
                   display: "block",
                 }}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/fallback.png";
+                onError={() => {
+                  if (displayImage !== "/fallback.png") {
+                    setFailedImages((prev) => ({
+                      ...prev,
+                      [id]: displayImage,
+                    }));
+                  }
                 }}
               />
 

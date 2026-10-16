@@ -11,7 +11,7 @@ import "./recomendedItem.css";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
-
+import Image from "next/image";
 import { useAppContext } from "./appContext";
 import {
   getCountryConfig,
@@ -597,12 +597,18 @@ const hasValidReviews =
             return (
               <div className="recommended-item" key={item?.id || productId}>
                 <div className="rec-img">
-                  <img
-                    src={item?.item?.images?.[0] || "/fallback.png"}
-                   alt={productName}
-                    className="recommended-image"
-                    onClick={() => handleItemClick(item?.id)}
-                  />
+                  <div className="rec-img">
+                    <Image
+                        src={item?.item?.images?.[0] || "/fallback.png"}
+                        alt={productName}
+                        fill
+                        sizes="(max-width: 600px) 50vw, 200px"
+                        quality={75}
+                        loading="lazy"
+                        className="recommended-image"
+                        onClick={() => handleItemClick(item?.id)}
+                    />
+                    </div>
                 </div>
 
                 <div className="recommended-info">

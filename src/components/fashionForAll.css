@@ -24,10 +24,12 @@
 
 .fashion-carousel__header {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
+  padding: 24px 20px 0;
+  box-sizing: border-box;
 }
 
 .fashion-carousel__heading-wrap {
@@ -373,10 +375,11 @@
   }
 
   .fashion-carousel__header {
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 18px 12px 0;
+}
 
   .fashion-carousel__title {
     font-size: 1.25rem;

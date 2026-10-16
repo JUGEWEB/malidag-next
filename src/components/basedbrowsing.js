@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-
+import Image from "next/image";
 import "./basedbrowsing.css";
 
 import { AppContext } from "./appContext";
@@ -1300,10 +1300,15 @@ const getProductPriceForColor = useCallback(
                     }
                   )}
                 >
-                  <img
-                    src={brandTheme.logo}
-                    alt={brandTheme.brandName}
-                  />
+                 <Image
+                  src={brandTheme.logo || "/fallback.png"}
+                  alt={brandTheme.brandName}
+                  width={75}
+                  height={40}
+                  sizes="75px"
+                  quality={75}
+                  loading="lazy"
+                />
                 </button>
               );
             })}
@@ -1799,25 +1804,15 @@ const getProductPriceForColor = useCallback(
                           </button>
                         )}
 
-                        <img
-                          src={
-                            displayImage
-                          }
-                          alt={getTranslatedName(
-                            item,
-                            itemId
-                          )}
-                          loading="lazy"
-                          onError={(
-                            event
-                          ) => {
-                            event.currentTarget.onerror =
-                              null;
-
-                            event.currentTarget.src =
-                              "/fallback.png";
-                          }}
-                        />
+                       <Image
+                        key={displayImage}
+                        src={displayImage || "/fallback.png"}
+                        alt={getTranslatedName(item, itemId)}
+                        fill
+                        sizes="(max-width: 768px) 50vw, (max-width: 900px) 33vw, (max-width: 1250px) 25vw, 20vw"
+                        quality={75}
+                        loading="lazy"
+                      />
 
                         {currentImages.length >
                           1 && (

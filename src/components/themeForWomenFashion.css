@@ -1,0 +1,15 @@
+.women-fashion-banner-image:hover {
+  transform: scale(1.025);
+}
+
+@media (max-width: 768px) {
+  .women-fashion-banner-image {
+    border-radius: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .women-fashion-banner-image {
+    transition: none !important;
+  }
+}

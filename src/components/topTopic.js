@@ -15,6 +15,8 @@ import useScreenSize from "./useIsMobile";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { getCountryConfig } from "./countryUtils";
+import Image from "next/image";
+
 
 const BASE_URL = "https://api.malidag.com";
 
@@ -549,23 +551,19 @@ const currentLanguage = ["en", "fr", "br"].includes(i18n.language)
                   flex: "0 0 auto",
                 }}
               >
-                <div className="carousel-i">
-                  <img
-                    src={
-                      item.item
-                        ?.images?.[0] ||
-                      "/fallback.png"
-                    }
-                    alt={productName}
-                   onClick={() =>
-                      handleItemClick(navigationId)
-                    }
-                    className="carousel-im"
-                    style={{
-                      cursor: "pointer",
-                    }}
-                  />
-                </div>
+               <div className="carousel-i">
+                <Image
+                  src={item.item?.images?.[0] || "/fallback.png"}
+                  alt={productName}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 15vw"
+                  quality={75}
+                  loading="lazy"
+                  className="carousel-im"
+                  onClick={() => handleItemClick(navigationId)}
+                  style={{ cursor: "pointer" }}
+                />
+              </div>
 
                 <div className="item-pr">
                   {renderPrice(usdPrice)}

@@ -7,6 +7,7 @@ import useScreenSize from './useIsMobile';
 import Link from 'next/link';
 import { useTranslation } from "react-i18next";
 import { getCountryConfig } from "./countryUtils";
+import Image from "next/image";
 
 const BASE_URL = 'https://api.malidag.com';
 const MAX_ITEMS = 17;
@@ -487,22 +488,21 @@ if (!isLoading && items.length === 0) {
                       </div>
                     )}
 
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={itemName}
-                        className="carousel-image"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = FALLBACK_IMAGE;
-                        }}
-                      />
-                    ) : (
-                      <div className="carousel-image carousel-image--placeholder">
-                        <span>{t("no_image_available")}</span>
-                      </div>
-                    )}
+                   {imageUrl ? (
+                                      <Image
+                                        src={imageUrl}
+                                        alt={itemName}
+                                        fill
+                                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1200px) 25vw, 20vw"
+                                        quality={75}
+                                        loading="lazy"
+                                        className="carousel-image"
+                                      />
+                                    ) : (
+                                      <div className="carousel-image carousel-image--placeholder">
+                                        <span>{t("no_image_available")}</span>
+                                      </div>
+                                    )}
                   </div>
 
                   <div className="carousel-card__content">

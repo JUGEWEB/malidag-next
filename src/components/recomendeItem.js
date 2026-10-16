@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { getCountryConfig } from "./countryUtils";
+import Image from "next/image";
 
 const BASE_URL = "https://api.malidag.com";
 const CACHE_KEY = "recommendedItems_first20";
@@ -542,14 +543,15 @@ const roundedRating = hasValidRating
                     handleItemClick(item.id)
                   }
                 >
-                  <img
-                    src={
-                      item.item?.images?.[0] ||
-                      "/fallback.png"
-                    }
-                    alt={productName}
-                    className="recommended-image"
-                  />
+                 <Image
+                  src={item.item?.images?.[0] || "/fallback.png"}
+                  alt={productName}
+                  fill
+                  sizes="(max-width: 600px) 50vw, 200px"
+                  quality={75}
+                  loading="lazy"
+                  className="recommended-image"
+                />
                 </div>
 
                 <div className="recommended-info">

@@ -13,7 +13,7 @@ import {
   useRouter,
 } from "next/navigation";
 import { useTranslation } from "react-i18next";
-
+import Image from "next/image";
 import "./WomenTopTopic.css";
 import AnalyseReview from "./analyseReview";
 import { AppContext } from "./appContext";
@@ -819,24 +819,15 @@ const WomenTopTopic = () => {
                       productName
                     }
                   >
-                    <img
-                      src={
-                        imageSrc
-                      }
-                      alt={
-                        productName
-                      }
-                      className="women-top-image"
-                      onError={(
-                        event
-                      ) => {
-                        event.currentTarget.onerror =
-                          null;
-
-                        event.currentTarget.src =
-                          "/fallback.png";
-                      }}
-                    />
+                   <Image
+                    src={imageSrc}
+                    alt={productName}
+                    fill
+                    sizes="(max-width: 850px) 50vw, (max-width: 1180px) 33vw, 25vw"
+                    quality={75}
+                    loading="lazy"
+                    className="women-top-image"
+                  />
 
                     <span className="women-top-rank">
                       #{index + 1}

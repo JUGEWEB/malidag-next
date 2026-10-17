@@ -15,6 +15,7 @@ import colorSwatches from "../../lib/colors.json";
 import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
 import { AppContext } from "./appContext";
+import Image from "next/image";
 import {
   getCountryConfig,
   isSupportedLanguage,
@@ -1180,9 +1181,14 @@ return (
 
         {beautyImages.length > 0 ? (
           <div className="shoe-hero-visual">
-            <img
+           <Image
               src={beautyImages[0].imageUrl}
               alt={normalizedItemClicked || t("shoes")}
+              width={900}
+              height={600}
+              priority
+              quality={75}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
               className="shoe-hero-image"
             />
             <div className="shoe-hero-gradient" />
@@ -1213,11 +1219,15 @@ return (
         <section className="shoe-gallery-strip">
           {beautyImages.slice(0, 3).map((img, index) => (
             <div key={index} className="shoe-gallery-card">
-              <img
-                src={img.imageUrl}
-                alt={`${normalizedItemClicked}-${index}`}
-                className="shoe-gallery-image"
-              />
+             <Image
+              src={img.imageUrl}
+              alt={`${normalizedItemClicked}-${index}`}
+              width={480}
+              height={360}
+              quality={75}
+              sizes="(max-width: 600px) 50vw, (max-width: 1024px) 33vw, 360px"
+              className="shoe-gallery-image"
+            />
             </div>
           ))}
         </section>
@@ -1337,9 +1347,13 @@ return (
                 >
                   <div className="shoe-brand-tile-top">
                     {brandLogo ? (
-                      <img
+                      <Image
                         src={brandLogo}
                         alt={brandName}
+                        width={160}
+                        height={100}
+                        quality={75}
+                        sizes="(max-width: 480px) 100px, 160px"
                         className="shoe-brand-logo"
                       />
                     ) : (
@@ -1494,10 +1508,14 @@ return (
                       />
                     ) : (
                       <>
-                        <img
+                       <Image
                           className="shoe-card-image"
-                         src={displayImage}
+                          src={displayImage}
                           alt={name}
+                          width={600}
+                          height={750}
+                          quality={75}
+                          sizes="(max-width: 480px) 50vw, (max-width: 768px) 45vw, (max-width: 1200px) 30vw, 260px"
                           onClick={() => handleNavigate(id)}
                         />
 

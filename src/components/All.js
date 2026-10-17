@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import Modal from "react-modal";
-
+import Image from "next/image";
 import "./All.css";
 
 const BASE_URL = "https://api.malidag.com";
@@ -237,19 +237,26 @@ useEffect(() => {
                                 {t(type)}
                               </div>
 
-                              {currentItem?.item?.images?.length > 0 ? (
-                                <div
-                                  className="type-image"
-                                  onClick={() => handleTypeClick(type)}
-                                >
-                                  <img
-                                    src={currentItem.item.images[0]}
-                                    alt={type}
-                                  />
-                                </div>
-                              ) : (
-                                <p className="no-image-text">{t("no_image")}</p>
-                              )}
+                             
+                            {currentItem?.item?.images?.length > 0 ? (
+                              <div
+                                className="type-image"
+                                onClick={() => handleTypeClick(type)}
+                              >
+                                <Image
+                                  src={currentItem.item.images[0]}
+                                  alt={type}
+                                  width={400}
+                                  height={300}
+                                  quality={75}
+                                  sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, 200px"
+                                  loading="lazy"
+                                />
+                              </div>
+                            ) : (
+                              <p className="no-image-text">{t("no_image")}</p>
+                            )}
+
                             </div>
                           );
                         })}

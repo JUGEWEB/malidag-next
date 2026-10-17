@@ -26,6 +26,7 @@ import MobileImageZoom from "./MobileImageZoom";
 import ProductDetailsPhone from "./ProductDetailsPhone";
 import ProductDetailsTablet from "./ProductDetailsTablet";
 import ProductDetailsDesktop from "./ProductDetailsDesktop";
+import Image from "next/image";
 
 // ⬇️ IMPORTANT: pick the default export explicitly
 const Slider = dynamic(() => import("react-slick").then((m) => m.default), {
@@ -115,7 +116,6 @@ const withCountry = (path) => {
   const [selectedRating, setSelectedRating] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-  const [zoomType, setZoomType] = useState("zoom1");
   const buttonRef = useRef(null);
   const modalRef = useRef(null);
   const { finalRating } = useFinalRating(itemsd);
@@ -183,25 +183,6 @@ const [mobileZoomOpen, setMobileZoomOpen] = useState(false);
   const handleMouseEnterImageCenter = () => setIsHoveringImageCenter(true);
   const handleMouseLeaveImageCenter = () => setIsHoveringImageCenter(false);
 
-  const fetchZoomSetting = async (itemId, color, imageNumber) => {
-    try {
-      if (!itemId || !color) return;
-
-      const response = await fetch(
-        `https://api.malidag.com/api/zoom-setting?itemId=${itemId}&color=${color}&imageNumber=${imageNumber}`
-      );
-      const result = await response.json();
-
-      if (response.ok) {
-        setZoomType(result.zoomType);
-      } else {
-        setZoomType("zoom1");
-      }
-    } catch (error) {
-      console.error("Failed to fetch zoom setting:", error);
-    }
-  };
-
   const normalizeVariantKey = (value) =>
   String(value ?? "")
     .trim()
@@ -257,9 +238,6 @@ const redirectToAuth = () => {
   );
 };
 
-  useEffect(() => {
-    fetchZoomSetting(itemsd, selectedColor, selectedImageNumber);
-  }, [itemsd, selectedColor, selectedImageNumber]);
 
   const checkDetailsSectionPosition = () => {
     if (detailsRef.current) {
@@ -923,79 +901,44 @@ if (!currentUser) {
     setModalOpen(false);
   };
 
-  const renderImageZoom = () => {
-    if (!selectedImage) return null;
+ 
+const renderImageZoom = () => {
+  if (!selectedImage) return null;
 
-    if (isTablet) {
-      return (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <img
-            src={encodeURI(selectedImage)}
-            alt="Selected product"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (zoomType === "nozoom") {
-      return (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <img
-            src={encodeURI(selectedImage)}
-            alt="Selected product"
-            style={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (zoomType === "zoom1") {
-      return (
-        <ImageZoom
-          selectedImage={selectedImage}
-          basketItems={basketItems}
+  // Keep the existing tablet image layout
+  if (isTablet) {
+    return (
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Image
+          src={encodeURI(selectedImage)}
           alt="Selected product"
-          style={{
-            width: "100%",
-            height: "100%",
-            maxWidth: "100%",
-            maxHeight: "100%",
-            objectFit: "contain",
-            cursor: "zoom-in",
-          }}
+          fill
+          quality={80}
+          sizes="(max-width: 1024px) 100vw, 700px"
+          style={{ objectFit: "contain" }}
         />
-      );
-    }
+      </div>
+    );
+  }
+    
+return (
+  <ImageZoom
+    key={selectedImage}
+    selectedImage={selectedImage}
+    basketItems={basketItems}
+  />
+  );
+};
 
-    return null;
-  };
 
 
  const handlePaymentOptionSelect = () => {
@@ -1238,9 +1181,9 @@ availableLengths={availableLengths}
             router={router}
             t={t}
             isZoomVisible={isZoomVisible}
-            zoomType={zoomType}
             zoomedPosition={zoomedPosition}
             selectedImageForZoom={selectedImage}
+            zoomType="zoom1"
             country={country}
             details={details}
              selectedDeliveryInfo={selectedDeliveryInfo}

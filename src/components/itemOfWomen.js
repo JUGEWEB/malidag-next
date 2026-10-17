@@ -15,7 +15,7 @@ import { useCheckoutStore } from "./checkoutStore";
 import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
 import colorSwatches from "../../lib/colors.json";
-
+import Image from "next/image";
 import { AppContext } from "./appContext";
 
 import {
@@ -1299,7 +1299,14 @@ if (!loading && !hasItems) {
         );
         }}
       >
-        <img src={brand.logo} alt={`${brand.brandName} logo`} />
+       <Image
+        src={brand.logo}
+        alt={`${brand.brandName} logo`}
+        width={160}
+        height={100}
+        quality={75}
+        sizes="160px"
+      />
       </button>
     ))}
   </section>
@@ -1309,9 +1316,14 @@ if (!loading && !hasItems) {
           <section className="women-item-hero">
             {beautyImages.map((img, index) => (
               <div key={index} className="women-item-hero-frame">
-      <img
+      <Image
         src={img.imageUrl}
-        alt={itemClicked}
+        alt={itemClicked || "Women's fashion"}
+        width={1440}
+        height={600}
+        quality={75}
+        priority={index === 0}
+        sizes="(max-width: 768px) 100vw, (max-width: 1440px) 95vw, 1440px"
         className="women-item-hero-image"
       />
     </div>
@@ -1336,7 +1348,14 @@ if (!loading && !hasItems) {
              router.push(withCountry(`/brand/${themeRoute}/${encodeURIComponent(brand.brandName)}`));
             }}
           >
-            <img src={brand.logo} alt={`${brand.brandName} logo`} />
+          <Image
+          src={brand.logo}
+          alt={`${brand.brandName} logo`}
+          width={100}
+          height={70}
+          quality={75}
+          sizes="(max-width: 480px) 70px, 100px"
+        />
           </button>
         ))}
       </div>
@@ -1600,12 +1619,16 @@ const displayUsdPrice =
                           ›
                         </button>
                       )}
-                        <img
-                          className="item-imageof"
-                         src={displayImage}
-                          alt={name}
-                          onClick={() => handleNavigate(id)}
-                        />
+                       <Image
+                        className="item-imageof"
+                        src={displayImage}
+                        alt={name}
+                        width={600}
+                        height={750}
+                        quality={75}
+                        sizes="(max-width: 360px) 100vw, (max-width: 600px) 50vw, (max-width: 1024px) 33vw, 300px"
+                        onClick={() => handleNavigate(id)}
+                      />
 
                         {firstVideoUrl && (
                           <button

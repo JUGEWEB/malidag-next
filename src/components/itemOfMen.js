@@ -16,6 +16,7 @@ import colorSwatches from "../../lib/colors.json";
 import { message } from "antd";
 import "./itemOfmen.css";
 import { AppContext } from "./appContext";
+import Image from "next/image";
 
 import {
   getCountryConfig,
@@ -1292,14 +1293,15 @@ const pageTitle = useMemo(() => {
 
         {beautyImages[0]?.imageUrl && (
           <section className="men-banner">
-            <img
+            <Image
               src={getImageUrl(beautyImages[0]) || beautyImages[0].imageUrl}
               alt={pageTitle}
+              width={1440}
+              height={600}
+              priority
+              quality={75}
+              sizes="(max-width: 768px) 100vw, (max-width: 1440px) 95vw, 1440px"
               className="men-banner-image"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.style.display = "none";
-              }}
             />
           </section>
         )}
@@ -1326,15 +1328,15 @@ const pageTitle = useMemo(() => {
                     aria-label={`View ${brandName} brand page`}
                   >
                     {brandLogo ? (
-                      <img
-                        src={brandLogo}
-                        alt={brandName}
-                        className="men-brand-chip-logo"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
+                     <Image
+                      src={brandLogo}
+                      alt={brandName}
+                      width={160}
+                      height={100}
+                      quality={75}
+                      sizes="(max-width: 480px) 100px, 160px"
+                      className="men-brand-chip-logo"
+                    />
                     ) : (
                       <span className="men-brand-chip-text">{brandName}</span>
                     )}
@@ -1438,15 +1440,18 @@ const displayUsdPrice =
                             onClick={() => handleNavigate(id)}
                             aria-label={`View ${productName}`}
                           >
-                            <img
-                              className="men-list-image"
-                              src={displayImage || getImageUrl(images[0]) || "/placeholder.png"}
-                              alt={productName}
-                              onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = "/placeholder.png";
-                              }}
-                            />
+                           <Image
+                            className="men-list-image"
+                            src={displayImage || getImageUrl(images[0]) || "/placeholder.png"}
+                            alt={productName}
+                            width={600}
+                            height={750}
+                            quality={75}
+                            sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, (max-width: 1200px) 30vw, 260px"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.png";
+                            }}
+                          />
                           </button>
 
                           {productBrand && (

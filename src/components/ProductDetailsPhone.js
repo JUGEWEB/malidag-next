@@ -317,12 +317,19 @@ const handleShareProduct = async () => {
 
         return (
           <div key={index}>
-            <img
+           
+            <Image
               src={encodeURI(imageUrl)}
-              alt={`Slide ${index}`}
+              alt={`Slide ${index + 1}`}
+              width={800}
+              height={1000}
+              quality={80}
+              sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, 600px"
+              priority={index === 0}
               className="pdp-phone-slider-image"
               onClick={() => handleImageChange(image, index)}
             />
+
           </div>
         );
       })}
@@ -344,13 +351,19 @@ const handleShareProduct = async () => {
           onClick={() => handleColorChange(color)}
           aria-label={`Select color ${color}`}
         >
-          <img
+         
+          <Image
             src={encodeURI(
               getFirstVariantImageUrl(product.imagesVariants[color] || [])
             )}
             alt={`${color} option`}
+            width={100}
+            height={100}
+            quality={75}
+            sizes="60px"
             className="pdp-phone-color-thumbnail-image"
           />
+
         </button>
       ))}
     </div>

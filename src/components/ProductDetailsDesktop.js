@@ -396,15 +396,19 @@ const getTranslatedColor = (color) => {
               const imageUrl = getImageUrl(image);
 
               return (
-                <Image
-                  key={index}
-                  src={encodeURI(imageUrl)}
-                  width={20}
-                  height={20}
-                  alt={`${selectedColor} variant ${index + 1}`}
-                  className={`thumbnail ${selectedImage === imageUrl ? "active" : ""}`}
-                  onClick={() => handleImageChange(image, index)}
-                />
+               
+              <Image
+                key={index}
+                src={encodeURI(imageUrl)}
+                width={120}
+                height={120}
+                alt={`${selectedColor} variant ${index + 1}`}
+                quality={75}
+                sizes="80px"
+                className={`thumbnail ${selectedImage === imageUrl ? "active" : ""}`}
+                onClick={() => handleImageChange(image, index)}
+              />
+
               );
             })}
           </div>
@@ -435,22 +439,7 @@ const getTranslatedColor = (color) => {
               } ${detailsSectionAtBottom ? "at-bottom" : ""} `}
               ref={detailsRef}
             >
-              {isZoomVisible && zoomType === "zoom1" && (
-                <div className="pdp-desktop-zoomed-view">
-                  <img
-                    src={selectedImageForZoom}
-                    alt="Zoomed"
-                    draggable={false}
-                    className="pdp-desktop-zoomed-image"
-                    style={{
-                      left: `-${offsetX}px`,
-                      top: `-${offsetY}px`,
-                      width: `${zoomedImageWidth}px`,
-                      height: `${zoomedImageHeight}px`,
-                    }}
-                  />
-                </div>
-              )}
+             
 
               <h1  onClick={handleSecretTap} className="pdp-desktop-title">{translation?.name || product?.name}</h1>
 
@@ -667,17 +656,21 @@ const getTranslatedColor = (color) => {
                 const colorPreview = getFirstVariantImageUrl(product.imagesVariants[color] || []);
 
                 return (
-                  <Image
-                    key={color}
-                    src={encodeURI(colorPreview)}
-                    alt={`${color} option`}
-                    width={60}
-                    height={60}
-                    className={`color-thumbnail ${
-                      color === selectedColor ? "selected" : ""
-                    }`}
-                    onClick={() => handleColorChange(color)}
-                  />
+                 
+                <Image
+                  key={color}
+                  src={encodeURI(colorPreview)}
+                  alt={`${color} option`}
+                  width={60}
+                  height={60}
+                  quality={75}
+                  sizes="60px"
+                  className={`color-thumbnail ${
+                    color === selectedColor ? "selected" : ""
+                  }`}
+                  onClick={() => handleColorChange(color)}
+                />
+
                 );
               })}
                 </div>

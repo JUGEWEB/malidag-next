@@ -9,6 +9,7 @@ import useScreenSize from "./useIsMobile";
 import { useTranslation } from "react-i18next";
 import { useCheckoutStore } from "./checkoutStore";
 import { getCountryConfig } from "./countryUtils";
+import Image from "next/image";
 
 const BASE_URL = "https://api.malidag.com";
 
@@ -65,30 +66,70 @@ const countryCurrencyConfig = useMemo(
   [lockedCountry?.name]
 );
 
-  const fetchReviews = async (productId) => {
-    try {
-      const response = await axios.get(`https://api.malidag.com/get-reviews/${productId}`);
+ 
+const fetchReviews = async (productId) => {
+  if (!productId) return;
 
-      if (response.data.success) {
-        const reviewsArray = response.data.reviews || [];
-        const totalRating = reviewsArray.reduce((acc, review) => {
-          const rating = parseFloat(review.rating);
-          return acc + (isNaN(rating) ? 4 : rating);
-        }, 0);
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/get-reviews/${encodeURIComponent(productId)}`
+    );
 
-        const averageRating = reviewsArray.length
-          ? (totalRating / reviewsArray.length).toFixed(2)
-          : null;
+    const reviewsArray =
+      response.data?.success &&
+      Array.isArray(response.data.reviews)
+        ? response.data.reviews
+        : [];
 
-        setReviews((prevReviews) => ({
-          ...prevReviews,
-          [productId]: { averageRating, reviewsArray },
-        }));
+    const validReviews = reviewsArray.filter((review) => {
+      const rawRating = review?.rating;
+
+      if (
+        rawRating === null ||
+        rawRating === undefined ||
+        String(rawRating).trim() === ""
+      ) {
+        return false;
       }
-    } catch (error) {
+
+      const rating = Number(rawRating);
+
+      return (
+        Number.isFinite(rating) &&
+        rating >= 1 &&
+        rating <= 5
+      );
+    });
+
+    const averageRating = validReviews.length
+      ? validReviews.reduce(
+          (total, review) => total + Number(review.rating),
+          0
+        ) / validReviews.length
+      : null;
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating,
+        reviewsArray: validReviews,
+      },
+    }));
+  } catch (error) {
+    if (error.response?.status !== 404) {
       console.error("Error fetching reviews:", error);
     }
-  };
+
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: {
+        averageRating: null,
+        reviewsArray: [],
+      },
+    }));
+  }
+};
+
 
   const getTranslationLanguage = () => {
   const raw = (
@@ -788,10 +829,15 @@ if (!loading && items.length === 0) {
       <div className="beauty-images-container">
         {beautyImages.length > 0 ? (
           beautyImages.map((img, index) => (
-            <img
+             <Image
               key={index}
               src={img.imageUrl}
-              alt={itemClicked}
+              alt={String(itemClicked || "Category")}
+              width={1440}
+              height={600}
+              priority={index === 0}
+              quality={75}
+              sizes="(max-width: 768px) 100vw, (max-width: 1440px) 95vw, 1440px"
               className="beauty-image"
             />
           ))
@@ -969,8 +1015,16 @@ if (!loading && items.length === 0) {
               const isBestSeller =
                 id === bestSellersByCategory[itemData.category];
 
-              const reviewsData = reviews[itemId] || {};
-              const finalRating = reviewsData?.averageRating;
+             const reviewsData = reviews[itemId] || {};
+
+              const finalRating = Number(reviewsData.averageRating);
+
+              const hasReviews =
+                Array.isArray(reviewsData.reviewsArray) &&
+                reviewsData.reviewsArray.length > 0 &&
+                Number.isFinite(finalRating) &&
+                finalRating >= 1 &&
+                finalRating <= 5;
 
               const normalizedVideos = Array.isArray(videos)
                 ? videos
@@ -1002,16 +1056,23 @@ if (!loading && items.length === 0) {
                       />
                     ) : (
                       <>
-                        <img
-                          className="item-imageof"
-                          src={getDisplayImage(itemData)}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = "/fallback.png";
-                          }}
-                          alt={displayName}
-                          onClick={() => handleNavigate(id)}
-                        />
+                        
+                          <Image
+                            className="item-imageof"
+                            src={getDisplayImage(itemData)}
+                            alt={displayName}
+                            width={600}
+                            height={750}
+                            quality={75}
+                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 300px"
+                            onError={(e) => {
+                              if (!e.currentTarget.src.includes("/fallback.png")) {
+                                e.currentTarget.src = "/fallback.png";
+                              }
+                            }}
+                            onClick={() => handleNavigate(id)}
+                          />
+
 
                         {firstVideoUrl && (
                           <button
@@ -1109,23 +1170,27 @@ if (!loading && items.length === 0) {
                       </div>
                     </div>
 
+                   
+                  {hasReviews && (
                     <button
                       type="button"
                       className="item-type-stars"
                       onClick={(e) => {
                         e.stopPropagation();
+
                         setItemData(itemData);
+
                         router.push(
                           withCountry(`/product/${itemData.id}/review`)
                         );
                       }}
                       title={t("view_reviews")}
                     >
-                      {finalRating
-                        ? "★".repeat(Math.round(finalRating)) +
-                          "☆".repeat(5 - Math.round(finalRating))
-                        : t("no_rating")}
+                      {"★".repeat(Math.round(finalRating))}
+                      {"☆".repeat(5 - Math.round(finalRating))}
                     </button>
+                  )}
+
                   </div>
                 </div>
               );

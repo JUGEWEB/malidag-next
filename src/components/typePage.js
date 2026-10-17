@@ -12,7 +12,7 @@ import React, {
 import {
   PlayCircleOutlined,
 } from "@ant-design/icons";
-
+import Image from "next/image";
 import axios from "axios";
 import "./typePage.css";
 
@@ -507,6 +507,13 @@ const displayName =
             ? item.videos
             : null;
 
+            const imageEntry = item.images?.[0];
+
+const productImage =
+  typeof imageEntry === "string"
+    ? imageEntry
+    : imageEntry?.url || "/fallback.png";
+
           return (
             <div key={id} className="tp-card">
               <div className="tp-media">
@@ -522,16 +529,19 @@ const displayName =
                   />
                 ) : (
                   <>
-                    <img
-                      src={item.images[0]}
-                      alt={displayName}
-                      className="tp-image"
-                      onClick={() => handleItemClick(id)}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/fallback.png";
-                      }}
-                    />
+                    
+                  <Image
+                    src={encodeURI(productImage)}
+                    alt={displayName}
+                    width={600}
+                    height={750}
+                    quality={75}
+                    sizes="(max-width: 600px) 90vw, (max-width: 1024px) 45vw, 25vw"
+                    loading="lazy"
+                    className="tp-image"
+                    onClick={() => handleItemClick(id)}
+                  />
+
 
                     {video && (
                       <button

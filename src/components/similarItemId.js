@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FaArrowUpRightFromSquare } from "react-icons/fa6";
+import Image from "next/image";
 import "./SimilarItemId.css";
 
 const API_BASE = "https://api.malidag.com";
@@ -196,16 +197,22 @@ const withCountry = (path) => {
                   : "similar-item-card similar-item-card-normal"
               }
             >
+              
               <div className="similar-item-image-wrap">
                 {image && (
-                  <img
+                  <Image
                     src={encodeURI(image)}
                     alt={name}
+                    width={600}
+                    height={750}
+                    quality={75}
+                    sizes="(max-width: 600px) 85vw, (max-width: 1024px) 45vw, 280px"
                     className="similar-item-image"
                     loading="lazy"
                   />
                 )}
               </div>
+
 
               <div className="similar-item-info">
                 {brand && (

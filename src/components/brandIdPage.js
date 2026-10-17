@@ -5,6 +5,7 @@ import axios from "axios";
 import { Carousel } from "antd";
 import { useTranslation } from "react-i18next";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
+import Image from "next/image";
 import "./brandIdPage.css";
 
 const API_BASE = "https://api.malidag.com";
@@ -110,7 +111,15 @@ const NextArrow = (props) => {
             return (
               <article className="brand-media-card-image_with_text-brand brand-media-split-brand" key={index}>
                 <div className="brand-media-visual-image_with_text-brand">
-                  <img src={item.files} alt={text || "Brand visual"} />
+                 <Image
+                    src={encodeURI(item.files)}
+                    alt={text || "Brand visual"}
+                    width={900}
+                    height={1100}
+                    quality={80}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    style={{ width: "100%", height: "auto" }}
+                  />
                 </div>
                 {text && <p className="brand-media-copy-brand">{text}</p>}
               </article>
@@ -125,7 +134,15 @@ const NextArrow = (props) => {
               >
                 {text && <p className="brand-media-copy-brand">{text}</p>}
                 <div className="brand-media-visual-image-left_with_text-brand">
-                  <img src={item.files} alt={text || "Brand visual"} />
+                  <Image
+                    src={encodeURI(item.files)}
+                    alt={text || "Brand visual"}
+                    width={900}
+                    height={1100}
+                    quality={80}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    style={{ width: "100%", height: "auto" }}
+                  />
                 </div>
               </article>
             );
@@ -152,7 +169,15 @@ const NextArrow = (props) => {
       </div>
 
       <div className="brand-media-visual-image_right-brand">
-        <img src={item.files} alt="Brand visual" />
+        <Image
+          src={encodeURI(item.files)}
+          alt="Brand visual"
+          width={900}
+          height={1100}
+          quality={80}
+          sizes="(max-width: 768px) 100vw, 50vw"
+          style={{ width: "100%", height: "auto" }}
+        />
       </div>
     </article>
   );
@@ -168,7 +193,15 @@ if (item.type === "title_image_subtitle") {
       )}
 
       <div className="brand-media-visual-center-brand">
-        <img src={item.files} alt="Brand visual" />
+       <Image
+          src={encodeURI(item.files)}
+          alt="Brand visual"
+          width={1200}
+          height={900}
+          quality={80}
+          sizes="(max-width: 768px) 100vw, 800px"
+          style={{ width: "100%", height: "auto" }}
+        />
       </div>
 
       {item.subtitle && (
@@ -207,7 +240,18 @@ if (item.type === "multiple_images_title_subtitle") {
         {Array.isArray(item.files) &&
           item.files.map((img, i) => (
             <div key={i} className="brand-media-multi-item">
-              <img src={img.url} alt="" />
+             <Image
+                src={encodeURI(img.url)}
+                alt={img.title || "Brand gallery image"}
+                width={600}
+                height={750}
+                quality={75}
+                sizes="(max-width: 600px) 90vw, (max-width: 1024px) 45vw, 300px"
+                style={{
+                  width: "100%",
+                  height: "auto",
+                }}
+              />
 
               {img.title && <h3>{img.title}</h3>}
               {img.subtitle && <p>{img.subtitle}</p>}
@@ -246,7 +290,18 @@ if (item.type === "multiple_images_title_subtitle") {
         {Array.isArray(item.files) &&
           item.files.map((img, i) => (
             <div key={i} className="brand-media-icon-item">
-              <img src={img.url} alt="" />
+             <Image
+              src={encodeURI(img.url)}
+              alt={img.title || "Brand feature"}
+              width={120}
+              height={120}
+              quality={75}
+              sizes="120px"
+              style={{
+                maxWidth: "100%",
+                height: "auto",
+              }}
+            />
 
               {img.title && <h3>{img.title}</h3>}
               {img.subtitle && <p>{img.subtitle}</p>}
@@ -261,7 +316,18 @@ if (item.type === "multiple_images_title_subtitle") {
             return (
               <article className="brand-media-card-single_image-brand" key={index}>
                 <div className="brand-media-hero-single_image-brand">
-                  <img src={item.files} alt="Brand visual" />
+                 <Image
+                    src={encodeURI(item.files)}
+                    alt="Brand visual"
+                    width={1600}
+                    height={900}
+                    quality={80}
+                    sizes="(max-width: 768px) 100vw, 90vw"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                    }}
+                  />
                 </div>
               </article>
             );
@@ -283,7 +349,18 @@ if (item.type === "multiple_images_title_subtitle") {
           item.files.map((slide, i) => (
             <div key={i}>
               <div className="brand-media-slide-slide_images-brand">
-                <img src={slide} alt={`Brand slide ${i + 1}`} />
+               <Image
+                  src={encodeURI(slide)}
+                  alt={`Brand slide ${i + 1}`}
+                  width={1200}
+                  height={700}
+                  quality={80}
+                  sizes="(max-width: 768px) 100vw, 900px"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                  }}
+                />
               </div>
             </div>
           ))}

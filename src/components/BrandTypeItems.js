@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-
+import Image from "next/image";
 import { getCountryConfig } from "./countryUtils";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
@@ -207,7 +207,12 @@ const formatPrice = (usdAmount) => {
         }`}
       >
         {items.map((product) => {
-          const image = product.item?.images?.[0];
+         const imageEntry = product.item?.images?.[0];
+
+const image =
+  typeof imageEntry === "string"
+    ? imageEntry
+    : imageEntry?.url || "";
 
           const translatedProduct =
             translations[product.itemId];
@@ -235,15 +240,26 @@ const formatPrice = (usdAmount) => {
                 isGridMode ? "grid-card" : "wide-card"
               }`}
             >
-              <div className="brand-item-image-wrap">
-                {image && (
-                  <img
-                    src={encodeURI(image)}
-                    alt={name || t("item")}
-                    className="brand-item-image"
-                  />
-                )}
-              </div>
+             
+<div className="brand-item-image-wrap">
+  {image && (
+    <Image
+      src={encodeURI(image)}
+      alt={name || t("item")}
+      width={600}
+      height={750}
+      quality={75}
+      sizes={
+        isGridMode
+          ? "(max-width: 600px) 90vw, (max-width: 1024px) 45vw, 25vw"
+          : "(max-width: 600px) 90vw, (max-width: 1024px) 45vw, 33vw"
+      }
+      loading="lazy"
+      className="brand-item-image"
+    />
+  )}
+</div>
+
 
               <div className="brand-item-info">
                 {brand && (

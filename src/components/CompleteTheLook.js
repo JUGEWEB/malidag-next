@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FaArrowUpRightFromSquare } from "react-icons/fa6";
+import Image from "next/image";
 import "./CompleteTheLook.css";
 
 const API_BASE = "https://api.malidag.com";
@@ -220,16 +221,21 @@ const matchedMainItem =
   {mainLookItem && (
     <article className="ctl-card ctl-main-card">
       <div className="ctl-image-wrap">
-        <img
-          src={encodeURI(mainLookItem.image)}
-          alt={`${
-            mainLookItem.product.item?.name ||
-            mainLookItem.product.details?.itemName ||
-            "Main product"
-          } - ${mainLookItem.color}`}
-          className="ctl-image"
-          loading="lazy"
-        />
+       
+<Image
+  src={encodeURI(mainLookItem.image)}
+  alt={`${
+    mainLookItem.product.item?.name ||
+    mainLookItem.product.details?.itemName ||
+    "Main product"
+  } - ${mainLookItem.color}`}
+  width={600}
+  height={750}
+  quality={75}
+  sizes="(max-width: 600px) 90vw, (max-width: 1024px) 45vw, 280px"
+  className="ctl-image"
+/>
+
 
         <span className="ctl-main-image-badge">
           Your selected piece
@@ -290,12 +296,17 @@ const matchedMainItem =
               className="ctl-card"
             >
               <div className="ctl-image-wrap">
-                <img
-                  src={encodeURI(image)}
-                  alt={`${name} - ${color}`}
-                  className="ctl-image"
-                  loading="lazy"
+               
+                <Image
+                src={encodeURI(image)}
+                alt={`${name} - ${color}`}
+                width={600}
+                height={750}
+                quality={75}
+                sizes="(max-width: 600px) 90vw, (max-width: 1024px) 45vw, 280px"
+                className="ctl-image"
                 />
+
               </div>
 
               <div className="ctl-card-content">

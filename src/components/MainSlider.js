@@ -552,7 +552,7 @@ useEffect(() => {
   if (!isHome) return null;
 
   return (
-    <div>
+    <div style={{position: "relative", width: "100%"}}>
       <Head>
         <link rel="preconnect" href="https://cdn.malidag.com" crossOrigin="anonymous" />
         {slides.map((slide) =>
@@ -704,7 +704,7 @@ useEffect(() => {
         </div>
 
         <div className="main-slider__footer">
-  {(isTablet || isDesktop) && (
+  {(isTablet || isDesktop || isMobile) && (
     <div className="main-slider__shipping-notice">
       <span>{t("shipping_notice")}</span>
 

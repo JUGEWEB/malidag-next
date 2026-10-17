@@ -1,111 +1,81 @@
+
 "use client";
 
-import React, { useEffect, useState, useContext, useCallback } from "react";
-import { AppContext } from "./appContext";
-import useScreenSize from "./useIsMobile";
+import React, { useContext } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import { AppContext } from "./appContext";
 import { useTranslation } from "react-i18next";
+import "./ThemeForFashionKick.css";
+
+const theme = {
+  id: 1,
+  theme: "Fashion's kick",
+  image:
+    "https://cdn.malidag.com/themes/1760454565150-92293723-212a-4179-bfe8-53e9d9c40c5b.webp",
+};
 
 const ThemeForFashionKick = () => {
-  const { isDesktop, isMobile, isTablet, isSmallMobile, isVerySmall } = useScreenSize();
-  const [loadedImages, setLoadedImages] = useState({});
   const { t } = useTranslation();
-
   const { country } = useContext(AppContext);
-const countryCode = country?.code;
 
-const withCountry = useCallback(
-  (path) => {
-    if (!countryCode) return path;
-    return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
-  },
-  [countryCode]
-);
-
-  const theme = {
-    id: 1,
-    theme: "Fashion's kick",
-    image: "https://cdn.malidag.com/themes/1760454565150-92293723-212a-4179-bfe8-53e9d9c40c5b.webp",
-  };
-
-  useEffect(() => {
-    const img = new Image();
-    img.src = theme.image;
-    img.onload = () => {
-      setLoadedImages((prev) => ({ ...prev, [theme.id]: true }));
-    };
-  }, []);
+  const countryCode = country?.code;
+  const href = countryCode
+    ? `/${countryCode}/fashionkick`
+    : "/fashionkick";
 
   return (
-    <div
-      style={{
-        overflow: "hidden",
-        width: isDesktop || isTablet || isMobile ? /*"270px"*/ "600px" : "150px",
-        boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
-        backgroundColor: "#fdfdfd",
-        height: isDesktop || isTablet || isMobile ? "400px" : "270px",
-        borderRadius: "0px",
-      }}
-    >
-      <div
-        style={{
-          padding: "10px",
-          fontSize: "24px",
-          fontWeight: "bold",
-          color: "#333",
-          backgroundColor: "#fafafa",
-          textAlign: "center",
-          borderBottom: "1px solid #eee",
-        }}
+    <article className="fashion-kick-card">
+      <Link
+        href={href}
+        className="fashion-kick-card__link"
+        aria-label={t("fashion_kick")}
       >
-        {t("fashion_kick")}
-      </div>
-
-      {/* Wrap image with Link */}
-      <Link href={withCountry("/fashionkick")}>
-        <div
-          style={{
-            width: isSmallMobile || isVerySmall ? "150px" : "100%",
-            height: isSmallMobile || isVerySmall ? "170px" : "auto",
-            backgroundColor: "#ddd5",
-          }}
-        >
-          <img
+        <div className="fashion-kick-card__image-wrap">
+          <Image
             src={theme.image}
             alt={theme.theme}
-            loading="lazy"
-            style={{
-              width: "100%",
-              height: isSmallMobile || isVerySmall ? "100%" : "300px",
-              display: "block",
-              opacity: loadedImages[theme.id] ? 1 : 1,
-              filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
-              cursor: "pointer",
-              objectFit: "cover",
-              transition: "opacity 0.3s ease-in-out",
-            }}
+            fill
+            quality={75}
+            sizes="(max-width: 480px) 82vw, 270px"
+            className="fashion-kick-card__image"
           />
+
+          <span className="fashion-kick-card__badge">
+            MALIDAG STYLE
+          </span>
+        </div>
+
+        <div className="fashion-kick-card__content">
+          <span className="fashion-kick-card__eyebrow">
+            THE COLLECTION
+          </span>
+
+          <h3 className="fashion-kick-card__title">
+            {t("fashion_kick")}
+          </h3>
+
+          <span className="fashion-kick-card__cta">
+            {t("explore_now")}
+
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </span>
         </div>
       </Link>
-
-      {/* Discover Now link */}
-      {(isDesktop || isTablet || isMobile) && (
-        <Link
-          href={withCountry("/fashionkick")}
-          style={{
-            color: "blue",
-            marginTop: "1rem",
-            fontSize: "0.8rem",
-            textDecoration: "underline",
-            cursor: "pointer",
-            marginLeft: "1rem",
-            display: "inline-block",
-          }}
-        >
-         {t("explore_now")}
-        </Link>
-      )}
-    </div>
+    </article>
   );
 };
 

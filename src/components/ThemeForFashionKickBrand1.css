@@ -1,0 +1,344 @@
+
+/* ==========================================
+   MALIDAG — FASHION KICK BRAND 1
+   Premium Responsive Hero
+========================================== */
+
+/* MAIN SECTION */
+
+.fashion-kick-hero-brand1 {
+  position: relative;
+  display: block;
+
+  width: 100%;
+  max-width: 1200px;
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
+}
+
+/* HERO BANNER */
+
+.fashion-kick-hero__link-brand1 {
+  position: relative;
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+  height: 465px;
+
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 24px;
+
+  background-color: #171717;
+  color: #ffffff;
+  text-decoration: none;
+
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.05),
+    0 18px 48px rgba(15, 23, 42, 0.12);
+
+  transition: box-shadow 0.35s ease;
+}
+
+.fashion-kick-hero__link-brand1:hover {
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.08),
+    0 24px 60px rgba(15, 23, 42, 0.16);
+}
+
+.fashion-kick-hero__link-brand1:focus-visible {
+  outline: 3px solid #15803d;
+  outline-offset: 4px;
+}
+
+/* OPTIMIZED IMAGE */
+
+.fashion-kick-hero__image-brand1 {
+  z-index: 0;
+  object-fit: cover;
+  object-position: center;
+
+  transform: scale(1.01);
+
+  transition:
+    transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fashion-kick-hero__link-brand1:hover
+.fashion-kick-hero__image-brand1 {
+  transform: scale(1.055);
+}
+
+/* CINEMATIC OVERLAY */
+
+.fashion-kick-hero__overlay-brand1 {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(7, 13, 22, 0.76) 0%,
+      rgba(7, 13, 22, 0.48) 48%,
+      rgba(7, 13, 22, 0.12) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.18),
+      transparent 60%
+    );
+}
+
+/* CONTENT */
+
+.fashion-kick-hero__content-brand1 {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+
+  width: 100%;
+  height: 100%;
+
+  padding: clamp(24px, 4vw, 52px);
+  box-sizing: border-box;
+
+  color: #ffffff;
+  text-align: left;
+  pointer-events: none;
+}
+
+/* EYEBROW */
+
+.fashion-kick-hero__eyebrow-brand1 {
+  margin-bottom: 18px;
+
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* TITLE */
+
+.fashion-kick-hero__title-brand1 {
+  margin: 0;
+  max-width: 100%;
+
+  color: #ffffff;
+  font-size: clamp(30px, 3.5vw, 54px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.14);
+}
+
+/* SUBTITLE */
+
+.fashion-kick-hero__subtitle-brand1 {
+  margin: 22px 0 0;
+  max-width: 540px;
+
+  color: rgba(255, 255, 255, 0.93);
+  font-size: clamp(15px, 1.5vw, 19px);
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+/* DISCOVER CTA */
+
+.fashion-kick-hero__cta-brand1 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  margin-top: 32px;
+  padding: 15px 28px;
+
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+  transition:
+    background-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.fashion-kick-hero__cta-brand1 svg {
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.fashion-kick-hero__link-brand1:hover
+.fashion-kick-hero__cta-brand1 {
+  background: #f5f5f4;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+}
+
+.fashion-kick-hero__link-brand1:hover
+.fashion-kick-hero__cta-brand1 svg {
+  transform: translateX(4px);
+}
+
+/* ==========================================
+   RESPONSIVE HEIGHTS
+========================================== */
+
+/* LARGE DESKTOP */
+
+@media (min-width: 1440px) {
+  .fashion-kick-hero__link-brand1 {
+    height: 465px;
+  }
+}
+
+/* LAPTOP */
+
+@media (min-width: 1025px) and (max-width: 1439px) {
+  .fashion-kick-hero__link-brand1 {
+    height: 420px;
+  }
+
+  .fashion-kick-hero__title-brand1 {
+    font-size: clamp(30px, 3.5vw, 48px);
+  }
+}
+
+/* TABLET */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .fashion-kick-hero__link-brand1 {
+    height: 390px;
+    border-radius: 20px;
+  }
+
+  .fashion-kick-hero__content-brand1 {
+    padding: 28px;
+  }
+
+  .fashion-kick-hero__title-brand1 {
+    font-size: clamp(28px, 3.5vw, 40px);
+  }
+}
+
+/* MOBILE */
+
+@media (max-width: 768px) {
+  .fashion-kick-hero__link-brand1 {
+    height: 400px;
+    border-radius: 18px;
+  }
+
+  .fashion-kick-hero__overlay-brand1 {
+    background: linear-gradient(
+      0deg,
+      rgba(7, 13, 22, 0.82) 0%,
+      rgba(7, 13, 22, 0.48) 55%,
+      rgba(7, 13, 22, 0.18) 100%
+    );
+  }
+
+  .fashion-kick-hero__content-brand1 {
+    justify-content: flex-end;
+    padding: 28px;
+  }
+
+  .fashion-kick-hero__title-brand1 {
+    font-size: clamp(30px, 7vw, 46px);
+  }
+
+  .fashion-kick-hero__subtitle-brand1 {
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .fashion-kick-hero__cta-brand1 {
+    margin-top: 22px;
+    padding: 12px 22px;
+    font-size: 13px;
+  }
+}
+
+/* SMALL MOBILE */
+
+@media (max-width: 480px) {
+  .fashion-kick-hero__link-brand1 {
+    height: 360px;
+    border-radius: 16px;
+  }
+
+  .fashion-kick-hero__content-brand1 {
+    padding: 22px;
+  }
+
+  .fashion-kick-hero__eyebrow-brand1 {
+    margin-bottom: 10px;
+    font-size: 9px;
+  }
+
+  .fashion-kick-hero__title-brand1 {
+    font-size: clamp(27px, 8vw, 36px);
+  }
+
+  .fashion-kick-hero__subtitle-brand1 {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .fashion-kick-hero__cta-brand1 {
+    margin-top: 18px;
+    padding: 11px 20px;
+    font-size: 12px;
+  }
+}
+
+/* ==========================================
+   REDUCED MOTION
+========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .fashion-kick-hero__link-brand1,
+  .fashion-kick-hero__image-brand1,
+  .fashion-kick-hero__cta-brand1,
+  .fashion-kick-hero__cta-brand1 svg {
+    transition: none;
+  }
+
+  .fashion-kick-hero__image-brand1,
+  .fashion-kick-hero__link-brand1:hover
+  .fashion-kick-hero__image-brand1,
+  .fashion-kick-hero__link-brand1:hover
+  .fashion-kick-hero__cta-brand1,
+  .fashion-kick-hero__link-brand1:hover
+  .fashion-kick-hero__cta-brand1 svg {
+    transform: none;
+  }
+}

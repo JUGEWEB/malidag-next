@@ -1,0 +1,45 @@
+
+/* ==========================================
+   MALIDAG CATEGORY 2
+   Clean Responsive Layout
+========================================== */
+
+.malidag-category2 {
+  display: block;
+  position: relative;
+
+  width: 100%;
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
+}
+
+.malidag-category2__item {
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   RESPONSIVE LAYOUT
+========================================== */
+
+@media (max-width: 768px) {
+  .malidag-category2 {
+    width: 100%;
+    position: relative;
+  }
+
+  .malidag-category2__item {
+    width: 100%;
+  }
+}

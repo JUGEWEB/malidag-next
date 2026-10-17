@@ -1,0 +1,402 @@
+
+/* ==========================================
+   MALIDAG — WOMEN FASHION BRAND 1
+   Premium Responsive Hero
+========================================== */
+
+/* ==========================================
+   MAIN SECTION
+========================================== */
+
+.women-brand-hero-brand1 {
+  position: relative;
+  display: block;
+
+  width: 100%;
+  max-width: 1200px;
+  min-width: 0;
+
+  margin: 24px auto;
+  padding: 0 20px;
+
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   HERO LINK / BANNER
+========================================== */
+
+.women-brand-hero__link-brand1 {
+  position: relative;
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 12 / 5;
+
+  overflow: hidden;
+  isolation: isolate;
+
+  border-radius: 24px;
+  background-color: #171717;
+
+  color: #ffffff;
+  text-decoration: none;
+
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.05),
+    0 18px 48px rgba(15, 23, 42, 0.12);
+
+  transition: box-shadow 0.35s ease;
+}
+
+.women-brand-hero__link-brand1:hover {
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.08),
+    0 24px 60px rgba(15, 23, 42, 0.16);
+}
+
+.women-brand-hero__link-brand1:focus-visible {
+  outline: 3px solid #15803d;
+  outline-offset: 4px;
+}
+
+/* ==========================================
+   NEXT.JS IMAGE
+========================================== */
+
+.women-brand-hero__image-brand1 {
+  z-index: 0;
+
+  object-fit: cover;
+  object-position: center center;
+
+  opacity: 1;
+  visibility: visible;
+
+  transform: scale(1.01);
+
+  transition:
+    transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.women-brand-hero__link-brand1:hover
+.women-brand-hero__image-brand1 {
+  transform: scale(1.055);
+}
+
+/* ==========================================
+   CINEMATIC GRADIENT
+========================================== */
+
+.women-brand-hero__overlay-brand1 {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(9, 15, 24, 0.68) 0%,
+      rgba(9, 15, 24, 0.42) 48%,
+      rgba(9, 15, 24, 0.14) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.22),
+      transparent 55%
+    );
+}
+
+/* ==========================================
+   CONTENT CONTAINER
+========================================== */
+
+.women-brand-hero__content-brand1 {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+
+  width: 100%;
+  height: 100%;
+  max-width: 800px;
+
+  padding: clamp(24px, 6vw, 80px);
+  box-sizing: border-box;
+
+  text-align: left;
+  color: #ffffff;
+
+  pointer-events: none;
+}
+
+/* ==========================================
+   COLLECTION LABEL
+========================================== */
+
+.women-brand-hero__eyebrow-brand1 {
+  display: inline-block;
+  margin-bottom: 18px;
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* ==========================================
+   TITLE
+========================================== */
+
+.women-brand-hero__title-brand1 {
+  margin: 0;
+  max-width: 720px;
+
+  font-size: clamp(36px, 5.4vw, 70px);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: -0.045em;
+
+  color: #ffffff;
+  text-wrap: balance;
+
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================
+   SUBTITLE
+========================================== */
+
+.women-brand-hero__subtitle-brand1 {
+  margin: 22px 0 0;
+  max-width: 540px;
+
+  font-size: clamp(15px, 1.5vw, 19px);
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0.005em;
+
+  color: rgba(255, 255, 255, 0.93);
+}
+
+/* ==========================================
+   PREMIUM CTA
+========================================== */
+
+.women-brand-hero__cta-brand1 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  margin-top: 32px;
+  padding: 15px 28px;
+
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+
+  background-color: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.women-brand-hero__cta-brand1 svg {
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.women-brand-hero__link-brand1:hover
+.women-brand-hero__cta-brand1 {
+  background-color: #f5f5f4;
+  color: #111827;
+
+  transform: translateY(-2px);
+
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+}
+
+.women-brand-hero__link-brand1:hover
+.women-brand-hero__cta-brand1 svg {
+  transform: translateX(4px);
+}
+
+/* ==========================================
+   TABLET — 1024px
+========================================== */
+
+@media (max-width: 1024px) {
+  .women-brand-hero-brand1 {
+    padding: 0 16px;
+    margin: 20px auto;
+  }
+
+  .women-brand-hero__link-brand1 {
+    aspect-ratio: 16 / 7;
+    border-radius: 20px;
+  }
+
+  .women-brand-hero__content-brand1 {
+    max-width: 680px;
+    padding: 48px;
+  }
+
+  .women-brand-hero__title-brand1 {
+    font-size: clamp(38px, 5vw, 58px);
+  }
+
+  .women-brand-hero__subtitle-brand1 {
+    max-width: 500px;
+  }
+}
+
+/* ==========================================
+   MOBILE — 768px
+========================================== */
+
+@media (max-width: 768px) {
+  .women-brand-hero-brand1 {
+    position: relative;
+    padding: 0 12px;
+    margin: 14px auto;
+  }
+
+  .women-brand-hero__link-brand1 {
+    aspect-ratio: 4 / 3;
+    border-radius: 18px;
+  }
+
+  .women-brand-hero__image-brand1 {
+    object-position: center center;
+  }
+
+  .women-brand-hero__overlay-brand1 {
+    background: linear-gradient(
+      0deg,
+      rgba(9, 15, 24, 0.8) 0%,
+      rgba(9, 15, 24, 0.46) 55%,
+      rgba(9, 15, 24, 0.2) 100%
+    );
+  }
+
+  .women-brand-hero__content-brand1 {
+    justify-content: flex-end;
+    align-items: flex-start;
+
+    width: 100%;
+    max-width: 100%;
+
+    padding: 30px 26px;
+  }
+
+  .women-brand-hero__eyebrow-brand1 {
+    margin-bottom: 12px;
+
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+
+  .women-brand-hero__title-brand1 {
+    font-size: clamp(30px, 7vw, 46px);
+    line-height: 1.1;
+  }
+
+  .women-brand-hero__subtitle-brand1 {
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .women-brand-hero__cta-brand1 {
+    margin-top: 22px;
+    padding: 12px 22px;
+    font-size: 13px;
+  }
+}
+
+/* ==========================================
+   SMALL MOBILE — 480px
+========================================== */
+
+@media (max-width: 480px) {
+  .women-brand-hero-brand1 {
+    padding: 0 10px;
+    margin: 10px auto;
+  }
+
+  .women-brand-hero__link-brand1 {
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+  }
+
+  .women-brand-hero__content-brand1 {
+    padding: 24px 20px;
+  }
+
+  .women-brand-hero__eyebrow-brand1 {
+    margin-bottom: 10px;
+    font-size: 9px;
+  }
+
+  .women-brand-hero__title-brand1 {
+    font-size: clamp(27px, 8vw, 36px);
+  }
+
+  .women-brand-hero__subtitle-brand1 {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .women-brand-hero__cta-brand1 {
+    margin-top: 18px;
+    padding: 11px 20px;
+    font-size: 12px;
+  }
+}
+
+/* ==========================================
+   REDUCED MOTION
+========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .women-brand-hero__link-brand1,
+  .women-brand-hero__image-brand1,
+  .women-brand-hero__cta-brand1,
+  .women-brand-hero__cta-brand1 svg {
+    transition: none;
+  }
+
+  .women-brand-hero__image-brand1,
+  .women-brand-hero__link-brand1:hover
+  .women-brand-hero__image-brand1 {
+    transform: none;
+  }
+
+  .women-brand-hero__link-brand1:hover
+  .women-brand-hero__cta-brand1 {
+    transform: none;
+  }
+}

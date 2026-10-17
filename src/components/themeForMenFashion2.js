@@ -1,79 +1,100 @@
+
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import useScreenSize from './useIsMobile';
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import axios from "axios";
+import "./ThemeForMenFashion2.css";
 
 const ThemeForMenFashion2 = () => {
-   const router = useRouter();
   const [theme, setTheme] = useState(null);
-  const { isDesktop, isMobile, isTablet } = useScreenSize();
 
   useEffect(() => {
     const fetchTheme = async () => {
       try {
-        const res = await axios.get('https://api.malidag.com/themes/');
-        const allThemes = res.data.themes;
+        const res = await axios.get(
+          "https://api.malidag.com/themes/"
+        );
+
+        const allThemes = res.data?.themes || [];
 
         const selected = allThemes.find(
-          t => t.theme === "Men fashion"
+          (item) => item.theme === "Men fashion"
         );
 
         if (selected) {
           setTheme(selected);
         }
       } catch (error) {
-        console.error('Error fetching theme:', error);
+        console.error("Error fetching men's fashion theme:", error);
       }
     };
 
     fetchTheme();
   }, []);
 
-  const brandCount = parseInt(localStorage.getItem('brandCount')) || 0;
-
-
   if (!theme) return null;
 
   return (
-    <div style={{
-      overflow: 'hidden',
-      width: '270px',
-      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
-      backgroundColor: '#fdfdfd',
-     height: "400px"
-    }}>
-      <div style={{
-        padding: '10px',
-        fontSize: '24px',
-        fontWeight: 'bold',
-        color: '#333',
-        backgroundColor: '#fafafa',
-        textAlign: 'center',
-        borderBottom: '1px solid #eee',
-      }}>
-        {theme.theme}
-      </div>
+    <article className="men-fashion2">
+      <Link
+        href="/men-fashion"
+        className="men-fashion2__link"
+        aria-label={`Discover ${theme.theme}`}
+      >
+        <div className="men-fashion2__image-wrapper">
+          {theme.image && (
+            <Image
+              src={theme.image}
+              alt={theme.theme}
+              fill
+              quality={75}
+              sizes="(max-width: 480px) 85vw, 270px"
+              className="men-fashion2__image"
+            />
+          )}
 
-      <img
-        src={theme.image}
-        alt={theme.theme}
-        onClick={() => router.push(`/men-fashion`)}
+          <div
+            className="men-fashion2__overlay"
+            aria-hidden="true"
+          />
 
-        style={{
-          cursor: "pointer",
-          width: '100%',
-          height: 'auto',
-          display: 'block',
-          objectFit: 'cover',
-          filter: "contrast(1.08) saturate(1.08) brightness(1.02)",
-        }}
-      />
+          <span className="men-fashion2__badge">
+            MALIDAG STYLE
+          </span>
+        </div>
 
-      <div onClick={() => router.push('/men-fashion')}
- style={{cursor: "pointer" , color: "blue", marginTop: "4rem", fontSize: "0.8rem", textDecoration: "underline", marginLeft: "1rem"}}>discover now</div>
-    </div>
+        <div className="men-fashion2__content">
+          <span className="men-fashion2__eyebrow">
+            THE COLLECTION
+          </span>
+
+          <h3 className="men-fashion2__title">
+            {theme.theme}
+          </h3>
+
+          <span className="men-fashion2__cta">
+            Discover now
+
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </span>
+        </div>
+      </Link>
+    </article>
   );
 };
 

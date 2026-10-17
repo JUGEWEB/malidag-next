@@ -1,17 +1,196 @@
-.categories-container{
+
+/* ==========================================
+   ORIGINAL CATEGORIES CONTAINER
+========================================== */
+
+.categories-container {
   display: flex;
   position: relative;
   width: 100%;
   height: auto;
-  justify-content: start;
+  justify-content: flex-start;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
+/* ==========================================
+   SKELETON ANIMATION
+========================================== */
+
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 .skeleton-card {
   animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* ==========================================
+   WOMEN FASHION BRAND 1 LAYOUT
+========================================== */
+
+.malidag-categories-hero {
+  display: block;
+  position: relative;
+
+  width: 100%;
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
+}
+
+.malidag-categories-hero__item {
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
+}
+
+
+
+/* ==========================================
+   MALIDAG CATEGORY
+   Responsive Brand Banner Layout
+========================================== */
+
+/* ORIGINAL CATEGORIES CONTAINER */
+
+.categories-container {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* ORIGINAL SKELETON ANIMATION */
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.skeleton-card {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* ==========================================
+   BRAND CATEGORY SECTION
+========================================== */
+
+.malidag-category {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   TWO-COLUMN GRID
+========================================== */
+
+.malidag-category__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+
+  width: 100%;
+  min-width: 0;
+  max-width: 1440px;
+
+  margin: 0 auto;
+  padding: 20px;
+
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   INDIVIDUAL BANNER WRAPPER
+========================================== */
+
+.malidag-category__item {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   NESTED BRAND HERO WIDTH
+========================================== */
+
+.malidag-category__item .men-brand-hero-brand1 {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================
+   TABLET
+========================================== */
+
+@media (max-width: 1024px) {
+  .malidag-category__grid {
+    gap: 12px;
+    padding: 16px;
+  }
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 768px) {
+  .malidag-category__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 12px;
+  }
+}
+
+/* ==========================================
+   SMALL MOBILE
+========================================== */
+
+@media (max-width: 480px) {
+  .malidag-category__grid {
+    gap: 12px;
+    padding: 10px;
+  }
 }

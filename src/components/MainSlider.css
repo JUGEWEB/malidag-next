@@ -73,6 +73,8 @@
 
 .main-slider {
   position: relative;
+  width: 100%;
+  height: auto;
 }
 
 .main-slider__surface {
@@ -233,17 +235,73 @@
   margin-left: 20px;
 }
 
+
+/* ==========================================
+   MAIN SLIDER FOOTER
+   Floats over the bottom of the slider
+========================================== */
+
 .main-slider__footer {
-  position: absolute;
-  bottom: 0;
+  position: relative;
+  z-index: 10;
+
   width: 100%;
+  min-width: 0;
+  height: auto;
+
+  /* Pull footer upward over the slider */
+  margin-top: -450px;
+
+  padding: 0 0 24px;
+
+  box-sizing: border-box;
 }
 
+/* Category banners */
+
 .main-slider__categories {
+  position: relative;
+  z-index: 2;
+
   width: 100%;
+  min-width: 0;
   height: auto;
+
   margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
 }
+
+.main-slider__categories > div {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Tablet */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-slider__footer {
+    margin-top: -390px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+  .main-slider__footer {
+    margin-top: -370px;
+    padding-bottom: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .main-slider__footer {
+    margin-top: -250px;
+    padding-bottom: 16px;
+  }
+}
+
 
 .main-slider__shipping-notice {
   width: 100%;

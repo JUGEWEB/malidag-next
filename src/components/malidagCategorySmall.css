@@ -1,0 +1,97 @@
+
+/* ==========================================
+   MALIDAG — SMALL MOBILE CATEGORIES
+========================================== */
+
+/* MAIN CONTAINER */
+
+.malidag-category-small {
+  position: relative;
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
+}
+
+/* HORIZONTAL SCROLL AREA */
+
+.malidag-category-small__scroll {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+
+  width: 100%;
+  min-width: 0;
+
+  gap: 12px;
+
+  padding: 12px;
+  margin: 0;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none;
+
+  box-sizing: border-box;
+}
+
+.malidag-category-small__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* INDIVIDUAL CATEGORY CARD */
+
+.malidag-category-small__item {
+  position: relative;
+  display: block;
+
+  flex: 0 0 270px;
+
+  width: 270px;
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  scroll-snap-align: start;
+
+  box-sizing: border-box;
+}
+
+/* SMALL MOBILE */
+
+@media (max-width: 480px) {
+  .malidag-category-small__scroll {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .malidag-category-small__item {
+    flex-basis: min(270px, 82vw);
+    width: min(270px, 82vw);
+  }
+}
+
+/* VERY SMALL MOBILE */
+
+@media (max-width: 360px) {
+  .malidag-category-small__scroll {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .malidag-category-small__item {
+    flex-basis: min(250px, 84vw);
+    width: min(250px, 84vw);
+  }
+}

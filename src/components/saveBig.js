@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useContext } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+  useRef,
+} from "react";
 import axios from "axios";
 import "./saveBig.css";
 import { useRouter } from "next/navigation";
@@ -26,6 +32,15 @@ function SaveBig({ countryCode }) {
 const [reviews, setReviews] = useState({});
   const [types, setTypes] = useState({});
   const [loading, setLoading] = useState(true);
+  const PAGE_SIZE = 8;
+
+const [page, setPage] = useState(1);
+const [hasMore, setHasMore] = useState(true);
+const [loadingMore, setLoadingMore] = useState(false);
+const [loadError, setLoadError] = useState(false);
+const [retryCount, setRetryCount] = useState(0);
+
+const loadMoreRef = useRef(null);
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
   const [bestSellerId, setBestSellerId] = useState(null);
   const [basketItems, setBasketItems] = useState([]);
@@ -93,57 +108,202 @@ const currentLanguage = isSupportedLanguage(i18n.language)
   return `/${code}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
-  useEffect(() => {
-    const fetchFilteredItems = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/items?country=${encodeURIComponent(countryCode)}`);
-        const raw = response.data;
-const data = Array.isArray(raw) ? raw : raw?.items || [];
+ 
+/* Reset pagination when country changes */
+useEffect(() => {
+  setTypes({});
+  setPage(1);
+  setHasMore(true);
+  setLoading(false);
+  setLoadingMore(false);
+  setLoadError(false);
+  setSelectedColorByItem({});
+  setBestSellerId(null);
+  setReviews({});
+  setTranslations({});
+}, [countryCode]);
 
-       const filteredData = data.filter((item) => {
-  const usdPrice = parseFloat(item?.item?.usdPrice || 0);
-  const originalPrice = parseFloat(item?.item?.originalPrice || 0);
-  const discount =
-    originalPrice > 0 ? (originalPrice - usdPrice) / originalPrice : 0;
+/* Fetch one API page at a time */
+useEffect(() => {
+  if (!countryCode) {
+    setLoading(false);
+    setLoadingMore(false);
+    return;
+  }
 
-  return originalPrice > usdPrice && discount <= 0.2;
-});
+  const controller = new AbortController();
+  let cancelled = false;
 
-        const groupedData = filteredData.reduce((acc, item) => {
-          const type = item?.item?.type || "Other";
-          if (!acc[type]) acc[type] = [];
-          acc[type].push(item);
-          return acc;
-        }, {});
+  const fetchFilteredItems = async () => {
+    if (page === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
 
-        const bestSeller = [...filteredData].sort(
-  (a, b) => Number(b?.item?.sold || 0) - Number(a?.item?.sold || 0)
-)[0];
+    setLoadError(false);
 
-setBestSellerId(bestSeller?.id || null);
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/items`,
+        {
+          params: {
+            country: countryCode,
+            page,
+            limit: PAGE_SIZE,
+          },
+          signal: controller.signal,
+        }
+      );
 
-        const initialColors = {};
+      if (cancelled) return;
+
+      const raw = response.data;
+
+      const data = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.items)
+          ? raw.items
+          : [];
+
+      const pagination = raw?.pagination;
+
+      // Preserve the existing SaveBig discount rule.
+      const filteredData = data.filter((product) => {
+        const usdPrice = parseFloat(
+          product?.item?.usdPrice || 0
+        );
+
+        const originalPrice = parseFloat(
+          product?.item?.originalPrice || 0
+        );
+
+        const discount =
+          originalPrice > 0
+            ? (originalPrice - usdPrice) / originalPrice
+            : 0;
+
+        return (
+          originalPrice > usdPrice &&
+          discount <= 0.2
+        );
+      });
+
+      setTypes((prev) => {
+        // Replace on page 1; append on later pages.
+        const next = page === 1 ? {} : { ...prev };
 
         filteredData.forEach((product) => {
-          if (product?.itemId) fetchReviews(product.itemId);
+          const type = product?.item?.type || "Other";
 
-          const colorKeys = Object.keys(product?.item?.imagesVariants || {});
-          if (colorKeys.length > 0) {
-            initialColors[product.id] = colorKeys[0];
+          if (!next[type]) {
+            next[type] = [];
+          }
+
+          const exists = next[type].some(
+            (existing) =>
+              String(existing.id ?? existing.itemId) ===
+              String(product.id ?? product.itemId)
+          );
+
+          if (!exists) {
+            next[type].push(product);
           }
         });
 
-        setSelectedColorByItem(initialColors);
-        setTypes(groupedData);
-      } catch (error) {
-        console.error("Error fetching items:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+        return next;
+      });
 
-    fetchFilteredItems();
-  },  [countryCode]);
+      setHasMore(
+        pagination
+          ? Boolean(pagination.hasNextPage)
+          : data.length === PAGE_SIZE
+      );
+
+      const initialColors = {};
+
+      filteredData.forEach((product) => {
+        const colorKeys = Object.keys(
+          product?.item?.imagesVariants || {}
+        );
+
+        if (colorKeys.length > 0) {
+          initialColors[product.id] = colorKeys[0];
+        }
+
+        if (product?.itemId) {
+          fetchReviews(product.itemId);
+        }
+      });
+
+      setSelectedColorByItem((prev) => ({
+        ...(page === 1 ? {} : prev),
+        ...initialColors,
+      }));
+
+    } catch (error) {
+      if (cancelled || axios.isCancel(error)) return;
+
+      console.error("SaveBig pagination error:", error);
+      setLoadError(true);
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    }
+  };
+
+  fetchFilteredItems();
+
+  return () => {
+    cancelled = true;
+    controller.abort();
+  };
+}, [countryCode, page, retryCount]);
+
+/* Automatically load the next page */
+useEffect(() => {
+  const target = loadMoreRef.current;
+
+  if (
+    !target ||
+    loading ||
+    loadingMore ||
+    !hasMore ||
+    loadError ||
+    !countryCode
+  ) {
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        observer.disconnect();
+
+        setPage((prev) => prev + 1);
+      }
+    },
+    {
+      root: null,
+      rootMargin: "300px",
+      threshold: 0,
+    }
+  );
+
+  observer.observe(target);
+
+  return () => observer.disconnect();
+}, [
+  types,
+  loading,
+  loadingMore,
+  hasMore,
+  loadError,
+  countryCode,
+]);
+
 
  useEffect(() => {
   const fetchRates = async () => {
@@ -197,6 +357,19 @@ const formatPrice = (usdAmount) => {
 };
 
   const allItems = useMemo(() => Object.values(types).flat(), [types]);
+
+  useEffect(() => {
+  const bestSeller = allItems.reduce((best, product) => {
+    if (!best) return product;
+
+    return Number(product?.item?.sold || 0) >
+      Number(best?.item?.sold || 0)
+      ? product
+      : best;
+  }, null);
+
+  setBestSellerId(bestSeller?.id || null);
+}, [allItems]);
 
   const countryName = countryCode?.toUpperCase() || "your country";
 const hasItems = allItems.length > 0;
@@ -1034,7 +1207,7 @@ useEffect(() => {
   );
 }
 
-if (!loading && !hasItems) {
+if (!loading && !hasItems && !hasMore && !loadError) {
   return (
    <div className="bbe-empty-country">
   <div className="bbe-empty-icon">💸</div>
@@ -1362,6 +1535,41 @@ const displayName =
           );
         })}
       </div>
+
+ {/* Infinite scroll loading spinner */}
+      {loadingMore && (
+        <div className="bbe-infinite-loader" role="status">
+          <span
+            className="bbe-infinite-spinner"
+            aria-hidden="true"
+          />
+        </div>
+      )}
+
+      {/* Retry when loading another page fails */}
+      {loadError && (
+        <div className="bbe-infinite-loader">
+          <button
+            type="button"
+            className="bbe-retry-btn"
+            onClick={() => {
+              setLoadError(false);
+              setRetryCount((prev) => prev + 1);
+            }}
+          >
+            Retry loading products
+          </button>
+        </div>
+      )}
+
+      {/* IntersectionObserver target */}
+      {hasMore && !loadError && (
+        <div
+          ref={loadMoreRef}
+          className="bbe-load-more-trigger"
+          aria-hidden="true"
+        />
+      )}
 
        {sizeModalOpen &&
   pendingBasketProduct && (

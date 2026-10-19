@@ -649,10 +649,9 @@ return (
               <button
                 type="button"
                 className="fashionkick-primary-btn"
-                onClick={() => {
-                  const el = document.getElementById("fashionkick-products");
-                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
+                onClick={() =>
+  router.push(withCountry("/fashionkick/trending"))
+}
               >
                {t("fashionkick_shop_trending")}
               </button>
@@ -849,7 +848,7 @@ return (
     </div>
   ) : (
     <section className="fashionkick-products-grid">
-      {allItems.map(({ id, item, itemId }) => {
+     {allItems.slice(0, 8).map(({ id, item, itemId }) => {
         const reviewData = reviews[itemId];
         const averageRating = reviewData?.averageRating;
         const reviewCount = reviewData?.count || 0;
@@ -955,6 +954,42 @@ return (
         );
       })}
     </section>
+  )}
+
+   {allItems.length > 8 && (
+    <nav
+      className="fashionkick-trending-pagination"
+      aria-label="Trending products pagination"
+    >
+      <button
+        type="button"
+        className="fashionkick-page-number active"
+        aria-current="page"
+        disabled
+      >
+        1
+      </button>
+
+      <button
+        type="button"
+        className="fashionkick-page-number"
+        onClick={() =>
+          router.push(withCountry("/fashionkick/trending"))
+        }
+      >
+        2
+      </button>
+
+      <button
+        type="button"
+        className="fashionkick-page-next"
+        onClick={() =>
+          router.push(withCountry("/fashionkick/trending"))
+        }
+      >
+        Next <span aria-hidden="true">→</span>
+      </button>
+    </nav>
   )}
 
   <div className="fashionkick-recommended-wrap">

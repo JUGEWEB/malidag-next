@@ -1195,3 +1195,48 @@ button {
     transform: rotate(360deg);
   }
 }
+
+
+.fashionkick-trending-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 35px 0 45px;
+}
+
+.fashionkick-page-number,
+.fashionkick-page-next {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.fashionkick-page-number.active {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+  cursor: default;
+}
+
+.fashionkick-page-number:not(.active):hover,
+.fashionkick-page-next:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.fashionkick-page-next {
+  gap: 8px;
+}

@@ -1,0 +1,263 @@
+
+.fkt-page {
+  min-height: 100vh;
+  background: #f8f9fb;
+  color: #111827;
+  padding: 30px 16px 80px;
+}
+
+.fkt-container {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.fkt-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 18px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fkt-back:hover {
+  background: #f3f4f6;
+}
+
+.fkt-header {
+  text-align: center;
+  padding: 45px 0 38px;
+}
+
+.fkt-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.fkt-header h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+
+.fkt-header p {
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.fkt-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.fkt-card {
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  transition: box-shadow 0.2s;
+}
+
+.fkt-card:hover {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+}
+
+.fkt-image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: #f3f4f6;
+  cursor: pointer;
+}
+
+.fkt-image {
+  object-fit: cover;
+}
+
+.fkt-discount {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: #111827;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fkt-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.fkt-brand {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.fkt-name {
+  margin: 0;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fkt-price-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fkt-price-row strong {
+  font-size: 17px;
+}
+
+.fkt-price-row del {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.fkt-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fkt-rating > span:first-child {
+  color: #f59e0b;
+}
+
+.fkt-review-count {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.fkt-view-btn {
+  width: 100%;
+  margin-top: auto;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #111827;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fkt-view-btn:hover {
+  background: #374151;
+}
+
+.fkt-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 35px 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.fkt-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #111827;
+  border-radius: 50%;
+  animation: fktSpin 0.75s linear infinite;
+}
+
+.fkt-scroll-trigger {
+  height: 1px;
+  width: 100%;
+}
+
+.fkt-message {
+  text-align: center;
+  padding: 40px 15px;
+  color: #6b7280;
+}
+
+.fkt-message button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+@keyframes fktSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .fkt-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .fkt-page {
+    padding: 20px 12px 60px;
+  }
+
+  .fkt-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .fkt-info {
+    padding: 11px;
+  }
+
+  .fkt-name {
+    font-size: 13px;
+  }
+
+  .fkt-price-row strong {
+    font-size: 14px;
+  }
+
+  .fkt-header {
+    padding: 32px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fkt-spinner {
+    animation: none;
+  }
+}

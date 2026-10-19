@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useContext, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  useMemo,
+  useRef,
+} from "react";
 import { AppContext } from "./appContext";
 import axios from "axios";
 import "./itemPage.css";
@@ -34,8 +40,17 @@ const withCountry = (path) => {
   return `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+ const PAGE_SIZE = 8;
+
+const [items, setItems] = useState([]);
+const [loading, setLoading] = useState(true);
+
+const [page, setPage] = useState(1);
+const [hasMore, setHasMore] = useState(false);
+const [loadingMore, setLoadingMore] = useState(false);
+const [loadError, setLoadError] = useState(false);
+const [retryCount, setRetryCount] = useState(0);
+const loadMoreRef = useRef(null);
   const [activeVideoId, setActiveVideoId] = useState(null);
   const [reviews, setReviews] = useState({});
   const [menuOpen, setMenuOpen] = useState(false);
@@ -537,46 +552,171 @@ const fetchReviews = async (productId) => {
 };
 
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      if (!searchTerm) return;
+ 
+useEffect(() => {
+  // Reset the search when the term or country changes.
+  setItems([]);
+  setPage(1);
+  setHasMore(false);
+  setLoadError(false);
+ setLoading(false);
+  setLoadingMore(false);
+  setSelectedColorByItem({});
+  setBestSellerId(null);
+}, [searchTerm, countryCode]);
 
-      setLoading(true);
-
-      try {
-       const response = await axios.get(
-  `https://api.malidag.com/items/${encodeURIComponent(searchTerm)}?country=${encodeURIComponent(countryCode)}`
-);
-       const matchedItems = response.data.items || [];
-setItems(matchedItems);
-
-const initialColors = {};
-
-matchedItems.forEach((product) => {
-  const colorKeys = Object.keys(product?.item?.imagesVariants || {});
-  if (colorKeys.length > 0) {
-    initialColors[product.id] = colorKeys[0];
+useEffect(() => {
+  if (!searchTerm || !countryCode) {
+    setLoading(false);
+    return;
   }
-});
 
-setSelectedColorByItem(initialColors);
+  const controller = new AbortController();
+  let cancelled = false;
 
-const bestSeller = [...matchedItems].sort(
-  (a, b) => Number(b?.item?.sold || b?.details?.soldText || 0) - Number(a?.item?.sold || a?.details?.soldText || 0)
-)[0];
+  const fetchItems = async () => {
+    // Prevent simultaneous page requests.
 
-setBestSellerId(bestSeller?.id || null);
+    if (page === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
 
-matchedItems.forEach((item) => fetchReviews(item.itemId));
-      } catch (error) {
-        console.error("Error fetching items:", error);
-      } finally {
+    setLoadError(false);
+
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/items/${encodeURIComponent(searchTerm)}`,
+        {
+          params: {
+            country: countryCode,
+            page,
+            limit: PAGE_SIZE,
+          },
+          signal: controller.signal,
+        }
+      );
+
+      if (cancelled) return;
+
+      const matchedItems = Array.isArray(response.data?.items)
+        ? response.data.items
+        : [];
+
+      const pagination = response.data?.pagination;
+
+      setItems((prev) => {
+        const combined =
+          page === 1
+            ? matchedItems
+            : [...prev, ...matchedItems];
+
+        // Avoid duplicate product cards.
+        return Array.from(
+          new Map(
+            combined.map((product) => [
+              product.id || product.itemId,
+              product,
+            ])
+          ).values()
+        );
+      });
+
+      setHasMore(Boolean(pagination?.hasNextPage));
+
+      const initialColors = {};
+
+      matchedItems.forEach((product) => {
+        const colorKeys = Object.keys(
+          product?.item?.imagesVariants || {}
+        );
+
+        if (colorKeys.length > 0) {
+          initialColors[product.id] = colorKeys[0];
+        }
+      });
+
+      setSelectedColorByItem((prev) => ({
+        ...prev,
+        ...initialColors,
+      }));
+
+      // Preserve the existing best-seller badge logic
+      // across all products loaded so far.
+      setBestSellerId((prev) => {
+        const bestInBatch = [...matchedItems].sort(
+          (a, b) =>
+            Number(b?.item?.sold || b?.details?.soldText || 0) -
+            Number(a?.item?.sold || a?.details?.soldText || 0)
+        )[0];
+
+        if (!bestInBatch) return page === 1 ? null : prev;
+
+        return bestInBatch.id;
+      });
+
+      matchedItems.forEach((item) => {
+        if (item.itemId) {
+          fetchReviews(item.itemId);
+        }
+      });
+    } catch (error) {
+      if (cancelled || axios.isCancel(error)) return;
+
+      console.error("Error fetching items:", error);
+      setLoadError(true);
+    } finally {
+
+      if (!cancelled) {
         setLoading(false);
+        setLoadingMore(false);
       }
-    };
+    }
+  };
 
-    fetchItems();
-  }, [searchTerm, countryCode]);
+  fetchItems();
+
+  return () => {
+    cancelled = true;
+    controller.abort();
+  };
+}, [searchTerm, countryCode, page, retryCount]);
+
+
+useEffect(() => {
+  const target = loadMoreRef.current;
+
+  if (
+    !target ||
+    loading ||
+    loadingMore ||
+    !hasMore ||
+    loadError
+  ) {
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        observer.disconnect();
+
+        setPage((prev) => prev + 1);
+      }
+    },
+    {
+      root: null,
+      rootMargin: "300px",
+      threshold: 0,
+    }
+  );
+
+  observer.observe(target);
+
+  return () => observer.disconnect();
+}, [items, loading, loadingMore, hasMore, loadError]);
+
 
   useEffect(() => {
   const fetchRates = async () => {
@@ -954,9 +1094,35 @@ useEffect(() => {
   };
 }, [menuOpen]);
 
-  if (loading) return <div className="loading-message">{t("loading")}</div>;
+if (loadError && items.length === 0) {
+  return (
+    <div className="loading-message">
+      <p>Failed to load products.</p>
+      <button
+        type="button"
+        onClick={() => {
+          setLoadError(false);
+          setRetryCount((prev) => prev + 1);
+        }}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
 
-  if (!items || items.length === 0) {
+if (loading && items.length === 0) {
+  return (
+    <div className="infinite-loader-cc" role="status">
+      <span className="infinite-spinner-cc" aria-hidden="true" />
+      <span className="infinite-loader-text-cc">
+        {t("loading")}
+      </span>
+    </div>
+  );
+}
+
+if (!loading && items.length === 0 && !loadError) {
     return (
       <div className="no-results-message">
         {t("no_results_found", { term: searchTerm })}
@@ -2223,9 +2389,46 @@ const basketQuantity = getBasketQuantity(itemId);
 </div>
 </div>
 </div>
+
   );
 })}
         </div>
+
+{/* Infinite scroll trigger */}
+<div
+  ref={loadMoreRef}
+  style={{
+    width: "100%",
+    minHeight: "1px",
+  }}
+  aria-hidden="true"
+/>
+
+{/* Loading the next 7 products */}
+
+{/* Spinning loader for infinite scrolling */}
+{loadingMore && (
+  <div className="infinite-loader-cc" role="status">
+    <span className="infinite-spinner-cc" aria-hidden="true" />
+  </div>
+)}
+
+
+{/* Request failed: allow retry */}
+{loadError && (
+  <div style={{ textAlign: "center", padding: "20px" }}>
+    <button
+      type="button"
+      onClick={() => {
+  setLoadError(false);
+  setRetryCount((prev) => prev + 1);
+}}
+    >
+      Retry loading products
+    </button>
+  </div>
+)}
+
       </main>
     </div>
   );

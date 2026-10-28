@@ -166,9 +166,16 @@ function InputSearch({ isBasketVisible, basketItems, user }) {
   }
 }, [pathname, searchParams]);
 
-  if (pathname === "/") {
+ 
+const isAuthActionPage =
+  /^\/(?:(?:fr|gb|br|us|de|ie|au|be)\/)?auth\/action\/?$/.test(
+    pathname || ""
+  );
+
+if (pathname === "/" || isAuthActionPage) {
   return null;
 }
+
 
   return (
     <div

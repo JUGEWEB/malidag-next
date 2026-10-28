@@ -188,7 +188,7 @@ const basketCount = (basketItems || []).reduce(
   {/* MALIDAG text logo */}
  {(isSmallMobile || isMobile || isTablet || isDesktop) &&
   !hidePhoneCheckoutHeaderItems && (
-    <div
+    <button
       className="logoStyle"
       onClick={home}
       style={{
@@ -201,7 +201,7 @@ const basketCount = (basketItems || []).reduce(
       }}
     >
       MALIDAG
-    </div>
+    </button>
 )}
 
   {/* Image logo for very small devices */}

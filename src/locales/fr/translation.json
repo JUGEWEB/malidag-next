@@ -1304,5 +1304,8 @@
   "search_empty_description": "Nous n'avons trouvé aucun produit correspondant à « {{term}} ».",
   "search_empty_description_generic": "Nous n'avons trouvé aucun produit correspondant à votre recherche.",
   "search_empty_hint": "Essayez d'autres mots-clés ou une recherche plus générale.",
-  "search_empty_button": "Découvrir Malidag"
+  "search_empty_button": "Découvrir Malidag",
+  
+"auth_return_to_login_message": "Tout est prêt ! Veuillez retourner sur la page Malidag où vous avez commencé et vous connecter à votre compte."
+
 }

@@ -246,43 +246,33 @@ const withCountry = (path) => {
      EMAIL VERIFIED
      ====================================================== */
 
-  if (status === "verified") {
-    return (
-      <main className="auth-action-page">
-        <section className="auth-action-card">
-          <div className="auth-action-icon success">
-            ✓
-          </div>
+  
+if (status === "verified") {
+  return (
+    <main className="auth-action-page">
+      <section className="auth-action-card">
+        <div className="auth-action-icon success">
+          ✓
+        </div>
 
-          <h1>
-            {t("email_verified_title")}
-          </h1>
+        <h1>{t("email_verified_title")}</h1>
 
-          <p>
-            {t(
-              "email_verified_description"
-            )}
+        <p>{t("email_verified_description")}</p>
+
+        {email && (
+          <p className="auth-action-email">
+            {email}
           </p>
+        )}
 
-          {email && (
-            <p className="auth-action-email">
-              {email}
-            </p>
-          )}
+        <div className="auth-action-next-step">
+          <p>{t("auth_return_to_login_message")}</p>
+        </div>
+      </section>
+    </main>
+  );
+}
 
-          <button
-            type="button"
-            className="auth-submit"
-            
-             onClick={goToAuth}
-            
-          >
-            {t("continue_to_login")}
-          </button>
-        </section>
-      </main>
-    );
-  }
 
   /* ======================================================
      RESET PASSWORD FORM
@@ -484,39 +474,31 @@ const withCountry = (path) => {
      PASSWORD RESET SUCCESS
      ====================================================== */
 
-  if (status === "passwordResetSuccess") {
-    return (
-      <main className="auth-action-page">
-        <section className="auth-action-card">
-          <div className="auth-action-icon success">
-            ✓
-          </div>
+ 
+if (status === "passwordResetSuccess") {
+  return (
+    <main className="auth-action-page">
+      <section className="auth-action-card">
+        <div className="auth-action-icon success">
+          ✓
+        </div>
 
-          <h1>
-            {t(
-              "password_reset_success_title"
-            )}
-          </h1>
+        <h1>
+          {t("password_reset_success_title")}
+        </h1>
 
-          <p>
-            {t(
-              "password_reset_success_description"
-            )}
-          </p>
+        <p>
+          {t("password_reset_success_description")}
+        </p>
 
-          <button
-            type="button"
-            className="auth-submit"
-           
-              onClick={goToAuth}
-            
-          >
-            {t("continue_to_login")}
-          </button>
-        </section>
-      </main>
-    );
-  }
+        <div className="auth-action-next-step">
+          <p>{t("auth_return_to_login_message")}</p>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 
   /* ======================================================
      UNSUPPORTED ACTION

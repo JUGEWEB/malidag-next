@@ -1329,5 +1329,8 @@
   "search_empty_description": "We couldn't find any products matching “{{term}}”.",
   "search_empty_description_generic": "We couldn't find any matching products.",
   "search_empty_hint": "Try using different keywords or a more general search.",
-  "search_empty_button": "Explore Malidag"
+  "search_empty_button": "Explore Malidag",
+  
+"auth_return_to_login_message": "You're all set! Please return to the Malidag page where you started and log in to your account."
+
 }

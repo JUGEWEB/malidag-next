@@ -348,17 +348,6 @@
   z-index: 12;
 }
 
-@media (max-width: 1200px) {
-  .carousel-item.items-5 {
-    width: calc((100% - 3 * var(--fashion-gap)) / 4);
-  }
-}
-
-@media (max-width: 1024px) {
-  .carousel-item.items-5 {
-    width: calc((100% - 2 * var(--fashion-gap)) / 3);
-  }
-
   .carousel-card__media {
     height: 230px;
   }
@@ -367,7 +356,7 @@
   .carousel-image--placeholder {
     height: 230px;
   }
-}
+
 
 @media (max-width: 768px) {
   .fashion-carousel {
@@ -441,5 +430,92 @@
   .carousel-image,
   .carousel-image--placeholder {
     height: 160px;
+  }
+}
+
+
+/* One API page displayed at a time */
+.fashion-carousel .carousel-slides {
+  overflow-x: hidden;
+  scroll-behavior: auto;
+}
+
+/* Keep navigation available on phones */
+@media (max-width: 768px) {
+  .fashion-carousel__nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+
+/* Spinner while fetching an API page */
+.fashion-carousel__state--loading {
+  min-height: 260px;
+  border: none;
+  background: #ffffff;
+}
+
+.fashion-carousel__spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #15803d;
+  border-radius: 50%;
+  animation: fashion-spinner-rotate 0.75s linear infinite;
+}
+
+@keyframes fashion-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Disable animation for reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .fashion-carousel__spinner {
+    animation-duration: 2s;
+  }
+}
+
+/* Allow horizontal swiping without blocking vertical scrolling */
+.fashion-carousel .carousel-slides {
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+}
+
+
+/* Match the number of visible cards to API page size */
+.fashion-carousel .carousel-item.items-5 {
+  width: calc((100% - 4 * var(--fashion-gap)) / 5);
+}
+
+.fashion-carousel .carousel-item.items-3 {
+  width: calc((100% - 2 * var(--fashion-gap)) / 3);
+}
+
+.fashion-carousel .carousel-item.items-2 {
+  width: calc((100% - 1 * var(--fashion-gap)) / 2);
+}
+
+/* Mobile swipe pagination */
+@media (max-width: 768px) {
+  .fashion-carousel .carousel-slides {
+    overflow-x: hidden;
+  }
+
+  .fashion-carousel__nav {
+    display: flex;
+    width: 34px;
+    height: 34px;
+  }
+
+  .fashion-carousel__nav--left {
+    left: 5px;
+  }
+
+  .fashion-carousel__nav--right {
+    right: 5px;
   }
 }

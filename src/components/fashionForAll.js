@@ -11,10 +11,6 @@ import Image from "next/image";
 
 const BASE_URL = 'https://api.malidag.com';
 const MAX_ITEMS = 17;
-const CACHED_ITEMS_COUNT = 10;
-const CACHE_KEY = 'fashionForAll_first10';
-const CACHE_TIME_KEY = 'fashionForAll_first10_time';
-const CACHE_TTL = 1000 * 60 * 30;
 const FALLBACK_IMAGE = '/placeholder-image.png';
 
 function FashionForAll({
@@ -28,27 +24,91 @@ function FashionForAll({
   showViewMore = true,
   country,
 }) {
-  const [items, setItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFetchingFreshData, setIsFetchingFreshData] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const [rates, setRates] = useState(null);
+  
+const [items, setItems] = useState([]);
+const [isLoading, setIsLoading] = useState(true);
+const [isFetchingFreshData, setIsFetchingFreshData] = useState(false);
+const [hasError, setHasError] = useState(false);
+const [hasNextPage, setHasNextPage] = useState(false);
+const [page, setPage] = useState(1);
+const [retryKey, setRetryKey] = useState(0);
+const [rates, setRates] = useState(null);
+
+// Cache already fetched pages while this component is mounted.
+const pageCacheRef = useRef(new Map());
+
+
+const touchStartX = useRef(null);
+const touchStartY = useRef(null);
+
+const handleTouchStart = (event) => {
+  touchStartX.current = event.touches[0].clientX;
+  touchStartY.current = event.touches[0].clientY;
+};
+
+const handleTouchEnd = (event) => {
+  if (
+    touchStartX.current === null ||
+    touchStartY.current === null
+  ) {
+    return;
+  }
+
+  const deltaX =
+    event.changedTouches[0].clientX - touchStartX.current;
+
+  const deltaY =
+    event.changedTouches[0].clientY - touchStartY.current;
+
+  touchStartX.current = null;
+  touchStartY.current = null;
+
+  // Ignore small movements and vertical page scrolling.
+  if (
+    Math.abs(deltaX) < 50 ||
+    Math.abs(deltaX) <= Math.abs(deltaY)
+  ) {
+    return;
+  }
+
+  if (isLoading) return;
+
+  if (deltaX < 0 && canGoNext) {
+    setPage((prev) => prev + 1);
+  } else if (deltaX > 0 && canGoPrevious) {
+    setItems([]);
+setIsLoading(true);
+    setPage((prev) => prev - 1);
+  }
+};
+
   const { t, i18n } = useTranslation();
-  const scrollRef = useRef(null);
   const { isMobile, isSmallMobile, isVerySmall, isTablet } = useScreenSize();
   const displayTitle = title || t("fashion_for_all");
 const displayEyebrow = eyebrow || t("curated_collection");
 const displayViewMore = viewMoreLabel || t("view_more");
 const [itemTranslations, setItemTranslations] = useState({});
-  const itemsPerRowClass = useMemo(() => {
-    if (isSmallMobile || isVerySmall) return 'items-2';
-    if (isTablet || isMobile) return 'items-3';
-    return 'items-5';
-  }, [isMobile, isSmallMobile, isTablet, isVerySmall]);
+ 
+const pageSize =
+  isMobile || isSmallMobile || isVerySmall
+    ? 2
+    : isTablet
+    ? 3
+    : 5;
 
-  const showDesktopArrows = !isMobile && !isSmallMobile && !isVerySmall;
+const itemsPerRowClass = useMemo(() => {
+  if (pageSize === 2) return "items-2";
+  if (pageSize === 3) return "items-3";
+  return "items-5";
+}, [pageSize]);
+
+const showDesktopArrows = true;
+
+const maxPages = Math.ceil(MAX_ITEMS / pageSize);
+const canGoPrevious = page > 1;
+const canGoNext =
+  page < maxPages && hasNextPage;
+
 
   const countryCode = country?.code?.toLowerCase() || "fr";
 
@@ -68,104 +128,134 @@ const withCountry = (path) => {
   return `/${countryCode}${cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`}`;
 };
 
-  const updateScrollState = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container) return;
+ 
+const fetchFashionItems = useCallback(() => {
+  const cacheKey = `${countryCode}:${category}:${pageSize}:${page}`;
 
-    const { scrollLeft, scrollWidth, clientWidth } = container;
-    const maxScrollLeft = scrollWidth - clientWidth;
+  pageCacheRef.current.delete(cacheKey);
+  setRetryKey((prev) => prev + 1);
+}, [countryCode, category, pageSize, page]);
 
-    setCanScrollLeft(scrollLeft > 5);
-    setCanScrollRight(scrollLeft < maxScrollLeft - 5);
-  }, []);
+// Reset pagination whenever the country, category,
+// or responsive page size changes.
+useEffect(() => {
+  setPage(1);
+  setItems([]);
+  setHasNextPage(false);
+  setHasError(false);
+  setIsLoading(true);
+  pageCacheRef.current.clear();
+}, [countryCode, category, pageSize]);
 
-  const readCache = useCallback(() => {
-    try {
-      if (typeof window === 'undefined') return null;
+// Fetch only the current page from the API.
+useEffect(() => {
+  const controller = new AbortController();
+  let cancelled = false;
 
-    const cacheKey = `${CACHE_KEY}_${countryCode}_${category}`;
-const cacheTimeKey = `${CACHE_TIME_KEY}_${countryCode}_${category}`;
+  const loadPage = async () => {
+    const cacheKey =
+      `${countryCode}:${category}:${pageSize}:${page}`;
 
-      const cachedItems = localStorage.getItem(cacheKey);
-      const cachedTime = localStorage.getItem(cacheTimeKey);
+    const cached = pageCacheRef.current.get(cacheKey);
 
-      if (!cachedItems || !cachedTime) return null;
-
-      const isExpired = Date.now() - Number(cachedTime) > CACHE_TTL;
-      if (isExpired) return null;
-
-      const parsedItems = JSON.parse(cachedItems);
-
-      if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
-        return null;
-      }
-
-      return parsedItems;
-    } catch (error) {
-      console.error('Error reading fashion carousel cache:', error);
-      return null;
-    }
-  }, [category]);
-
-  const writeCache = useCallback(
-    (fashionItems) => {
-      try {
-        if (typeof window === 'undefined') return;
-
-       const cacheKey = `${CACHE_KEY}_${countryCode}_${category}`;
-const cacheTimeKey = `${CACHE_TIME_KEY}_${countryCode}_${category}`;
-
-        const firstItems = fashionItems.slice(0, CACHED_ITEMS_COUNT);
-        localStorage.setItem(cacheKey, JSON.stringify(firstItems));
-        localStorage.setItem(cacheTimeKey, Date.now().toString());
-      } catch (error) {
-        console.error('Error writing fashion carousel cache:', error);
-      }
-    },
-    [category, countryCode]
-  );
-
-  const fetchFashionItems = useCallback(async () => {
-  try {
-    setIsFetchingFreshData(true);
-    setHasError(false);
-
-    if (!countryCode) {
-      setItems([]);
+    if (cached) {
+      setItems(cached.items);
+      setHasNextPage(cached.hasNextPage);
+      setHasError(false);
+      setIsLoading(false);
+      setIsFetchingFreshData(false);
       return;
     }
 
-    const response = await fetch(
-      `${BASE_URL}/items/category/clothes?country=${encodeURIComponent(countryCode)}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
+    setIsLoading(true);
+    setIsFetchingFreshData(true);
+    setHasError(false);
+
+    try {
+      const params = new URLSearchParams({
+        country: countryCode,
+        page: String(page),
+        limit: String(pageSize),
+      });
+
+      const response = await fetch(
+        `${BASE_URL}/items/category/clothes?${params.toString()}`,
+        {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch fashion items: ${response.status}`
+        );
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch items: ${response.status}`);
+      const data = await response.json();
+
+      const fetchedItems = Array.isArray(data?.items)
+        ? data.items
+        : [];
+
+      // The API always uses a fixed page size.
+      // Only trim the displayed results to respect MAX_ITEMS.
+      const remainingSlots =
+        MAX_ITEMS - (page - 1) * pageSize;
+
+      const pageItems = fetchedItems.slice(
+        0,
+        Math.max(0, remainingSlots)
+      );
+
+      const nextPageAvailable =
+        Boolean(data?.pagination?.hasNextPage) &&
+        page < Math.ceil(MAX_ITEMS / pageSize);
+
+      if (cancelled) return;
+
+      pageCacheRef.current.set(cacheKey, {
+        items: pageItems,
+        hasNextPage: nextPageAvailable,
+      });
+
+      setItems(pageItems);
+      setHasNextPage(nextPageAvailable);
+    } catch (error) {
+      if (cancelled || error.name === "AbortError") {
+        return;
+      }
+
+      console.error(
+        "Error fetching fashion items:",
+        error
+      );
+
+      setItems([]);
+      setHasError(true);
+    } finally {
+      if (!cancelled) {
+        setIsLoading(false);
+        setIsFetchingFreshData(false);
+      }
     }
+  };
 
-    const data = await response.json();
+  loadPage();
 
-    const fashionItems = (
-      Array.isArray(data) ? data : data?.items || []
-    ).slice(0, MAX_ITEMS);
+  return () => {
+    cancelled = true;
+    controller.abort();
+  };
+}, [
+  countryCode,
+  category,
+  page,
+  pageSize,
+  retryKey,
+]);
 
-    setItems(fashionItems);
-    writeCache(fashionItems);
-  } catch (error) {
-    console.error("Error fetching fashion items:", error);
-    setHasError(true);
-  } finally {
-    setIsFetchingFreshData(false);
-    setIsLoading(false);
-  }
-}, [category, countryCode, writeCache]);
 
 useEffect(() => {
   const fetchRates = async () => {
@@ -288,45 +378,30 @@ useEffect(() => {
   };
 }, [items, i18n.language]);
 
-  useEffect(() => {
-    const cachedItems = readCache();
 
-    if (cachedItems && cachedItems.length > 0) {
-      setItems(cachedItems);
-      setIsLoading(false);
+ 
+const scrollCarousel = useCallback(
+  (direction) => {
+    if (isLoading) return;
+
+    if (direction === "left" && page > 1) {
+      setPage((prev) => prev - 1);
     }
 
-    fetchFashionItems();
-  }, [fetchFashionItems, readCache]);
+    if (
+      direction === "right" &&
+      hasNextPage &&
+      page < maxPages
+    ) {
 
-  useEffect(() => {
-    updateScrollState();
-  }, [items, updateScrollState]);
+      setItems([]);
+setIsLoading(true);
+      setPage((prev) => prev + 1);
+    }
+  },
+  [isLoading, page, hasNextPage, maxPages]
+);
 
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    container.addEventListener('scroll', updateScrollState);
-    window.addEventListener('resize', updateScrollState);
-
-    return () => {
-      container.removeEventListener('scroll', updateScrollState);
-      window.removeEventListener('resize', updateScrollState);
-    };
-  }, [updateScrollState]);
-
-  const scrollCarousel = useCallback((direction) => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const scrollAmount = container.clientWidth * 0.82;
-
-    container.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth',
-    });
-  }, []);
 
   const getItemData = useCallback((item) => {
     const rawItem = item?.item || {};
@@ -394,23 +469,40 @@ const itemName =
   );
 };
 
-  const renderState = (message, type = 'default') => (
-    <div className={`fashion-carousel__state fashion-carousel__state--${type}`}>
-      <div className="fashion-carousel__state-content">
-        <span className="fashion-carousel__state-title">{message}</span>
+ 
+const renderState = (message, type = "default") => (
+  <div
+    className={`fashion-carousel__state fashion-carousel__state--${type}`}
+    role={type === "loading" ? "status" : undefined}
+    aria-live={type === "loading" ? "polite" : undefined}
+  >
+    <div className="fashion-carousel__state-content">
+      {type === "loading" ? (
+        <div
+          className="fashion-carousel__spinner"
+          aria-label={message}
+        />
+      ) : (
+        <>
+          <span className="fashion-carousel__state-title">
+            {message}
+          </span>
 
-        {type === 'error' && (
-          <button
-            type="button"
-            className="fashion-carousel__retry-button"
-            onClick={fetchFashionItems}
-          >
-           {t("try_again")}
-          </button>
-        )}
-      </div>
+          {type === "error" && (
+            <button
+              type="button"
+              className="fashion-carousel__retry-button"
+              onClick={fetchFashionItems}
+            >
+              {t("try_again")}
+            </button>
+          )}
+        </>
+      )}
     </div>
-  );
+  </div>
+);
+
 
   const renderContent = () => {
     if (isLoading && items.length === 0) {
@@ -427,7 +519,7 @@ if (!isLoading && items.length === 0) {
 
     return (
       <div className="fashion-carousel__viewport">
-        {items.length > 0 && showDesktopArrows && (
+      {showDesktopArrows && (
           <>
             <div className="fashion-carousel__edge fashion-carousel__edge--left" />
             <div className="fashion-carousel__edge fashion-carousel__edge--right" />
@@ -437,7 +529,7 @@ if (!isLoading && items.length === 0) {
               onClick={() => scrollCarousel('left')}
               className="fashion-carousel__nav fashion-carousel__nav--left"
               aria-label={t("scroll_left")}
-              disabled={!canScrollLeft}
+             disabled={!canGoPrevious || isLoading}
             >
               <LeftOutlined />
             </button>
@@ -447,19 +539,25 @@ if (!isLoading && items.length === 0) {
               onClick={() => scrollCarousel('right')}
               className="fashion-carousel__nav fashion-carousel__nav--right"
               aria-label={t("scroll_right")}
-              disabled={!canScrollRight}
+              disabled={!canGoNext || isLoading}
             >
               <RightOutlined />
             </button>
           </>
         )}
 
-        <div
-          ref={scrollRef}
-          className="carousel-slides"
-          aria-label={`${title} products`}
-          role="region"
-        >
+       
+
+      <div
+        className="carousel-slides"
+        aria-label={`${displayTitle} products, page ${page}`}
+        role="region"
+        aria-live="polite"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+
+
           {items.map((item, index) => {
             const {
               imageUrl,
@@ -564,11 +662,6 @@ if (!isLoading && items.length === 0) {
 
       {renderContent()}
 
-      {isFetchingFreshData && items.length > 0 && (
-        <div className="fashion-carousel__refreshing" aria-live="polite">
-          <span>{t("refreshing")}</span>
-        </div>
-      )}
     </section>
   );
 }

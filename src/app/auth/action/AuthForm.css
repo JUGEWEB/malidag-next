@@ -165,3 +165,31 @@
 .auth-action-form .auth-submit {
   margin-top: 12px;
 }
+
+
+.auth-action-next-step {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.auth-action-next-step p {
+  margin: 0;
+  color: #1e40af;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+@media (max-width: 480px) {
+  .auth-action-next-step {
+    padding: 14px 16px;
+  }
+
+  .auth-action-next-step p {
+    font-size: 13px;
+  }
+}

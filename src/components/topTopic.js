@@ -20,7 +20,7 @@ import Image from "next/image";
 
 const BASE_URL = "https://api.malidag.com";
 
-const MAX_ITEMS = 100;
+const MAX_ITEMS = 14;
 const CACHED_ITEMS_COUNT = 10;
 const CACHE_KEY = "topTopic_first10";
 

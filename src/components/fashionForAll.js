@@ -37,6 +37,8 @@ const [rates, setRates] = useState(null);
 // Cache already fetched pages while this component is mounted.
 const pageCacheRef = useRef(new Map());
 
+const translationCacheRef = useRef(new Map());
+
 
 const touchStartX = useRef(null);
 const touchStartY = useRef(null);
@@ -73,13 +75,13 @@ const handleTouchEnd = (event) => {
 
   if (isLoading) return;
 
-  if (deltaX < 0 && canGoNext) {
-    setPage((prev) => prev + 1);
-  } else if (deltaX > 0 && canGoPrevious) {
-    setItems([]);
-setIsLoading(true);
-    setPage((prev) => prev - 1);
-  }
+ 
+if (deltaX < 0 && canGoNext) {
+  navigateToPage(page + 1);
+} else if (deltaX > 0 && canGoPrevious) {
+  navigateToPage(page - 1);
+}
+
 };
 
   const { t, i18n } = useTranslation();
@@ -127,6 +129,48 @@ const withCountry = (path) => {
 
   return `/${countryCode}${cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`}`;
 };
+
+
+const navigateToPage = useCallback(
+  (nextPage) => {
+    if (isLoading) return;
+
+    if (nextPage < 1 || nextPage > maxPages) return;
+
+    if (nextPage === page) return;
+
+    if (nextPage > page && !hasNextPage) return;
+
+    const cacheKey =
+      `${countryCode}:${category}:${pageSize}:${nextPage}`;
+
+    const cachedPage = pageCacheRef.current.get(cacheKey);
+
+    if (cachedPage) {
+      // Previously visited page: display immediately.
+      setItems(cachedPage.items);
+      setHasNextPage(cachedPage.hasNextPage);
+      setHasError(false);
+      setIsLoading(false);
+    } else {
+      // New page: show the spinner immediately.
+      setItems([]);
+      setHasError(false);
+      setIsLoading(true);
+    }
+
+    setPage(nextPage);
+  },
+  [
+    isLoading,
+    maxPages,
+    page,
+    hasNextPage,
+    countryCode,
+    category,
+    pageSize,
+  ]
+);
 
  
 const fetchFashionItems = useCallback(() => {
@@ -300,75 +344,102 @@ const convertUsdToLocal = useCallback(
   [rates, countryCurrencyConfig?.currency]
 );
 
+
 useEffect(() => {
-  if (!items.length || !i18n.language) return;
+  if (!i18n.language) return;
 
   let cancelled = false;
 
+  const lang = ["en", "fr", "br"].includes(i18n.language)
+    ? i18n.language
+    : "en";
+
+  if (lang === "en") {
+    setItemTranslations({});
+    return;
+  }
+
   const fetchTranslations = async () => {
-    const lang = ["en", "fr", "br"].includes(i18n.language)
-      ? i18n.language
-      : "en";
+    const translationMap = {};
+    const missingItems = [];
 
-    // English is the original product language.
-    if (lang === "en") {
-      if (!cancelled) {
-        setItemTranslations({});
-      }
-      return;
-    }
+    // Reuse translations already fetched.
+    for (const item of items) {
+      const productId = item?.itemId;
 
-    try {
-      const results = await Promise.all(
-        items.map(async (item) => {
-          const productId = item?.itemId;
+      if (!productId) continue;
 
-          if (!productId) return null;
+      const cacheKey = `${lang}:${productId}`;
 
-          try {
-            const response = await fetch(
-              `${BASE_URL}/translate/product/translate/${encodeURIComponent(
-                productId
-              )}/${encodeURIComponent(lang)}`
-            );
+      if (translationCacheRef.current.has(cacheKey)) {
+        const cachedTranslation =
+          translationCacheRef.current.get(cacheKey);
 
-            if (!response.ok) return null;
-
-            const data = await response.json();
-
-            return [
-              productId,
-              data?.translation || null,
-            ];
-          } catch (error) {
-            console.error(
-              `Translation fetch failed for ${productId}:`,
-              error
-            );
-
-            return null;
-          }
-        })
-      );
-
-      if (cancelled) return;
-
-      const translationMap = {};
-
-      results.forEach((result) => {
-        if (!result) return;
-
-        const [productId, translation] = result;
-
-        if (translation) {
-          translationMap[productId] = translation;
+        if (cachedTranslation) {
+          translationMap[productId] = cachedTranslation;
         }
-      });
-
-      setItemTranslations(translationMap);
-    } catch (error) {
-      console.error("Error fetching product translations:", error);
+      } else {
+        missingItems.push(item);
+      }
     }
+
+    // Display cached translations immediately.
+    setItemTranslations(translationMap);
+
+    if (missingItems.length === 0) return;
+
+    const results = await Promise.all(
+      missingItems.map(async (item) => {
+        const productId = item.itemId;
+        const cacheKey = `${lang}:${productId}`;
+
+        try {
+          const response = await fetch(
+            `${BASE_URL}/translate/product/translate/${encodeURIComponent(
+              productId
+            )}/${encodeURIComponent(lang)}`
+          );
+
+          if (!response.ok) return null;
+
+          const data = await response.json();
+          const translation = data?.translation || null;
+
+          // Cache successful translations only.
+          if (translation) {
+            translationCacheRef.current.set(
+              cacheKey,
+              translation
+            );
+          }
+
+          return [productId, translation];
+        } catch (error) {
+          console.error(
+            `Translation fetch failed for ${productId}:`,
+            error
+          );
+
+          return null;
+        }
+      })
+    );
+
+    if (cancelled) return;
+
+    const updatedMap = { ...translationMap };
+
+    results.forEach((result) => {
+      if (!result) return;
+
+      const [productId, translation] = result;
+
+      if (translation) {
+        updatedMap[productId] = translation;
+      }
+    });
+
+    setItemTranslations(updatedMap);
   };
 
   fetchTranslations();
@@ -378,29 +449,19 @@ useEffect(() => {
   };
 }, [items, i18n.language]);
 
-
  
+
 const scrollCarousel = useCallback(
   (direction) => {
-    if (isLoading) return;
-
-    if (direction === "left" && page > 1) {
-      setPage((prev) => prev - 1);
-    }
-
-    if (
-      direction === "right" &&
-      hasNextPage &&
-      page < maxPages
-    ) {
-
-      setItems([]);
-setIsLoading(true);
-      setPage((prev) => prev + 1);
+    if (direction === "left") {
+      navigateToPage(page - 1);
+    } else if (direction === "right") {
+      navigateToPage(page + 1);
     }
   },
-  [isLoading, page, hasNextPage, maxPages]
+  [navigateToPage, page]
 );
+
 
 
   const getItemData = useCallback((item) => {

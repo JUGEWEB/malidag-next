@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import "./fashionForAllPage.css";
 import useScreenSize from "./useIsMobile";
@@ -36,6 +36,18 @@ const [selectedImageIndexByItem, setSelectedImageIndexByItem] = useState({});
 const { push } = useRouter();
 const pathname = usePathname();
 const [failedImages, setFailedImages] = useState({});
+
+const [visibleCount, setVisibleCount] = useState(8);
+const [loadingMore, setLoadingMore] = useState(false);
+const loadMoreRef = useRef(null);
+
+const isPhone =
+  isMobile ||
+  isSmallMobile ||
+  isVerySmall ||
+  isVeryVerySmall;
+
+const batchSize = isPhone ? 4 : 8;
 
 const routeCountryCode = pathname.split("/").filter(Boolean)[0];
 
@@ -429,6 +441,72 @@ const filteredItems = useMemo(() => {
     return matchesBrand && matchesType && matchesPrice && matchesColor;
   });
 }, [allFashionItems, selectedBrand, selectedType, selectedColor, priceRange]);
+
+
+const visibleItems = useMemo(() => {
+  return filteredItems.slice(0, visibleCount);
+}, [filteredItems, visibleCount]);
+
+const hasMore = visibleCount < filteredItems.length;
+
+// Reset when filters, country, or screen size change.
+useEffect(() => {
+  setVisibleCount(batchSize);
+  setLoadingMore(false);
+}, [
+  batchSize,
+  countryCode,
+  selectedBrand,
+  selectedType,
+  selectedColor,
+  priceRange,
+]);
+
+// Automatically reveal the next batch near the bottom.
+useEffect(() => {
+  const target = loadMoreRef.current;
+
+  if (!target || loading || loadingMore || !hasMore) {
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        observer.disconnect();
+
+        setLoadingMore(true);
+
+        setVisibleCount((previous) =>
+          Math.min(previous + batchSize, filteredItems.length)
+        );
+      }
+    },
+    {
+      root: null,
+      rootMargin: "300px",
+      threshold: 0,
+    }
+  );
+
+  observer.observe(target);
+
+  return () => observer.disconnect();
+}, [
+  loading,
+  loadingMore,
+  hasMore,
+  batchSize,
+  filteredItems.length,
+  visibleCount,
+]);
+
+useEffect(() => {
+  if (loadingMore) {
+    setLoadingMore(false);
+  }
+}, [visibleCount]);
+
 
 const hasLoadedItems = allFashionItems.length > 0;
 const hasActiveFilters =

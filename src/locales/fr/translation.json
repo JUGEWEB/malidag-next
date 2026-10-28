@@ -1298,6 +1298,11 @@
   "auth_seo_title": "Connexion ou création de compte | Malidag",
 "auth_seo_description": "Connectez-vous à votre compte Malidag ou créez un nouveau compte pour gérer votre expérience d'achat.",
 "about_seo_title": "À propos de Malidag | Shopping en ligne",
-"about_seo_description": "Découvrez Malidag, notre approche du shopping en ligne, des paiements, de la livraison, des retours et du service client."
-
+"about_seo_description": "Découvrez Malidag, notre approche du shopping en ligne, des paiements, de la livraison, des retours et du service client.",
+"search_empty_eyebrow": "RECHERCHE MALIDAG",
+  "search_empty_title": "Aucun produit trouvé",
+  "search_empty_description": "Nous n'avons trouvé aucun produit correspondant à « {{term}} ».",
+  "search_empty_description_generic": "Nous n'avons trouvé aucun produit correspondant à votre recherche.",
+  "search_empty_hint": "Essayez d'autres mots-clés ou une recherche plus générale.",
+  "search_empty_button": "Découvrir Malidag"
 }

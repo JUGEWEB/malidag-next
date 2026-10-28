@@ -22,9 +22,17 @@ function MalidagFooter() {
   const withCountry = (path) =>
     `/${countryCode}${path.startsWith("/") ? path : `/${path}`}`;
 
-  if (pathname === "/") {
-    return null;
-  }
+ 
+const isAuthActionPage =
+  pathname === "/auth/action" ||
+  /^\/(fr|gb|br|us|de|ie|au|be)\/auth\/action\/?$/.test(
+    pathname
+  );
+
+if (pathname === "/" || isAuthActionPage) {
+  return null;
+}
+
 
   return (
     <footer className="malidag-footer">

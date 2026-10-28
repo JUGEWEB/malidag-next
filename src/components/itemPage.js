@@ -1122,13 +1122,69 @@ if (loading && items.length === 0) {
   );
 }
 
+
+
 if (!loading && items.length === 0 && !loadError) {
-    return (
-      <div className="no-results-message">
-        {t("no_results_found", { term: searchTerm })}
+  return (
+    <section className="no-results-cc">
+      <div className="no-results-content-cc">
+        <div className="no-results-illustration-cc">
+          <div className="no-results-icon-circle-cc">
+            <svg
+              width="58"
+              height="58"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="10.8" cy="10.8" r="6.8" />
+              <path d="m16 16 5 5" />
+              <path d="M8.5 10.8h4.6" />
+            </svg>
+          </div>
+
+          <span className="no-results-decoration-cc decoration-one" />
+          <span className="no-results-decoration-cc decoration-two" />
+        </div>
+
+        <span className="no-results-eyebrow-cc">
+          {t("search_empty_eyebrow")}
+        </span>
+
+        <h2 className="no-results-title-cc">
+          {t("search_empty_title")}
+        </h2>
+
+        <p className="no-results-description-cc">
+          {visibleSearchQuery
+            ? t("search_empty_description", {
+                term: visibleSearchQuery,
+              })
+            : t("search_empty_description_generic")}
+        </p>
+
+        <p className="no-results-hint-cc">
+          {t("search_empty_hint")}
+        </p>
+
+        <button
+          type="button"
+          className="no-results-home-btn-cc"
+          onClick={() => router.push(withCountry("/"))}
+        >
+          <span>{t("search_empty_button")}</span>
+          <span aria-hidden="true">→</span>
+        </button>
       </div>
-    );
-  }
+    </section>
+  );
+}
+
+
 
   const handleColorSelect = (itemId, color, e) => {
   e.stopPropagation();
@@ -2253,7 +2309,7 @@ const basketQuantity = getBasketQuantity(itemId);
 )}
 
   {/* COLORS */}
-  {colorOptions.length > 0 && (
+  {colorOptions.length > 1 && (
     <div className="item-color-block-cc">
       <div className="item-color-options-cc">
         {visibleColorOptions.map((color) => {

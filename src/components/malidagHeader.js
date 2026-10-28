@@ -131,9 +131,17 @@ const savedCountryCode = getSavedCountryCode();
       />
     );
 
-    if (isCountrySelectorPage) {
+  
+const isAuthActionPage =
+  pathname === "/auth/action" ||
+  /^\/(fr|gb|br|us|de|ie|au|be)\/auth\/action\/?$/.test(
+    pathname
+  );
+
+if (isCountrySelectorPage || isAuthActionPage) {
   return null;
 }
+
 
 const basketCount = (basketItems || []).reduce(
   (total, basketItem) => {

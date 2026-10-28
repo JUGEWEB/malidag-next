@@ -555,3 +555,46 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+
+.fashion-products-column {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.fashion-items-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+/* TABLET */
+@media (max-width: 1100px) {
+  .fashion-items-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* PHONE */
+@media (max-width: 640px) {
+  .fashion-items-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fashion-load-more {
+  width: 100%;
+  min-height: 90px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.fashion-load-more .fashion-loading-spinner {
+  margin: 0;
+}

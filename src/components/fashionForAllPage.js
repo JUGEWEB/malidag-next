@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import axios from "axios";
 import "./fashionForAllPage.css";
 import useScreenSize from "./useIsMobile";
@@ -37,9 +43,18 @@ const { push } = useRouter();
 const pathname = usePathname();
 const [failedImages, setFailedImages] = useState({});
 
-const [visibleCount, setVisibleCount] = useState(8);
 const [loadingMore, setLoadingMore] = useState(false);
+const [hasMore, setHasMore] = useState(true);
+const [loadMoreError, setLoadMoreError] = useState(false);
+
 const loadMoreRef = useRef(null);
+const paginationCursorRef = useRef({
+  brandIndex: 0,
+  page: 1,
+});
+
+const fetchingRef = useRef(false);
+const paginationGenerationRef = useRef(0);
 
 const isPhone =
   isMobile ||
@@ -199,65 +214,180 @@ useEffect(() => {
   fetchBrands();
 }, [countryCode]);
 
-useEffect(() => {
-  if (!countryCode) {
-    setLoading(false);
+
+
+const loadNextProducts = useCallback(async () => {
+  if (
+    fetchingRef.current ||
+    !countryCode ||
+    brandGroups.length === 0 ||
+    !hasMore
+  ) {
     return;
   }
 
-   if (brandGroups.length === 0) {
-    return;
-  }
+  fetchingRef.current = true;
+  setLoadingMore(true);
+  setLoadMoreError(false);
 
-  const fetchTopItemsAndBestSellers = async () => {
-    const itemsMap = {};
-    const bestSellerMap = {};
+  const generation = paginationGenerationRef.current;
+  const cursor = { ...paginationCursorRef.current };
+  const newItems = {};
+  const newBestSellers = {};
+  let collected = 0;
 
-    await Promise.all(
-      brandGroups.map(async (group) => {
-        const brandName = group.brand;
+  try {
+    while (
+      collected < batchSize &&
+      cursor.brandIndex < brandGroups.length
+    ) {
+      const brandName = brandGroups[cursor.brandIndex]?.brand;
 
-        try {
-          const encodedBrandName = encodeURIComponent(brandName);
+      if (!brandName) {
+        cursor.brandIndex++;
+        cursor.page = 1;
+        continue;
+      }
 
-          const topItemsRes = await axios.get(
-            `https://api.malidag.com/api/brands/${encodedBrandName}/top-items?country=${countryCode}`
-          );
+      const key = brandName.trim().toLowerCase();
+      const remaining = batchSize - collected;
+      let products = [];
 
-          const bestSellerRes = await axios.get(
-            `https://api.malidag.com/api/brands/${encodedBrandName}/best-seller?country=${countryCode}`
-          );
-
-          const topItems = topItemsRes.data || [];
-
-          itemsMap[brandName.trim().toLowerCase()] = topItems;
-
-          const bestSellerId = bestSellerRes.data?.id;
-          if (bestSellerId) {
-            bestSellerMap[brandName.trim().toLowerCase()] = bestSellerId;
+      if (pendingProductsRef.current.length > 0) {
+        products = pendingProductsRef.current;
+        pendingProductsRef.current = [];
+      } else {
+        const response = await axios.get(
+          `${BASE_URL}/api/brands/${encodeURIComponent(brandName)}/top-items`,
+          {
+            params: {
+              country: countryCode,
+              page: cursor.page,
+              limit: batchSize,
+            },
           }
+        );
 
-          const lang = i18n.language || "en";
+        if (generation !== paginationGenerationRef.current) return;
 
-          topItems.forEach((item) => {
-            fetchTranslation(item.itemId, lang);
-            fetchReviews(item.itemId);
-          });
-        } catch (error) {
-          console.warn(`Error fetching items for ${brandName}`, error);
+        products = response.data?.items || [];
+
+        // Advance the cursor immediately after fetching a page.
+        if (response.data?.pagination?.hasNextPage) {
+          cursor.page++;
+        } else {
+          cursor.brandIndex++;
+          cursor.page = 1;
         }
-      })
-    );
 
-    setTopItemsPerBrand(itemsMap);
-    setBestSellersByBrand(bestSellerMap);
-    setLoading(false);
+        if (cursor.page === 2 || cursor.page === 1) {
+          // Best seller is fetched once per brand.
+          if (!bestSellersByBrand[key] && !newBestSellers[key]) {
+            const bestSellerResponse = await axios.get(
+              `${BASE_URL}/api/brands/${encodeURIComponent(brandName)}/best-seller`,
+              { params: { country: countryCode } }
+            );
+
+            if (generation !== paginationGenerationRef.current) return;
+
+            if (bestSellerResponse.data?.id) {
+              newBestSellers[key] = bestSellerResponse.data.id;
+            }
+          }
+        }
+      }
+
+      const consumed = products.slice(0, remaining);
+      const leftover = products.slice(remaining);
+
+      if (leftover.length > 0) {
+        pendingProductsRef.current = leftover;
+      }
+
+      if (!newItems[key]) newItems[key] = [];
+      newItems[key].push(...consumed);
+      collected += consumed.length;
+
+      consumed.forEach((item) => {
+        fetchTranslation(item.itemId, i18n.language || "en");
+        fetchReviews(item.itemId);
+      });
+
+      if (leftover.length > 0) {
+        break;
+      }
+    }
+
+    if (generation !== paginationGenerationRef.current) return;
+
+    paginationCursorRef.current = cursor;
+
+    setTopItemsPerBrand((previous) => {
+      const updated = { ...previous };
+
+      Object.entries(newItems).forEach(([brand, products]) => {
+        const existing = updated[brand] || [];
+        const ids = new Set(existing.map((item) => item.itemId));
+
+        updated[brand] = [
+          ...existing,
+          ...products.filter((item) => !ids.has(item.itemId)),
+        ];
+      });
+
+      return updated;
+    });
+
+    setBestSellersByBrand((previous) => ({
+      ...previous,
+      ...newBestSellers,
+    }));
+
+    setHasMore(
+      pendingProductsRef.current.length > 0 ||
+      cursor.brandIndex < brandGroups.length
+    );
+  } catch (error) {
+    if (generation === paginationGenerationRef.current) {
+      console.error("Fashion pagination error:", error);
+      setLoadMoreError(true);
+    }
+  } finally {
+    if (generation === paginationGenerationRef.current) {
+      fetchingRef.current = false;
+      setLoadingMore(false);
+      setLoading(false);
+    }
+  }
+}, [
+  countryCode,
+  brandGroups,
+  batchSize,
+  hasMore,
+  i18n.language,
+]);
+
+
+const pendingProductsRef = useRef([]);
+
+useEffect(() => {
+  paginationGenerationRef.current += 1;
+
+  paginationCursorRef.current = {
+    brandIndex: 0,
+    page: 1,
   };
 
-  if (brandGroups.length > 0) {
-    fetchTopItemsAndBestSellers();
-  }
-}, [brandGroups, countryCode]);
+  pendingProductsRef.current = [];
+
+  fetchingRef.current = false;
+
+  setTopItemsPerBrand({});
+  setBestSellersByBrand({});
+  setHasMore(true);
+  setLoadMoreError(false);
+  setLoading(true);
+}, [countryCode, batchSize]);
 
 useEffect(() => {
   const fetchRates = async () => {
@@ -443,51 +573,49 @@ const filteredItems = useMemo(() => {
 }, [allFashionItems, selectedBrand, selectedType, selectedColor, priceRange]);
 
 
-const visibleItems = useMemo(() => {
-  return filteredItems.slice(0, visibleCount);
-}, [filteredItems, visibleCount]);
 
-const hasMore = visibleCount < filteredItems.length;
 
-// Reset when filters, country, or screen size change.
 useEffect(() => {
-  setVisibleCount(batchSize);
-  setLoadingMore(false);
-}, [
-  batchSize,
-  countryCode,
-  selectedBrand,
-  selectedType,
-  selectedColor,
-  priceRange,
-]);
+  if (!brandGroups.length || !countryCode) return;
 
-// Automatically reveal the next batch near the bottom.
+  loadNextProducts();
+
+  // Initial batch only. Further batches are scroll-triggered.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [brandGroups, countryCode, batchSize]);
+
+
+// Load the next API batch when scrolling near the bottom.
 useEffect(() => {
   const target = loadMoreRef.current;
 
-  if (!target || loading || loadingMore || !hasMore) {
+  if (
+    !target ||
+    loading ||
+    loadingMore ||
+    !hasMore ||
+    loadMoreError
+  ) {
     return;
   }
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting) {
-        observer.disconnect();
-
-        setLoadingMore(true);
-
-        setVisibleCount((previous) =>
-          Math.min(previous + batchSize, filteredItems.length)
-        );
-      }
-    },
-    {
-      root: null,
-      rootMargin: "300px",
-      threshold: 0,
+const observer = new IntersectionObserver(
+  ([entry]) => {
+    if (
+      entry.isIntersecting &&
+      !fetchingRef.current &&
+      window.scrollY > 0
+    ) {
+      observer.disconnect();
+      loadNextProducts();
     }
-  );
+  },
+  {
+    root: null,
+    rootMargin: "0px",
+    threshold: 0,
+  }
+);
 
   observer.observe(target);
 
@@ -496,16 +624,9 @@ useEffect(() => {
   loading,
   loadingMore,
   hasMore,
-  batchSize,
-  filteredItems.length,
-  visibleCount,
+  loadMoreError,
+  loadNextProducts,
 ]);
-
-useEffect(() => {
-  if (loadingMore) {
-    setLoadingMore(false);
-  }
-}, [visibleCount]);
 
 
 const hasLoadedItems = allFashionItems.length > 0;
@@ -1064,6 +1185,7 @@ if (loading) {
         </div>
       </aside>
 
+<div className="fashion-products-column">
       <div className="fashion-items-grid">
         {filteredItems.map((itemData) => {
           const { id, itemId, item, brand } = itemData;
@@ -1272,8 +1394,23 @@ const currentImages =
           );
         })}
       </div>
+
+     {hasMore && (
+      <div ref={loadMoreRef} className="fashion-load-more">
+        {loadingMore && (
+          <div className="fashion-loading-spinner" />
+        )}
+
+        {loadMoreError && (
+          <button type="button" onClick={loadNextProducts}>
+            {t("try_again")}
+          </button>
+        )}
+  </div>
+)}
     </div>
   </div>
+   </div>
 );
 }
 

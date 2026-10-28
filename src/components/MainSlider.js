@@ -248,7 +248,7 @@ const sliderLanguage = getSliderLanguage();
 
      {
         id: '1',
-        url: 'https://cdn.malidag.com/themes/1775519689314-b9c85daf-7c62-4ba1-8078-c775bb83dc1b.webp',
+        url: 'https://cdn.malidag.com/themes/1793145283047-9ce5ab00-8714-4974-977b-28a4e203be67.webp',
         type: '#ff9a00',
         content: 'image',
          textPosition: 'right',
@@ -288,7 +288,7 @@ const sliderLanguage = getSliderLanguage();
     */
     {
       id: "2",
-      url: "https://cdn.malidag.com/themes/1788524538925-34921113-fa42-4dc8-837d-d11f60312c71.webp",
+      url: "https://cdn.malidag.com/themes/1793145732439-7b9dcbc5-4681-44e1-9fd7-4598610c115f.webp",
       type: "#024163",
       content: "image",
       textPosition: "left",

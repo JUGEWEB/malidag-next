@@ -34,11 +34,61 @@ function ItemFashionPage() {
 const [selectedType, setSelectedType] = useState("all");
 const [selectedColor, setSelectedColor] = useState("all");
 const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(true);
-
+const isPhone =
+  isMobile ||
+  isSmallMobile ||
+  isVerySmall ||
+  isVeryVerySmall;
 const mobileFiltersRef = useRef(null);
+const [headerBottom, setHeaderBottom] = useState(0);
+
+useEffect(() => {
+  if (!isPhone) return;
+
+  const header = document.querySelector(".malidag-sticky-header");
+
+  if (!header) return;
+
+  let frameId = null;
+
+  const updateHeaderPosition = () => {
+    const rect = header.getBoundingClientRect();
+
+    // If the header is visible, place filters directly below it.
+    // If hidden above the screen, let filters reach the top.
+    const nextBottom = Math.max(0, rect.bottom);
+
+    setHeaderBottom((previous) =>
+      Math.abs(previous - nextBottom) > 1 ? nextBottom : previous
+    );
+  };
+
+  const handleScroll = () => {
+    if (frameId !== null) return;
+
+    frameId = requestAnimationFrame(() => {
+      frameId = null;
+      updateHeaderPosition();
+    });
+  };
+
+  updateHeaderPosition();
+
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  window.addEventListener("resize", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+    window.removeEventListener("resize", handleScroll);
+
+    if (frameId !== null) {
+      cancelAnimationFrame(frameId);
+    }
+  };
+}, [isPhone]);
 const lastMobileScrollYRef = useRef(0);
 const mobileFiltersExpandedRef = useRef(true);
-
+const mobileFiltersManualOpenRef = useRef(false);
 const updateMobileFiltersExpanded = useCallback((expanded) => {
   mobileFiltersExpandedRef.current = expanded;
   setMobileFiltersExpanded(expanded);
@@ -73,20 +123,18 @@ const paginationCursorRef = useRef({
 const fetchingRef = useRef(false);
 const paginationGenerationRef = useRef(0);
 
-const isPhone =
-  isMobile ||
-  isSmallMobile ||
-  isVerySmall ||
-  isVeryVerySmall;
+
 
 const batchSize = isPhone ? 4 : 8;
 
-// Collapse mobile filters when scrolling down.
-// Reopen them automatically when returning near the top.
+// Automatically collapse mobile filters on intentional downward scrolling.
+// Keep manually opened filters visible until the user closes them.
 useEffect(() => {
   if (!isPhone) return;
 
-  lastMobileScrollYRef.current = window.scrollY;
+  lastMobileScrollYRef.current = Math.max(0, window.scrollY);
+
+  let downwardDistance = 0;
 
   const handleMobileFilterScroll = () => {
     const currentY = Math.max(0, window.scrollY);
@@ -95,20 +143,41 @@ useEffect(() => {
 
     lastMobileScrollYRef.current = currentY;
 
-    // Keep full filters visible at the top.
+    // Always show filters near the top.
     if (currentY <= 40) {
+      downwardDistance = 0;
+      mobileFiltersManualOpenRef.current = false;
+
       if (!mobileFiltersExpandedRef.current) {
         updateMobileFiltersExpanded(true);
       }
+
       return;
     }
 
-    // Ignore tiny movements and upward scrolling.
-   if (delta <= 4 || currentY <= 100) return;
+    // Don't auto-close filters that the user opened manually.
+    if (mobileFiltersManualOpenRef.current) {
+      return;
+    }
 
-    // Collapse only after the user has scrolled down.
-    if (mobileFiltersExpandedRef.current) {
+    // Ignore upward scrolling and tiny layout movements.
+    if (delta <= 0) {
+      downwardDistance = 0;
+      return;
+    }
+
+    if (delta < 3) return;
+
+    downwardDistance += delta;
+
+    // Collapse only after meaningful downward scrolling.
+    if (
+      currentY > 100 &&
+      downwardDistance >= 35 &&
+      mobileFiltersExpandedRef.current
+    ) {
       updateMobileFiltersExpanded(false);
+      downwardDistance = 0;
     }
   };
 
@@ -1137,21 +1206,29 @@ if (loading) {
         ))}
     </div>
 
-   <div
+  <div
   ref={mobileFiltersRef}
   className={`mobile-filters-wrapper ${
     mobileFiltersExpanded ? "filters-expanded" : "filters-collapsed"
   }`}
+  style={{
+    "--mobile-filter-top": `${headerBottom}px`,
+  }}
 >
   <button
-    type="button"
-    className="mobile-filters-toggle"
-    onClick={() => {
-      updateMobileFiltersExpanded(!mobileFiltersExpandedRef.current);
-    }}
-    aria-expanded={mobileFiltersExpanded}
-    aria-controls="malidag-mobile-filter-options"
-  >
+  type="button"
+  className="mobile-filters-toggle"
+  onClick={() => {
+    const nextExpanded = !mobileFiltersExpandedRef.current;
+
+    // Remember that the user intentionally opened the panel.
+    mobileFiltersManualOpenRef.current = nextExpanded;
+
+    updateMobileFiltersExpanded(nextExpanded);
+  }}
+  aria-expanded={mobileFiltersExpanded}
+  aria-controls="malidag-mobile-filter-options"
+>
     <span className="mobile-filters-toggle-left">
       <svg
         width="19"

@@ -526,8 +526,14 @@ const allFashionItems = useMemo(() => {
 }, [topItemsPerBrand]);
 
 const brands = useMemo(() => {
-  return [...new Set(allFashionItems.map((x) => x.brand).filter(Boolean))];
-}, [allFashionItems]);
+  return [
+    ...new Set(
+      brandGroups
+        .map((group) => group?.brand?.trim())
+        .filter(Boolean)
+    ),
+  ];
+}, [brandGroups]);
 
 const types = useMemo(() => {
   return [...new Set(allFashionItems.map((x) => x.item.type).filter(Boolean))];
@@ -940,10 +946,14 @@ if (loading) {
   return (
   <div className="fashion-page-wrapper">
     <div className="fashion-brand-top">
-      {brandThemes
-        .filter((b) =>
-          Object.keys(topItemsPerBrand).includes(normalizeBrand(b.brandName))
-        )
+     {brandThemes
+  .filter((b) =>
+    brandGroups.some(
+      (group) =>
+        normalizeBrand(group.brand) ===
+        normalizeBrand(b.brandName)
+    )
+  )
         .map((brand) => (
           <button
             key={brand.brandName}

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import axios from "axios";
 import {
   usePathname,
@@ -22,7 +28,19 @@ const BASKET_API = "https://api.malidag.com/add-to-basket";
 function TopItem() {
   const router = useRouter();
  const { t, i18n } = useTranslation();
-  const { isVerySmall } = useScreenSize();
+ const {
+  isMobile,
+  isSmallMobile,
+  isVerySmall,
+  isVeryVerySmall,
+} = useScreenSize();
+
+const isPhone =
+  isMobile ||
+  isSmallMobile ||
+  isVerySmall ||
+  isVeryVerySmall;
+
   const [messageApi, contextHolder] = message.useMessage();
 
   const setSelectedBrandName = useCheckoutStore(
@@ -30,6 +48,14 @@ function TopItem() {
   );
 
   const [items, setItems] = useState([]);
+ const [page, setPage] = useState(1);
+const [hasMore, setHasMore] = useState(true);
+const [loadingMore, setLoadingMore] = useState(false);
+
+const loadMoreRef = useRef(null);
+const fetchingRef = useRef(false);
+
+const batchSize = isVerySmall ? 4 : 8;
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState({});
   const [translations, setTranslations] = useState({});
@@ -192,56 +218,100 @@ const withCountry = (path) => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const fetchTopSoldItems = async () => {
-      try {
-        setLoading(true);
+ useEffect(() => {
+  let cancelled = false;
 
-       const response = await fetch(
+  const fetchPage = async () => {
+    if (fetchingRef.current) return;
+
+    fetchingRef.current = true;
+
+    if (page === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    try {
+      const response = await fetch(
         `${BASE_URL}/items?country=${encodeURIComponent(
           countryCode
-        )}`,
-        {
-          cache: "no-store",
-        }
+        )}&page=${page}&limit=${batchSize}`,
+        { cache: "no-store" }
       );
-        const data = await response.json();
 
-        const itemsArray = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.items)
-          ? data.items
-          : [];
-
-        const sortedItems = itemsArray
-          .filter((itemData) => itemData?.item)
-          .sort(
-            (a, b) =>
-              Number(b?.item?.sold || 0) -
-              Number(a?.item?.sold || 0)
-          )
-          .slice(0, 100);
-
-        const lang = i18n.language || "en";
-
-        setItems(sortedItems);
-
-        sortedItems.forEach((itemData) => {
-          if (itemData?.itemId) {
-            fetchTranslation(itemData.itemId, lang);
-            fetchReviews(itemData.itemId);
-          }
-        });
-      } catch (error) {
-        console.error("Error fetching top sold items:", error);
-        setItems([]);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch items: ${response.status}`);
       }
-    };
 
-    fetchTopSoldItems();
-  },  [countryCode]);
+      const data = await response.json();
+      const newItems = Array.isArray(data?.items) ? data.items : [];
+
+      if (cancelled) return;
+
+      setItems((previous) =>
+        page === 1 ? newItems : [...previous, ...newItems]
+      );
+
+      setHasMore(Boolean(data?.pagination?.hasNextPage));
+
+      const lang = i18n.language || "en";
+
+      newItems.forEach((itemData) => {
+        if (itemData?.itemId) {
+          fetchTranslation(itemData.itemId, lang);
+          fetchReviews(itemData.itemId);
+        }
+      });
+    } catch (error) {
+      if (!cancelled) {
+        console.error("Error fetching items page:", error);
+      }
+    } finally {
+      fetchingRef.current = false;
+
+      if (!cancelled) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    }
+  };
+
+  fetchPage();
+
+  return () => {
+    cancelled = true;
+  };
+}, [countryCode, page, batchSize]);
+
+useEffect(() => {
+  if (loading || loadingMore || !hasMore) return;
+
+  const target = loadMoreRef.current;
+  if (!target) return;
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (
+        entry.isIntersecting &&
+        !fetchingRef.current &&
+        window.scrollY > 0
+      ) {
+        observer.disconnect();
+        setPage((previous) => previous + 1);
+      }
+    },
+    {
+      root: null,
+      rootMargin: "0px",
+      threshold: 0,
+    }
+  );
+
+  observer.observe(target);
+
+  return () => observer.disconnect();
+}, [loading, loadingMore, hasMore, page]);
 
   useEffect(() => {
     const fetchBrandThemes = async () => {

@@ -30,6 +30,33 @@ function RecommendedItem({ country }) {
 
   const [translations, setTranslations] = useState({});
   const [rates, setRates] = useState(null);
+  const [page, setPage] = useState(1);
+const [hasMore, setHasMore] = useState(true);
+const [loadingMore, setLoadingMore] = useState(false);
+const [loadMoreError, setLoadMoreError] = useState(false);
+
+const loadMoreRef = useRef(null);
+const fetchingRef = useRef(false);
+const requestRef = useRef(null);
+const generationRef = useRef(0);
+
+const [isPhone, setIsPhone] = useState(false);
+
+useEffect(() => {
+  const media = window.matchMedia("(max-width: 767px)");
+
+  const updateScreenSize = () => setIsPhone(media.matches);
+
+  updateScreenSize();
+
+  media.addEventListener("change", updateScreenSize);
+
+  return () => {
+    media.removeEventListener("change", updateScreenSize);
+  };
+}, []);
+
+const batchSize = isPhone ? 4 : 8;
 
   // =========================================================
   // COUNTRY
@@ -233,83 +260,167 @@ reviewRequestsRef.current.add(productId);
   // RECOMMENDED ITEMS
   // =========================================================
 
-  useEffect(() => {
-    const cacheKey =
-      `${CACHE_KEY}_${countryCode}`;
+  
+const loadNextRecommendations = useCallback(
+  async (nextPage, signal, generation) => {
+    if (fetchingRef.current) return;
 
-    const loadCachedItems = () => {
-      try {
-        const cached =
-          localStorage.getItem(cacheKey);
+    fetchingRef.current = true;
 
-        if (!cached) return false;
+    if (nextPage === 1) {
+      setLoadingRecommendations(true);
+    } else {
+      setLoadingMore(true);
+    }
 
-        const parsed = JSON.parse(cached);
+    setLoadMoreError(false);
 
-        if (
-          Array.isArray(parsed) &&
-          parsed.length > 0
-        ) {
-          setRecommendedItems(parsed);
-          setLoadingRecommendations(false);
-
-          return true;
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/recommended-items`,
+        {
+          params: {
+            min: 1,
+            max: 50,
+            country: countryCode,
+            page: nextPage,
+            limit: batchSize,
+          },
+          signal,
         }
-      } catch (error) {
-        console.error(
-          "Error reading recommended cache:",
-          error
-        );
-      }
+      );
 
-      return false;
-    };
+      if (generation !== generationRef.current) return;
 
-    const fetchRecommendedItems = async () => {
-      try {
-        const response = await fetch(
-          `${BASE_URL}/recommended-items?min=1&max=50&country=${encodeURIComponent(
-            countryCode
-          )}`,
-          {
-            cache: "no-store",
-          }
+      const incoming = Array.isArray(response.data?.items)
+        ? response.data.items
+        : [];
+
+      setRecommendedItems((previous) => {
+        if (nextPage === 1) return incoming;
+
+        const existingIds = new Set(
+          previous.map((item) => String(item.itemId || item.id))
         );
 
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch recommendations: ${response.status}`
-          );
-        }
+        return [
+          ...previous,
+          ...incoming.filter(
+            (item) =>
+              !existingIds.has(String(item.itemId || item.id))
+          ),
+        ];
+      });
 
-        const data = await response.json();
+      const more = Boolean(
+        response.data?.pagination?.hasNextPage
+      );
 
-        const freshItems = data?.items || [];
+      setHasMore(more);
+      setPage(nextPage + 1);
 
-        setRecommendedItems(freshItems);
-
+      if (nextPage === 1) {
         localStorage.setItem(
-          cacheKey,
-          JSON.stringify(
-            freshItems.slice(
-              0,
-              MAX_CACHE_ITEMS
-            )
-          )
+          `${CACHE_KEY}_${countryCode}`,
+          JSON.stringify(incoming.slice(0, MAX_CACHE_ITEMS))
         );
-      } catch (error) {
-        console.error(
-          "Error fetching recommended items:",
-          error
-        );
-      } finally {
-        setLoadingRecommendations(false);
       }
-    };
+    } catch (error) {
+      if (
+        generation === generationRef.current &&
+        !signal.aborted
+      ) {
+        console.error("Recommended pagination error:", error);
+        setLoadMoreError(true);
+      }
+    } finally {
+      if (generation === generationRef.current) {
+        fetchingRef.current = false;
+        setLoadingRecommendations(false);
+        setLoadingMore(false);
+      }
+    }
+  },
+  [countryCode, batchSize]
+);
 
-    loadCachedItems();
-    fetchRecommendedItems();
-  }, [countryCode]);
+useEffect(() => {
+  generationRef.current += 1;
+  const generation = generationRef.current;
+
+  requestRef.current?.abort();
+
+  const controller = new AbortController();
+  requestRef.current = controller;
+
+  fetchingRef.current = false;
+
+  setPage(1);
+  setHasMore(true);
+  setLoadMoreError(false);
+  setLoadingRecommendations(true);
+  setRecommendedItems([]);
+
+  loadNextRecommendations(1, controller.signal, generation);
+
+  return () => {
+    controller.abort();
+    generationRef.current += 1;
+    fetchingRef.current = false;
+  };
+}, [loadNextRecommendations]);
+
+useEffect(() => {
+  const target = loadMoreRef.current;
+
+  if (
+    !target ||
+    loadingRecommendations ||
+    loadingMore ||
+    !hasMore ||
+    loadMoreError
+  ) {
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (
+        entry.isIntersecting &&
+        !fetchingRef.current &&
+        window.scrollY > 0
+      ) {
+        observer.disconnect();
+
+        const controller = new AbortController();
+        requestRef.current = controller;
+
+        loadNextRecommendations(
+          page,
+          controller.signal,
+          generationRef.current
+        );
+      }
+    },
+    {
+      root: null,
+      rootMargin: "200px",
+      threshold: 0,
+    }
+  );
+
+  observer.observe(target);
+
+  return () => observer.disconnect();
+}, [
+  page,
+  hasMore,
+  loadingRecommendations,
+  loadingMore,
+  loadMoreError,
+  loadNextRecommendations,
+]);
+
 
   // =========================================================
   // FETCH REVIEWS
@@ -482,7 +593,7 @@ reviewRequestsRef.current.add(productId);
       <div className="recommended-grid">
         {loadingRecommendations &&
         recommendedItems.length === 0 ? (
-          [...Array(8)].map((_, i) => (
+         [...Array(batchSize)].map((_, i) => (
             <div
               key={i}
               className="recommended-item skeleton-card"
@@ -597,6 +708,32 @@ const roundedRating = hasValidRating
           })
         )}
       </div>
+
+      {hasMore && (
+  <div ref={loadMoreRef} className="recommended-load-more">
+    {loadingMore && (
+      <div className="recommended-loading-spinner" />
+    )}
+
+    {loadMoreError && (
+      <button
+        type="button"
+        onClick={() => {
+          const controller = new AbortController();
+          requestRef.current = controller;
+
+          loadNextRecommendations(
+            page,
+            controller.signal,
+            generationRef.current
+          );
+        }}
+      >
+        {t("try_again")}
+      </button>
+    )}
+  </div>
+)}
     </div>
   );
 }

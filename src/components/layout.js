@@ -59,11 +59,6 @@ const { t } = useTranslation();
   const [appReady, setAppReady] = useState(false);
   const [bootProduct, setBootProduct] = useState(null);
   const [countryChanging, setCountryChanging] = useState(false);
-  // Smart sticky header
-const [headerVisible, setHeaderVisible] = useState(true);
-
-const lastScrollYRef = useRef(0);
-const scrollDirectionDistanceRef = useRef(0);
   const router = useRouter();
 
 const setCountry = (nextCountry) => {
@@ -75,94 +70,65 @@ const setCountry = (nextCountry) => {
 };
 
   const pathname = usePathname();
+const headerRef = useRef(null);
 
-  
+
 useEffect(() => {
+  const header = headerRef.current;
+  if (!header) return;
+
+ let lastScrollY = Math.max(0, window.scrollY);
+let offset = 0;
+
+header.style.setProperty("--header-offset", "0px");
   let frameId = null;
 
-  const TOP_THRESHOLD = 80;
-  const DIRECTION_THRESHOLD = 12;
+  const getHeaderHeight = () => header.offsetHeight;
 
-  lastScrollYRef.current = Math.max(0, window.scrollY);
-  scrollDirectionDistanceRef.current = 0;
+  const updateHeader = () => {
+    frameId = null;
 
-  const handleScroll = () => {
-    if (frameId !== null) return;
+    const currentScrollY = Math.max(0, window.scrollY);
+    const delta = currentScrollY - lastScrollY;
+    const headerHeight = getHeaderHeight();
 
-    frameId = window.requestAnimationFrame(() => {
-      const currentScrollY = Math.max(0, window.scrollY);
-      const previousScrollY = lastScrollYRef.current;
-      const delta = currentScrollY - previousScrollY;
+    // Move at the same speed as the user's scrolling.
+    offset = Math.max(
+      -headerHeight,
+      Math.min(0, offset - delta)
+    );
 
-      frameId = null;
+    // Always fully reveal the header at the top.
+    if (currentScrollY <= 0) {
+      offset = 0;
+    }
 
-      // Always show the header near the top.
-      if (currentScrollY <= TOP_THRESHOLD) {
-        setHeaderVisible(true);
-        scrollDirectionDistanceRef.current = 0;
-        lastScrollYRef.current = currentScrollY;
-        return;
-      }
+    header.style.setProperty(
+      "--header-offset",
+      `${offset}px`
+    );
 
-      // Ignore very small scroll movements.
-      if (Math.abs(delta) < 1) {
-        lastScrollYRef.current = currentScrollY;
-        return;
-      }
-
-      const accumulated = scrollDirectionDistanceRef.current;
-
-      // Reset accumulation when scroll direction changes.
-      if (
-        (delta > 0 && accumulated < 0) ||
-        (delta < 0 && accumulated > 0)
-      ) {
-        scrollDirectionDistanceRef.current = delta;
-      } else {
-        scrollDirectionDistanceRef.current += delta;
-      }
-
-      // Scroll down: hide.
-      if (
-        scrollDirectionDistanceRef.current >=
-        DIRECTION_THRESHOLD
-      ) {
-        setHeaderVisible(false);
-        scrollDirectionDistanceRef.current = 0;
-      }
-
-      // Scroll up: show.
-      if (
-        scrollDirectionDistanceRef.current <=
-        -DIRECTION_THRESHOLD
-      ) {
-        setHeaderVisible(true);
-        scrollDirectionDistanceRef.current = 0;
-      }
-
-      lastScrollYRef.current = currentScrollY;
-    });
+    lastScrollY = currentScrollY;
   };
 
-  window.addEventListener("scroll", handleScroll, {
+  const onScroll = () => {
+    if (frameId !== null) return;
+
+    frameId = window.requestAnimationFrame(updateHeader);
+  };
+
+  window.addEventListener("scroll", onScroll, {
     passive: true,
   });
 
   return () => {
-    window.removeEventListener("scroll", handleScroll);
+    window.removeEventListener("scroll", onScroll);
 
     if (frameId !== null) {
       window.cancelAnimationFrame(frameId);
     }
   };
-}, []);
-
-// Show the header again when navigating to another page.
-useEffect(() => {
-  setHeaderVisible(true);
-  scrollDirectionDistanceRef.current = 0;
-  lastScrollYRef.current = Math.max(0, window.scrollY);
-}, [pathname]);
+}, [pathname, languageReady, appReady, country?.code]);
 
 
   const pathSegments = pathname.split("/").filter(Boolean);
@@ -434,9 +400,8 @@ if (
 
        <div className="malidag-app">
   <div
-  className={`malidag-sticky-header ${
-    headerVisible ? "header-visible" : "header-hidden"
-  }`}
+  ref={headerRef}
+  className="malidag-sticky-header"
 >
   <AppHeader
     basketItems={basketItems}

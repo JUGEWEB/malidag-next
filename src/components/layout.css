@@ -35,7 +35,8 @@ body {
 
 /* Sticky header */
 
-/* Smart sticky Malidag header */
+
+/* Natural scroll-following Malidag header */
 .malidag-sticky-header {
   position: sticky;
   top: 0;
@@ -45,20 +46,13 @@ body {
   flex-shrink: 0;
   background-color: #333;
 
-  transform: translateY(0);
-  transition: transform 0.28s ease-in-out;
+  transform: translate3d(0, var(--header-offset, 0px), 0);
+
+  /* No animation: movement follows the scroll itself */
+  transition: none;
   will-change: transform;
 }
 
-/* Header slides into view */
-.malidag-sticky-header.header-visible {
-  transform: translateY(0);
-}
-
-/* Header slides completely above the viewport */
-.malidag-sticky-header.header-hidden {
-  transform: translateY(-100%);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .malidag-sticky-header {

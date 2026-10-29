@@ -33,6 +33,16 @@ function ItemFashionPage() {
   const [selectedBrand, setSelectedBrand] = useState("all");
 const [selectedType, setSelectedType] = useState("all");
 const [selectedColor, setSelectedColor] = useState("all");
+const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(true);
+
+const mobileFiltersRef = useRef(null);
+const lastMobileScrollYRef = useRef(0);
+const mobileFiltersExpandedRef = useRef(true);
+
+const updateMobileFiltersExpanded = useCallback((expanded) => {
+  mobileFiltersExpandedRef.current = expanded;
+  setMobileFiltersExpanded(expanded);
+}, []);
 const [priceRange, setPriceRange] = useState([0, 10000]);
 const [filterMetadata, setFilterMetadata] = useState({
   types: [],
@@ -70,6 +80,46 @@ const isPhone =
   isVeryVerySmall;
 
 const batchSize = isPhone ? 4 : 8;
+
+// Collapse mobile filters when scrolling down.
+// Reopen them automatically when returning near the top.
+useEffect(() => {
+  if (!isPhone) return;
+
+  lastMobileScrollYRef.current = window.scrollY;
+
+  const handleMobileFilterScroll = () => {
+    const currentY = Math.max(0, window.scrollY);
+    const previousY = lastMobileScrollYRef.current;
+    const delta = currentY - previousY;
+
+    lastMobileScrollYRef.current = currentY;
+
+    // Keep full filters visible at the top.
+    if (currentY <= 40) {
+      if (!mobileFiltersExpandedRef.current) {
+        updateMobileFiltersExpanded(true);
+      }
+      return;
+    }
+
+    // Ignore tiny movements and upward scrolling.
+   if (delta <= 4 || currentY <= 100) return;
+
+    // Collapse only after the user has scrolled down.
+    if (mobileFiltersExpandedRef.current) {
+      updateMobileFiltersExpanded(false);
+    }
+  };
+
+  window.addEventListener("scroll", handleMobileFilterScroll, {
+    passive: true,
+  });
+
+  return () => {
+    window.removeEventListener("scroll", handleMobileFilterScroll);
+  };
+}, [isPhone, updateMobileFiltersExpanded]);
 
 const routeCountryCode = pathname.split("/").filter(Boolean)[0];
 
@@ -1087,8 +1137,74 @@ if (loading) {
         ))}
     </div>
 
-    <div className="mobile-filters-wrapper">
-      <div className="mobile-scroll-filters">
+   <div
+  ref={mobileFiltersRef}
+  className={`mobile-filters-wrapper ${
+    mobileFiltersExpanded ? "filters-expanded" : "filters-collapsed"
+  }`}
+>
+  <button
+    type="button"
+    className="mobile-filters-toggle"
+    onClick={() => {
+      updateMobileFiltersExpanded(!mobileFiltersExpandedRef.current);
+    }}
+    aria-expanded={mobileFiltersExpanded}
+    aria-controls="malidag-mobile-filter-options"
+  >
+    <span className="mobile-filters-toggle-left">
+      <svg
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 7h16M7 12h10M10 17h4" />
+        <circle cx="8" cy="7" r="2" fill="white" />
+        <circle cx="15" cy="12" r="2" fill="white" />
+      </svg>
+
+      <span>{t("filters", { defaultValue: "Filters" })}</span>
+
+      {[
+        selectedBrand !== "all",
+        selectedType !== "all",
+        selectedColor !== "all",
+        priceRange[0] > 0 || priceRange[1] < maxPrice,
+      ].filter(Boolean).length > 0 && (
+        <span className="mobile-active-filter-count">
+          {[
+            selectedBrand !== "all",
+            selectedType !== "all",
+            selectedColor !== "all",
+            priceRange[0] > 0 || priceRange[1] < maxPrice,
+          ].filter(Boolean).length}
+        </span>
+      )}
+    </span>
+
+    <span className="mobile-filters-toggle-right">
+      {mobileFiltersExpanded
+        ? t("hide_filters", { defaultValue: "Hide" })
+        : t("view_filters", { defaultValue: "View filters" })}
+
+      <span aria-hidden="true">
+        {mobileFiltersExpanded ? "⌃" : "⌄"}
+      </span>
+    </span>
+  </button>
+
+  <div
+    id="malidag-mobile-filter-options"
+    className="mobile-filters-content"
+    hidden={!mobileFiltersExpanded}
+  >
+    <div className="mobile-scroll-filters">
         <button
           className={selectedBrand === "all" ? "active-filter" : ""}
           onClick={() => setSelectedBrand("all")}
@@ -1184,6 +1300,7 @@ if (loading) {
       </span>
       </div>
     </div>
+     </div>
 
     <div className="fashion-layout">
       <aside className="fashion-sidebar">

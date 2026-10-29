@@ -13,6 +13,7 @@ import MainSlider from "./MainSlider";
 import SpanWarnings from "./spanWarnings";
 import useScreenSize from "./useIsMobile";
 import { usePathname } from "next/navigation"; // ✅ Step 1
+import "./appHeader.css";
 
 function AppHeader(props) {
   const pathname = usePathname(); // ✅ Step 2
@@ -41,7 +42,14 @@ const isCountryHome =
     pathname === `/${routeCountryCode}/`);
 
     return(
-        <div style={{position: "relative", width: "100%", backgroundColor: "white"}}>   
+  <div
+    style={{
+      position: "relative",
+      width: "100%",
+      backgroundColor: "white",
+    }}
+  >
+    
                 {/* Header */}
                 <div style={{backgroundColor: "#333"}}>
                <div className="header-container" style={{ backgroundColor: isDesktop || isTablet ? "" : "#333" }} >
@@ -83,19 +91,8 @@ const isCountryHome =
                 {(isTablet || isDesktop) && (
               <NavMenu  basketItems={basketItems} /> 
                 )}
-              
-                {isCountryHome && (
-        <div>
-          <MainSlider user={user} country={country} />
-        </div>
-      )}
-               
 
-     {isCountryHome && (
-        <div style={{ width: "100%", backgroundColor: "#ddd5" }}>
-          <SpanWarnings />
-        </div>
-      )}
+              
       
           </div>  
      )

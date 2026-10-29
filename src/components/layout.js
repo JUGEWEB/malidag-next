@@ -11,6 +11,8 @@ import MalidagFooter from "@/components/malidagFooter";
 import { usePathname, useRouter } from "next/navigation";
 import { ConfigProvider, App as AntdApp } from "antd";
 import { useTranslation } from "react-i18next";
+import MainSlider from "@/components/MainSlider";
+import SpanWarnings from "@/components/spanWarnings";
 import "./layout.css";
 
 const BASE_URLs = "https://api.malidag.com";
@@ -68,6 +70,16 @@ const setCountry = (nextCountry) => {
 };
 
   const pathname = usePathname();
+
+  const pathSegments = pathname.split("/").filter(Boolean);
+const routeCountryCode = pathSegments[0]?.toLowerCase();
+
+const isCountryHome =
+  SUPPORTED_COUNTRIES.some(
+    (c) => c.code === routeCountryCode
+  ) &&
+  (pathname === `/${routeCountryCode}` ||
+    pathname === `/${routeCountryCode}/`);
 
   const COUNTRY_NEUTRAL_ROUTES = [
   "/auth/action",
@@ -326,23 +338,33 @@ if (
           </div>
         )}
 
-        <div className="malidag-app">
-          <AppHeader
-            {...{
-              basketItems,
-              user,
-              allCountries,
-              country,
-              setCountry,
-            }}
-          />
+       <div className="malidag-app">
+  <div className="malidag-sticky-header">
+    <AppHeader
+      basketItems={basketItems}
+      user={user}
+      allCountries={allCountries}
+      country={country}
+      setCountry={setCountry}
+    />
+  </div>
 
-          <main className="malidag-main">
-            {children}
-          </main>
+  {isCountryHome && (
+    <>
+      <MainSlider user={user} country={country} />
 
-          <MalidagFooter />
-        </div>
+      <div style={{ width: "100%", backgroundColor: "#ddd5" }}>
+        <SpanWarnings />
+      </div>
+    </>
+  )}
+
+  <main className="malidag-main">
+    {children}
+  </main>
+
+  <MalidagFooter />
+</div>
       </AppContext.Provider>
     </AntdApp>
   </ConfigProvider>

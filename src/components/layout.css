@@ -1,3 +1,4 @@
+
 * {
   box-sizing: border-box;
 }
@@ -10,23 +11,43 @@ body {
   min-height: 100%;
 }
 
+/* Avoid creating an unnecessary horizontal scroll container */
 body {
-  overflow-x: auto;
+  overflow-x: clip;
 }
 
+/* Main application wrapper */
 .malidag-app {
   width: 100%;
   min-width: 300px;
   max-width: 1300px;
-
   min-height: 100vh;
 
   margin-left: auto;
   margin-right: auto;
 
+  display: flex;
+  flex-direction: column;
+
   position: relative;
+  overflow: visible;
 }
 
+/* Sticky header */
+.malidag-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+
+  width: 100%;
+  flex-shrink: 0;
+
+  background-color: #333;
+}
+
+/* Main page content */
 .malidag-main {
   width: 100%;
+  min-width: 0;
+  flex: 1;
 }

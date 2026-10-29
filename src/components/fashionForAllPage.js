@@ -34,6 +34,13 @@ function ItemFashionPage() {
 const [selectedType, setSelectedType] = useState("all");
 const [selectedColor, setSelectedColor] = useState("all");
 const [priceRange, setPriceRange] = useState([0, 10000]);
+const [filterMetadata, setFilterMetadata] = useState({
+  types: [],
+  colors: [],
+  maxPrice: 10000,
+});
+
+const [filtersLoading, setFiltersLoading] = useState(false);
 const [rates, setRates] = useState({});
 const [ratesLoading, setRatesLoading] =
   useState(true);
@@ -91,6 +98,309 @@ const currentLang =
   ["en", "fr", "br"].includes(i18n.language)
     ? i18n.language
     : "en";
+
+const pendingProductsRef = useRef([]);
+const hasMoreRef = useRef(true);
+const requestControllerRef = useRef(null);
+const loadedBestSellersRef = useRef(new Set());
+
+const paginationQuery = useMemo(
+  () => ({
+    country: countryCode,
+    brand: selectedBrand,
+    type: selectedType,
+    color: selectedColor,
+    minPrice: priceRange[0],
+    maxPrice: priceRange[1],
+  }),
+  [
+    countryCode,
+    selectedBrand,
+    selectedType,
+    selectedColor,
+    priceRange[0],
+    priceRange[1],
+  ]
+);
+
+const loadNextProducts = useCallback(
+  async (reset = false) => {
+    if (
+      fetchingRef.current ||
+      !countryCode ||
+      !brandGroups.length ||
+      (!reset && !hasMoreRef.current)
+    ) {
+      return;
+    }
+
+    const generation = paginationGenerationRef.current;
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
+
+    fetchingRef.current = true;
+    setLoadingMore(!reset);
+    setLoadMoreError(false);
+
+    const matchingBrands =
+      selectedBrand === "all"
+        ? brandGroups
+        : brandGroups.filter(
+            (group) =>
+              group.brand?.trim().toLowerCase() === selectedBrand
+          );
+
+    const cursor = { ...paginationCursorRef.current };
+    const newItems = {};
+    const newBestSellers = {};
+    let collected = 0;
+
+    try {
+      while (
+        collected < batchSize &&
+        cursor.brandIndex < matchingBrands.length
+      ) {
+        const brandName = matchingBrands[cursor.brandIndex]?.brand;
+
+        if (!brandName) {
+          cursor.brandIndex++;
+          cursor.page = 1;
+          continue;
+        }
+
+        const key = brandName.trim().toLowerCase();
+        const remaining = batchSize - collected;
+        let products = [];
+
+        // Keep the brand name with buffered products.
+        // Otherwise a leftover batch can be assigned to the next brand.
+        if (pendingProductsRef.current.length > 0) {
+          products = pendingProductsRef.current;
+          pendingProductsRef.current = [];
+        } else {
+          const response = await axios.get(
+            `${BASE_URL}/api/brands/${encodeURIComponent(brandName)}/top-items`,
+            {
+              params: {
+                country: countryCode,
+                type: selectedType,
+                color: selectedColor,
+                minPrice: priceRange[0],
+                maxPrice: priceRange[1],
+                page: cursor.page,
+                limit: batchSize,
+              },
+              signal: controller.signal,
+            }
+          );
+
+          if (generation !== paginationGenerationRef.current) return;
+
+          products = (response.data?.items || []).map((product) => ({
+            ...product,
+            __brandKey: key,
+          }));
+
+          if (response.data?.pagination?.hasNextPage) {
+            cursor.page++;
+          } else {
+            cursor.brandIndex++;
+            cursor.page = 1;
+          }
+        }
+
+        const consumed = products.slice(0, remaining);
+        const leftover = products.slice(remaining);
+
+        if (leftover.length > 0) {
+          pendingProductsRef.current = leftover;
+        }
+
+        consumed.forEach((product) => {
+          const productBrand = product.__brandKey || key;
+
+          if (!newItems[productBrand]) {
+            newItems[productBrand] = [];
+          }
+
+          newItems[productBrand].push(product);
+        });
+
+        collected += consumed.length;
+
+        if (!loadedBestSellersRef.current.has(key)) {
+          const sellerResponse = await axios.get(
+            `${BASE_URL}/api/brands/${encodeURIComponent(brandName)}/best-seller`,
+            {
+              params: { country: countryCode },
+              signal: controller.signal,
+            }
+          );
+
+          if (generation !== paginationGenerationRef.current) return;
+
+          if (sellerResponse.data?.id) {
+            newBestSellers[key] = sellerResponse.data.id;
+          }
+
+          loadedBestSellersRef.current.add(key);
+        }
+
+        if (leftover.length > 0) break;
+      }
+
+      if (generation !== paginationGenerationRef.current) return;
+
+      paginationCursorRef.current = cursor;
+
+      setTopItemsPerBrand((previous) => {
+        const updated = { ...previous };
+
+        Object.entries(newItems).forEach(([brand, products]) => {
+          const existing = updated[brand] || [];
+          const existingIds = new Set(
+            existing.map((product) => product.itemId)
+          );
+
+          updated[brand] = [
+            ...existing,
+            ...products.filter(
+              (product) => !existingIds.has(product.itemId)
+            ),
+          ];
+        });
+
+        return updated;
+      });
+
+      setBestSellersByBrand((previous) => ({
+        ...previous,
+        ...newBestSellers,
+      }));
+
+      Object.values(newItems).flat().forEach((product) => {
+        if (product.itemId) {
+          fetchReviews(product.itemId);
+        }
+      });
+
+      const more =
+        pendingProductsRef.current.length > 0 ||
+        cursor.brandIndex < matchingBrands.length;
+
+      hasMoreRef.current = more;
+      setHasMore(more);
+    } catch (error) {
+      if (
+        generation === paginationGenerationRef.current &&
+        !controller.signal.aborted
+      ) {
+        console.error("Fashion pagination error:", error);
+        setLoadMoreError(true);
+      }
+    } finally {
+      if (generation === paginationGenerationRef.current) {
+        fetchingRef.current = false;
+        requestControllerRef.current = null;
+        setLoadingMore(false);
+        setLoading(false);
+      }
+    }
+  },
+  [
+    countryCode,
+    brandGroups,
+    batchSize,
+    selectedBrand,
+    selectedType,
+    selectedColor,
+    priceRange[0],
+    priceRange[1],
+  ]
+);
+
+// Reset pagination and fetch immediately when any filter changes.
+useEffect(() => {
+  paginationGenerationRef.current += 1;
+
+  requestControllerRef.current?.abort();
+  requestControllerRef.current = null;
+  fetchingRef.current = false;
+
+  paginationCursorRef.current = {
+    brandIndex: 0,
+    page: 1,
+  };
+
+  pendingProductsRef.current = [];
+  loadedBestSellersRef.current = new Set();
+  hasMoreRef.current = true;
+
+  setTopItemsPerBrand({});
+  setBestSellersByBrand({});
+  setHasMore(true);
+  setLoadMoreError(false);
+  setLoading(true);
+  setLoadingMore(false);
+
+  if (!countryCode || brandGroups.length === 0) {
+    setLoading(false);
+    return;
+  }
+
+  loadNextProducts(true);
+
+  return () => {
+    paginationGenerationRef.current += 1;
+    requestControllerRef.current?.abort();
+    requestControllerRef.current = null;
+    fetchingRef.current = false;
+  };
+}, [paginationQuery, brandGroups, batchSize, loadNextProducts]);
+
+// Infinite scrolling for the currently selected filters.
+useEffect(() => {
+  const target = loadMoreRef.current;
+
+  if (
+    !target ||
+    loading ||
+    loadingMore ||
+    !hasMore ||
+    loadMoreError
+  ) {
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (
+        entry.isIntersecting &&
+        !fetchingRef.current &&
+        window.scrollY > 0
+      ) {
+        observer.disconnect();
+        loadNextProducts();
+      }
+    },
+    {
+      root: null,
+      rootMargin: "0px",
+      threshold: 0,
+    }
+  );
+
+  observer.observe(target);
+
+  return () => observer.disconnect();
+}, [
+  loading,
+  loadingMore,
+  hasMore,
+  loadMoreError,
+  loadNextProducts,
+]);
+
 
 const fetchTranslation = async (productId, lang) => {
   if (translations[productId]?.[lang]) return;
@@ -215,180 +525,6 @@ useEffect(() => {
 }, [countryCode]);
 
 
-
-const loadNextProducts = useCallback(async () => {
-  if (
-    fetchingRef.current ||
-    !countryCode ||
-    brandGroups.length === 0 ||
-    !hasMore
-  ) {
-    return;
-  }
-
-  fetchingRef.current = true;
-  setLoadingMore(true);
-  setLoadMoreError(false);
-
-  const generation = paginationGenerationRef.current;
-  const cursor = { ...paginationCursorRef.current };
-  const newItems = {};
-  const newBestSellers = {};
-  let collected = 0;
-
-  try {
-    while (
-      collected < batchSize &&
-      cursor.brandIndex < brandGroups.length
-    ) {
-      const brandName = brandGroups[cursor.brandIndex]?.brand;
-
-      if (!brandName) {
-        cursor.brandIndex++;
-        cursor.page = 1;
-        continue;
-      }
-
-      const key = brandName.trim().toLowerCase();
-      const remaining = batchSize - collected;
-      let products = [];
-
-      if (pendingProductsRef.current.length > 0) {
-        products = pendingProductsRef.current;
-        pendingProductsRef.current = [];
-      } else {
-        const response = await axios.get(
-          `${BASE_URL}/api/brands/${encodeURIComponent(brandName)}/top-items`,
-          {
-            params: {
-              country: countryCode,
-              page: cursor.page,
-              limit: batchSize,
-            },
-          }
-        );
-
-        if (generation !== paginationGenerationRef.current) return;
-
-        products = response.data?.items || [];
-
-        // Advance the cursor immediately after fetching a page.
-        if (response.data?.pagination?.hasNextPage) {
-          cursor.page++;
-        } else {
-          cursor.brandIndex++;
-          cursor.page = 1;
-        }
-
-        if (cursor.page === 2 || cursor.page === 1) {
-          // Best seller is fetched once per brand.
-          if (!bestSellersByBrand[key] && !newBestSellers[key]) {
-            const bestSellerResponse = await axios.get(
-              `${BASE_URL}/api/brands/${encodeURIComponent(brandName)}/best-seller`,
-              { params: { country: countryCode } }
-            );
-
-            if (generation !== paginationGenerationRef.current) return;
-
-            if (bestSellerResponse.data?.id) {
-              newBestSellers[key] = bestSellerResponse.data.id;
-            }
-          }
-        }
-      }
-
-      const consumed = products.slice(0, remaining);
-      const leftover = products.slice(remaining);
-
-      if (leftover.length > 0) {
-        pendingProductsRef.current = leftover;
-      }
-
-      if (!newItems[key]) newItems[key] = [];
-      newItems[key].push(...consumed);
-      collected += consumed.length;
-
-      consumed.forEach((item) => {
-        fetchTranslation(item.itemId, i18n.language || "en");
-        fetchReviews(item.itemId);
-      });
-
-      if (leftover.length > 0) {
-        break;
-      }
-    }
-
-    if (generation !== paginationGenerationRef.current) return;
-
-    paginationCursorRef.current = cursor;
-
-    setTopItemsPerBrand((previous) => {
-      const updated = { ...previous };
-
-      Object.entries(newItems).forEach(([brand, products]) => {
-        const existing = updated[brand] || [];
-        const ids = new Set(existing.map((item) => item.itemId));
-
-        updated[brand] = [
-          ...existing,
-          ...products.filter((item) => !ids.has(item.itemId)),
-        ];
-      });
-
-      return updated;
-    });
-
-    setBestSellersByBrand((previous) => ({
-      ...previous,
-      ...newBestSellers,
-    }));
-
-    setHasMore(
-      pendingProductsRef.current.length > 0 ||
-      cursor.brandIndex < brandGroups.length
-    );
-  } catch (error) {
-    if (generation === paginationGenerationRef.current) {
-      console.error("Fashion pagination error:", error);
-      setLoadMoreError(true);
-    }
-  } finally {
-    if (generation === paginationGenerationRef.current) {
-      fetchingRef.current = false;
-      setLoadingMore(false);
-      setLoading(false);
-    }
-  }
-}, [
-  countryCode,
-  brandGroups,
-  batchSize,
-  hasMore,
-  i18n.language,
-]);
-
-
-const pendingProductsRef = useRef([]);
-
-useEffect(() => {
-  paginationGenerationRef.current += 1;
-
-  paginationCursorRef.current = {
-    brandIndex: 0,
-    page: 1,
-  };
-
-  pendingProductsRef.current = [];
-
-  fetchingRef.current = false;
-
-  setTopItemsPerBrand({});
-  setBestSellersByBrand({});
-  setHasMore(true);
-  setLoadMoreError(false);
-  setLoading(true);
-}, [countryCode, batchSize]);
-
 useEffect(() => {
   const fetchRates = async () => {
     try {
@@ -504,6 +640,67 @@ const getTranslatedName = (item, itemId) => {
 
 const normalizeBrand = (brand = "") => brand.trim().toLowerCase();
 
+useEffect(() => {
+  if (!countryCode || brandGroups.length === 0) return;
+
+  const controller = new AbortController();
+
+  const fetchAllFacets = async () => {
+    setFiltersLoading(true);
+
+    try {
+      const responses = await Promise.all(
+        brandGroups.map((group) =>
+          axios.get(
+            `${BASE_URL}/api/brands/${encodeURIComponent(group.brand)}/top-items`,
+            {
+              params: {
+                country: countryCode,
+                facets: 1,
+              },
+              signal: controller.signal,
+            }
+          )
+        )
+      );
+
+      if (controller.signal.aborted) return;
+
+      const allTypes = new Set();
+      const allColors = new Set();
+      let highestPrice = 100;
+
+      responses.forEach(({ data }) => {
+        (data.types || []).forEach((type) => allTypes.add(type));
+        (data.colors || []).forEach((color) => allColors.add(color));
+
+        highestPrice = Math.max(
+          highestPrice,
+          Number(data.maxPrice) || 0
+        );
+      });
+
+      setFilterMetadata({
+        types: [...allTypes],
+        colors: [...allColors],
+        maxPrice: Math.ceil(highestPrice),
+      });
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        console.error("Fashion facets error:", error);
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setFiltersLoading(false);
+      }
+    }
+  };
+
+  fetchAllFacets();
+
+  return () => controller.abort();
+}, [brandGroups, countryCode]);
+
 const allFashionItems = useMemo(() => {
   return Object.entries(topItemsPerBrand).flatMap(([brand, items]) =>
     items.map((rawItem) => ({
@@ -535,107 +732,14 @@ const brands = useMemo(() => {
   ];
 }, [brandGroups]);
 
-const types = useMemo(() => {
-  return [...new Set(allFashionItems.map((x) => x.item.type).filter(Boolean))];
-}, [allFashionItems]);
+const types = filterMetadata.types;
+const colors = filterMetadata.colors;
+const maxPrice = filterMetadata.maxPrice;
 
-const colors = useMemo(() => {
-  const allColors = [];
-
-  allFashionItems.forEach((itemData) => {
-    Object.keys(itemData?.item?.imagesVariants || {}).forEach((color) => {
-      allColors.push(color);
-    });
-  });
-
-  return [...new Set(allColors)];
-}, [allFashionItems]);
-
-const maxPrice = useMemo(() => {
-  const prices = allFashionItems.map((x) => Number(x?.item?.usdPrice || 0));
-  return Math.ceil(Math.max(...prices, 100));
-}, [allFashionItems]);
-
-const filteredItems = useMemo(() => {
-  return allFashionItems.filter((itemData) => {
-    const item = itemData.item;
-    const price = Number(item?.usdPrice || 0);
-
-    const matchesBrand =
-      selectedBrand === "all" || normalizeBrand(itemData.brand) === selectedBrand;
-
-    const matchesType =
-      selectedType === "all" || item?.type === selectedType;
-
-    const matchesPrice =
-      price >= priceRange[0] && price <= priceRange[1];
-
-    const matchesColor =
-      selectedColor === "all" ||
-      Object.keys(item?.imagesVariants || {}).includes(selectedColor);
-
-    return matchesBrand && matchesType && matchesPrice && matchesColor;
-  });
-}, [allFashionItems, selectedBrand, selectedType, selectedColor, priceRange]);
+const filteredItems = allFashionItems;
 
 
-
-
-useEffect(() => {
-  if (!brandGroups.length || !countryCode) return;
-
-  loadNextProducts();
-
-  // Initial batch only. Further batches are scroll-triggered.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [brandGroups, countryCode, batchSize]);
-
-
-// Load the next API batch when scrolling near the bottom.
-useEffect(() => {
-  const target = loadMoreRef.current;
-
-  if (
-    !target ||
-    loading ||
-    loadingMore ||
-    !hasMore ||
-    loadMoreError
-  ) {
-    return;
-  }
-
-const observer = new IntersectionObserver(
-  ([entry]) => {
-    if (
-      entry.isIntersecting &&
-      !fetchingRef.current &&
-      window.scrollY > 0
-    ) {
-      observer.disconnect();
-      loadNextProducts();
-    }
-  },
-  {
-    root: null,
-    rootMargin: "0px",
-    threshold: 0,
-  }
-);
-
-  observer.observe(target);
-
-  return () => observer.disconnect();
-}, [
-  loading,
-  loadingMore,
-  hasMore,
-  loadMoreError,
-  loadNextProducts,
-]);
-
-
-const hasLoadedItems = allFashionItems.length > 0;
+const hasLoadedItems = brandGroups.length > 0;
 const hasActiveFilters =
   selectedBrand !== "all" ||
   selectedType !== "all" ||
@@ -1412,7 +1516,7 @@ const currentImages =
         )}
 
         {loadMoreError && (
-          <button type="button" onClick={loadNextProducts}>
+          <button type="button"onClick={() => loadNextProducts()}>
             {t("try_again")}
           </button>
         )}

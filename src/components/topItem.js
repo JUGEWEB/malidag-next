@@ -55,7 +55,20 @@ const [loadingMore, setLoadingMore] = useState(false);
 const loadMoreRef = useRef(null);
 const fetchingRef = useRef(false);
 
-const batchSize = isVerySmall ? 4 : 8;
+const batchSize = isPhone ? 4 : 8;
+
+const [filterMetadata, setFilterMetadata] = useState({
+  brands: [],
+  types: [],
+  colors: [],
+  maxPrice: 100,
+});
+
+const [loadMoreError, setLoadMoreError] = useState(false);
+
+const nextPageRef = useRef(1);
+const requestControllerRef = useRef(null);
+const generationRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState({});
   const [translations, setTranslations] = useState({});
@@ -165,6 +178,40 @@ const withCountry = (path) => {
   }
 };
 
+useEffect(() => {
+  const controller = new AbortController();
+
+  const fetchFilters = async () => {
+    try {
+      const response = await fetch(
+        `${BASE_URL}/items?country=${encodeURIComponent(countryCode)}&topSold=1&facets=1`,
+        { signal: controller.signal }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Filter request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      setFilterMetadata({
+        brands: data.brands || [],
+        types: data.types || [],
+        colors: data.colors || [],
+        maxPrice: data.maxPrice || 100,
+      });
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.error("Failed to load filters:", error);
+      }
+    }
+  };
+
+  fetchFilters();
+
+  return () => controller.abort();
+}, [countryCode]);
+
   const fetchReviews = async (productId) => {
     if (!productId) return;
 
@@ -218,74 +265,172 @@ const withCountry = (path) => {
     return () => unsubscribe();
   }, []);
 
- useEffect(() => {
-  let cancelled = false;
+ const productQuery = useMemo(() => {
+  const params = new URLSearchParams({
+    country: countryCode,
+    topSold: "1",
+    brand: selectedBrand,
+    type: selectedType,
+    color: selectedColor,
+    maxPrice: String(priceRange[1]),
+  });
 
-  const fetchPage = async () => {
-    if (fetchingRef.current) return;
+  return params.toString();
+}, [
+  countryCode,
+  selectedBrand,
+  selectedType,
+  selectedColor,
+  priceRange,
+]);
 
-    fetchingRef.current = true;
+const loadNextProducts = useCallback(async () => {
+  if (fetchingRef.current || !hasMore) return;
 
-    if (page === 1) {
-      setLoading(true);
-    } else {
-      setLoadingMore(true);
+  const generation = generationRef.current;
+  const controller = new AbortController();
+  const currentPage = nextPageRef.current;
+
+  requestControllerRef.current = controller;
+  fetchingRef.current = true;
+  setLoadMoreError(false);
+
+  if (currentPage === 1) {
+    setLoading(true);
+  } else {
+    setLoadingMore(true);
+  }
+
+  try {
+    const response = await fetch(
+      `${BASE_URL}/items?${productQuery}&page=${currentPage}&limit=${batchSize}`,
+      {
+        signal: controller.signal,
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Products request failed: ${response.status}`);
     }
 
+    const data = await response.json();
+
+    if (generation !== generationRef.current) return;
+
+    const newItems = Array.isArray(data.items) ? data.items : [];
+
+    setItems((previous) =>
+      currentPage === 1
+        ? newItems
+        : [...previous, ...newItems]
+    );
+
+    setPage(currentPage);
+    setHasMore(Boolean(data.pagination?.hasNextPage));
+
+    nextPageRef.current = currentPage + 1;
+
+    // Existing reviews functionality.
+    newItems.forEach((product) => {
+      if (product.itemId) {
+        fetchReviews(product.itemId);
+      }
+    });
+
+    // Your existing translation effect handles new items.
+  } catch (error) {
+    if (
+      error.name !== "AbortError" &&
+      generation === generationRef.current
+    ) {
+      console.error("Failed to load products:", error);
+      setLoadMoreError(true);
+    }
+  } finally {
+    if (generation === generationRef.current) {
+      fetchingRef.current = false;
+      requestControllerRef.current = null;
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }
+}, [productQuery, batchSize, hasMore]);
+
+// Reset only the product results when the query changes.
+useEffect(() => {
+  generationRef.current += 1;
+  requestControllerRef.current?.abort();
+  requestControllerRef.current = null;
+
+  fetchingRef.current = false;
+  nextPageRef.current = 1;
+
+  setItems([]);
+  setPage(1);
+  setHasMore(true);
+  setLoadMoreError(false);
+  setLoading(true);
+  setLoadingMore(false);
+
+  const generation = generationRef.current;
+  const controller = new AbortController();
+
+  requestControllerRef.current = controller;
+  fetchingRef.current = true;
+
+  const fetchFirstPage = async () => {
     try {
       const response = await fetch(
-        `${BASE_URL}/items?country=${encodeURIComponent(
-          countryCode
-        )}&page=${page}&limit=${batchSize}`,
-        { cache: "no-store" }
+        `${BASE_URL}/items?${productQuery}&page=1&limit=${batchSize}`,
+        { signal: controller.signal, cache: "no-store" }
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch items: ${response.status}`);
+        throw new Error(`Products request failed: ${response.status}`);
       }
 
       const data = await response.json();
-      const newItems = Array.isArray(data?.items) ? data.items : [];
 
-      if (cancelled) return;
+      if (generation !== generationRef.current) return;
 
-      setItems((previous) =>
-        page === 1 ? newItems : [...previous, ...newItems]
-      );
+      const newItems = Array.isArray(data.items) ? data.items : [];
 
-      setHasMore(Boolean(data?.pagination?.hasNextPage));
+      setItems(newItems);
+      setHasMore(Boolean(data.pagination?.hasNextPage));
+      nextPageRef.current = 2;
 
-      const lang = i18n.language || "en";
-
-      newItems.forEach((itemData) => {
-        if (itemData?.itemId) {
-          fetchTranslation(itemData.itemId, lang);
-          fetchReviews(itemData.itemId);
-        }
+      newItems.forEach((product) => {
+        if (product.itemId) fetchReviews(product.itemId);
       });
     } catch (error) {
-      if (!cancelled) {
-        console.error("Error fetching items page:", error);
+      if (
+        error.name !== "AbortError" &&
+        generation === generationRef.current
+      ) {
+        console.error("First page failed:", error);
+        setLoadMoreError(true);
       }
     } finally {
-      fetchingRef.current = false;
-
-      if (!cancelled) {
+      if (generation === generationRef.current) {
+        fetchingRef.current = false;
+        requestControllerRef.current = null;
         setLoading(false);
-        setLoadingMore(false);
       }
     }
   };
 
-  fetchPage();
+  fetchFirstPage();
 
   return () => {
-    cancelled = true;
+    controller.abort();
+    generationRef.current += 1;
   };
-}, [countryCode, page, batchSize]);
+}, [productQuery, batchSize]);
 
+// Load subsequent pages only when the bottom is reached.
 useEffect(() => {
-  if (loading || loadingMore || !hasMore) return;
+  if (loading || loadingMore || !hasMore || loadMoreError) return;
 
   const target = loadMoreRef.current;
   if (!target) return;
@@ -298,7 +443,7 @@ useEffect(() => {
         window.scrollY > 0
       ) {
         observer.disconnect();
-        setPage((previous) => previous + 1);
+        loadNextProducts();
       }
     },
     {
@@ -311,7 +456,13 @@ useEffect(() => {
   observer.observe(target);
 
   return () => observer.disconnect();
-}, [loading, loadingMore, hasMore, page]);
+}, [
+  loading,
+  loadingMore,
+  hasMore,
+  loadMoreError,
+  loadNextProducts,
+]);
 
   useEffect(() => {
     const fetchBrandThemes = async () => {
@@ -788,65 +939,12 @@ const getProductPriceForColor = (
     });
   };
 
-  const brands = useMemo(() => {
-    return [
-      ...new Set(
-        items.map((x) => x?.item?.brand || x?.details?.brand).filter(Boolean)
-      ),
-    ];
-  }, [items]);
+ const brands = filterMetadata.brands;
+const types = filterMetadata.types;
+const colors = filterMetadata.colors;
+const maxPrice = filterMetadata.maxPrice;
 
-  const types = useMemo(() => {
-    return [
-      ...new Set(
-        items
-          .map((x) => x?.item?.type || x?.item?.brandType)
-          .filter(Boolean)
-      ),
-    ];
-  }, [items]);
-
-  const colors = useMemo(() => {
-    const allColors = [];
-
-    items.forEach((itemData) => {
-      Object.keys(itemData?.item?.imagesVariants || {}).forEach((color) => {
-        allColors.push(color);
-      });
-    });
-
-    return [...new Set(allColors)];
-  }, [items]);
-
-  const maxPrice = useMemo(() => {
-    const prices = items.map((x) => Number(x?.item?.usdPrice || 0));
-    return Math.ceil(Math.max(...prices, 100));
-  }, [items]);
-
-  const filteredItems = useMemo(() => {
-    return items.filter((itemData) => {
-      const item = itemData.item || {};
-      const price = Number(item?.usdPrice || 0);
-      const itemType = normalizeText(item?.type || item?.brandType);
-
-      const matchesBrand =
-        selectedBrand === "all" ||
-        normalizeText(item?.brand || itemData?.details?.brand) === selectedBrand;
-
-      const matchesType =
-        selectedType === "all" ||
-        itemType === selectedType ||
-        itemType.includes(selectedType);
-
-      const matchesColor =
-        selectedColor === "all" ||
-        Object.keys(item?.imagesVariants || {}).includes(selectedColor);
-
-      const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
-
-      return matchesBrand && matchesType && matchesColor && matchesPrice;
-    });
-  }, [items, selectedBrand, selectedType, selectedColor, priceRange]);
+ const filteredItems = items;
 
   const topItemBrandThemes = useMemo(() => {
     const brandNames = new Set(brands.map((brand) => normalizeText(brand)));
@@ -1554,6 +1652,7 @@ const availableModalLengths = sizeModalItem
             </div>
           </aside>
 
+      <div className="topitem-products-column">
           <div className="topitem-items-grid">
             {filteredItems.length > 0 ? (
               filteredItems.map((itemData) => {
@@ -1856,6 +1955,21 @@ const availableModalLengths = sizeModalItem
               <div className="topitem-no-items">{t("no_items_found")}</div>
             )}
           </div>
+
+           {hasMore && !loadMoreError && (
+    <div ref={loadMoreRef} className="topitem-load-more">
+      {loadingMore && <div className="topitem-loading-spinner" />}
+    </div>
+  )}
+
+  {loadMoreError && (
+    <div className="topitem-load-more">
+      <button type="button" onClick={loadNextProducts}>
+        Try again
+      </button>
+    </div>
+  )}
+</div>
         </div>
       </div>
     </>

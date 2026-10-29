@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AppContext } from "./appContext";
 import { onAuthStateChanged } from "firebase/auth";
 import axios from "axios";
@@ -59,6 +59,11 @@ const { t } = useTranslation();
   const [appReady, setAppReady] = useState(false);
   const [bootProduct, setBootProduct] = useState(null);
   const [countryChanging, setCountryChanging] = useState(false);
+  // Smart sticky header
+const [headerVisible, setHeaderVisible] = useState(true);
+
+const lastScrollYRef = useRef(0);
+const scrollDirectionDistanceRef = useRef(0);
   const router = useRouter();
 
 const setCountry = (nextCountry) => {
@@ -70,6 +75,95 @@ const setCountry = (nextCountry) => {
 };
 
   const pathname = usePathname();
+
+  
+useEffect(() => {
+  let frameId = null;
+
+  const TOP_THRESHOLD = 80;
+  const DIRECTION_THRESHOLD = 12;
+
+  lastScrollYRef.current = Math.max(0, window.scrollY);
+  scrollDirectionDistanceRef.current = 0;
+
+  const handleScroll = () => {
+    if (frameId !== null) return;
+
+    frameId = window.requestAnimationFrame(() => {
+      const currentScrollY = Math.max(0, window.scrollY);
+      const previousScrollY = lastScrollYRef.current;
+      const delta = currentScrollY - previousScrollY;
+
+      frameId = null;
+
+      // Always show the header near the top.
+      if (currentScrollY <= TOP_THRESHOLD) {
+        setHeaderVisible(true);
+        scrollDirectionDistanceRef.current = 0;
+        lastScrollYRef.current = currentScrollY;
+        return;
+      }
+
+      // Ignore very small scroll movements.
+      if (Math.abs(delta) < 1) {
+        lastScrollYRef.current = currentScrollY;
+        return;
+      }
+
+      const accumulated = scrollDirectionDistanceRef.current;
+
+      // Reset accumulation when scroll direction changes.
+      if (
+        (delta > 0 && accumulated < 0) ||
+        (delta < 0 && accumulated > 0)
+      ) {
+        scrollDirectionDistanceRef.current = delta;
+      } else {
+        scrollDirectionDistanceRef.current += delta;
+      }
+
+      // Scroll down: hide.
+      if (
+        scrollDirectionDistanceRef.current >=
+        DIRECTION_THRESHOLD
+      ) {
+        setHeaderVisible(false);
+        scrollDirectionDistanceRef.current = 0;
+      }
+
+      // Scroll up: show.
+      if (
+        scrollDirectionDistanceRef.current <=
+        -DIRECTION_THRESHOLD
+      ) {
+        setHeaderVisible(true);
+        scrollDirectionDistanceRef.current = 0;
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    });
+  };
+
+  window.addEventListener("scroll", handleScroll, {
+    passive: true,
+  });
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+
+    if (frameId !== null) {
+      window.cancelAnimationFrame(frameId);
+    }
+  };
+}, []);
+
+// Show the header again when navigating to another page.
+useEffect(() => {
+  setHeaderVisible(true);
+  scrollDirectionDistanceRef.current = 0;
+  lastScrollYRef.current = Math.max(0, window.scrollY);
+}, [pathname]);
+
 
   const pathSegments = pathname.split("/").filter(Boolean);
 const routeCountryCode = pathSegments[0]?.toLowerCase();
@@ -339,15 +433,19 @@ if (
         )}
 
        <div className="malidag-app">
-  <div className="malidag-sticky-header">
-    <AppHeader
-      basketItems={basketItems}
-      user={user}
-      allCountries={allCountries}
-      country={country}
-      setCountry={setCountry}
-    />
-  </div>
+  <div
+  className={`malidag-sticky-header ${
+    headerVisible ? "header-visible" : "header-hidden"
+  }`}
+>
+  <AppHeader
+    basketItems={basketItems}
+    user={user}
+    allCountries={allCountries}
+    country={country}
+    setCountry={setCountry}
+  />
+</div>
 
   {isCountryHome && (
     <>

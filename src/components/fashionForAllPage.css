@@ -678,18 +678,12 @@
   }
 
   /* Expanded options */
-  .mobile-filters-content {
-    width: 100%;
-    max-height: min(
-    60dvh,
-    calc(100dvh - var(--mobile-filter-top, 0px) - 65px)
-  );
-  overflow-y: auto;
-  overscroll-behavior: contain;
-    background: #fff;
-
-    -webkit-overflow-scrolling: touch;
-  }
+ .mobile-filters-content {
+  max-height: none;
+  overflow-y: visible;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+}
 
   /* Immediate collapse — no noticeable animation */
   .mobile-filters-content[hidden] {

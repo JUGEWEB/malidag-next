@@ -720,3 +720,162 @@
     animation: none !important;
   }
 }
+
+/* =========================================
+   MALIDAG TABLET RESPONSIVE FIX
+   700px - 900px
+   ========================================= */
+
+@media (min-width: 700px) and (max-width: 900px) {
+
+  .fashion-page-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .mobile-filters-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    position: sticky;
+    top: var(--mobile-filter-top, 0px);
+    z-index: 50;
+    background: #fff;
+  }
+
+  .mobile-filters-toggle {
+    min-height: 46px;
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+
+  .mobile-filters-content {
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  /* Brand and type rows */
+  .mobile-filters-content .mobile-scroll-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    padding: 8px 18px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x pan-y;
+    scrollbar-width: none;
+  }
+
+  .mobile-scroll-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-scroll-filters button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  /* Color options */
+  .mobile-filters-content .mobile-color-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    padding: 10px 18px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x pan-y;
+    scrollbar-width: none;
+  }
+
+  .mobile-color-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-color-circle {
+    flex: 0 0 auto;
+  }
+
+  /* Price */
+  .mobile-filters-content .price-filter-mobile {
+    padding: 10px 18px 14px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Products */
+  .fashion-layout {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .fashion-products-column {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .fashion-items-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .fashion-card {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .fashion-card-media {
+    max-width: 100%;
+  }
+}
+
+/* Keep compact filters aligned with the visible Malidag header */
+@media (max-width: 900px) {
+  .fashion-page-wrapper {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .mobile-filters-wrapper {
+    position: sticky;
+    top: var(--mobile-filter-top, 0px);
+    z-index: 50;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .mobile-filters-content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mobile-filters-content .mobile-scroll-filters,
+  .mobile-filters-content .mobile-color-filters {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x pan-y;
+  }
+}

@@ -41,6 +41,18 @@ const isPhone =
   isVerySmall ||
   isVeryVerySmall;
 
+  const [filtersExpanded, setFiltersExpanded] = useState(true);
+const [headerBottom, setHeaderBottom] = useState(0);
+
+const filtersExpandedRef = useRef(true);
+const filtersManualOpenRef = useRef(false);
+const lastFilterScrollYRef = useRef(0);
+
+const updateFiltersExpanded = useCallback((expanded) => {
+  filtersExpandedRef.current = expanded;
+  setFiltersExpanded(expanded);
+}, []);
+
   const [messageApi, contextHolder] = message.useMessage();
 
   const setSelectedBrandName = useCheckoutStore(
@@ -1241,8 +1253,106 @@ const availableModalLengths = sizeModalItem
     )
   : [];
 
-  if (loading) return <div className="topitem-loading-message"> {t("loading")}</div>;
+  // Follow the actual visible bottom of Malidag's header.
+useEffect(() => {
+  const header = document.querySelector(".malidag-sticky-header");
+  if (!header) return;
 
+  let frameId = null;
+
+  const updatePosition = () => {
+    frameId = null;
+
+    const bottom = Math.max(
+      0,
+      header.getBoundingClientRect().bottom
+    );
+
+    setHeaderBottom((previous) =>
+      Math.abs(previous - bottom) > 1 ? bottom : previous
+    );
+  };
+
+  const handleScroll = () => {
+    if (frameId !== null) return;
+
+    frameId = requestAnimationFrame(updatePosition);
+  };
+
+  updatePosition();
+
+  window.addEventListener("scroll", handleScroll, {
+    passive: true,
+  });
+  window.addEventListener("resize", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+    window.removeEventListener("resize", handleScroll);
+
+    if (frameId !== null) {
+      cancelAnimationFrame(frameId);
+    }
+  };
+}, []);
+
+
+// Automatically collapse on downward scrolling.
+// Manually opened filters remain open.
+useEffect(() => {
+  lastFilterScrollYRef.current = Math.max(0, window.scrollY);
+
+  let downwardDistance = 0;
+
+  const handleScroll = () => {
+    const currentY = Math.max(0, window.scrollY);
+    const delta = currentY - lastFilterScrollYRef.current;
+
+    lastFilterScrollYRef.current = currentY;
+
+    if (currentY <= 40) {
+      downwardDistance = 0;
+      filtersManualOpenRef.current = false;
+
+      if (!filtersExpandedRef.current) {
+        updateFiltersExpanded(true);
+      }
+
+      return;
+    }
+
+    if (filtersManualOpenRef.current) return;
+
+    if (delta <= 0) {
+      downwardDistance = 0;
+      return;
+    }
+
+    if (delta < 3) return;
+
+    downwardDistance += delta;
+
+    if (
+      currentY > 100 &&
+      downwardDistance >= 35 &&
+      filtersExpandedRef.current
+    ) {
+      updateFiltersExpanded(false);
+      downwardDistance = 0;
+    }
+  };
+
+  window.addEventListener("scroll", handleScroll, {
+    passive: true,
+  });
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
+}, [updateFiltersExpanded]);
+
+ if (loading) return <div className="topitem-loading-message"> {t("loading")}</div>;
+ 
   return (
     <>
       <Head>
@@ -1438,7 +1548,47 @@ const availableModalLengths = sizeModalItem
   })}</div>
         </div>
 
-        <div className="mobile-filters-wrapper topitem-mobile-filters">
+       <div
+  className={`mobile-filters-wrapper topitem-mobile-filters ${
+    filtersExpanded ? "filters-expanded" : "filters-collapsed"
+  }`}
+  style={{
+    "--mobile-filter-top": `${headerBottom}px`,
+  }}
+>
+  <button
+    type="button"
+    className="mobile-filters-toggle"
+    aria-expanded={filtersExpanded}
+    aria-controls="topitem-filter-options"
+    onClick={() => {
+      const expanded = !filtersExpandedRef.current;
+
+      filtersManualOpenRef.current = expanded;
+      updateFiltersExpanded(expanded);
+    }}
+  >
+    <span className="mobile-filters-toggle-left">
+      <span aria-hidden="true">☷</span>
+      <span>{t("filters", { defaultValue: "Filters" })}</span>
+    </span>
+
+    <span className="mobile-filters-toggle-right">
+      {filtersExpanded
+        ? t("hide_filters", { defaultValue: "Hide" })
+        : t("view_filters", { defaultValue: "View filters" })}
+
+      <span aria-hidden="true">
+        {filtersExpanded ? "⌃" : "⌄"}
+      </span>
+    </span>
+  </button>
+
+  <div
+    id="topitem-filter-options"
+    className="mobile-filters-content"
+    hidden={!filtersExpanded}
+  >
           <div className="mobile-scroll-filters">
             <button
               className={selectedBrand === "all" ? "active-filter" : ""}
@@ -1535,6 +1685,7 @@ const availableModalLengths = sizeModalItem
             })}
           </span>
           </div>
+        </div>
         </div>
 
         <div className="topitem-layout">

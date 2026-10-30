@@ -39,11 +39,29 @@ const isPhone =
   isSmallMobile ||
   isVerySmall ||
   isVeryVerySmall;
+
+  const [useCompactFilters, setUseCompactFilters] = useState(false);
+
+useEffect(() => {
+  const media = window.matchMedia("(max-width: 900px)");
+
+  const update = () => {
+    setUseCompactFilters(media.matches);
+  };
+
+  update();
+
+  media.addEventListener("change", update);
+
+  return () => {
+    media.removeEventListener("change", update);
+  };
+}, []);
 const mobileFiltersRef = useRef(null);
 const [headerBottom, setHeaderBottom] = useState(0);
 
 useEffect(() => {
-  if (!isPhone) return;
+  if (!useCompactFilters) return;
 
   const header = document.querySelector(".malidag-sticky-header");
 
@@ -85,7 +103,9 @@ useEffect(() => {
       cancelAnimationFrame(frameId);
     }
   };
-}, [isPhone]);
+},  [useCompactFilters]);
+
+
 const lastMobileScrollYRef = useRef(0);
 const mobileFiltersExpandedRef = useRef(true);
 const mobileFiltersManualOpenRef = useRef(false);
@@ -130,7 +150,7 @@ const batchSize = isPhone ? 4 : 8;
 // Automatically collapse mobile filters on intentional downward scrolling.
 // Keep manually opened filters visible until the user closes them.
 useEffect(() => {
-  if (!isPhone) return;
+ if (!useCompactFilters) return;
 
   lastMobileScrollYRef.current = Math.max(0, window.scrollY);
 
@@ -188,7 +208,7 @@ useEffect(() => {
   return () => {
     window.removeEventListener("scroll", handleMobileFilterScroll);
   };
-}, [isPhone, updateMobileFiltersExpanded]);
+},  [useCompactFilters, updateMobileFiltersExpanded]);
 
 const routeCountryCode = pathname.split("/").filter(Boolean)[0];
 

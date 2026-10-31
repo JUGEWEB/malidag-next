@@ -279,11 +279,22 @@ useEffect(() => {
 
        /* Send verification email in the current Malidag language */
 
-        setFirebaseEmailLanguage();
+       const idToken = await newUser.getIdToken();
 
-        await sendEmailVerification(
-          newUser
-        );
+const response = await fetch(
+  "https://api.malidag.com/api/auth/verification-email/send",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+  }
+);
+
+if (!response.ok) {
+  throw new Error("Unable to send verification email");
+}
 
         /*
          * Keep the Firebase user signed in,

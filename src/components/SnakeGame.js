@@ -2,6 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import useOnlineStatus from "@/hooks/useOnlineStatus";
 
 const GRID_SIZE = 16;
 const INITIAL_SNAKE = [
@@ -33,7 +34,50 @@ function randomFood(snake) {
   return empty[Math.floor(Math.random() * empty.length)];
 }
 
-export default function SnakeGame() {
+export default function SnakeGame({ standalone = false }) {
+      const isOnline = useOnlineStatus();
+  const [returning, setReturning] = useState(false);
+
+  const returnToMalidag = async () => {
+    if (returning) return;
+
+    setReturning(true);
+
+    try {
+      const response = await fetch(
+        `/api/connectivity?t=${Date.now()}`,
+        { cache: "no-store" }
+      );
+
+      if (response.status !== 204) {
+        throw new Error("Connection not restored");
+      }
+
+      // Restore the last storefront page when available.
+      const previousPage = sessionStorage.getItem(
+        "malidag-last-storefront-page"
+      );
+
+     const destination =
+  previousPage &&
+  previousPage.startsWith("/") &&
+  !previousPage.startsWith("//") &&
+  !previousPage.includes("\\") &&
+  !previousPage.startsWith("/offline") &&
+  !previousPage.startsWith("/api/") &&
+  !previousPage.startsWith("/admin") &&
+  !previousPage.startsWith("/seller")
+    ? previousPage
+    : "/";
+
+window.location.assign(destination);
+
+      window.location.assign(destination);
+    } catch {
+      alert("Malidag is still unreachable. Please try again.");
+      setReturning(false);
+    }
+  };
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [food, setFood] = useState({ x: 11, y: 8 });
   const [direction, setDirection] = useState(DIRECTIONS.ArrowRight);
@@ -332,6 +376,28 @@ return (
       <p style={{ color: "#94a3b8", fontSize: 13 }}>
         Use arrow keys to move. Press Space to pause.
       </p>
+
+     {standalone && isOnline && (
+  <button
+    type="button"
+    onClick={returnToMalidag}
+    disabled={returning}
+    style={{
+      marginTop: 16,
+      marginBottom: 16,
+      padding: "14px 28px",
+      background: "#d5a947",
+      color: "#101827",
+      border: 0,
+      borderRadius: 10,
+      fontWeight: "bold",
+      fontSize: 16,
+      cursor: returning ? "wait" : "pointer",
+    }}
+  >
+    {returning ? "Connecting..." : "Back to Malidag →"}
+  </button>
+)}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import Providers from "@/components/providers";
 import TermsBanner from "@/components/TermsBanner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import RememberStorefrontPage from "@/components/RememberStorefrontPage";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -89,6 +90,7 @@ export default async function RootLayout({ children }) {
       >
         <Providers initialLang={lang}>
            <ServiceWorkerRegister />
+           <RememberStorefrontPage />
           <main className="bg-white">
             {children}
           </main>

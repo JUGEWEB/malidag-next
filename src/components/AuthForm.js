@@ -279,7 +279,19 @@ useEffect(() => {
 
        /* Send verification email in the current Malidag language */
 
+       const currentLanguage = String(
+  i18n.resolvedLanguage || i18n.language || "en"
+).toLowerCase();
+
+const emailLanguage =
+  currentLanguage === "br" || currentLanguage.startsWith("pt")
+    ? "pt"
+    : currentLanguage.startsWith("fr")
+    ? "fr"
+    : "en";
+
        const idToken = await newUser.getIdToken();
+
 
 const response = await fetch(
   "https://api.malidag.com/api/auth/verification-email/send",
@@ -289,8 +301,12 @@ const response = await fetch(
       "Content-Type": "application/json",
       Authorization: `Bearer ${idToken}`,
     },
+    body: JSON.stringify({
+      language: emailLanguage,
+    }),
   }
 );
+
 
 if (!response.ok) {
   throw new Error("Unable to send verification email");

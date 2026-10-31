@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import useOnlineStatus from "@/hooks/useOnlineStatus";
+import styles from "./SnakeGame.module.css";
 
 const GRID_SIZE = 16;
 const INITIAL_SNAKE = [
@@ -72,7 +73,6 @@ export default function SnakeGame({ standalone = false }) {
 
 window.location.assign(destination);
 
-      window.location.assign(destination);
     } catch {
       alert("Malidag is still unreachable. Please try again.");
       setReturning(false);
@@ -236,168 +236,98 @@ const changeDirection = useCallback((next) => {
     }
   }
 
-return (
-  <div
-    style={{
-      position: "fixed",
-      inset: 0,
-      zIndex: 2147483647,
-      width: "100%",
-      height: "100dvh",
-      background: "#101827",
-      color: "#ffffff",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      padding: "24px 16px",
-      paddingTop: "max(24px, env(safe-area-inset-top))",
-      paddingBottom: "max(24px, env(safe-area-inset-bottom))",
-      fontFamily: "Arial, sans-serif",
-      textAlign: "center",
-      boxSizing: "border-box",
-      overflowY: "auto",
-      overscrollBehavior: "contain",
-    }}
-  >
 
-      <img
-        src="/malidag.png"
-        alt="Malidag"
-        width={76}
-        height={76}
-        style={{ borderRadius: 14, objectFit: "contain" }}
-      />
+  return (
+    <div className={styles.screen}>
+      <div className={styles.header}>
+        <img
+          src="/malidag.png"
+          alt="Malidag"
+          className={styles.logo}
+        />
 
-      <h1 style={{ color: "#f5d68a", marginBottom: 4 }}>
-        Malidag Snake
-      </h1>
+        <div>
+          <h1 className={styles.title}>Malidag Snake</h1>
+          <p className={styles.subtitle}>
+            You're offline. Play while we reconnect!
+          </p>
+        </div>
+      </div>
 
-      <p style={{ color: "#cbd5e1", marginBottom: 20 }}>
-        You're offline. Play while we reconnect!
-      </p>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          width: "min(90vw, 380px)",
-          marginBottom: 12,
-          color: "#f5d68a",
-          fontWeight: "bold",
-        }}
-      >
+      <div className={styles.scoreBar}>
         <span>Score: {score}</span>
-        <span>{gameOver ? "Game Over" : running ? "Playing" : "Ready"}</span>
+        <span>
+          {gameOver ? "Game Over" : running ? "Playing" : "Ready"}
+        </span>
       </div>
 
       <div
         role="img"
         aria-label="Snake game board"
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-          gap: 2,
-          width: "min(90vw, 380px)",
-          aspectRatio: "1",
-          padding: 6,
-          background: "#26344b",
-          borderRadius: 12,
-          boxSizing: "border-box",
-        }}
+        className={styles.board}
       >
         {cells}
       </div>
 
-      <button
-        type="button"
-        onClick={() => {
-         if (gameOver || (!running && score === 0)) {
-            resetGame();
-          } else {
-            setRunning((current) => !current);
-          }
-        }}
-        style={{
-          marginTop: 20,
-          background: "#d5a947",
-          color: "#101827",
-          border: 0,
-          borderRadius: 10,
-          padding: "12px 30px",
-          fontWeight: "bold",
-          cursor: "pointer",
-        }}
-      >
-        {gameOver ? "Play Again" : running ? "Pause" : score > 0 ? "Resume" : "Play Snake"}
-      </button>
+      <div className={styles.controls}>
+        {[
+          { label: "▲", key: "ArrowUp", column: 2, row: 1 },
+          { label: "◀", key: "ArrowLeft", column: 1, row: 2 },
+          { label: "▶", key: "ArrowRight", column: 3, row: 2 },
+          { label: "▼", key: "ArrowDown", column: 2, row: 3 },
+        ].map((control) => (
+          <button
+            key={control.key}
+            type="button"
+            aria-label={control.key.replace("Arrow", "Move ")}
+            className={styles.directionButton}
+            style={{
+              gridColumn: control.column,
+              gridRow: control.row,
+            }}
+            onClick={() =>
+              changeDirection(DIRECTIONS[control.key])
+            }
+          >
+            {control.label}
+          </button>
+        ))}
 
-      
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 60px)",
-    gap: 8,
-    justifyContent: "center",
-    marginTop: 20,
-  }}
->
-  {[
-    { label: "▲", key: "ArrowUp", column: 2 },
-    { label: "◀", key: "ArrowLeft", column: 1 },
-    { label: "▼", key: "ArrowDown", column: 2 },
-    { label: "▶", key: "ArrowRight", column: 3 },
-  ].map((control) => (
-    <button
-      key={control.key}
-      type="button"
-      aria-label={control.key.replace("Arrow", "Move ")}
-      onClick={() => changeDirection(DIRECTIONS[control.key])}
-      style={{
-        gridColumn: control.column,
-        width: 60,
-        height: 52,
-        background: "#26344b",
-        color: "#f5d68a",
-        border: "1px solid #d5a947",
-        borderRadius: 10,
-        fontSize: 22,
-        fontWeight: "bold",
-        cursor: "pointer",
-        touchAction: "manipulation",
-      }}
-    >
-      {control.label}
-    </button>
-  ))}
-</div>
+        <button
+          type="button"
+          className={styles.playButton}
+          onClick={() => {
+            if (gameOver || (!running && score === 0)) {
+              resetGame();
+            } else {
+              setRunning((current) => !current);
+            }
+          }}
+        >
+          {gameOver
+            ? "Restart"
+            : running
+              ? "Pause"
+              : score > 0
+                ? "Resume"
+                : "Play"}
+        </button>
+      </div>
 
-
-      <p style={{ color: "#94a3b8", fontSize: 13 }}>
-        Use arrow keys to move. Press Space to pause.
+      <p className={styles.help}>
+        Arrow keys to move · Space to pause
       </p>
 
-     {standalone && isOnline && (
-  <button
-    type="button"
-    onClick={returnToMalidag}
-    disabled={returning}
-    style={{
-      marginTop: 16,
-      marginBottom: 16,
-      padding: "14px 28px",
-      background: "#d5a947",
-      color: "#101827",
-      border: 0,
-      borderRadius: 10,
-      fontWeight: "bold",
-      fontSize: 16,
-      cursor: returning ? "wait" : "pointer",
-    }}
-  >
-    {returning ? "Connecting..." : "Back to Malidag →"}
-  </button>
-)}
+      {standalone && isOnline && (
+        <button
+          type="button"
+          onClick={returnToMalidag}
+          disabled={returning}
+          className={styles.returnButton}
+        >
+          {returning ? "Connecting..." : "Back to Malidag →"}
+        </button>
+      )}
     </div>
   );
 }

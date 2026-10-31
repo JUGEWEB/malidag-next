@@ -1,0 +1,166 @@
+
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 1.2dvh, 12px);
+
+  padding: max(6px, env(safe-area-inset-top))
+    12px max(6px, env(safe-area-inset-bottom));
+
+  background: #101827;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  color: #f5d68a;
+  font-size: clamp(17px, 3dvh, 23px);
+  line-height: 1.15;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.scoreBar {
+  display: flex;
+  justify-content: space-between;
+  width: min(90vw, 380px);
+  color: #f5d68a;
+  font-size: 14px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 2px;
+
+  width: min(90vw, 380px, 46dvh);
+  aspect-ratio: 1;
+  flex-shrink: 1;
+  min-height: 0;
+
+  padding: 6px;
+  background: #26344b;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  grid-template-rows: repeat(3, 46px);
+  gap: 5px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.directionButton {
+  width: 58px;
+  height: 46px;
+  padding: 0;
+  background: #26344b;
+  color: #f5d68a;
+  border: 1px solid #d5a947;
+  border-radius: 9px;
+  font-size: 21px;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.playButton {
+  grid-column: 2;
+  grid-row: 2;
+  width: 58px;
+  height: 46px;
+  padding: 3px;
+  background: #d5a947;
+  color: #101827;
+  border: 0;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.help {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.returnButton {
+  padding: 9px 18px;
+  background: #d5a947;
+  color: #101827;
+  border: 0;
+  border-radius: 9px;
+  font-weight: bold;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@media (max-height: 650px) {
+  .screen {
+    gap: 4px;
+  }
+
+  .logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .subtitle,
+  .help {
+    display: none;
+  }
+
+  .board {
+    width: min(85vw, 380px, 39dvh);
+  }
+
+  .controls {
+    grid-template-columns: repeat(3, 48px);
+    grid-template-rows: repeat(3, 36px);
+    gap: 3px;
+  }
+
+  .directionButton,
+  .playButton {
+    width: 48px;
+    height: 36px;
+  }
+}

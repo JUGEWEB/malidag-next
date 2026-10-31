@@ -3,6 +3,7 @@ import "./globals.css";
 import { headers } from "next/headers";
 import Providers from "@/components/providers";
 import TermsBanner from "@/components/TermsBanner";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -87,6 +88,7 @@ export default async function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black`}
       >
         <Providers initialLang={lang}>
+           <ServiceWorkerRegister />
           <main className="bg-white">
             {children}
           </main>

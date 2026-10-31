@@ -13,6 +13,7 @@ import { ConfigProvider, App as AntdApp } from "antd";
 import { useTranslation } from "react-i18next";
 import MainSlider from "@/components/MainSlider";
 import SpanWarnings from "@/components/spanWarnings";
+import OfflineSnake from "@/components/OfflineSnake";
 import "./layout.css";
 
 const BASE_URLs = "https://api.malidag.com";
@@ -143,6 +144,7 @@ const isCountryHome =
 
   const COUNTRY_NEUTRAL_ROUTES = [
   "/auth/action",
+   "/offline",
 ];
 
 const isCountryNeutralRoute =
@@ -427,6 +429,7 @@ if (
   </main>
 
   <MalidagFooter />
+  <OfflineSnake />
 </div>
       </AppContext.Provider>
     </AntdApp>

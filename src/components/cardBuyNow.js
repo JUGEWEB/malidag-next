@@ -533,16 +533,17 @@ const orderItems = useMemo(() => {
     return item?.images?.[0] || "/placeholder.png";
   }, [urlBasket, orderItems, item]);
 
- const basketItemCount = useMemo(() => {
+
+const basketItemCount = useMemo(() => {
   if (urlBasket !== "true") {
     return 0;
   }
 
-  return checkoutBasket.length;
-}, [
-  urlBasket,
-  checkoutBasket,
-]);
+  return checkoutBasket.reduce((total, basketItem) => {
+    return total + Number(basketItem?.quantity ?? 1);
+  }, 0);
+}, [urlBasket, checkoutBasket]);
+
 
   const basketTotalQuantity = useMemo(() => {
   if (urlBasket !== "true" || !Array.isArray(orderItems)) return urlQuantity || 1;

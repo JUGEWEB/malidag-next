@@ -140,7 +140,7 @@ const sliderLanguage = getSliderLanguage();
       url: "https://firebasestorage.googleapis.com/v0/b/benege-93e7c.appspot.com/o/uploads%2FINTERSPORT%20France%20intersportfr%20Instagram%20reel.mp4?alt=media&token=1ee47354-068f-45e7-9cd9-3150677e119d",
       type: "#eeeeee",
       content: "video",
-      cover: "https://cdn.malidag.com/themes/1775517425727-e79e4283-6b2a-4a70-a6ba-271053176df0.webp",
+      cover: "https://cdn.malidag.com/themes/1793660155271-c6bfa4c5-cd4c-4853-a9f1-dfa7bf543476.webp",
       router: "/itemPage/shoes?q=shoes",
 
       text: {
@@ -163,7 +163,7 @@ const sliderLanguage = getSliderLanguage();
     },
     {
       id: "2",
-      url: "https://cdn.malidag.com/themes/1788482740227-c989a9ea-b273-41ae-822f-bdfe1a23c058.webp",
+      url: "https://cdn.malidag.com/themes/1793659865385-ba7baf50-2f6b-40d8-a2c0-c56fb24403f2.webp",
       type: "#f3dcd8",
       content: "image",
       textPosition: "left",

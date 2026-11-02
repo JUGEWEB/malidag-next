@@ -487,3 +487,78 @@
 .liked-price-change-dismiss:hover {
   opacity: 1;
 }
+
+
+/* =========================
+   ALREADY IN BASKET
+   ========================= */
+
+.liked-added-basket-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  width: 100%;
+  margin-top: auto;
+  padding: 12px 16px;
+
+  border: 1px solid #16803c;
+  border-radius: 7px;
+
+  background: #eaf8ef;
+  color: #16803c;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.liked-added-basket-button:hover {
+  background: #d5f1df;
+}
+
+.liked-added-basket-button:active {
+  transform: scale(0.98);
+}
+
+/* Quantity badge */
+
+.liked-basket-quantity {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+
+  border-radius: 20px;
+
+  background: #16803c;
+  color: #fff;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .liked-added-basket-button {
+    gap: 6px;
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .liked-basket-quantity {
+    min-width: 21px;
+    height: 21px;
+    font-size: 11px;
+  }
+}

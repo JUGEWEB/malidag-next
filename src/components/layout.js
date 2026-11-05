@@ -8,7 +8,11 @@ import { auth } from "@/components/firebaseConfig";
 import i18n from "i18next";
 import AppHeader from "@/components/appHeader";
 import MalidagFooter from "@/components/malidagFooter";
-import { usePathname, useRouter } from "next/navigation";
+import {
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { ConfigProvider, App as AntdApp } from "antd";
 import { useTranslation } from "react-i18next";
 import MainSlider from "@/components/MainSlider";
@@ -70,8 +74,13 @@ const setCountry = (nextCountry) => {
   window.dispatchEvent(new Event("countryChanged"));
 };
 
-  const pathname = usePathname();
+ const pathname = usePathname();
+const searchParams = useSearchParams();
 const headerRef = useRef(null);
+
+const isMwsPreview =
+  /^\/(fr|gb|br)\/brand\/theme1\/[^/]+\/?$/.test(pathname) &&
+  searchParams.get("mwsPreview") === "1";
 
 
 useEffect(() => {
@@ -400,19 +409,21 @@ if (
           </div>
         )}
 
-       <div className="malidag-app">
-  <div
-  ref={headerRef}
-  className="malidag-sticky-header"
->
-  <AppHeader
-    basketItems={basketItems}
-    user={user}
-    allCountries={allCountries}
-    country={country}
-    setCountry={setCountry}
-  />
-</div>
+      <div className="malidag-app">
+  {!isMwsPreview && (
+    <div
+      ref={headerRef}
+      className="malidag-sticky-header"
+    >
+      <AppHeader
+        basketItems={basketItems}
+        user={user}
+        allCountries={allCountries}
+        country={country}
+        setCountry={setCountry}
+      />
+    </div>
+  )}
 
   {isCountryHome && (
     <>
@@ -428,8 +439,12 @@ if (
     {children}
   </main>
 
-  <MalidagFooter />
-  <OfflineSnake />
+{!isMwsPreview && (
+  <>
+    <MalidagFooter />
+    <OfflineSnake />
+  </>
+)}
 </div>
       </AppContext.Provider>
     </AntdApp>

@@ -20,7 +20,7 @@ import colors from "../../../../lib/colors.json";
 import axios from "axios";
 import { auth } from "@/components/firebaseConfig";
 import { message } from "antd";
-
+import { fetchMwsSampleProducts } from "./mwsSampleProducts";
 import {
   getCountryConfig,
   isSupportedLanguage,
@@ -30,18 +30,116 @@ const BASE_URL = "https://api.malidag.com";
 const BASKET_API =
   "https://api.malidag.com/add-to-basket";
 
+ const MWS_SAMPLE_PRODUCTS = [
+  {
+    id: "mws-sample-1",
+    itemId: "mws-sample-1",
+    name: "Classic Cotton T-Shirt",
+    usdPrice: 29.99,
+    originalPrice: 39.99,
+    department: "men",
+    brandType: "Clothing",
+    image: "/fallback.png",
+    isMwsSample: true,
+  },
+  {
+    id: "mws-sample-2",
+    itemId: "mws-sample-2",
+    name: "Everyday Sneakers",
+    usdPrice: 79.99,
+    originalPrice: 0,
+    department: "men",
+    brandType: "Shoes",
+    image: "/fallback.png",
+    isMwsSample: true,
+  },
+  {
+    id: "mws-sample-3",
+    itemId: "mws-sample-3",
+    name: "Elegant Summer Dress",
+    usdPrice: 59.99,
+    originalPrice: 0,
+    department: "women",
+    brandType: "Clothing",
+    image: "/fallback.png",
+    isMwsSample: true,
+  },
+  {
+    id: "mws-sample-4",
+    itemId: "mws-sample-4",
+    name: "Classic Shoulder Bag",
+    usdPrice: 89.99,
+    originalPrice: 109.99,
+    department: "women",
+    brandType: "Bags",
+    image: "/fallback.png",
+    isMwsSample: true,
+  },
+  {
+    id: "mws-sample-5",
+    itemId: "mws-sample-5",
+    name: "Kids Casual Jacket",
+    usdPrice: 39.99,
+    originalPrice: 0,
+    department: "kids",
+    brandType: "Clothing",
+    image: "/fallback.png",
+    isMwsSample: true,
+  },
+  {
+    id: "mws-sample-6",
+    itemId: "mws-sample-6",
+    name: "Minimalist Watch",
+    usdPrice: 119.99,
+    originalPrice: 0,
+    department: "men",
+    brandType: "Accessories",
+    image: "/fallback.png",
+    isMwsSample: true,
+  },
+];
+
 function Theme1({ brandName }) {
   const router = useRouter();
 const searchParams = useSearchParams();
 
 const requestedBrandType =
   searchParams.get("brandType");
+  const isMwsPreview =
+  searchParams.get("mwsPreview") === "1";
   const { isDesktop } = useScreenSize();
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [departments, setDepartments] = useState([]);
+  const MWS_SAMPLE_DEPARTMENTS = [
+  {
+    name: "men",
+    brandTypes: [
+      "Clothing",
+      "Shoes",
+      "Accessories",
+    ],
+  },
+  {
+    name: "women",
+    brandTypes: [
+      "Clothing",
+      "Shoes",
+      "Bags",
+      "Accessories",
+    ],
+  },
+  {
+    name: "kids",
+    brandTypes: [
+      "Clothing",
+      "Shoes",
+    ],
+  },
+];
   const [topItems, setTopItems] = useState([]);
+  const [mwsApiProducts, setMwsApiProducts] = useState([]);
   const [bestSeller, setBestSeller] = useState(null);
   const [brandItems, setBrandItems] = useState([]);
   const [departmentItemsLoading, setDepartmentItemsLoading] = useState(false);
@@ -97,6 +195,33 @@ const [selectedModalLength, setSelectedModalLength] = useState(null);
 const [addingToBasket, setAddingToBasket] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedBrandType, setSelectedBrandType] = useState(null);
+
+  useEffect(() => {
+  if (!isMwsPreview) {
+    setMwsApiProducts([]);
+    return;
+  }
+
+  let cancelled = false;
+
+  fetchMwsSampleProducts()
+    .then((products) => {
+      if (!cancelled) {
+        setMwsApiProducts(products);
+      }
+    })
+    .catch((error) => {
+      console.error("MWS sample products error:", error);
+
+      if (!cancelled) {
+        setMwsApiProducts([]);
+      }
+    });
+
+  return () => {
+    cancelled = true;
+  };
+}, [isMwsPreview]);
 
   const normalizeTopItem = (product) => ({
     id: product?.id || "",
@@ -452,11 +577,15 @@ const isItemInBasket = (itemId) =>
   )
     .then((response) => response.json())
     .then((data) => {
-      setDepartments(
-        Array.isArray(data?.departments)
-          ? data.departments
-          : []
-      );
+     const actualDepartments = Array.isArray(data?.departments)
+  ? data.departments
+  : [];
+
+setDepartments(
+  isMwsPreview && actualDepartments.length === 0
+    ? MWS_SAMPLE_DEPARTMENTS
+    : actualDepartments
+);
     })
     .catch((error) => {
       console.error(
@@ -466,7 +595,7 @@ const isItemInBasket = (itemId) =>
 
       setDepartments([]);
     });
-}, [brandName, countryCode]);
+}, [brandName, countryCode, isMwsPreview]);
 
   useEffect(() => {
   if (
@@ -774,15 +903,15 @@ const formatPrice = (usdAmount) => {
     brandType
   );
 
-  router.push(
-    withCountry(
-      `/brand/theme1/${encodeURIComponent(
-        brandName
-      )}?brandType=${encodeURIComponent(
-        brandType
-      )}`
-    )
-  );
+ router.push(
+  withCountry(
+    `/brand/theme1/${encodeURIComponent(
+      brandName
+    )}?brandType=${encodeURIComponent(
+      brandType
+    )}${isMwsPreview ? "&mwsPreview=1" : ""}`
+  )
+);
 };
 
  const handleBackToHome = () => {
@@ -791,13 +920,13 @@ const formatPrice = (usdAmount) => {
   setDepartmentItemsError(null);
   setExpandedDeptIndex(null);
 
-  router.push(
-    withCountry(
-      `/brand/theme1/${encodeURIComponent(
-        brandName
-      )}`
-    )
-  );
+ router.push(
+  withCountry(
+    `/brand/theme1/${encodeURIComponent(
+      brandName
+    )}${isMwsPreview ? "?mwsPreview=1" : ""}`
+  )
+);
 };
 
   const getTranslatedName = (item, itemId) => {
@@ -928,15 +1057,38 @@ const getDisplayImage = (product) => {
 
   const shouldShowLargeBestSeller = !!bestSellerVideo && !hideBestSellerVideo;
 
+  const previewTopItems = useMemo(() => {
+  if (!isMwsPreview) {
+    return topItems;
+  }
+
+  const realItems = topItems.filter(
+    (item) => item?.id && item?.name
+  );
+
+  const remainingSlots = Math.max(0, 6 - realItems.length);
+
+ const samples = mwsApiProducts
+  .filter(
+    (item) =>
+      !realItems.some(
+        (real) => String(real.id) === String(item.id)
+      )
+  )
+  .slice(0, remainingSlots);
+
+  return [...realItems, ...samples];
+}, [isMwsPreview, topItems, mwsApiProducts]);
+
   const filteredTopItems = useMemo(() => {
-    const withoutBestSeller = topItems.filter(
+    const withoutBestSeller = previewTopItems.filter(
       (item) => !isSameProduct(item, bestSeller)
     );
 
     return withoutBestSeller.filter((item, index, arr) => {
       return index === arr.findIndex((x) => isSameProduct(x, item));
     });
-  }, [topItems, bestSeller]);
+  }, [previewTopItems, bestSeller]);
 
   const shoeItems = useMemo(() => {
     return filteredTopItems.filter((item) => {
@@ -1034,6 +1186,11 @@ const handleAddToBasket = async (
   explicitLength = null
 ) => {
   e?.stopPropagation();
+
+  // Never allow demonstration products into the real basket.
+if (product?.isMwsSample === true) {
+  return;
+}
 
   const currentUser = auth?.currentUser;
 
@@ -1136,7 +1293,7 @@ const handleAddToBasket = async (
 
   const renderProductCard = (item, options = {}) => {
     const { isTop = false, badgeText = "" } = options;
-
+    const isSample = isMwsPreview && item?.isMwsSample === true;
     const selectedColor = selectedColorByItem[item.id];
     const colorOptions = getColorOptions(item);
     const displayImage = getDisplayImage(item);
@@ -1283,7 +1440,11 @@ const handleAddToBasket = async (
 
         <div
           className="th1-item-media"
-          onClick={() => router.push( withCountry(`/product/${item.id}`))}
+         onClick={() => {
+  if (!isSample) {
+    router.push(withCountry(`/product/${item.id}`));
+  }
+}}
         >
           {badgeText ? (
           <div className="th1-image-badge th1-image-badge-best">
@@ -1314,7 +1475,11 @@ const handleAddToBasket = async (
 
         <div
           className="th1-item-info"
-          onClick={() => router.push( withCountry(`/product/${item.id}`))}
+         onClick={() => {
+  if (!isSample) {
+    router.push(withCountry(`/product/${item.id}`));
+  }
+}}
         >
         <div className="th1-item-price-row">
           <span className="th1-item-price">
@@ -1394,13 +1559,25 @@ const handleAddToBasket = async (
   </div>
 )}
 
-        <button
-          type="button"
-          className="th1-add-basket-btn"
-          onClick={(e) => handleAddToBasket(item, e)}
-        >
-          {t("add_to_cart")}
-        </button>
+      {isSample ? (
+  <button
+    type="button"
+    className="th1-add-basket-btn"
+    disabled
+    title="Demonstration product — not available for purchase"
+    style={{ opacity: 0.55, cursor: "not-allowed" }}
+  >
+    Preview only
+  </button>
+) : (
+  <button
+    type="button"
+    className="th1-add-basket-btn"
+    onClick={(e) => handleAddToBasket(item, e)}
+  >
+    {t("add_to_cart")}
+  </button>
+)}
 
        {getBasketQuantity(item.itemId) > 0 && (
   <button
@@ -1554,13 +1731,53 @@ const handleAddToBasket = async (
     );
   };
 
- const renderBestSellerSmallCard = () => {
-  if (!bestSeller || shouldShowLargeBestSeller) return null;
+const renderBestSellerSmallCard = () => {
+  const hasValidBestSeller =
+    bestSeller &&
+    (bestSeller.id || bestSeller.itemId) &&
+    bestSeller.name &&
+    String(bestSeller.name).trim() !== "";
+
+  if (!hasValidBestSeller) {
+    return null;
+  }
 
   return renderProductCard(bestSeller, {
     badgeText: t("best_seller"),
   });
 };
+
+const previewBrandItems = useMemo(() => {
+  if (!isMwsPreview) {
+    return brandItems;
+  }
+
+  const realItems = brandItems.filter(
+    (item) => item?.id && item?.name
+  );
+
+ const sampleItems = mwsApiProducts.filter(
+  (item) =>
+    item.department.toLowerCase() ===
+      String(selectedDepartment || "").toLowerCase() &&
+    item.brandType.toLowerCase() ===
+      String(selectedBrandType || "").toLowerCase()
+);
+
+  return [
+    ...realItems,
+    ...sampleItems.slice(
+      0,
+      Math.max(0, 6 - realItems.length)
+    ),
+  ];
+}, [
+  isMwsPreview,
+  brandItems,
+  mwsApiProducts,
+  selectedDepartment,
+  selectedBrandType,
+]);
 
   const renderDepartmentItems = () => {
     return (
@@ -1591,13 +1808,13 @@ const handleAddToBasket = async (
           </p>
         )}
 
-        {!departmentItemsLoading && !departmentItemsError && brandItems.length === 0 && (
+        {!departmentItemsLoading && !departmentItemsError && previewBrandItems.length === 0 && (
           <p className="th1-message">{t("no_items_found") || "No items found"}</p>
         )}
 
-        {!departmentItemsLoading && !departmentItemsError && brandItems.length > 0 && (
+        {!departmentItemsLoading && !departmentItemsError && previewBrandItems.length > 0 && (
           <div className={`th1-item-grid ${!isDesktop ? "mobile" : ""}`}>
-            {brandItems.map((item) => renderProductCard(item))}
+            {previewBrandItems.map((item) => renderProductCard(item))}
           </div>
         )}
       </div>

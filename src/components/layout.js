@@ -185,8 +185,8 @@ const isCountryNeutralRoute =
 }, [pathname]);
 
 useEffect(() => {
-  // Routes such as / and /auth/action
-  // do not require a country prefix.
+
+  // Normal Malidag routing remains unchanged.
   if (isCountryNeutralRoute) {
     setCountryState(null);
     setCountryChanging(false);
@@ -231,6 +231,7 @@ useEffect(() => {
   pathname,
   router,
   isCountryNeutralRoute,
+  isMwsPreview,
 ]);
 
 

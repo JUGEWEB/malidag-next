@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useMemo,
   useContext,
+  useRef,
 } from "react";
 import {
   useRouter,
@@ -107,6 +108,9 @@ const requestedBrandType =
   searchParams.get("brandType");
   const isMwsPreview =
   searchParams.get("mwsPreview") === "1";
+  const isMwsEditMode =
+  isMwsPreview &&
+  searchParams.get("mwsEdit") === "1";
   const { isDesktop } = useScreenSize();
   const { t } = useTranslation();
   const setItemData = useCheckoutStore((state) => state.setItemData);
@@ -140,6 +144,76 @@ const requestedBrandType =
 ];
   const [topItems, setTopItems] = useState([]);
   const [mwsApiProducts, setMwsApiProducts] = useState([]);
+  const [showMwsSamples, setShowMwsSamples] = useState(true);
+  const [mwsCustomSamples, setMwsCustomSamples] = useState([]);
+  const mwsImagePreviewUrlsRef = useRef(new Set());
+
+useEffect(() => {
+  const previewUrls = mwsImagePreviewUrlsRef.current;
+
+  return () => {
+    previewUrls.forEach((url) => {
+      URL.revokeObjectURL(url);
+    });
+
+    previewUrls.clear();
+  };
+}, []);
+  const [editingMwsSampleId, setEditingMwsSampleId] = useState(null);
+  const [isMwsEditorPanelOpen, setIsMwsEditorPanelOpen] = useState(false);
+  const [isMwsProductSaving, setIsMwsProductSaving] = useState(false);
+  const mwsPendingSaveRequestRef = useRef(null);
+  useEffect(() => {
+  if (!isMwsEditMode) return;
+
+  const handleMwsSaveResponse = (event) => {
+    if (event.origin !== "https://mws.malidag.com") return;
+    if (event.source !== window.parent) return;
+
+    const data = event.data;
+
+    if (!data || data.type !== "MWS_SAVE_PRODUCT_RESULT") return;
+
+    const pending = mwsPendingSaveRequestRef.current;
+
+    if (!pending || data.requestId !== pending.requestId) return;
+
+    mwsPendingSaveRequestRef.current = null;
+    setIsMwsProductSaving(false);
+
+    if (!data.success) {
+      messageApi.error(data.error || "Failed to save product.");
+      return;
+    }
+
+    const folderId = data.product?.folderId;
+
+    if (!folderId) {
+      messageApi.error("Save response is missing the product ID.");
+      return;
+    }
+
+    setMwsCustomSamples((previous) =>
+      previous.map((sample) =>
+        sample.id === pending.sampleId
+          ? {
+              ...sample,
+              folderId,
+              status: "draft",
+            }
+          : sample
+      )
+    );
+
+    messageApi.success("Product saved as draft.");
+  };
+
+  window.addEventListener("message", handleMwsSaveResponse);
+
+  return () => {
+    window.removeEventListener("message", handleMwsSaveResponse);
+  };
+}, [isMwsEditMode, messageApi]);
   const [bestSeller, setBestSeller] = useState(null);
   const [brandItems, setBrandItems] = useState([]);
   const [departmentItemsLoading, setDepartmentItemsLoading] = useState(false);
@@ -909,7 +983,9 @@ const formatPrice = (usdAmount) => {
       brandName
     )}?brandType=${encodeURIComponent(
       brandType
-    )}${isMwsPreview ? "&mwsPreview=1" : ""}`
+    )}${isMwsPreview ? "&mwsPreview=1" : ""}${
+      isMwsEditMode ? "&mwsEdit=1" : ""
+    }`
   )
 );
 };
@@ -924,7 +1000,9 @@ const formatPrice = (usdAmount) => {
   withCountry(
     `/brand/theme1/${encodeURIComponent(
       brandName
-    )}${isMwsPreview ? "?mwsPreview=1" : ""}`
+    )}${isMwsPreview ? "?mwsPreview=1" : ""}${
+      isMwsEditMode ? "&mwsEdit=1" : ""
+    }`
   )
 );
 };
@@ -1057,6 +1135,235 @@ const getDisplayImage = (product) => {
 
   const shouldShowLargeBestSeller = !!bestSellerVideo && !hideBestSellerVideo;
 
+  const handleAddMwsSample = () => {
+  if (!isMwsEditMode) return;
+
+  const newSample = {
+    id: `mws-custom-${crypto.randomUUID()}`,
+    itemId: "",
+    name: "New Product",
+    usdPrice: 0,
+    originalPrice: 0,
+    department: selectedDepartment || "men",
+    brandType: selectedBrandType || "Clothing",
+    images: ["https://api.malidag.com/learn/videos/1794018211184-malidag_sample_image.jpg"],
+    imagesVariants: {},
+    size: {},
+    videos: [],
+    rating: 0,
+    isMwsSample: true,
+    isMwsCustomSample: true,
+  };
+
+  setMwsCustomSamples((previous) => [...previous, newSample]);
+};
+
+const handleCustomizeMwsDefaultSample = (item) => {
+  if (!isMwsEditMode || !item?.id) return;
+
+  const customId = `mws-custom-${crypto.randomUUID()}`;
+
+  const customSample = {
+    ...item,
+    id: customId,
+    isMwsSample: true,
+    isMwsCustomSample: true,
+    mwsOriginalSampleId: String(item.id),
+  };
+
+  setMwsCustomSamples((previous) => [
+    ...previous,
+    customSample,
+  ]);
+
+  setEditingMwsSampleId(customId);
+
+  return customId;
+};
+
+const handleRemoveMwsSample = (sampleId) => {
+  if (!isMwsEditMode) return;
+
+  const sampleToRemove = mwsCustomSamples.find(
+    (sample) => sample.id === sampleId
+  );
+
+ if (sampleToRemove?.imagePreviewUrl) {
+  URL.revokeObjectURL(sampleToRemove.imagePreviewUrl);
+
+  mwsImagePreviewUrlsRef.current.delete(
+    sampleToRemove.imagePreviewUrl
+  );
+}
+
+  setMwsCustomSamples((previous) =>
+    previous.filter((sample) => sample.id !== sampleId)
+  );
+
+  setEditingMwsSampleId((previous) =>
+    previous === sampleId ? null : previous
+  );
+};
+
+const handleUpdateMwsSample = (sampleId, field, value) => {
+  if (!isMwsEditMode) return;
+
+ const allowedFields = [
+  "name",
+  "itemSubName",
+  "category",
+  "department",
+  "brandType",
+  "genre",
+  "type",
+  "usdPrice",
+  "originalPrice",
+  "numberItemText",
+  "itemDetailText",
+  "productDetail01",
+  "productDetail02",
+  "images",
+];
+
+  if (!allowedFields.includes(field)) return;
+
+  setMwsCustomSamples((previous) =>
+    previous.map((sample) => {
+      if (sample.id !== sampleId) {
+        return sample;
+      }
+
+      if (field === "usdPrice") {
+        return {
+          ...sample,
+          usdPrice: Math.max(0, Number(value) || 0),
+        };
+      }
+
+      if (field === "images") {
+        return {
+          ...sample,
+          images: [String(value || "/fallback.png")],
+        };
+      }
+
+     return {
+  ...sample,
+  [field]: String(value ?? ""),
+};
+    })
+  );
+};
+
+const handleSaveMwsProduct = () => {
+  if (!isMwsEditMode || isMwsProductSaving) return;
+
+  if (!activeMwsEditorSample) {
+    messageApi.error("No product selected.");
+    return;
+  }
+
+  const product = activeMwsEditorSample;
+
+  if (!String(product.name || "").trim()) {
+    messageApi.error("Product name is required.");
+    return;
+  }
+
+  if (window.parent === window) {
+    messageApi.error("Open the editor through MWS to save.");
+    return;
+  }
+
+ const requestId = crypto.randomUUID();
+
+const productData = {
+  folderId: product.folderId || null,
+  itemName: product.name,
+  itemSubName: product.itemSubName || "",
+  category: product.category || "",
+  department: product.department || "",
+  brandType: product.brandType || "",
+  genre: product.genre || "",
+  type: product.type || "",
+  usdText: String(product.usdPrice ?? 0),
+  originalPrice: String(product.originalPrice ?? 0),
+  numberItemText: product.numberItemText || "",
+  itemDetailText: product.itemDetailText || "",
+  productDetail01: product.productDetail01 || "",
+  productDetail02: product.productDetail02 || "",
+  imageFile: product.imageFile || null,
+};
+
+mwsPendingSaveRequestRef.current = {
+  requestId,
+  sampleId: product.id,
+};
+
+setIsMwsProductSaving(true);
+
+window.parent.postMessage(
+  {
+    type: "MWS_SAVE_PRODUCT",
+    requestId,
+    product: productData,
+  },
+  "https://mws.malidag.com"
+);
+};
+
+const handleMwsSampleImageUpload = (sampleId, file) => {
+  if (!isMwsEditMode || !file) return;
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    messageApi.error("Please upload a JPG, PNG, or WebP image.");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    messageApi.error("Product image must be 5 MB or smaller.");
+    return;
+  }
+
+  const existingSample = mwsCustomSamples.find(
+  (sample) => sample.id === sampleId
+);
+
+if (!existingSample) return;
+
+if (existingSample.imagePreviewUrl) {
+  URL.revokeObjectURL(existingSample.imagePreviewUrl);
+
+  mwsImagePreviewUrlsRef.current.delete(
+    existingSample.imagePreviewUrl
+  );
+}
+
+const previewUrl = URL.createObjectURL(file);
+
+mwsImagePreviewUrlsRef.current.add(previewUrl);
+
+  setMwsCustomSamples((previous) =>
+    previous.map((sample) => {
+      if (sample.id !== sampleId) return sample;
+
+      return {
+        ...sample,
+        imageFile: file,
+        imagePreviewUrl: previewUrl,
+        images: [previewUrl],
+        imagesVariants: {},
+      };
+    })
+  );
+};
+
   const previewTopItems = useMemo(() => {
   if (!isMwsPreview) {
     return topItems;
@@ -1066,19 +1373,48 @@ const getDisplayImage = (product) => {
     (item) => item?.id && item?.name
   );
 
+  if (isMwsEditMode && !showMwsSamples) {
+  return [...realItems, ...mwsCustomSamples];
+}
+
   const remainingSlots = Math.max(0, 6 - realItems.length);
 
- const samples = mwsApiProducts
-  .filter(
-    (item) =>
-      !realItems.some(
-        (real) => String(real.id) === String(item.id)
-      )
-  )
-  .slice(0, remainingSlots);
+  const customSamples = isMwsEditMode
+    ? mwsCustomSamples
+    : [];
+
+  const customizedDefaultIds = new Set(
+  customSamples
+    .map((item) => item.mwsOriginalSampleId)
+    .filter(Boolean)
+    .map(String)
+);
+
+const apiSamples = mwsApiProducts.filter(
+  (item) =>
+    !realItems.some(
+      (real) => String(real.id) === String(item.id)
+    ) &&
+    !customizedDefaultIds.has(String(item.id))
+);
+
+  const samples = [
+    ...customSamples,
+    ...apiSamples.slice(
+      0,
+      Math.max(0, remainingSlots - customSamples.length)
+    ),
+  ];
 
   return [...realItems, ...samples];
-}, [isMwsPreview, topItems, mwsApiProducts]);
+}, [
+  isMwsPreview,
+  isMwsEditMode,
+  showMwsSamples,
+  topItems,
+  mwsApiProducts,
+  mwsCustomSamples,
+]);
 
   const filteredTopItems = useMemo(() => {
     const withoutBestSeller = previewTopItems.filter(
@@ -1309,6 +1645,65 @@ if (product?.isMwsSample === true) {
 
     return (
       <div key={item.id} className="th1-item-card">
+
+      {isMwsEditMode && item?.isMwsSample === true && (
+  <div
+    style={{
+      display: "flex",
+      gap: "8px",
+      padding: "8px",
+    }}
+  >
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+      if (item.isMwsCustomSample) {
+  setEditingMwsSampleId(item.id);
+} else {
+  handleCustomizeMwsDefaultSample(item);
+}
+
+setIsMwsEditorPanelOpen(true);
+      }}
+      style={{
+        flex: 1,
+        padding: "9px 6px",
+        background:
+          editingMwsSampleId === item.id ? "#16a34a" : "#2563eb",
+        color: "#ffffff",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+     Edit Sample
+    </button>
+
+   {item?.isMwsCustomSample === true && (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      handleRemoveMwsSample(item.id);
+    }}
+    style={{
+      flex: 1,
+      padding: "9px 6px",
+      background: "#dc2626",
+      color: "#ffffff",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontWeight: 600,
+    }}
+  >
+    Remove Sample
+  </button>
+)}
+  </div>
+)}
 
          {contextHolder}
 
@@ -1756,25 +2151,65 @@ const previewBrandItems = useMemo(() => {
     (item) => item?.id && item?.name
   );
 
- const sampleItems = mwsApiProducts.filter(
+  // Hide sample products in MWS Edit Storefront mode.
+ if (isMwsEditMode && !showMwsSamples) {
+  return [
+    ...realItems,
+    ...mwsCustomSamples.filter(
+      (item) =>
+        String(item.department || "").toLowerCase() ===
+          String(selectedDepartment || "").toLowerCase() &&
+        String(item.brandType || "").toLowerCase() ===
+          String(selectedBrandType || "").toLowerCase()
+    ),
+  ];
+}
+
+  const sampleItems = [
+  ...(isMwsEditMode ? mwsCustomSamples : []),
+  ...mwsApiProducts,
+].filter(
   (item) =>
-    item.department.toLowerCase() ===
+    String(item.department || "").toLowerCase() ===
       String(selectedDepartment || "").toLowerCase() &&
-    item.brandType.toLowerCase() ===
+    String(item.brandType || "").toLowerCase() ===
       String(selectedBrandType || "").toLowerCase()
 );
 
-  return [
-    ...realItems,
-    ...sampleItems.slice(
-      0,
-      Math.max(0, 6 - realItems.length)
-    ),
-  ];
+ const customSamples = sampleItems.filter(
+  (item) => item.isMwsCustomSample === true
+);
+
+const customizedDefaultIds = new Set(
+  mwsCustomSamples
+    .map((item) => item.mwsOriginalSampleId)
+    .filter(Boolean)
+    .map(String)
+);
+
+const apiSamples = sampleItems.filter(
+  (item) =>
+    item.isMwsCustomSample !== true &&
+    !customizedDefaultIds.has(String(item.id))
+);
+
+const remainingSlots = Math.max(
+  0,
+  6 - realItems.length - customSamples.length
+);
+
+return [
+  ...realItems,
+  ...customSamples,
+  ...apiSamples.slice(0, remainingSlots),
+];
 }, [
   isMwsPreview,
+  isMwsEditMode,
+  showMwsSamples,
   brandItems,
   mwsApiProducts,
+  mwsCustomSamples,
   selectedDepartment,
   selectedBrandType,
 ]);
@@ -1821,8 +2256,402 @@ const previewBrandItems = useMemo(() => {
     );
   };
 
+  const activeMwsEditorSample = mwsCustomSamples.find(
+  (sample) => sample.id === editingMwsSampleId
+);
+
   return (
     <div className="th1-wrapper">
+
+      {isMwsEditMode &&
+  isMwsEditorPanelOpen &&
+  activeMwsEditorSample && (
+    <div
+      role="dialog"
+      aria-modal="false"
+      aria-label="Edit sample product"
+      style={{
+        position: "fixed",
+        top: 0,
+        right: 0,
+        width: "min(420px, 100vw)",
+        height: "100dvh",
+        background: "#ffffff",
+        boxShadow: "-8px 0 30px rgba(0,0,0,0.18)",
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div
+        style={{
+          padding: "18px",
+          borderBottom: "1px solid #e2e8f0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "12px",
+        }}
+      >
+        <div>
+          <strong
+            style={{
+              fontSize: "18px",
+              color: "#111827",
+            }}
+          >
+            Edit Product
+          </strong>
+
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#64748b",
+              marginTop: "4px",
+            }}
+          >
+            Changes appear instantly in your storefront.
+          </div>
+        </div>
+
+        <button
+          type="button"
+          aria-label="Close product editor"
+          onClick={() => {
+            setIsMwsEditorPanelOpen(false);
+            setEditingMwsSampleId(null);
+          }}
+          style={{
+            padding: "8px 12px",
+            background: "#f1f5f9",
+            color: "#111827",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "20px",
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "20px",
+        }}
+      >
+        <p style={{ color: "#475569" }}>
+          Editing: <strong>{activeMwsEditorSample.name}</strong>
+        </p>
+
+       <label
+  style={{
+    display: "block",
+    marginTop: "20px",
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#111827",
+  }}
+>
+  Product Name
+  <input
+    type="text"
+    value={activeMwsEditorSample.name ?? ""}
+    onChange={(e) =>
+      handleUpdateMwsSample(
+        activeMwsEditorSample.id,
+        "name",
+        e.target.value
+      )
+    }
+    style={{
+      display: "block",
+      width: "100%",
+      boxSizing: "border-box",
+      padding: "12px",
+      marginTop: "8px",
+      border: "1px solid #cbd5e1",
+      borderRadius: "8px",
+      background: "#ffffff",
+      color: "#111827",
+    }}
+  />
+</label>
+
+{[
+  ["itemSubName", "Product Subtitle"],
+  ["category", "Category"],
+  ["department", "Department"],
+  ["brandType", "Brand Type"],
+  ["genre", "Genre"],
+  ["type", "Type"],
+].map(([field, label]) => (
+  <label
+    key={field}
+    style={{
+      display: "block",
+      marginTop: "16px",
+      fontSize: "13px",
+      fontWeight: 600,
+      color: "#111827",
+    }}
+  >
+    {label}
+    <input
+      type="text"
+      value={activeMwsEditorSample[field] ?? ""}
+      onChange={(e) =>
+        handleUpdateMwsSample(
+          activeMwsEditorSample.id,
+          field,
+          e.target.value
+        )
+      }
+      style={{
+        display: "block",
+        width: "100%",
+        boxSizing: "border-box",
+        padding: "12px",
+        marginTop: "8px",
+        border: "1px solid #cbd5e1",
+        borderRadius: "8px",
+        background: "#ffffff",
+        color: "#111827",
+      }}
+    />
+  </label>
+))}
+
+{[
+  ["usdPrice", "Price (USD)", "0.01"],
+  ["originalPrice", "Original Price (USD)", "0.01"],
+  ["numberItemText", "Quantity Available", "1"],
+].map(([field, label, step]) => (
+  <label
+    key={field}
+    style={{
+      display: "block",
+      marginTop: "16px",
+      fontSize: "13px",
+      fontWeight: 600,
+      color: "#111827",
+    }}
+  >
+    {label}
+    <input
+      type="number"
+      min="0"
+      step={step}
+      value={activeMwsEditorSample[field] ?? ""}
+      onChange={(e) =>
+        handleUpdateMwsSample(
+          activeMwsEditorSample.id,
+          field,
+          e.target.value
+        )
+      }
+      style={{
+        display: "block",
+        width: "100%",
+        boxSizing: "border-box",
+        padding: "12px",
+        marginTop: "8px",
+        border: "1px solid #cbd5e1",
+        borderRadius: "8px",
+        background: "#ffffff",
+        color: "#111827",
+      }}
+    />
+  </label>
+))}
+
+{[
+  ["itemDetailText", "Item Details"],
+  ["productDetail01", "Product Description 1"],
+  ["productDetail02", "Product Description 2"],
+].map(([field, label]) => (
+  <label
+    key={field}
+    style={{
+      display: "block",
+      marginTop: "18px",
+      fontSize: "13px",
+      fontWeight: 600,
+      color: "#111827",
+    }}
+  >
+    {label}
+
+    <textarea
+      rows={4}
+      value={activeMwsEditorSample[field] ?? ""}
+      onChange={(e) =>
+        handleUpdateMwsSample(
+          activeMwsEditorSample.id,
+          field,
+          e.target.value
+        )
+      }
+      placeholder={`Enter ${label.toLowerCase()}...`}
+      style={{
+        display: "block",
+        width: "100%",
+        boxSizing: "border-box",
+        padding: "12px",
+        marginTop: "8px",
+        border: "1px solid #cbd5e1",
+        borderRadius: "8px",
+        background: "#ffffff",
+        color: "#111827",
+        resize: "vertical",
+        fontFamily: "inherit",
+        lineHeight: "1.5",
+      }}
+    />
+  </label>
+))}
+
+<label
+  style={{
+    display: "block",
+    marginTop: "20px",
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#111827",
+  }}
+>
+  Upload Product Image
+
+  <input
+    type="file"
+    accept="image/jpeg,image/png,image/webp"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+
+      if (file) {
+        handleMwsSampleImageUpload(
+          activeMwsEditorSample.id,
+          file
+        );
+      }
+
+      e.target.value = "";
+    }}
+    style={{
+      display: "block",
+      width: "100%",
+      boxSizing: "border-box",
+      marginTop: "8px",
+      padding: "12px",
+      border: "1px solid #cbd5e1",
+      borderRadius: "8px",
+      background: "#ffffff",
+      color: "#111827",
+    }}
+  />
+
+  <span
+    style={{
+      display: "block",
+      marginTop: "6px",
+      fontSize: "12px",
+      color: "#64748b",
+    }}
+  >
+    JPG, PNG, or WebP — maximum 5 MB
+  </span>
+
+  {activeMwsEditorSample.imageFile && (
+    <span
+      style={{
+        display: "block",
+        marginTop: "8px",
+        fontSize: "12px",
+        color: "#16a34a",
+      }}
+    >
+      Selected: {activeMwsEditorSample.imageFile.name}
+    </span>
+  )}
+</label>
+
+<button
+  type="button"
+ onClick={handleSaveMwsProduct}
+disabled={isMwsProductSaving}
+  style={{
+    width: "100%",
+    marginTop: "24px",
+    padding: "14px",
+    background: "#16a34a",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: 700,
+    fontSize: "15px",
+  }}
+>
+ {isMwsProductSaving ? "Saving..." : "Save Changes"}
+</button>
+
+      </div>
+    </div>
+  )}
+
+      {isMwsEditMode && (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: "12px",
+      padding: "12px 16px",
+      margin: "12px",
+      background: "#f8fafc",
+      border: "1px solid #e2e8f0",
+      borderRadius: "10px",
+    }}
+  >
+   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+  <button
+    type="button"
+    onClick={handleAddMwsSample}
+    style={{
+      padding: "9px 14px",
+      background: "#2563eb",
+      color: "#ffffff",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontWeight: 600,
+    }}
+  >
+    + Add Sample
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setShowMwsSamples((previous) => !previous)}
+    style={{
+      padding: "9px 14px",
+      background: "#111827",
+      color: "#ffffff",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+    }}
+  >
+   {showMwsSamples
+  ? "Hide Default Samples"
+  : "Show Default Samples"}
+  </button>
+</div>
+
+  </div>
+)}
       {isDesktop ? (
         <div className="th1-container">
           <aside className="th1-sidebar">

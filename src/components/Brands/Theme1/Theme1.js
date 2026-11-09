@@ -163,6 +163,8 @@ useEffect(() => {
   const [isMwsEditorPanelOpen, setIsMwsEditorPanelOpen] = useState(false);
   const [isMwsProductSaving, setIsMwsProductSaving] = useState(false);
   const mwsPendingSaveRequestRef = useRef(null);
+  const [messageApi, contextHolder] =
+  message.useMessage();
   useEffect(() => {
   if (!isMwsEditMode) return;
 
@@ -244,9 +246,6 @@ const withCountry = (path) => {
 };
 
 const [basketItems, setBasketItems] = useState([]);
-
-const [messageApi, contextHolder] =
-  message.useMessage();
 
 const [rates, setRates] = useState(null);
 

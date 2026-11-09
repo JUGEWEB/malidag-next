@@ -230,8 +230,8 @@ if (pathname === "/" || isAuthActionPage) {
             }}
           style={{
             flex: 1,
-            height: "45px",
-            padding: "0 10px",
+            height: "35px",
+            padding: "0 5px",
             border: "none",
             fontSize: "16px",
             outline: "none",
@@ -245,8 +245,8 @@ if (pathname === "/" || isAuthActionPage) {
             setIsFocused(false);
           }}
           style={{
-            height: "45px",
-            padding: "0 15px",
+            height: "35px",
+            padding: "0 5px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

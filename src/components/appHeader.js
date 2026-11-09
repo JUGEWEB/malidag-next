@@ -76,7 +76,7 @@ const isCountryHome =
                 </div>
         
                 {(isMobile || isSmallMobile || isVerySmall) && allCountries.length > 0 && (
-          <div style={{color: "white", backgroundColor: "#0d1b2a", padding: "10px"}}>
+          <div style={{color: "white", backgroundColor: "#0d1b2a", padding: "5px"}}>
             <Location country={country} allCountries={allCountries} setCountry={setCountry}/>
             </div>
           )}

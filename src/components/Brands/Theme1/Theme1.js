@@ -216,38 +216,63 @@ useEffect(() => {
       return;
     }
 
-    setMwsCustomSamples((previous) =>
+   
+const savedProduct = data.product || {};
+
+const returnedImage =
+  savedProduct.imageUrl ||
+  savedProduct.images?.[0] ||
+  null;
+
+const serverImageUrl =
+  typeof returnedImage === "string"
+    ? returnedImage
+    : returnedImage?.url || null;
+
+setMwsCustomSamples((previous) =>
   previous.map((sample) => {
     if (sample.id !== pending.sampleId) {
       return sample;
     }
 
-    const imageUrl = data.product?.imageUrl;
-
-    if (sample.imagePreviewUrl) {
-      URL.revokeObjectURL(sample.imagePreviewUrl);
-      mwsImagePreviewUrlsRef.current.delete(
-        sample.imagePreviewUrl
-      );
-    }
+    // Keep the local image preview if the server
+    // has not returned a usable image URL.
+    const nextImages = serverImageUrl
+      ? [
+          serverImageUrl,
+          ...(sample.images || []).slice(1),
+        ]
+      : sample.images || [];
 
     return {
       ...sample,
+
       folderId,
-      status: data.product?.status || sample.status || "draft",
-      imageFile: null,
-       isMwsSavedProduct: true,
-      imagePreviewUrl: null,
-      images: imageUrl
-        ? [imageUrl, ...(sample.images || []).filter(
-            (url) => !String(url).startsWith("blob:")
-          ).slice(1)]
-        : (sample.images || []).filter(
-            (url) => !String(url).startsWith("blob:")
-          ),
+      itemId: folderId,
+      isMwsSavedProduct: true,
+      status: savedProduct.status || sample.status || "draft",
+
+      // The editor already contains the latest text.
+      name: sample.name,
+      itemSubName: sample.itemSubName,
+      itemDetailText: sample.itemDetailText,
+      productDetail01: sample.productDetail01,
+      productDetail02: sample.productDetail02,
+
+      // Do not remove the local image prematurely.
+      images: nextImages,
+
+      imagePreviewUrl: serverImageUrl
+        ? null
+        : sample.imagePreviewUrl,
+
+      imageFile: serverImageUrl
+        ? null
+        : sample.imageFile,
     };
   })
 );
+
 
     messageApi.success("Product saved as draft.");
   };

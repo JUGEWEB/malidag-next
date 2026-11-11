@@ -1812,7 +1812,7 @@ setIsMwsEditorPanelOpen(true);
         fontWeight: 600,
       }}
     >
-    Edit Item
+   Edit Sample
     </button>
 
    {item?.isMwsCustomSample === true && (
@@ -2030,17 +2030,34 @@ setIsMwsEditorPanelOpen(true);
           </div>
 
           
-{isMwsEditMode &&
-  item?.isMwsSavedProduct === true &&
-  Boolean(item?.folderId) && (
+{item?.isMwsSample !== true && (
     <button
       type="button"
-      onClick={(e) => {
-        e.stopPropagation();
+     onClick={(e) => {
+  e.stopPropagation();
 
-        setEditingMwsSampleId(item.id);
-        setIsMwsEditorPanelOpen(true);
-      }}
+  if (!isMwsEditMode) {
+    messageApi.info("Open MWS editor to modify this product.");
+    return;
+  }
+
+  const editableProduct = mwsCustomSamples.find(
+    (product) =>
+      product.folderId &&
+      String(product.folderId) ===
+        String(item.folderId || item.itemId)
+  );
+
+  if (!editableProduct) {
+    messageApi.warning(
+      "This product is not connected to an editable MWS record."
+    );
+    return;
+  }
+
+  setEditingMwsSampleId(editableProduct.id);
+  setIsMwsEditorPanelOpen(true);
+}}
       style={{
         display: "block",
         width: "100%",

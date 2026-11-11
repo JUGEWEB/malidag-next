@@ -363,6 +363,94 @@ const [addingToBasket, setAddingToBasket] = useState(false);
   };
 }, [isMwsPreview]);
 
+
+useEffect(() => {
+  if (!isMwsEditMode) return;
+
+  const handleProductUpdated = (event) => {
+    if (event.origin !== "https://mws.malidag.com") return;
+    if (event.source !== window.parent) return;
+
+    const data = event.data;
+
+    if (data?.type !== "MWS_PRODUCT_UPDATED") return;
+
+    const product = data.product;
+    if (!product?.folderId) return;
+
+    const fields = product.textFields || {};
+
+    setMwsCustomSamples((previous) =>
+      previous.map((sample) => {
+        if (
+          String(sample.folderId || "") !==
+          String(product.folderId)
+        ) {
+          return sample;
+        }
+
+        const serverImage =
+          product.imageUrl ||
+          product.images?.[0] ||
+          null;
+
+        const imageUrl =
+          typeof serverImage === "string"
+            ? serverImage
+            : serverImage?.url || null;
+
+        return {
+          ...sample,
+
+          name: fields.itemName ?? sample.name,
+          itemSubName:
+            fields.itemSubName ?? sample.itemSubName,
+          category: fields.category ?? sample.category,
+          department:
+            fields.department ?? sample.department,
+          brandType:
+            fields.brandType ?? sample.brandType,
+
+          usdPrice:
+            fields.usdText != null
+              ? Number(fields.usdText)
+              : sample.usdPrice,
+
+          originalPrice:
+            fields.originalPrice != null
+              ? Number(fields.originalPrice)
+              : sample.originalPrice,
+
+          itemDetailText:
+            fields.itemDetailText ?? sample.itemDetailText,
+
+          productDetail01:
+            fields.productDetail01 ?? sample.productDetail01,
+
+          productDetail02:
+            fields.productDetail02 ?? sample.productDetail02,
+
+          images: imageUrl
+            ? [imageUrl, ...(sample.images || []).slice(1)]
+            : sample.images,
+
+          status: product.status ?? sample.status,
+        };
+      })
+    );
+  };
+
+  window.addEventListener("message", handleProductUpdated);
+
+  return () => {
+    window.removeEventListener(
+      "message",
+      handleProductUpdated
+    );
+  };
+}, [isMwsEditMode]);
+
+
 useEffect(() => {
   if (!isMwsEditMode) return;
 
@@ -433,6 +521,13 @@ useEffect(() => {
       if (!existing) {
         return serverProduct;
       }
+
+      if (
+  mwsPendingSaveRequestRef.current?.sampleId ===
+  existing.id
+) {
+  return existing;
+}
 
       // Preserve the product's React identity.
       // Keep its placement and temporary image preview.

@@ -217,16 +217,36 @@ useEffect(() => {
     }
 
     setMwsCustomSamples((previous) =>
-      previous.map((sample) =>
-        sample.id === pending.sampleId
-          ? {
-              ...sample,
-              folderId,
-              status: "draft",
-            }
-          : sample
-      )
-    );
+  previous.map((sample) => {
+    if (sample.id !== pending.sampleId) {
+      return sample;
+    }
+
+    const imageUrl = data.product?.imageUrl;
+
+    if (sample.imagePreviewUrl) {
+      URL.revokeObjectURL(sample.imagePreviewUrl);
+      mwsImagePreviewUrlsRef.current.delete(
+        sample.imagePreviewUrl
+      );
+    }
+
+    return {
+      ...sample,
+      folderId,
+      status: data.product?.status || sample.status || "draft",
+      imageFile: null,
+      imagePreviewUrl: null,
+      images: imageUrl
+        ? [imageUrl, ...(sample.images || []).filter(
+            (url) => !String(url).startsWith("blob:")
+          ).slice(1)]
+        : (sample.images || []).filter(
+            (url) => !String(url).startsWith("blob:")
+          ),
+    };
+  })
+);
 
     messageApi.success("Product saved as draft.");
   };
@@ -1286,6 +1306,17 @@ const handleCustomizeMwsDefaultSample = (item) => {
 
 const handleRemoveMwsSample = (sampleId) => {
   if (!isMwsEditMode) return;
+
+  const savedProduct = mwsCustomSamples.find(
+  (sample) => sample.id === sampleId
+);
+
+if (savedProduct?.folderId) {
+  messageApi.warning(
+    "This product is saved. Remove it through product management."
+  );
+  return;
+}
 
   const sampleToRemove = mwsCustomSamples.find(
     (sample) => sample.id === sampleId

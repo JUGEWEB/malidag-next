@@ -1240,6 +1240,10 @@ const getDisplayImage = (product) => {
     originalPrice: 0,
     department: selectedDepartment || "men",
     brandType: selectedBrandType || "Clothing",
+    placement:
+  selectedDepartment && selectedBrandType
+    ? "category"
+    : "homepage",
     images: ["https://api.malidag.com/learn/videos/1794018211184-malidag_sample_image.jpg"],
     imagesVariants: {},
     size: {},
@@ -1262,6 +1266,11 @@ const handleCustomizeMwsDefaultSample = (item) => {
     id: customId,
     isMwsSample: true,
     isMwsCustomSample: true,
+    placement:
+  item.placement ||
+  (selectedDepartment && selectedBrandType
+    ? "category"
+    : "homepage"),
     mwsOriginalSampleId: String(item.id),
   };
 
@@ -1467,41 +1476,38 @@ mwsImagePreviewUrlsRef.current.add(previewUrl);
     (item) => item?.id && item?.name
   );
 
-  const customSamples = isMwsEditMode
-    ? mwsCustomSamples
+  // Homepage items must be explicitly assigned
+  // to the homepage, not simply be editable.
+  const homepageCustomItems = isMwsEditMode
+    ? mwsCustomSamples.filter(
+        (item) => item.placement === "homepage"
+      )
     : [];
 
-  if (isMwsEditMode && !showMwsSamples) {
+  if (!showMwsSamples) {
     return uniqueMwsProducts([
       ...realItems,
-      ...customSamples,
+      ...homepageCustomItems,
     ]);
   }
 
-  const customizedDefaultIds = new Set(
-    customSamples
+  const customizedIds = new Set(
+    homepageCustomItems
       .map((item) => item.mwsOriginalSampleId)
       .filter(Boolean)
       .map(String)
   );
 
-  const apiSamples = mwsApiProducts.filter(
+  const homepageSamples = mwsApiProducts.filter(
     (item) =>
-      !customizedDefaultIds.has(String(item.id)) &&
-      !realItems.some(
-        (real) => String(real.id) === String(item.id)
-      )
-  );
-
-  const remainingSlots = Math.max(
-    0,
-    6 - realItems.length - customSamples.length
+      item.placement === "homepage" &&
+      !customizedIds.has(String(item.id))
   );
 
   return uniqueMwsProducts([
     ...realItems,
-    ...customSamples,
-    ...apiSamples.slice(0, remainingSlots),
+    ...homepageCustomItems,
+    ...homepageSamples,
   ]);
 }, [
   isMwsPreview,
@@ -1774,7 +1780,7 @@ setIsMwsEditorPanelOpen(true);
         fontWeight: 600,
       }}
     >
-     Edit Sample
+    Edit Item
     </button>
 
    {item?.isMwsCustomSample === true && (
@@ -2243,62 +2249,48 @@ const previewBrandItems = useMemo(() => {
     return brandItems;
   }
 
+  const normalize = (value) =>
+    String(value || "").trim().toLowerCase();
+
+  const matchesSelectedCategory = (item) =>
+    normalize(item.department) ===
+      normalize(selectedDepartment) &&
+    normalize(item.brandType) ===
+      normalize(selectedBrandType);
+
   const realItems = brandItems.filter(
     (item) => item?.id && item?.name
   );
 
-  // Hide sample products in MWS Edit Storefront mode.
- if (isMwsEditMode && !showMwsSamples) {
-  return [
+  const customItems = isMwsEditMode
+    ? mwsCustomSamples.filter(matchesSelectedCategory)
+    : [];
+
+  if (!showMwsSamples) {
+    return uniqueMwsProducts([
+      ...realItems,
+      ...customItems,
+    ]);
+  }
+
+  const customizedIds = new Set(
+    customItems
+      .map((item) => item.mwsOriginalSampleId)
+      .filter(Boolean)
+      .map(String)
+  );
+
+  const categorySamples = mwsApiProducts.filter(
+    (item) =>
+      matchesSelectedCategory(item) &&
+      !customizedIds.has(String(item.id))
+  );
+
+  return uniqueMwsProducts([
     ...realItems,
-    ...mwsCustomSamples.filter(
-      (item) =>
-        String(item.department || "").toLowerCase() ===
-          String(selectedDepartment || "").toLowerCase() &&
-        String(item.brandType || "").toLowerCase() ===
-          String(selectedBrandType || "").toLowerCase()
-    ),
-  ];
-}
-
-  const sampleItems = [
-  ...(isMwsEditMode ? mwsCustomSamples : []),
-  ...mwsApiProducts,
-].filter(
-  (item) =>
-    String(item.department || "").toLowerCase() ===
-      String(selectedDepartment || "").toLowerCase() &&
-    String(item.brandType || "").toLowerCase() ===
-      String(selectedBrandType || "").toLowerCase()
-);
-
- const customSamples = sampleItems.filter(
-  (item) => item.isMwsCustomSample === true
-);
-
-const customizedDefaultIds = new Set(
-  mwsCustomSamples
-    .map((item) => item.mwsOriginalSampleId)
-    .filter(Boolean)
-    .map(String)
-);
-
-const apiSamples = sampleItems.filter(
-  (item) =>
-    item.isMwsCustomSample !== true &&
-    !customizedDefaultIds.has(String(item.id))
-);
-
-const remainingSlots = Math.max(
-  0,
-  6 - realItems.length - customSamples.length
-);
-
-return uniqueMwsProducts([
-  ...realItems,
-  ...customSamples,
-  ...apiSamples.slice(0, remainingSlots),
-]);
+    ...customItems,
+    ...categorySamples,
+  ]);
 }, [
   isMwsPreview,
   isMwsEditMode,

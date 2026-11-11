@@ -236,6 +236,7 @@ useEffect(() => {
       folderId,
       status: data.product?.status || sample.status || "draft",
       imageFile: null,
+       isMwsSavedProduct: true,
       imagePreviewUrl: null,
       images: imageUrl
         ? [imageUrl, ...(sample.images || []).filter(
@@ -2027,6 +2028,37 @@ setIsMwsEditorPanelOpen(true);
               ? `${getTranslatedName(item, item.itemId).slice(0, 70)}...`
               : getTranslatedName(item, item.itemId)}
           </div>
+
+          
+{isMwsEditMode &&
+  item?.isMwsSavedProduct === true &&
+  Boolean(item?.folderId) && (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+
+        setEditingMwsSampleId(item.id);
+        setIsMwsEditorPanelOpen(true);
+      }}
+      style={{
+        display: "block",
+        width: "100%",
+        marginTop: "10px",
+        marginBottom: "12px",
+        padding: "10px 14px",
+        borderRadius: "8px",
+        border: "1px solid #2563eb",
+        background: "#eff6ff",
+        color: "#1d4ed8",
+        fontWeight: 700,
+        cursor: "pointer",
+      }}
+    >
+      ✎ Edit Item
+    </button>
+  )}
+
 
          {colorOptions.length > 0 && (
   <div

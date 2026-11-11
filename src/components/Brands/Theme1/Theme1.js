@@ -414,13 +414,55 @@ useEffect(() => {
         };
       });
 
-    setMwsCustomSamples((previous) => {
-      const unsavedProducts = previous.filter(
-        (product) => !product.folderId
+   setMwsCustomSamples((previous) => {
+  const previousByFolderId = new Map(
+    previous
+      .filter((product) => product.folderId)
+      .map((product) => [
+        String(product.folderId),
+        product,
+      ])
+  );
+
+  const synchronizedProducts = restoredProducts.map(
+    (serverProduct) => {
+      const existing = previousByFolderId.get(
+        String(serverProduct.folderId)
       );
 
-      return [...restoredProducts, ...unsavedProducts];
-    });
+      if (!existing) {
+        return serverProduct;
+      }
+
+      // Preserve the product's React identity.
+      // Keep its placement and temporary image preview.
+      return {
+        ...serverProduct,
+        id: existing.id,
+        placement:
+          existing.placement ??
+          serverProduct.placement,
+
+        ...(existing.imageFile
+          ? {
+              images: existing.images,
+              imageFile: existing.imageFile,
+              imagePreviewUrl: existing.imagePreviewUrl,
+            }
+          : {}),
+      };
+    }
+  );
+
+  const unsavedProducts = previous.filter(
+    (product) => !product.folderId
+  );
+
+  return [
+    ...synchronizedProducts,
+    ...unsavedProducts,
+  ];
+});
 
     setMwsProductsLoaded(true);
   };

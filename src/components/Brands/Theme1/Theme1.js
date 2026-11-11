@@ -100,6 +100,26 @@ const BASKET_API =
   },
 ];
 
+const uniqueMwsProducts = (products) => {
+  const seen = new Set();
+
+  return products.filter((product) => {
+    if (!product) return false;
+
+    const key = String(
+      product.folderId ||
+      product.itemId ||
+      product.id ||
+      ""
+    );
+
+    if (!key || seen.has(key)) return false;
+
+    seen.add(key);
+    return true;
+  });
+};
+
 function Theme1({ brandName }) {
   const router = useRouter();
 const searchParams = useSearchParams();
@@ -1438,7 +1458,7 @@ mwsImagePreviewUrlsRef.current.add(previewUrl);
   );
 };
 
-  const previewTopItems = useMemo(() => {
+ const previewTopItems = useMemo(() => {
   if (!isMwsPreview) {
     return topItems;
   }
@@ -1447,40 +1467,42 @@ mwsImagePreviewUrlsRef.current.add(previewUrl);
     (item) => item?.id && item?.name
   );
 
-  if (isMwsEditMode && !showMwsSamples) {
-  return [...realItems, ...mwsCustomSamples];
-}
-
-  const remainingSlots = Math.max(0, 6 - realItems.length);
-
   const customSamples = isMwsEditMode
     ? mwsCustomSamples
     : [];
 
+  if (isMwsEditMode && !showMwsSamples) {
+    return uniqueMwsProducts([
+      ...realItems,
+      ...customSamples,
+    ]);
+  }
+
   const customizedDefaultIds = new Set(
-  customSamples
-    .map((item) => item.mwsOriginalSampleId)
-    .filter(Boolean)
-    .map(String)
-);
+    customSamples
+      .map((item) => item.mwsOriginalSampleId)
+      .filter(Boolean)
+      .map(String)
+  );
 
-const apiSamples = mwsApiProducts.filter(
-  (item) =>
-    !realItems.some(
-      (real) => String(real.id) === String(item.id)
-    ) &&
-    !customizedDefaultIds.has(String(item.id))
-);
+  const apiSamples = mwsApiProducts.filter(
+    (item) =>
+      !customizedDefaultIds.has(String(item.id)) &&
+      !realItems.some(
+        (real) => String(real.id) === String(item.id)
+      )
+  );
 
-  const samples = [
+  const remainingSlots = Math.max(
+    0,
+    6 - realItems.length - customSamples.length
+  );
+
+  return uniqueMwsProducts([
+    ...realItems,
     ...customSamples,
-    ...apiSamples.slice(
-      0,
-      Math.max(0, remainingSlots - customSamples.length)
-    ),
-  ];
-
-  return [...realItems, ...samples];
+    ...apiSamples.slice(0, remainingSlots),
+  ]);
 }, [
   isMwsPreview,
   isMwsEditMode,
@@ -2272,11 +2294,11 @@ const remainingSlots = Math.max(
   6 - realItems.length - customSamples.length
 );
 
-return [
+return uniqueMwsProducts([
   ...realItems,
   ...customSamples,
   ...apiSamples.slice(0, remainingSlots),
-];
+]);
 }, [
   isMwsPreview,
   isMwsEditMode,

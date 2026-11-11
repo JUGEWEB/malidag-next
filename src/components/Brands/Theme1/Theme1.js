@@ -146,6 +146,7 @@ const requestedBrandType =
   const [mwsApiProducts, setMwsApiProducts] = useState([]);
   const [showMwsSamples, setShowMwsSamples] = useState(true);
   const [mwsCustomSamples, setMwsCustomSamples] = useState([]);
+  const [mwsProductsLoaded, setMwsProductsLoaded] = useState(false);
   const mwsImagePreviewUrlsRef = useRef(new Set());
 
 useEffect(() => {
@@ -295,6 +296,80 @@ const [addingToBasket, setAddingToBasket] = useState(false);
     cancelled = true;
   };
 }, [isMwsPreview]);
+
+useEffect(() => {
+  if (!isMwsEditMode) return;
+
+  const handleSavedProducts = (event) => {
+    if (event.origin !== "https://mws.malidag.com") return;
+    if (event.source !== window.parent) return;
+
+    const data = event.data;
+
+    if (data?.type !== "MWS_SAVED_PRODUCTS") return;
+    if (!Array.isArray(data.products)) return;
+
+    const restoredProducts = data.products
+      .filter((product) => product?.folderId)
+      .map((product) => {
+        const fields = product.textFields || {};
+
+        return {
+          id: `mws-saved-${product.folderId}`,
+          itemId: product.folderId,
+          folderId: product.folderId,
+          status: product.status,
+
+          name: fields.itemName || "Unnamed Product",
+          itemSubName: fields.itemSubName || "",
+          category: fields.category || "",
+          department: fields.department || "men",
+          brandType: fields.brandType || "Clothing",
+          genre: fields.genre || "",
+          type: fields.type || "",
+
+          usdPrice: Number(fields.usdText) || 0,
+          originalPrice: Number(fields.originalPrice) || 0,
+
+          numberItemText: fields.numberItemText || "",
+          itemDetailText: fields.itemDetailText || "",
+          productDetail01: fields.productDetail01 || "",
+          productDetail02: fields.productDetail02 || "",
+
+          images: product.images || [],
+          imagesVariants: {},
+          videos: [],
+          size: {},
+          rating: 0,
+
+          isMwsSample: true,
+          isMwsCustomSample: true,
+          isMwsSavedProduct: true,
+        };
+      });
+
+    setMwsCustomSamples((previous) => {
+      const unsavedProducts = previous.filter(
+        (product) => !product.folderId
+      );
+
+      return [...restoredProducts, ...unsavedProducts];
+    });
+
+    setMwsProductsLoaded(true);
+  };
+
+  window.addEventListener("message", handleSavedProducts);
+
+  window.parent.postMessage(
+    { type: "MWS_REQUEST_SAVED_PRODUCTS" },
+    "https://mws.malidag.com"
+  );
+
+  return () => {
+    window.removeEventListener("message", handleSavedProducts);
+  };
+}, [isMwsEditMode]);
 
   const normalizeTopItem = (product) => ({
     id: product?.id || "",

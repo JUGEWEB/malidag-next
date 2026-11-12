@@ -463,6 +463,11 @@ useEffect(() => {
     if (data?.type !== "MWS_SAVED_PRODUCTS") return;
     if (!Array.isArray(data.products)) return;
 
+    console.log(
+  "Theme1 received MWS products:",
+  event.data.products.length
+);
+
     const restoredProducts = data.products
       .filter((product) => product?.folderId)
       .map((product) => {

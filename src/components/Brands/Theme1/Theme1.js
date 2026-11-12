@@ -3352,7 +3352,7 @@ disabled={isMwsProductSaving}
 
   </div>
 )}
-      {isDesktop ? (
+     {(isDesktop || isMwsEditMode) ? (
         <div className="th1-container">
           <aside className="th1-sidebar">
             <div className="th1-sidebar-inner">

@@ -2309,8 +2309,8 @@ setIsMwsEditorPanelOpen(true);
           </div>
 
           
-{item?.isMwsSample !== true && (
-    <button
+{isMwsEditMode && item?.isMwsSample !== true && (
+  <button
       type="button"
      onClick={(e) => {
   e.stopPropagation();

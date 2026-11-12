@@ -478,7 +478,6 @@ useEffect(() => {
           itemId: product.folderId,
           folderId: product.folderId,
           status: product.status,
-          placement: "homepage",
 
           name: fields.itemName || "Unnamed Product",
           itemSubName: fields.itemSubName || "",

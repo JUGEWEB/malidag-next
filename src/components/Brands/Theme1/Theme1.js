@@ -285,6 +285,7 @@ setMwsCustomSamples((previous) =>
 }, [isMwsEditMode, messageApi]);
   const [bestSeller, setBestSeller] = useState(null);
   const [brandItems, setBrandItems] = useState([]);
+  const [mwsStorefrontItems, setMwsStorefrontItems] = useState([]);
   const [departmentItemsLoading, setDepartmentItemsLoading] = useState(false);
   const [departmentItemsError, setDepartmentItemsError] = useState(null);
   const [hideBestSellerVideo, setHideBestSellerVideo] = useState(false);
@@ -589,6 +590,92 @@ useEffect(() => {
     window.removeEventListener("message", handleSavedProducts);
   };
 }, [isMwsEditMode]);
+
+
+useEffect(() => {
+  if (!isMwsPreview) return;
+
+  const handleStorefrontData = (event) => {
+    if (event.origin !== "https://mws.malidag.com") return;
+    if (event.source !== window.parent) return;
+
+    const data = event.data;
+
+    if (data?.type !== "MWS_STOREFRONT_DATA") return;
+
+    if (
+      String(data.brandName || "").trim().toLowerCase() !==
+      String(brandName || "").trim().toLowerCase()
+    ) {
+      return;
+    }
+
+    if (
+      !Array.isArray(data.topItems) ||
+      !Array.isArray(data.departments)
+    ) {
+      return;
+    }
+
+    const normalizeMwsProduct = (product) => {
+      const item = product?.item || {};
+      const details = product?.details || {};
+
+      return {
+       id: product?.id || product?.itemId || product?.folderId || "",
+itemId: product?.itemId || product?.id || product?.folderId || "",
+        name: item.name || details.itemName || "",
+        images: Array.isArray(item.images) ? item.images : [],
+        videos: Array.isArray(item.videos) ? item.videos : [],
+        department: item.department || details.department || "",
+        brandType: item.brandType || details.brandType || "",
+        usdPrice: Number(item.usdPrice ?? details.usdText ?? 0),
+        originalPrice: Number(
+          item.originalPrice ?? details.originalPrice ?? 0
+        ),
+        size: item.size || {},
+        rating: Number(item.rating || 0),
+        imagesVariants: item.imagesVariants || {},
+        rawItem: product,
+      };
+    };
+
+    const normalizedTopItems =
+      data.topItems.map(normalizeMwsProduct);
+
+    const normalizedBestSeller =
+      data.bestSeller
+        ? normalizeMwsProduct(data.bestSeller)
+        : null;
+
+   const normalizedProducts = Array.isArray(data.products)
+  ? data.products.map(normalizeMwsProduct)
+  : [];
+
+setTopItems(normalizedTopItems);
+setBestSeller(normalizedBestSeller);
+setDepartments(data.departments);
+setMwsStorefrontItems(normalizedProducts);
+
+    console.log("Theme1 received MWS storefront data:", {
+      topItems: normalizedTopItems.length,
+      bestSeller: normalizedBestSeller?.itemId || null,
+      departments: data.departments.length,
+    });
+  };
+
+  window.addEventListener("message", handleStorefrontData);
+
+  window.parent.postMessage(
+    { type: "MWS_REQUEST_STOREFRONT_DATA" },
+    "https://mws.malidag.com"
+  );
+
+  return () => {
+    window.removeEventListener("message", handleStorefrontData);
+  };
+}, [isMwsPreview, brandName]);
+
 
   const normalizeTopItem = (product) => ({
     id: product?.id || "",
@@ -930,6 +1017,10 @@ const isItemInBasket = (itemId) =>
   }, [brandName]);
 
  useEffect(() => {
+  if (isMwsPreview) {
+  setDepartments([]);
+  return;
+}
   if (!brandName || !countryCode) {
     setDepartments([]);
     return;
@@ -1016,6 +1107,10 @@ setDepartments(
 ]);
 
  useEffect(() => {
+  if (isMwsPreview) {
+  setTopItems([]);
+  return;
+}
   if (!brandName || !countryCode) return;
 
   fetch(
@@ -1059,9 +1154,15 @@ setDepartments(
 
       setTopItems([]);
     });
-}, [brandName, countryCode]);
+}, [brandName, countryCode, isMwsPreview]);
 
   useEffect(() => {
+
+    if (isMwsPreview) {
+  setBestSeller(null);
+  return;
+}
+
   if (!brandName || !countryCode) return;
 
   fetch(
@@ -1102,9 +1203,35 @@ setDepartments(
 
       setBestSeller(null);
     });
-}, [brandName, countryCode]);
+}, [brandName, countryCode, isMwsPreview]);
 
- useEffect(() => {
+ 
+useEffect(() => {
+  if (isMwsPreview) {
+    if (!selectedDepartment || !selectedBrandType) {
+      setBrandItems([]);
+      setDepartmentItemsError(null);
+      setDepartmentItemsLoading(false);
+      return;
+    }
+
+    const normalizeText = (value) =>
+      String(value || "").trim().toLowerCase();
+
+    const filteredProducts = mwsStorefrontItems.filter(
+      (product) =>
+        normalizeText(product.department) ===
+          normalizeText(selectedDepartment) &&
+        normalizeText(product.brandType) ===
+          normalizeText(selectedBrandType)
+    );
+
+    setBrandItems(filteredProducts);
+    setDepartmentItemsError(null);
+    setDepartmentItemsLoading(false);
+    return;
+  }
+
   if (
     !selectedDepartment ||
     !selectedBrandType ||
@@ -1117,52 +1244,40 @@ setDepartments(
     return;
   }
 
+  let cancelled = false;
+
   setDepartmentItemsLoading(true);
   setDepartmentItemsError(null);
 
   fetch(
     `${BASE_URL}/api/brands/${encodeURIComponent(
       brandName
-    )}/items?country=${encodeURIComponent(
-      countryCode
-    )}`
+    )}/items?country=${encodeURIComponent(countryCode)}`
   )
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to load items");
+      }
+
+      return response.json();
+    })
     .then((data) => {
-      const list = Array.isArray(data)
-        ? data
-        : [];
+      if (cancelled) return;
+
+      const list = Array.isArray(data) ? data : [];
+
+      const normalizeText = (value) =>
+        String(value || "").trim().toLowerCase();
 
       const normalized = list
         .map(normalizeBrandItem)
-        .filter((item) => {
-          const itemDepartment =
-            item?.department
-              ?.trim()
-              ?.toLowerCase() || "";
-
-          const itemBrandType =
-            item?.brandType
-              ?.trim()
-              ?.toLowerCase() || "";
-
-          const targetDepartment =
-            selectedDepartment
-              ?.trim()
-              ?.toLowerCase() || "";
-
-          const targetBrandType =
-            selectedBrandType
-              ?.trim()
-              ?.toLowerCase() || "";
-
-          return (
-            itemDepartment ===
-              targetDepartment &&
-            itemBrandType ===
-              targetBrandType
-          );
-        });
+        .filter(
+          (item) =>
+            normalizeText(item.department) ===
+              normalizeText(selectedDepartment) &&
+            normalizeText(item.brandType) ===
+              normalizeText(selectedBrandType)
+        );
 
       const initialColors = {};
 
@@ -1172,20 +1287,21 @@ setDepartments(
         );
 
         if (colorKeys.length > 0) {
-          initialColors[product.id] =
-            colorKeys[0];
+          initialColors[product.id] = colorKeys[0];
         }
       });
 
-      setSelectedColorByItem((prev) => ({
+      setSelectedColorByItem((previous) => ({
         ...initialColors,
-        ...prev,
+        ...previous,
       }));
 
       setBrandItems(normalized);
       setDepartmentItemsLoading(false);
     })
     .catch((error) => {
+      if (cancelled) return;
+
       console.error(
         "Error fetching department items:",
         error
@@ -1193,17 +1309,23 @@ setDepartments(
 
       setBrandItems([]);
       setDepartmentItemsError(
-        error?.message ||
-          "Failed to load items"
+        error?.message || "Failed to load items"
       );
       setDepartmentItemsLoading(false);
     });
+
+  return () => {
+    cancelled = true;
+  };
 }, [
+  isMwsPreview,
+  mwsStorefrontItems,
   selectedDepartment,
   selectedBrandType,
   brandName,
   countryCode,
 ]);
+
 
   useEffect(() => {
     setHideBestSellerVideo(false);
@@ -1677,7 +1799,8 @@ mwsImagePreviewUrlsRef.current.add(previewUrl);
   );
 };
 
- const previewTopItems = useMemo(() => {
+ 
+const previewTopItems = useMemo(() => {
   if (!isMwsPreview) {
     return topItems;
   }
@@ -1686,47 +1809,25 @@ mwsImagePreviewUrlsRef.current.add(previewUrl);
     (item) => item?.id && item?.name
   );
 
-  // Homepage items must be explicitly assigned
-  // to the homepage, not simply be editable.
-  const homepageCustomItems = isMwsEditMode
+  const unsavedHomepageSamples = isMwsEditMode
     ? mwsCustomSamples.filter(
-        (item) => item.placement === "homepage"
+        (item) =>
+          !item.folderId &&
+          item.placement === "homepage"
       )
     : [];
 
-  if (!showMwsSamples) {
-    return uniqueMwsProducts([
-      ...realItems,
-      ...homepageCustomItems,
-    ]);
-  }
-
-  const customizedIds = new Set(
-    homepageCustomItems
-      .map((item) => item.mwsOriginalSampleId)
-      .filter(Boolean)
-      .map(String)
-  );
-
-  const homepageSamples = mwsApiProducts.filter(
-    (item) =>
-      item.placement === "homepage" &&
-      !customizedIds.has(String(item.id))
-  );
-
   return uniqueMwsProducts([
     ...realItems,
-    ...homepageCustomItems,
-    ...homepageSamples,
+    ...unsavedHomepageSamples,
   ]);
 }, [
   isMwsPreview,
   isMwsEditMode,
-  showMwsSamples,
   topItems,
-  mwsApiProducts,
   mwsCustomSamples,
 ]);
+
 
   const filteredTopItems = useMemo(() => {
     const withoutBestSeller = previewTopItems.filter(

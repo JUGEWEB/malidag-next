@@ -136,6 +136,98 @@ const requestedBrandType =
   const setItemData = useCheckoutStore((state) => state.setItemData);
 
   const [departments, setDepartments] = useState([]);
+  const [mwsCustomDepartments, setMwsCustomDepartments] = useState([]);
+const [mwsDepartmentsLoaded, setMwsDepartmentsLoaded] = useState(false);
+
+const mwsDepartmentStorageKey = `mws:departments:${encodeURIComponent(
+  String(brandName || "").trim().toLowerCase()
+)}`;
+
+useEffect(() => {
+  if (!isMwsEditMode || !brandName) {
+    setMwsCustomDepartments([]);
+    setMwsDepartmentsLoaded(false);
+    return;
+  }
+
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(mwsDepartmentStorageKey) || "[]"
+    );
+
+    setMwsCustomDepartments(
+      Array.isArray(saved)
+        ? saved.filter(
+            (department) =>
+              typeof department?.name === "string" &&
+              Array.isArray(department?.brandTypes)
+          )
+        : []
+    );
+  } catch (error) {
+    console.error("Failed to load MWS departments:", error);
+    setMwsCustomDepartments([]);
+  }
+
+  setMwsDepartmentsLoaded(true);
+}, [isMwsEditMode, brandName, mwsDepartmentStorageKey]);
+
+useEffect(() => {
+  if (!isMwsEditMode || !mwsDepartmentsLoaded) return;
+
+  try {
+    localStorage.setItem(
+      mwsDepartmentStorageKey,
+      JSON.stringify(mwsCustomDepartments)
+    );
+  } catch (error) {
+    console.error("Failed to save MWS departments:", error);
+  }
+}, [
+  isMwsEditMode,
+  mwsDepartmentsLoaded,
+  mwsDepartmentStorageKey,
+  mwsCustomDepartments,
+]);
+
+const displayedDepartments = useMemo(() => {
+  if (!isMwsEditMode) return departments;
+
+  const merged = departments.map((department) => ({
+    ...department,
+    brandTypes: [...(department.brandTypes || [])],
+  }));
+
+  const normalize = (value) =>
+    String(value || "").trim().toLowerCase();
+
+  mwsCustomDepartments.forEach((custom) => {
+    const existing = merged.find(
+      (department) =>
+        normalize(department.name) === normalize(custom.name)
+    );
+
+    if (!existing) {
+      merged.push({
+        name: custom.name,
+        brandTypes: [...custom.brandTypes],
+      });
+      return;
+    }
+
+    custom.brandTypes.forEach((brandType) => {
+      if (
+        !existing.brandTypes.some(
+          (value) => normalize(value) === normalize(brandType)
+        )
+      ) {
+        existing.brandTypes.push(brandType);
+      }
+    });
+  });
+
+  return merged;
+}, [departments, mwsCustomDepartments, isMwsEditMode]);
   const MWS_SAMPLE_DEPARTMENTS = [
   {
     name: "men",
@@ -1058,7 +1150,7 @@ setDepartments(
   useEffect(() => {
   if (
     !requestedBrandType ||
-    !departments.length
+   !displayedDepartments.length
   ) {
     return;
   }
@@ -1069,7 +1161,7 @@ setDepartments(
       .toLowerCase();
 
   const matchingDepartment =
-    departments.find((department) =>
+   displayedDepartments.find((department) =>
       (department?.brandTypes || []).some(
         (brandType) =>
           String(brandType || "")
@@ -1103,7 +1195,7 @@ setDepartments(
   );
 }, [
   requestedBrandType,
-  departments,
+  displayedDepartments,
 ]);
 
  useEffect(() => {
@@ -1376,6 +1468,167 @@ const formatPrice = (usdAmount) => {
   }
 
   return `${currencyConfig.symbol}${converted.toFixed(2)}`;
+};
+
+const handleAddMwsDepartment = () => {
+  if (!isMwsEditMode) return;
+
+  const name = window.prompt("Enter department name:");
+  if (name === null) return;
+
+  const trimmed = name.trim();
+
+  if (!trimmed) {
+    messageApi.warning("Department name is required.");
+    return;
+  }
+
+  const exists = displayedDepartments.some(
+    (department) =>
+      department.name.trim().toLowerCase() ===
+      trimmed.toLowerCase()
+  );
+
+  if (exists) {
+    messageApi.warning("This department already exists.");
+    return;
+  }
+
+  setMwsCustomDepartments((previous) => [
+    ...previous,
+    { name: trimmed, brandTypes: [] },
+  ]);
+
+  messageApi.success(`Department "${trimmed}" created.`);
+};
+
+const handleAddMwsBrandType = (departmentName) => {
+  if (!isMwsEditMode) return;
+
+  const name = window.prompt(
+    `Enter a brand type for "${departmentName}":`
+  );
+
+  if (name === null) return;
+
+  const trimmed = name.trim();
+
+  if (!trimmed) {
+    messageApi.warning("Brand type name is required.");
+    return;
+  }
+
+  const department = displayedDepartments.find(
+    (entry) =>
+      entry.name.toLowerCase() === departmentName.toLowerCase()
+  );
+
+  if (
+    department?.brandTypes.some(
+      (type) => type.toLowerCase() === trimmed.toLowerCase()
+    )
+  ) {
+    messageApi.warning("This brand type already exists.");
+    return;
+  }
+
+  setMwsCustomDepartments((previous) => {
+    const exists = previous.some(
+      (entry) =>
+        entry.name.toLowerCase() === departmentName.toLowerCase()
+    );
+
+    if (!exists) {
+      return [
+        ...previous,
+        { name: departmentName, brandTypes: [trimmed] },
+      ];
+    }
+
+    return previous.map((entry) =>
+      entry.name.toLowerCase() === departmentName.toLowerCase()
+        ? {
+            ...entry,
+            brandTypes: [...entry.brandTypes, trimmed],
+          }
+        : entry
+    );
+  });
+
+  messageApi.success(`Brand type "${trimmed}" created.`);
+};
+
+const handleRemoveMwsDepartment = (departmentName) => {
+  if (!isMwsEditMode) return;
+
+  const custom = mwsCustomDepartments.find(
+    (department) => department.name === departmentName
+  );
+
+  if (!custom) return;
+
+  const hasProducts = mwsStorefrontItems.some(
+    (product) =>
+      String(product.department || "").toLowerCase() ===
+      departmentName.toLowerCase()
+  );
+
+  if (hasProducts) {
+    messageApi.warning(
+      "This department contains saved products. Move or remove those products first."
+    );
+    return;
+  }
+
+  if (
+    !window.confirm(
+      `Remove "${departmentName}" from your custom departments?`
+    )
+  ) {
+    return;
+  }
+
+  setMwsCustomDepartments((previous) =>
+    previous.filter(
+      (department) => department.name !== departmentName
+    )
+  );
+};
+
+const handleRemoveMwsBrandType = (departmentName, brandType) => {
+  if (!isMwsEditMode) return;
+
+  const hasProducts = mwsStorefrontItems.some(
+    (product) =>
+      String(product.department || "").toLowerCase() ===
+        departmentName.toLowerCase() &&
+      String(product.brandType || "").toLowerCase() ===
+        brandType.toLowerCase()
+  );
+
+  if (hasProducts) {
+    messageApi.warning(
+      "This brand type contains saved products. Move or remove those products first."
+    );
+    return;
+  }
+
+  if (!window.confirm(`Remove brand type "${brandType}"?`)) {
+    return;
+  }
+
+  setMwsCustomDepartments((previous) =>
+    previous.map((department) =>
+      department.name === departmentName
+        ? {
+            ...department,
+            brandTypes: department.brandTypes.filter(
+              (type) => type !== brandType
+            ),
+          }
+        : department
+    )
+  );
 };
 
  const handleBrandTypeClick = (
@@ -3115,33 +3368,154 @@ disabled={isMwsProductSaving}
                {t("departments_label")}
               </div>
 
-              <div className="th1-type-list">
-                {departments.map((department, index) => (
-                  <div key={index} className="th1-department-block">
-                    <div className="th1-department-name">{t(department?.name)}</div>
+              
+<div className="th1-type-list">
+  {displayedDepartments.map((department, index) => {
+    const isCustomDepartment = mwsCustomDepartments.some(
+      (entry) =>
+        entry.name.toLowerCase() ===
+        department.name.toLowerCase()
+    );
 
-                    <div className="th1-brandtype-list">
-                      {(department?.brandTypes || []).map((brandType, bIndex) => {
-                        const isActive =
-                          selectedDepartment === department?.name &&
-                          selectedBrandType === brandType;
+    return (
+      <div key={department.name} className="th1-department-block">
+        <div
+          className="th1-department-name"
+          onClick={() => {
+            if (
+              isMwsEditMode &&
+              (!department.brandTypes ||
+                department.brandTypes.length === 0)
+            ) {
+              handleAddMwsBrandType(department.name);
+            }
+          }}
+        >
+          <span>{t(department.name)}</span>
 
-                        return (
-                          <div
-                            key={bIndex}
-                            className={`th1-type-item ${isActive ? "active" : ""}`}
-                            onClick={() =>
-                              handleBrandTypeClick(department?.name, brandType)
-                            }
-                          >
-                            {t(brandType)}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+          {isMwsEditMode && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleAddMwsBrandType(department.name);
+              }}
+              style={{
+                marginLeft: 10,
+                padding: "4px 8px",
+                borderRadius: 6,
+                border: "1px solid #cbd5e1",
+                background: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              + Brand Type
+            </button>
+          )}
+
+          {isMwsEditMode && isCustomDepartment && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleRemoveMwsDepartment(department.name);
+              }}
+              style={{
+                marginLeft: 6,
+                color: "#dc2626",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Remove
+            </button>
+          )}
+        </div>
+
+        <div className="th1-brandtype-list">
+          {(department.brandTypes || []).map((brandType) => {
+            const isActive =
+              selectedDepartment === department.name &&
+              selectedBrandType === brandType;
+
+            const isCustomBrandType =
+              mwsCustomDepartments.some(
+                (entry) =>
+                  entry.name.toLowerCase() ===
+                    department.name.toLowerCase() &&
+                  entry.brandTypes.some(
+                    (type) =>
+                      type.toLowerCase() ===
+                      brandType.toLowerCase()
+                  )
+              );
+
+            return (
+              <div
+                key={`${department.name}-${brandType}`}
+                className={`th1-type-item ${
+                  isActive ? "active" : ""
+                }`}
+                onClick={() =>
+                  handleBrandTypeClick(
+                    department.name,
+                    brandType
+                  )
+                }
+              >
+                <span>{t(brandType)}</span>
+
+                {isMwsEditMode && isCustomBrandType && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRemoveMwsBrandType(
+                        department.name,
+                        brandType
+                      );
+                    }}
+                    style={{
+                      marginLeft: 8,
+                      color: "#dc2626",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
               </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  })}
+
+  {isMwsEditMode && (
+    <button
+      type="button"
+      onClick={handleAddMwsDepartment}
+      style={{
+        width: "100%",
+        marginTop: 14,
+        padding: "12px",
+        background: "#111827",
+        color: "#ffffff",
+        border: "none",
+        borderRadius: 8,
+        cursor: "pointer",
+        fontWeight: 700,
+      }}
+    >
+      + Add Department
+    </button>
+  )}
+</div>
+
             </div>
           </aside>
 

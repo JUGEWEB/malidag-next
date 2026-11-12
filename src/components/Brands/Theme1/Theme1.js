@@ -479,7 +479,7 @@ useEffect(() => {
           folderId: product.folderId,
           status: product.status,
           placement: "homepage",
-          
+
           name: fields.itemName || "Unnamed Product",
           itemSubName: fields.itemSubName || "",
           category: fields.category || "",
@@ -509,6 +509,17 @@ useEffect(() => {
       });
 
    setMwsCustomSamples((previous) => {
+
+    console.table(
+  restoredProducts.map((product) => ({
+    folderId: product.folderId,
+    name: product.name,
+    price: product.usdPrice,
+    placement: product.placement,
+    source: "MWS_SAVED_PRODUCTS",
+  }))
+);
+
   const previousByFolderId = new Map(
     previous
       .filter((product) => product.folderId)

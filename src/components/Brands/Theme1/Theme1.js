@@ -3352,7 +3352,7 @@ disabled={isMwsProductSaving}
 
   </div>
 )}
-     {(isDesktop || isMwsEditMode) ? (
+    {isDesktop ? (
         <div className="th1-container">
           <aside className="th1-sidebar">
             <div className="th1-sidebar-inner">
@@ -3596,7 +3596,7 @@ disabled={isMwsProductSaving}
             ) : null}
 
             <div className="th1-mobile-type-list">
-              {departments.map((department, index) => (
+              {displayedDepartments.map((department, index) => (
                 <div key={index} className="th1-mobile-department">
                   <button
                     type="button"
@@ -3612,6 +3612,26 @@ disabled={isMwsProductSaving}
                 </div>
               ))}
             </div>
+
+            {isMwsEditMode && (
+  <button
+    type="button"
+    onClick={handleAddMwsDepartment}
+    style={{
+      display: "block",
+      margin: "12px auto",
+      padding: "10px 14px",
+      background: "#111827",
+      color: "#ffffff",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontWeight: 700,
+    }}
+  >
+    + Add Department
+  </button>
+)}
           </div>
 
           {expandedDeptIndex !== null && (
@@ -3624,7 +3644,7 @@ disabled={isMwsProductSaving}
               <div className="th1-mobile-dropdown-panel">
                 <div className="th1-mobile-dropdown-header">
                   <span className="th1-mobile-dropdown-title">
-                    {t(departments?.[expandedDeptIndex]?.name)}
+                    {t(displayedDepartments?.[expandedDeptIndex]?.name)}
                   </span>
 
                   <button
@@ -3635,12 +3655,33 @@ disabled={isMwsProductSaving}
                     ×
                   </button>
                 </div>
-
+                  {isMwsEditMode &&
+  displayedDepartments[expandedDeptIndex] && (
+    <button
+      type="button"
+      onClick={() =>
+        handleAddMwsBrandType(
+          displayedDepartments[expandedDeptIndex].name
+        )
+      }
+      style={{
+        display: "block",
+        margin: "12px",
+        padding: "10px",
+        background: "#ffffff",
+        border: "1px solid #cbd5e1",
+        borderRadius: "8px",
+        cursor: "pointer",
+      }}
+    >
+      + Add Brand Type
+    </button>
+  )}
                 <div className="th1-mobile-dropdown">
-                  {(departments?.[expandedDeptIndex]?.brandTypes || []).map(
+                  {(displayedDepartments?.[expandedDeptIndex]?.brandTypes || []).map(
                     (brandType, bIndex) => {
                       const isActive =
-                        selectedDepartment === departments?.[expandedDeptIndex]?.name &&
+                        selectedDepartment === displayedDepartments?.[expandedDeptIndex]?.name &&
                         selectedBrandType === brandType;
 
                       return (
@@ -3652,7 +3693,7 @@ disabled={isMwsProductSaving}
                           }`}
                           onClick={() =>
                             handleBrandTypeClick(
-                              departments?.[expandedDeptIndex]?.name,
+                              displayedDepartments?.[expandedDeptIndex]?.name,
                               brandType
                             )
                           }

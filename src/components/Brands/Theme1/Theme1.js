@@ -749,6 +749,20 @@ setBestSeller(normalizedBestSeller);
 setDepartments(data.departments);
 setMwsStorefrontItems(normalizedProducts);
 
+if (data.branding && typeof data.branding === "object") {
+  const nextBranding = data.branding;
+
+  setBrandDetails((previous) => ({
+    ...previous,
+    ...(nextBranding.logo !== undefined
+      ? { logo: nextBranding.logo }
+      : {}),
+    ...(nextBranding.headerImage !== undefined
+      ? { headerImage: nextBranding.headerImage }
+      : {}),
+  }));
+}
+
     console.log("Theme1 received MWS storefront data:", {
       topItems: normalizedTopItems.length,
       bestSeller: normalizedBestSeller?.itemId || null,

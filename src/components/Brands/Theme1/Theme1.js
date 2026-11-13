@@ -388,6 +388,30 @@ setMwsCustomSamples((previous) =>
     logo: null,
   });
 
+  const [hiddenMwsBrandingSamples, setHiddenMwsBrandingSamples] =
+  useState({
+    logo: false,
+    headerImage: false,
+  });
+
+const hideMwsBrandingSample = (field) => {
+  if (!isMwsEditMode) return;
+
+  setHiddenMwsBrandingSamples((previous) => ({
+    ...previous,
+    [field]: true,
+  }));
+};
+
+const restoreMwsBrandingSample = (field) => {
+  if (!isMwsEditMode) return;
+
+  setHiddenMwsBrandingSamples((previous) => ({
+    ...previous,
+    [field]: false,
+  }));
+};
+
   const { country } = useContext(AppContext);
 
   const countryCode =
@@ -2974,6 +2998,67 @@ const previewBrandItems = useMemo(() => {
   (sample) => sample.id === editingMwsSampleId
 );
 
+const showMwsSampleLogo =
+  isMwsEditMode &&
+  !brandDetails?.logo &&
+  !hiddenMwsBrandingSamples.logo;
+
+const showMwsSampleBanner =
+  isMwsEditMode &&
+  !brandDetails?.headerImage &&
+  !hiddenMwsBrandingSamples.headerImage;
+
+const mwsSampleLogo = (
+  <div
+    style={{
+      width: 80,
+      height: 80,
+      borderRadius: "50%",
+      background: "#111827",
+      color: "white",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 11,
+      fontWeight: 700,
+      textAlign: "center",
+    }}
+  >
+    <span>YOUR LOGO</span>
+    <span style={{ fontSize: 9, opacity: 0.7 }}>
+      SAMPLE
+    </span>
+  </div>
+);
+
+const mwsSampleBanner = (
+  <div
+    style={{
+      width: "100%",
+      minHeight: 180,
+      background:
+        "linear-gradient(120deg, #111827, #334155, #64748b)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      color: "#ffffff",
+      textAlign: "center",
+      padding: 20,
+      gap: 8,
+    }}
+  >
+    <strong style={{ fontSize: 25 }}>
+      YOUR BRAND
+    </strong>
+    <span>Sample header banner</span>
+    <span style={{ fontSize: 12, opacity: 0.8 }}>
+      Upload your own image to customize
+    </span>
+  </div>
+);
+
   return (
     <div className="th1-wrapper">
 
@@ -3362,6 +3447,52 @@ disabled={isMwsProductSaving}
   ? "Hide Default Samples"
   : "Show Default Samples"}
   </button>
+
+  {isMwsEditMode && !brandDetails?.logo && (
+  <button
+    type="button"
+    onClick={() =>
+      hiddenMwsBrandingSamples.logo
+        ? restoreMwsBrandingSample("logo")
+        : hideMwsBrandingSample("logo")
+    }
+    style={{
+      padding: "9px 14px",
+      borderRadius: 8,
+      border: "1px solid #cbd5e1",
+      background: "#ffffff",
+      color: "#111827",
+      cursor: "pointer",
+    }}
+  >
+    {hiddenMwsBrandingSamples.logo
+      ? "Restore Sample Logo"
+      : "Remove Sample Logo"}
+  </button>
+)}
+
+{isMwsEditMode && !brandDetails?.headerImage && (
+  <button
+    type="button"
+    onClick={() =>
+      hiddenMwsBrandingSamples.headerImage
+        ? restoreMwsBrandingSample("headerImage")
+        : hideMwsBrandingSample("headerImage")
+    }
+    style={{
+      padding: "9px 14px",
+      borderRadius: 8,
+      border: "1px solid #cbd5e1",
+      background: "#ffffff",
+      color: "#111827",
+      cursor: "pointer",
+    }}
+  >
+    {hiddenMwsBrandingSamples.headerImage
+      ? "Restore Sample Banner"
+      : "Remove Sample Banner"}
+  </button>
+)}
 </div>
 
   </div>
@@ -3370,13 +3501,15 @@ disabled={isMwsProductSaving}
         <div className="th1-container">
           <aside className="th1-sidebar">
             <div className="th1-sidebar-inner">
-              {brandDetails?.logo ? (
-                <img
-                  src={brandDetails.logo}
-                  alt={`${brandName} Logo`}
-                  className="th1-logo"
-                />
-              ) : null}
+             {brandDetails?.logo ? (
+              <img
+                src={brandDetails.logo}
+                alt={`${brandName} Logo`}
+                className="th1-logo"
+              />
+            ) : showMwsSampleLogo ? (
+              mwsSampleLogo
+            ) : null}
 
               <div className="th1-sidebar-title">
                {t("departments_label")}
@@ -3535,13 +3668,15 @@ disabled={isMwsProductSaving}
 
           <main className="th1-main">
             <div className="th1-header">
-              {brandDetails?.headerImage ? (
-                <img
-                  src={brandDetails.headerImage}
-                  alt={`${brandName} Header`}
-                  className="th1-header-image"
-                />
-              ) : null}
+             {brandDetails?.headerImage ? (
+              <img
+                src={brandDetails.headerImage}
+                alt={`${brandName} Header`}
+                className="th1-header-image"
+              />
+            ) : showMwsSampleBanner ? (
+              mwsSampleBanner
+            ) : null}
               <div className="th1-header-title">{brandName}</div>
             </div>
 
@@ -3607,7 +3742,7 @@ disabled={isMwsProductSaving}
                 alt={`${brandName} Logo`}
                 className="th1-mobile-logo"
               />
-            ) : null}
+            ) : showMwsSampleLogo ? mwsSampleLogo : null}
 
             <div className="th1-mobile-type-list">
               {displayedDepartments.map((department, index) => (

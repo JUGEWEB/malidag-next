@@ -2647,7 +2647,13 @@ setIsMwsEditorPanelOpen(true);
     </button>
   )}
 
-  {isMwsEditMode && item?.folderId && (
+ {isMwsEditMode &&
+  mwsCustomSamples.some(
+    (product) =>
+      product.folderId &&
+      String(product.folderId) ===
+        String(item.folderId || item.itemId)
+  ) && (
     <button
       type="button"
       onClick={(e) => {
@@ -2656,7 +2662,7 @@ setIsMwsEditorPanelOpen(true);
         window.parent.postMessage(
           {
             type: "MWS_OPEN_VARIANTS",
-            folderId: item.folderId,
+           folderId: String(item.folderId || item.itemId),
           },
           "https://mws.malidag.com"
         );

@@ -2642,13 +2642,44 @@ setIsMwsEditorPanelOpen(true);
         fontWeight: 700,
         cursor: "pointer",
       }}
-    >
+       >
       ✎ Edit Item
     </button>
   )}
 
+  {isMwsEditMode && item?.folderId && (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
 
-         {colorOptions.length > 0 && (
+        window.parent.postMessage(
+          {
+            type: "MWS_OPEN_VARIANTS",
+            folderId: item.folderId,
+          },
+          "https://mws.malidag.com"
+        );
+      }}
+      style={{
+        display: "block",
+        width: "100%",
+        marginTop: "8px",
+        marginBottom: "12px",
+        padding: "10px 14px",
+        borderRadius: "8px",
+        border: "1px solid #059669",
+        background: "#ecfdf5",
+        color: "#047857",
+        fontWeight: 700,
+        cursor: "pointer",
+      }}
+    >
+      + Add Variants
+    </button>
+  )}
+
+  {colorOptions.length > 0 && (
   <div
     className="th1-color-block"
     onClick={(e) => e.stopPropagation()}

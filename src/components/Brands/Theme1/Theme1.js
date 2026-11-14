@@ -1119,6 +1119,7 @@ const isItemInBasket = (itemId) =>
   }, [bestSeller]);
 
   useEffect(() => {
+    if (isMwsPreview) return;
     const fetchBrandDetails = async () => {
       try {
         const res = await fetch("https://api.malidag.com/api/brands/themes");
@@ -1144,7 +1145,7 @@ const isItemInBasket = (itemId) =>
     };
 
     fetchBrandDetails();
-  }, [brandName]);
+  }, [brandName, isMwsPreview]);
 
  useEffect(() => {
   if (isMwsPreview) {
@@ -2998,6 +2999,21 @@ const previewBrandItems = useMemo(() => {
   (sample) => sample.id === editingMwsSampleId
 );
 
+const requestMwsBrandingEdit = (field) => {
+  if (!isMwsEditMode) return;
+  if (window.parent === window) return;
+
+  if (field !== "logo" && field !== "headerImage") return;
+
+  window.parent.postMessage(
+    {
+      type: "MWS_EDIT_BRANDING",
+      field,
+    },
+    "https://mws.malidag.com"
+  );
+};
+
 const showMwsSampleLogo =
   isMwsEditMode &&
   !brandDetails?.logo &&
@@ -3015,7 +3031,7 @@ const mwsSampleLogo = (
       height: 80,
       borderRadius: "50%",
       background: "#111827",
-      color: "white",
+      color: "#ffffff",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -3023,11 +3039,12 @@ const mwsSampleLogo = (
       fontSize: 11,
       fontWeight: 700,
       textAlign: "center",
+      gap: 4,
     }}
   >
-    <span>YOUR LOGO</span>
-    <span style={{ fontSize: 9, opacity: 0.7 }}>
-      SAMPLE
+    <span>+ ADD LOGO</span>
+    <span style={{ fontSize: 9, opacity: 0.75 }}>
+      Click to upload
     </span>
   </div>
 );
@@ -3046,15 +3063,17 @@ const mwsSampleBanner = (
       color: "#ffffff",
       textAlign: "center",
       padding: 20,
-      gap: 8,
+      gap: 10,
     }}
   >
-    <strong style={{ fontSize: 25 }}>
-      YOUR BRAND
+    <strong style={{ fontSize: 24 }}>
+      + ADD YOUR COVER BANNER
     </strong>
-    <span>Sample header banner</span>
-    <span style={{ fontSize: 12, opacity: 0.8 }}>
-      Upload your own image to customize
+    <span style={{ fontSize: 14 }}>
+      Click here to upload your store header image
+    </span>
+    <span style={{ fontSize: 12, opacity: 0.75 }}>
+      JPG, PNG or WebP · Maximum 2 MB
     </span>
   </div>
 );
@@ -3501,15 +3520,39 @@ disabled={isMwsProductSaving}
         <div className="th1-container">
           <aside className="th1-sidebar">
             <div className="th1-sidebar-inner">
-             {brandDetails?.logo ? (
-              <img
-                src={brandDetails.logo}
-                alt={`${brandName} Logo`}
-                className="th1-logo"
-              />
-            ) : showMwsSampleLogo ? (
-              mwsSampleLogo
-            ) : null}
+            {brandDetails?.logo || showMwsSampleLogo ? (
+  isMwsEditMode ? (
+    <button
+      type="button"
+      onClick={() => requestMwsBrandingEdit("logo")}
+      title="Add or change store logo"
+      aria-label="Add or change store logo"
+      style={{
+        display: "block",
+        padding: 0,
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    >
+      {brandDetails?.logo ? (
+        <img
+          src={brandDetails.logo}
+          alt={`${brandName} Logo`}
+          className="th1-logo"
+        />
+      ) : (
+        mwsSampleLogo
+      )}
+    </button>
+  ) : (
+    <img
+      src={brandDetails.logo}
+      alt={`${brandName} Logo`}
+      className="th1-logo"
+    />
+  )
+) : null}
 
               <div className="th1-sidebar-title">
                {t("departments_label")}
@@ -3668,17 +3711,46 @@ disabled={isMwsProductSaving}
 
           <main className="th1-main">
             <div className="th1-header">
-             {brandDetails?.headerImage ? (
-              <img
-                src={brandDetails.headerImage}
-                alt={`${brandName} Header`}
-                className="th1-header-image"
-              />
-            ) : showMwsSampleBanner ? (
-              mwsSampleBanner
-            ) : null}
-              <div className="th1-header-title">{brandName}</div>
-            </div>
+  {brandDetails?.headerImage || showMwsSampleBanner ? (
+    isMwsEditMode ? (
+      <button
+        type="button"
+        onClick={() => requestMwsBrandingEdit("headerImage")}
+        title="Add or change cover banner"
+        aria-label="Add or change cover banner"
+        style={{
+          display: "block",
+          width: "100%",
+          padding: 0,
+          margin: 0,
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+        }}
+      >
+        {brandDetails?.headerImage ? (
+          <img
+            src={brandDetails.headerImage}
+            alt={`${brandName} Header`}
+            className="th1-header-image"
+          />
+        ) : (
+          mwsSampleBanner
+        )}
+      </button>
+    ) : (
+      <img
+        src={brandDetails.headerImage}
+        alt={`${brandName} Header`}
+        className="th1-header-image"
+      />
+    )
+  ) : null}
+
+  <div className="th1-header-title">
+    {brandName}
+  </div>
+</div>
 
             {selectedDepartment && selectedBrandType ? (
               renderDepartmentItems()
@@ -3725,24 +3797,79 @@ disabled={isMwsProductSaving}
       ) : (
         <div className="th1-mobile">
           <div className="th1-header">
-            {brandDetails?.headerImage ? (
-              <img
-                src={brandDetails.headerImage}
-                alt={`${brandName} Header`}
-                className="th1-header-image"
-              />
-            ) : null}
-            <div className="th1-header-title">{brandName}</div>
-          </div>
+  {brandDetails?.headerImage || showMwsSampleBanner ? (
+    isMwsEditMode ? (
+      <button
+        type="button"
+        onClick={() => requestMwsBrandingEdit("headerImage")}
+        title="Add or change cover banner"
+        aria-label="Add or change cover banner"
+        style={{
+          display: "block",
+          width: "100%",
+          padding: 0,
+          margin: 0,
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+        }}
+      >
+        {brandDetails?.headerImage ? (
+          <img
+            src={brandDetails.headerImage}
+            alt={`${brandName} Header`}
+            className="th1-header-image"
+          />
+        ) : (
+          mwsSampleBanner
+        )}
+      </button>
+    ) : (
+      <img
+        src={brandDetails.headerImage}
+        alt={`${brandName} Header`}
+        className="th1-header-image"
+      />
+    )
+  ) : null}
+
+  <div className="th1-header-title">
+    {brandName}
+  </div>
+</div>
 
           <div className="th1-mobile-nav">
-            {brandDetails?.logo ? (
-              <img
-                src={brandDetails.logo}
-                alt={`${brandName} Logo`}
-                className="th1-mobile-logo"
-              />
-            ) : showMwsSampleLogo ? mwsSampleLogo : null}
+          {brandDetails?.logo || showMwsSampleLogo ? (
+  isMwsEditMode ? (
+    <button
+      type="button"
+      onClick={() => requestMwsBrandingEdit("logo")}
+      aria-label="Add or change store logo"
+      style={{
+        padding: 0,
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    >
+      {brandDetails?.logo ? (
+        <img
+          src={brandDetails.logo}
+          alt={`${brandName} Logo`}
+          className="th1-mobile-logo"
+        />
+      ) : (
+        mwsSampleLogo
+      )}
+    </button>
+  ) : (
+    <img
+      src={brandDetails.logo}
+      alt={`${brandName} Logo`}
+      className="th1-mobile-logo"
+    />
+  )
+) : null}
 
             <div className="th1-mobile-type-list">
               {displayedDepartments.map((department, index) => (

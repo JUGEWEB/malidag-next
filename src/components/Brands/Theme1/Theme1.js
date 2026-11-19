@@ -2274,6 +2274,9 @@ const handleAddToBasket = async (
 ) => {
   e?.stopPropagation();
 
+    // MWS is a storefront preview, not a checkout.
+  if (isMwsPreview) return;
+
   // Never allow demonstration products into the real basket.
 if (product?.isMwsSample === true) {
   return;
@@ -2783,25 +2786,14 @@ setIsMwsEditorPanelOpen(true);
   </div>
 )}
 
-      {isSample ? (
-  <button
-    type="button"
-    className="th1-add-basket-btn"
-    disabled
-    title="Demonstration product — not available for purchase"
-    style={{ opacity: 0.55, cursor: "not-allowed" }}
-  >
-    Preview only
-  </button>
-) : (
-  <button
-    type="button"
-    className="th1-add-basket-btn"
-    onClick={(e) => handleAddToBasket(item, e)}
-  >
-    {t("add_to_cart")}
-  </button>
-)}
+    <button
+  type="button"
+  className="th1-add-basket-btn"
+  disabled={isMwsPreview}
+  onClick={(e) => handleAddToBasket(item, e)}
+>
+  {t("add_to_cart")}
+</button>
 
        {getBasketQuantity(item.itemId) > 0 && (
   <button
@@ -2936,13 +2928,14 @@ setIsMwsEditorPanelOpen(true);
             </div>
           )}
 
-          <button
-            type="button"
-            className="th1-add-basket-btn"
-            onClick={(e) => handleAddToBasket(bestSeller, e)}
-          >
-            {t("add_to_cart")}
-          </button>
+         <button
+  type="button"
+  className="th1-add-basket-btn"
+  disabled={isMwsPreview}
+  onClick={(e) => handleAddToBasket(bestSeller, e)}
+>
+  {t("add_to_cart")}
+</button>
 
         {getBasketQuantity(bestSeller.itemId) > 0 && (
   <button

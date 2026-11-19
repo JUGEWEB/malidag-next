@@ -1642,3 +1642,9 @@
     width: 175px;
   }
 }
+
+/* Keep MWS basket buttons visually identical but inactive */
+.th1-add-basket-btn:disabled {
+  opacity: 1;
+  cursor: default;
+}

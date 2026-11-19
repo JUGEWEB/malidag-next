@@ -498,13 +498,36 @@ useEffect(() => {
       return;
     }
 
-    setDepartmentDropdownPosition({
-      top: rect.bottom + 6,
-      left: Math.max(
-        8,
-        Math.min(rect.left, window.innerWidth - 208)
-      ),
-    });
+    const dropdownMaxHeight = 280;
+const spaceBelow = window.innerHeight - rect.bottom - 12;
+const spaceAbove = rect.top - 12;
+
+const openAbove =
+  spaceBelow < dropdownMaxHeight &&
+  spaceAbove > spaceBelow;
+
+const availableHeight = Math.max(
+  80,
+  openAbove ? spaceAbove : spaceBelow
+);
+
+const dropdownHeight = Math.min(
+  dropdownMaxHeight,
+  availableHeight
+);
+
+setDepartmentDropdownPosition({
+  top: openAbove
+    ? Math.max(8, rect.top - dropdownHeight - 6)
+    : rect.bottom + 6,
+
+  left: Math.max(
+    8,
+    Math.min(rect.left, window.innerWidth - 208)
+  ),
+
+  maxHeight: dropdownHeight,
+});
   };
 
   updatePosition();
@@ -4072,6 +4095,7 @@ disabled={isMwsProductSaving}
         position: "fixed",
         top: departmentDropdownPosition.top,
         left: departmentDropdownPosition.left,
+        maxHeight: departmentDropdownPosition.maxHeight,
         zIndex: 99999,
       }}
     >

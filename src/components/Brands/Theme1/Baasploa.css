@@ -1765,3 +1765,53 @@
   background: #fff;
   cursor: pointer;
 }
+
+/* Theme 1 — Scrollable department dropdown */
+
+.th1-category-dropdown {
+  max-height: min(280px, calc(100dvh - 24px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+
+  min-width: 190px;
+  box-sizing: border-box;
+
+  scrollbar-width: thin;
+  scrollbar-color: #aab2c0 transparent;
+}
+
+.th1-category-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.th1-category-dropdown::-webkit-scrollbar-thumb {
+  background: #aab2c0;
+  border-radius: 10px;
+}
+
+.th1-category-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Keep departments on one horizontal row */
+
+.th1-category-scroll {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.th1-category-wrapper {
+  flex: 0 0 auto;
+}
+
+.th1-category-add {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

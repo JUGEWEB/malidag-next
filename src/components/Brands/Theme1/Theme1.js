@@ -273,11 +273,37 @@ useEffect(() => {
   };
 }, []);
   const [editingMwsSampleId, setEditingMwsSampleId] = useState(null);
+  const [openMwsProductMenu, setOpenMwsProductMenu] = useState(null);
   const [isMwsEditorPanelOpen, setIsMwsEditorPanelOpen] = useState(false);
   const [isMwsProductSaving, setIsMwsProductSaving] = useState(false);
   const mwsPendingSaveRequestRef = useRef(null);
   const [messageApi, contextHolder] =
   message.useMessage();
+
+  useEffect(() => {
+  if (openMwsProductMenu === null) return;
+
+  const closeMenu = (event) => {
+    if (event.key === "Escape") {
+      setOpenMwsProductMenu(null);
+    }
+  };
+
+  const closeOnOutsideClick = (event) => {
+    if (!event.target.closest(".th1-product-edit-menu")) {
+      setOpenMwsProductMenu(null);
+    }
+  };
+
+  document.addEventListener("keydown", closeMenu);
+  document.addEventListener("pointerdown", closeOnOutsideClick);
+
+  return () => {
+    document.removeEventListener("keydown", closeMenu);
+    document.removeEventListener("pointerdown", closeOnOutsideClick);
+  };
+}, [openMwsProductMenu]);
+
   useEffect(() => {
   if (!isMwsEditMode) return;
 
@@ -2338,6 +2364,21 @@ if (product?.isMwsSample === true) {
     const selectedColor = selectedColorByItem[item.id];
     const colorOptions = getColorOptions(item);
     const displayImage = getDisplayImage(item);
+
+    const editableProduct = mwsCustomSamples.find(
+  (product) =>
+    product.folderId &&
+    String(product.folderId) ===
+      String(item.folderId || item.itemId)
+);
+
+const canEditMwsProduct =
+  isMwsEditMode &&
+  item?.isMwsSample !== true &&
+  Boolean(editableProduct);
+
+const productMenuId = String(item.folderId || item.itemId);
+
     const discountPercentage = getDiscountPercentage(
       item?.usdPrice,
       item?.originalPrice
@@ -2571,6 +2612,64 @@ setIsMwsEditorPanelOpen(true);
               e.target.src = "/fallback.png";
             }}
           />
+
+          {canEditMwsProduct && (
+  <div
+    className="th1-product-edit-menu"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <button
+      type="button"
+      className="th1-product-edit-trigger"
+      aria-label={`Edit ${item.name || "product"}`}
+      aria-haspopup="menu"
+      aria-expanded={openMwsProductMenu === productMenuId}
+      onClick={() => {
+        setOpenMwsProductMenu((previous) =>
+          previous === productMenuId ? null : productMenuId
+        );
+      }}
+    >
+      ✎
+    </button>
+
+    {openMwsProductMenu === productMenuId && (
+      <div className="th1-product-edit-dropdown" role="menu">
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => {
+            setOpenMwsProductMenu(null);
+            setEditingMwsSampleId(editableProduct.id);
+            setIsMwsEditorPanelOpen(true);
+          }}
+        >
+          <span aria-hidden="true">✎</span>
+          Edit Item
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => {
+            setOpenMwsProductMenu(null);
+
+            window.parent.postMessage(
+              {
+                type: "MWS_OPEN_VARIANTS",
+                folderId: String(editableProduct.folderId),
+              },
+              "https://mws.malidag.com"
+            );
+          }}
+        >
+          <span aria-hidden="true">▧</span>
+          Add/Edit Variants
+        </button>
+      </div>
+    )}
+  </div>
+)}
         </div>
 
         <div
@@ -2599,91 +2698,6 @@ setIsMwsEditorPanelOpen(true);
               ? `${getTranslatedName(item, item.itemId).slice(0, 70)}...`
               : getTranslatedName(item, item.itemId)}
           </div>
-
-          
-{isMwsEditMode && item?.isMwsSample !== true && (
-  <button
-      type="button"
-     onClick={(e) => {
-  e.stopPropagation();
-
-  if (!isMwsEditMode) {
-    messageApi.info("Open MWS editor to modify this product.");
-    return;
-  }
-
-  const editableProduct = mwsCustomSamples.find(
-    (product) =>
-      product.folderId &&
-      String(product.folderId) ===
-        String(item.folderId || item.itemId)
-  );
-
-  if (!editableProduct) {
-    messageApi.warning(
-      "This product is not connected to an editable MWS record."
-    );
-    return;
-  }
-
-  setEditingMwsSampleId(editableProduct.id);
-  setIsMwsEditorPanelOpen(true);
-}}
-      style={{
-        display: "block",
-        width: "100%",
-        marginTop: "10px",
-        marginBottom: "12px",
-        padding: "10px 14px",
-        borderRadius: "8px",
-        border: "1px solid #2563eb",
-        background: "#eff6ff",
-        color: "#1d4ed8",
-        fontWeight: 700,
-        cursor: "pointer",
-      }}
-       >
-      ✎ Edit Item
-    </button>
-  )}
-
- {isMwsEditMode &&
-  mwsCustomSamples.some(
-    (product) =>
-      product.folderId &&
-      String(product.folderId) ===
-        String(item.folderId || item.itemId)
-  ) && (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-
-        window.parent.postMessage(
-          {
-            type: "MWS_OPEN_VARIANTS",
-           folderId: String(item.folderId || item.itemId),
-          },
-          "https://mws.malidag.com"
-        );
-      }}
-      style={{
-        display: "block",
-        width: "100%",
-        marginTop: "8px",
-        marginBottom: "12px",
-        padding: "10px 14px",
-        borderRadius: "8px",
-        border: "1px solid #059669",
-        background: "#ecfdf5",
-        color: "#047857",
-        fontWeight: 700,
-        cursor: "pointer",
-      }}
-    >
-      + Add Variants
-    </button>
-  )}
 
   {colorOptions.length > 0 && (
   <div

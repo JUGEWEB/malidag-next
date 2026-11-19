@@ -4045,10 +4045,11 @@ disabled={isMwsProductSaving}
         className="th1-category-wrapper"
       >
         <button
-          type="button"
-          className={`th1-category-trigger ${
-            expandedDeptIndex === index ? "active" : ""
-          }`}
+  type="button"
+  data-department-index={index}
+  className={`th1-category-trigger ${
+    expandedDeptIndex === index ? "active" : ""
+  }`}
           aria-expanded={expandedDeptIndex === index}
           onClick={() =>
             setExpandedDeptIndex((previous) =>

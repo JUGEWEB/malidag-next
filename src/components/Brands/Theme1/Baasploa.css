@@ -1663,9 +1663,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
+
+  flex-wrap: wrap;
+  overflow: visible;
+
+  scrollbar-width: none;
 }
 
 .th1-category-wrapper {

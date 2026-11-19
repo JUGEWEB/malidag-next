@@ -1669,7 +1669,7 @@
 }
 
 .th1-category-wrapper {
-  position: static;
+  position: relative;
   flex: 0 0 auto;
 }
 
@@ -1695,8 +1695,8 @@
 
 .th1-category-dropdown {
   position: absolute;
-  top: 100%;
-  left: 12px;
+  top: calc(100% + 6px);
+  left: 0;
   z-index: 100;
   min-width: 190px;
   max-width: calc(100vw - 24px);

@@ -3593,6 +3593,42 @@ disabled={isMwsProductSaving}
 )}
 </div>
 
+<button
+  type="button"
+  title="Refresh Storefront"
+  aria-label="Refresh Storefront"
+  onClick={() => window.location.reload()}
+  style={{
+    width: "38px",
+    height: "38px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    padding: 0,
+    background: "#ffffff",
+    color: "#111827",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    cursor: "pointer",
+  }}
+>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20 11a8 8 0 1 0-2.3 6.3" />
+    <path d="M20 4v7h-7" />
+  </svg>
+</button>
+
   </div>
 )}
     {isDesktop ? (

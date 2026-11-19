@@ -3986,120 +3986,91 @@ disabled={isMwsProductSaving}
   )
 ) : null}
 
-            <div className="th1-mobile-type-list">
-              {displayedDepartments.map((department, index) => (
-                <div key={index} className="th1-mobile-department">
-                  <button
-                    type="button"
-                    className={`th1-mobile-department-title ${
-                      expandedDeptIndex === index ? "active" : ""
-                    }`}
-                    onClick={() =>
-                      setExpandedDeptIndex(index === expandedDeptIndex ? null : index)
-                    }
-                  >
-                    {t(department?.name)}
-                  </button>
-                </div>
-              ))}
-            </div>
+          <div className="th1-category-navigation">
+  <div className="th1-category-scroll">
+    {displayedDepartments.map((department, index) => (
+      <div
+        key={department.name}
+        className="th1-category-wrapper"
+      >
+        <button
+          type="button"
+          className={`th1-category-trigger ${
+            expandedDeptIndex === index ? "active" : ""
+          }`}
+          aria-expanded={expandedDeptIndex === index}
+          onClick={() =>
+            setExpandedDeptIndex((previous) =>
+              previous === index ? null : index
+            )
+          }
+        >
+          <span>{t(department.name)}</span>
+          <span aria-hidden="true">
+            {expandedDeptIndex === index ? "⌃" : "⌄"}
+          </span>
+        </button>
 
+        {expandedDeptIndex === index && (
+          <div className="th1-category-dropdown">
             {isMwsEditMode && (
-  <button
-    type="button"
-    onClick={handleAddMwsDepartment}
-    style={{
-      display: "block",
-      margin: "12px auto",
-      padding: "10px 14px",
-      background: "#111827",
-      color: "#ffffff",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontWeight: 700,
-    }}
-  >
-    + Add Department
-  </button>
-)}
+              <button
+                type="button"
+                className="th1-category-dropdown-item"
+                onClick={() =>
+                  handleAddMwsBrandType(department.name)
+                }
+              >
+                + Add Brand Type
+              </button>
+            )}
+
+            {(department.brandTypes || []).map((brandType) => (
+              <button
+                key={brandType}
+                type="button"
+                className={`th1-category-dropdown-item ${
+                  selectedDepartment === department.name &&
+                  selectedBrandType === brandType
+                    ? "active"
+                    : ""
+                }`}
+                onClick={() =>
+                  handleBrandTypeClick(
+                    department.name,
+                    brandType
+                  )
+                }
+              >
+                {t(brandType)}
+              </button>
+            ))}
+
+            {!department.brandTypes?.length && (
+              <span className="th1-category-empty">
+                No brand types yet
+              </span>
+            )}
           </div>
+        )}
+      </div>
+    ))}
+  </div>
 
-          {expandedDeptIndex !== null && (
-            <>
-              <div
-                className="th1-mobile-dropdown-backdrop"
-                onClick={() => setExpandedDeptIndex(null)}
-              />
-
-              <div className="th1-mobile-dropdown-panel">
-                <div className="th1-mobile-dropdown-header">
-                  <span className="th1-mobile-dropdown-title">
-                    {t(displayedDepartments?.[expandedDeptIndex]?.name)}
-                  </span>
-
-                  <button
-                    type="button"
-                    className="th1-mobile-dropdown-close"
-                    onClick={() => setExpandedDeptIndex(null)}
-                  >
-                    ×
-                  </button>
-                </div>
-                  {isMwsEditMode &&
-  displayedDepartments[expandedDeptIndex] && (
+   {isMwsEditMode && (
     <button
       type="button"
-      onClick={() =>
-        handleAddMwsBrandType(
-          displayedDepartments[expandedDeptIndex].name
-        )
-      }
-      style={{
-        display: "block",
-        margin: "12px",
-        padding: "10px",
-        background: "#ffffff",
-        border: "1px solid #cbd5e1",
-        borderRadius: "8px",
-        cursor: "pointer",
-      }}
+      className="th1-category-add"
+      onClick={handleAddMwsDepartment}
     >
-      + Add Brand Type
+      + Add Department
     </button>
   )}
-                <div className="th1-mobile-dropdown">
-                  {(displayedDepartments?.[expandedDeptIndex]?.brandTypes || []).map(
-                    (brandType, bIndex) => {
-                      const isActive =
-                        selectedDepartment === displayedDepartments?.[expandedDeptIndex]?.name &&
-                        selectedBrandType === brandType;
+</div>
 
-                      return (
-                        <button
-                          key={bIndex}
-                          type="button"
-                          className={`th1-mobile-dropdown-item ${
-                            isActive ? "active" : ""
-                          }`}
-                          onClick={() =>
-                            handleBrandTypeClick(
-                              displayedDepartments?.[expandedDeptIndex]?.name,
-                              brandType
-                            )
-                          }
-                        >
-                          {t(brandType)}
-                        </button>
-                      );
-                    }
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+</div> {/* End th1-mobile-nav */}
 
-         {selectedDepartment && selectedBrandType ? (
+{selectedDepartment && selectedBrandType ? (
   renderDepartmentItems()
 ) : (
   <>

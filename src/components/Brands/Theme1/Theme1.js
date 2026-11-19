@@ -638,9 +638,18 @@ useEffect(() => {
           productDetail01: fields.productDetail01 || "",
           productDetail02: fields.productDetail02 || "",
 
-          images: product.images || [],
-          imagesVariants: {},
-          videos: [],
+         images: Array.isArray(product.images)
+          ? product.images
+          : [],
+
+        imagesVariants:
+          product.imagesVariants &&
+          typeof product.imagesVariants === "object" &&
+          !Array.isArray(product.imagesVariants)
+            ? product.imagesVariants
+            : {},
+
+        videos: [],
           size: {},
           rating: 0,
 
@@ -1781,8 +1790,19 @@ const handleRemoveMwsBrandType = (departmentName, brandType) => {
 };
 
 const getDisplayImage = (product) => {
-  const selectedColor = selectedColorByItem[product.id];
-  const variants = product?.imagesVariants || {};
+ const variants = product?.imagesVariants || {};
+
+const availableColors = Object.keys(variants).filter(
+  (color) =>
+    Array.isArray(variants[color]) &&
+    variants[color].some((image) => getImageUrl(image))
+);
+
+const requestedColor = selectedColorByItem[product.id];
+
+const selectedColor = availableColors.includes(requestedColor)
+  ? requestedColor
+  : availableColors[0];
 
   if (selectedColor && variants[selectedColor]?.length > 0) {
     const sortedImages = [...variants[selectedColor]].sort((a, b) => {
@@ -2988,11 +3008,14 @@ const previewBrandItems = useMemo(() => {
       !customizedIds.has(String(item.id))
   );
 
-  return uniqueMwsProducts([
-    ...realItems,
-    ...customItems,
-    ...categorySamples,
-  ]);
+ const actualItems = uniqueMwsProducts([
+  ...realItems,
+  ...customItems,
+]);
+
+return actualItems.length > 0
+  ? actualItems
+  : uniqueMwsProducts(categorySamples);
 }, [
   isMwsPreview,
   isMwsEditMode,

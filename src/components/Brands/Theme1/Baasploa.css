@@ -1664,10 +1664,32 @@
   align-items: center;
   gap: 8px;
 
-  flex-wrap: wrap;
-  overflow: visible;
+  flex: 1;
+  min-width: 0;
 
-  scrollbar-width: none;
+  flex-wrap: nowrap;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.th1-category-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.th1-category-dropdown {
+  min-width: 190px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
 }
 
 .th1-category-wrapper {

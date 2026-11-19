@@ -7,6 +7,7 @@ import React, {
   useContext,
   useRef,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   useRouter,
   useSearchParams,
@@ -470,6 +471,56 @@ const currencyConfig = useMemo(
 );
 
   const [expandedDeptIndex, setExpandedDeptIndex] = useState(null);
+  const [departmentDropdownPosition, setDepartmentDropdownPosition] =
+  useState(null);
+
+const departmentScrollRef = useRef(null);
+
+useEffect(() => {
+  if (expandedDeptIndex === null) {
+    setDepartmentDropdownPosition(null);
+    return;
+  }
+
+  const updatePosition = () => {
+    const scroll = departmentScrollRef.current;
+    const trigger = scroll?.querySelector(
+      `[data-department-index="${expandedDeptIndex}"]`
+    );
+
+    if (!scroll || !trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const scrollRect = scroll.getBoundingClientRect();
+
+    if (rect.right < scrollRect.left || rect.left > scrollRect.right) {
+      setExpandedDeptIndex(null);
+      return;
+    }
+
+    setDepartmentDropdownPosition({
+      top: rect.bottom + 6,
+      left: Math.max(
+        8,
+        Math.min(rect.left, window.innerWidth - 208)
+      ),
+    });
+  };
+
+  updatePosition();
+
+  const scroll = departmentScrollRef.current;
+
+  scroll?.addEventListener("scroll", updatePosition);
+  window.addEventListener("resize", updatePosition);
+  window.addEventListener("scroll", updatePosition, true);
+
+  return () => {
+    scroll?.removeEventListener("scroll", updatePosition);
+    window.removeEventListener("resize", updatePosition);
+    window.removeEventListener("scroll", updatePosition, true);
+  };
+}, [expandedDeptIndex]);
   const [translations, setTranslations] = useState({});
   const [selectedColorByItem, setSelectedColorByItem] = useState({});
 const [pendingBasketItem, setPendingBasketItem] = useState(null);
@@ -3987,7 +4038,7 @@ disabled={isMwsProductSaving}
 ) : null}
 
           <div className="th1-category-navigation">
-  <div className="th1-category-scroll">
+  <div className="th1-category-scroll" ref={departmentScrollRef}>
     {displayedDepartments.map((department, index) => (
       <div
         key={department.name}
@@ -4011,48 +4062,56 @@ disabled={isMwsProductSaving}
           </span>
         </button>
 
-        {expandedDeptIndex === index && (
-          <div className="th1-category-dropdown">
-            {isMwsEditMode && (
-              <button
-                type="button"
-                className="th1-category-dropdown-item"
-                onClick={() =>
-                  handleAddMwsBrandType(department.name)
-                }
-              >
-                + Add Brand Type
-              </button>
-            )}
+       {expandedDeptIndex === index &&
+  departmentDropdownPosition &&
+  createPortal(
+    <div
+      className="th1-category-dropdown"
+      style={{
+        position: "fixed",
+        top: departmentDropdownPosition.top,
+        left: departmentDropdownPosition.left,
+        zIndex: 99999,
+      }}
+    >
+      {isMwsEditMode && (
+        <button
+          type="button"
+          className="th1-category-dropdown-item"
+          onClick={() =>
+            handleAddMwsBrandType(department.name)
+          }
+        >
+          + Add Brand Type
+        </button>
+      )}
 
-            {(department.brandTypes || []).map((brandType) => (
-              <button
-                key={brandType}
-                type="button"
-                className={`th1-category-dropdown-item ${
-                  selectedDepartment === department.name &&
-                  selectedBrandType === brandType
-                    ? "active"
-                    : ""
-                }`}
-                onClick={() =>
-                  handleBrandTypeClick(
-                    department.name,
-                    brandType
-                  )
-                }
-              >
-                {t(brandType)}
-              </button>
-            ))}
+      {(department.brandTypes || []).map((brandType) => (
+        <button
+          key={brandType}
+          type="button"
+          className={`th1-category-dropdown-item ${
+            selectedDepartment === department.name &&
+            selectedBrandType === brandType
+              ? "active"
+              : ""
+          }`}
+          onClick={() =>
+            handleBrandTypeClick(department.name, brandType)
+          }
+        >
+          {t(brandType)}
+        </button>
+      ))}
 
-            {!department.brandTypes?.length && (
-              <span className="th1-category-empty">
-                No brand types yet
-              </span>
-            )}
-          </div>
-        )}
+      {!department.brandTypes?.length && (
+        <span className="th1-category-empty">
+          No brand types yet
+        </span>
+      )}
+    </div>,
+    document.body
+  )}
       </div>
     ))}
   </div>

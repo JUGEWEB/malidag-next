@@ -2381,9 +2381,14 @@ if (product?.isMwsSample === true) {
   const renderProductCard = (item, options = {}) => {
     const { isTop = false, badgeText = "" } = options;
     const isSample = isMwsPreview && item?.isMwsSample === true;
-    const selectedColor = selectedColorByItem[item.id];
     const colorOptions = getColorOptions(item);
-    const displayImage = getDisplayImage(item);
+
+const selectedColor =
+  colorOptions.includes(selectedColorByItem[item.id])
+    ? selectedColorByItem[item.id]
+    : colorOptions[0] || "";
+
+const displayImage = getDisplayImage(item);
 
     const editableProduct = mwsCustomSamples.find(
   (product) =>
@@ -2719,7 +2724,7 @@ setIsMwsEditorPanelOpen(true);
               : getTranslatedName(item, item.itemId)}
           </div>
 
-  {colorOptions.length > 0 && (
+  {colorOptions.length > 1 && (
   <div
     className="th1-color-block"
     onClick={(e) => e.stopPropagation()}
@@ -2884,14 +2889,18 @@ setIsMwsEditorPanelOpen(true);
               {getTranslatedName(bestSeller, bestSeller.itemId)}
             </div>
 
-            {getColorOptions(bestSeller).length > 0 && (
+            {getColorOptions(bestSeller).length > 1 && (
               <div className="th1-color-block" onClick={(e) => e.stopPropagation()}>
                 <div className="th1-color-label">
                   {t("color")}:{" "}
                   <span>
-                    {translateColor(
+                   {translateColor(
+                    getColorOptions(bestSeller).includes(
                       selectedColorByItem[bestSeller.id]
-                    )}
+                    )
+                      ? selectedColorByItem[bestSeller.id]
+                      : getColorOptions(bestSeller)[0]
+                  )}
                   </span>
                 </div>
 
@@ -2901,7 +2910,10 @@ setIsMwsEditorPanelOpen(true);
                       key={color}
                       type="button"
                       className={`th1-color-circle ${
-                        selectedColorByItem[bestSeller.id] === color ? "active" : ""
+                       (
+                        selectedColorByItem[bestSeller.id] ||
+                        getColorOptions(bestSeller)[0]
+                      ) === color ? "active" : ""
                       }`}
                       title={translateColor(color)}
                       aria-label={t("select_color", {

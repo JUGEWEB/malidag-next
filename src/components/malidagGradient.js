@@ -171,40 +171,12 @@ const scheduleNextPhase = () => {
   }, remaining);
 };
 
-export const subscribeGradient = (callback) => {
- subscribers.add(callback);
-
-initialize();
-updatePhase();
-
-if (isBrandStorefront()) {
-  getBrandGradient();
-}
-
-  if (timer === null) {
-    scheduleNextPhase();
-  }
-
-  // Notify React after hydration
-  callback();
-
-  return () => {
-    subscribers.delete(callback);
-
-    if (subscribers.size === 0 && timer !== null) {
-      window.clearTimeout(timer);
-      timer = null;
-    }
-  };
+export const subscribeGradient = () => {
+  return () => {};
 };
 
-export const getGradientSnapshot = () => {
-  if (isBrandStorefront()) {
-    return getBrandGradient();
-  }
-
-  return currentGradient;
-};
+// Gradients disabled globally
+export const getGradientSnapshot = () => null;
 
 export const getGradientServerSnapshot = () => null;
 

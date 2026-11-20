@@ -1,7 +1,7 @@
 
 "use client";
 
-const FIVE_MINUTES = 5 * 60 * 1000;
+const FIVE_MINUTES = 2 * 60 * 1000;
 
 // For testing only:
 // const FIVE_MINUTES = 10 * 1000;
@@ -14,6 +14,15 @@ let subscribers = new Set();
 let initialized = false;
 let phaseStartedAt = 0;
 let isGradientPhase = false;
+let brandGradient = null;
+
+const isBrandStorefront = () => {
+  if (typeof window === "undefined") return false;
+
+  return /^\/[^/]+\/brand\/(?:theme1|theme2|theme3)(?:\/|$)/i.test(
+    window.location.pathname
+  );
+};
 
 const generateDarkGradient = () => {
   // Exclude yellow and gold hues
@@ -41,6 +50,14 @@ const generateDarkGradient = () => {
     hsl(${hue2}, 75%, 42%),
     hsl(${hue1}, 65%, 27%)
   )`;
+};
+
+const getBrandGradient = () => {
+  if (!brandGradient) {
+    brandGradient = generateDarkGradient();
+  }
+
+  return brandGradient;
 };
 
 const notify = () => {
@@ -155,10 +172,14 @@ const scheduleNextPhase = () => {
 };
 
 export const subscribeGradient = (callback) => {
-  subscribers.add(callback);
+ subscribers.add(callback);
 
-  initialize();
-  updatePhase();
+initialize();
+updatePhase();
+
+if (isBrandStorefront()) {
+  getBrandGradient();
+}
 
   if (timer === null) {
     scheduleNextPhase();
@@ -177,6 +198,16 @@ export const subscribeGradient = (callback) => {
   };
 };
 
-export const getGradientSnapshot = () => currentGradient;
+export const getGradientSnapshot = () => {
+  if (isBrandStorefront()) {
+    return getBrandGradient();
+  }
+
+  return currentGradient;
+};
 
 export const getGradientServerSnapshot = () => null;
+
+export const notifyGradientRouteChange = () => {
+  notify();
+};

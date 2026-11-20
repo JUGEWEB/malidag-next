@@ -1,7 +1,7 @@
 'use client';
 
 
-import React, { useSyncExternalStore } from "react";
+import React, { useEffect, useSyncExternalStore } from "react";
 import MalidagHeader from "./malidagHeader";
 import BasketComponent from "./basketComponent";
 import InputSearch from "./inputSearch";
@@ -17,11 +17,15 @@ import {
   subscribeGradient,
   getGradientSnapshot,
   getGradientServerSnapshot,
+  notifyGradientRouteChange,
 } from "./malidagGradient";
 import "./appHeader.css";
 
 function AppHeader(props) {
   const pathname = usePathname(); // ✅ Step 2
+  useEffect(() => {
+  notifyGradientRouteChange();
+}, [pathname]);
   const headerGradient = useSyncExternalStore(
   subscribeGradient,
   getGradientSnapshot,
@@ -90,11 +94,23 @@ const isCountryHome =
         
                 </div>
         
-                {(isMobile || isSmallMobile || isVerySmall) && allCountries.length > 0 && (
-          <div style={{color: "white", backgroundColor: "#0d1b2a", padding: "5px"}}>
-            <Location country={country} allCountries={allCountries} setCountry={setCountry}/>
-            </div>
-          )}
+               {(isMobile || isSmallMobile || isVerySmall) &&
+  allCountries.length > 0 && (
+    <div
+      style={{
+        color: headerGradient ? "#111" : "white",
+        backgroundColor: headerGradient ? "#fff" : "#0d1b2a",
+        padding: "5px",
+        transition: "background-color 0.4s ease, color 0.4s ease",
+      }}
+    >
+      <Location
+        country={country}
+        allCountries={allCountries}
+        setCountry={setCountry}
+      />
+    </div>
+  )}
                
                 {(isMobile || isSmallMobile || isVerySmall) && (
                 <div style={{backgroundColor: "white", borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc" }}>

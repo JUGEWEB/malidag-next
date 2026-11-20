@@ -185,8 +185,15 @@ if (isCountryNeutralRoute) {
           style={{
             display: "flex",
             alignItems: "center",
-            backgroundColor: isMobile || isSmallMobile || isVerySmall ? "#0d1b2a" : "#333",
-            color: "#fff",
+           backgroundColor:
+            isMobile || isSmallMobile || isVerySmall
+              ? "transparent"
+              : "#333",
+
+          color:
+            isMobile || isSmallMobile || isVerySmall
+              ? "inherit"
+              : "#fff",
             fontSize: "12px",
             width: "100%",
             justifyContent: isMobile || isSmallMobile || isVerySmall ? "flex-start" : "",

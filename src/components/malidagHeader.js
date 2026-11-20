@@ -213,17 +213,29 @@ const basketCount = (basketItems || []).reduce(
         background: "transparent",
       }}
     >
-      <img
-        src="https://cdn.malidag.com/themes/1795136984859-4011516e-b8ec-453e-9395-2dd77d97aeb8.webp"
-        alt="Malidag"
-        style={{
-          display: "block",
-          width: "auto",
-          height: "24px",
-          maxWidth: "150px",
-          objectFit: "contain",
-        }}
-      />
+     <div
+  style={{
+    width: "145px",
+    height: "30px",
+    overflow: "hidden",
+    position: "relative",
+    flexShrink: 0,
+  }}
+>
+  <img
+    src="https://cdn.malidag.com/themes/1795137398264-43c16df9-511d-4cde-ae88-316a7bfd020c.webp"
+    alt="Malidag"
+    style={{
+      position: "absolute",
+      width: "145px",
+      height: "145px",
+      maxWidth: "none",
+      objectFit: "contain",
+      left: 0,
+      top: "-57px",
+    }}
+  />
+</div>
     </button>
   )}
 

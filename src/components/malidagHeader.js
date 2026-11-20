@@ -1,6 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
 import "./malidagHeader.css";
 import Link from "next/link"; // Correct
 import { useRouter } from 'next/navigation';
@@ -15,6 +19,11 @@ import "./themeSkeleton.css";
 import LanguageSelector from "./LanguageSelector";
 import { usePathname } from 'next/navigation';
 import { useTranslation } from "react-i18next";
+import {
+  subscribeGradient,
+  getGradientSnapshot,
+  getGradientServerSnapshot,
+} from "./malidagGradient";
 
 
 function MalidagHeader({
@@ -55,6 +64,11 @@ const withCountry = (path) => {
    const isCountrySelectorPage = pathname === "/";
   const [isBasketVisible, setIsBasketVisible] = useState(false);
   const {isSmallMobile , isMobile, isTablet, isVerySmall, isDesktop} = useScreenSize()
+  const headerGradient = useSyncExternalStore(
+  subscribeGradient,
+  getGradientSnapshot,
+  getGradientServerSnapshot
+);
 
    // Determine if we are on the BuyNow (checkout) page
 const isCheckoutPage =
@@ -170,7 +184,9 @@ const basketCount = (basketItems || []).reduce(
         padding: "0px",
         marginLeft: "0px",
         marginTop: "0px",
-        backgroundColor: (isTablet || isDesktop) ? "black" : "#333",
+       backgroundColor: (isTablet || isDesktop) ? "#000" : "#333",
+        backgroundImage: headerGradient || "none",
+        transition: "background-color 1.5s ease",
         width:"100%",
         paddingRight: isBasketVisible && isDesktop && basketItems.length > 0 ? "150px" : "0",
       
@@ -406,7 +422,7 @@ const basketCount = (basketItems || []).reduce(
 {basketCount > 0 && savedCountryCode && (
           <div
     style={{
-      backgroundColor: isTablet || isDesktop ? "black" : "#333",
+     backgroundColor: "transparent",
     }}
   >
     <Link href={`/${savedCountryCode}/basket`}>

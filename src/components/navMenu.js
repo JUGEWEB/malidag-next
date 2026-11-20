@@ -1,22 +1,37 @@
 'use client';
 
 
-import React, {useEffect, useState} from "react";
+import React, {
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useRouter, usePathname } from 'next/navigation';
 import axios from "axios";
 import All from "./All";
 import Type from "./type";
 import Jewelry from "./jewelry";
 import useScreenSize from "./useIsMobile";
+import {
+  subscribeGradient,
+  getGradientSnapshot,
+  getGradientServerSnapshot,
+} from "./malidagGradient";
 
 const BASE_URL = "https://api.malidag.com"; // Your API URL http://192.168.0.109:3010
 
 const NavMenu = ({basketItems}) => {
    const router = useRouter();
    const pathname = usePathname()
+   const headerGradient = useSyncExternalStore(
+  subscribeGradient,
+  getGradientSnapshot,
+  getGradientServerSnapshot
+);
     const [beautyTypes, setBeautyTypes] = useState(new Set()); // Store Beauty category types
     const [isBasketVisible, setIsBasketVisible] = useState(false);
     const {isMobile, isSmallMobile, isVerySmall, isDesktop} = useScreenSize()
+    
 
      // Using useEffect to track location changes
    useEffect(() => {
@@ -73,13 +88,35 @@ if (isCheckoutPage || isItemsOfWomenPage || (isItemTypeRoute && beautyTypes.has(
     return null;
   }
 
-  return (
-    <div className="headtx" style={{  display: "flex", alignItems: "center", gap: "0px", background: "#333", marginTop: "-5px",  marginRight: isBasketVisible && isDesktop && basketItems.length > 0 ? "150px" : "0", }}>
-      <All />
-      <Type />
+ return (
+  <div
+    className="headtx"
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "0px",
+
+      // Original navigation color
+      backgroundColor: "#333",
+
+      // Exactly the same gradient as MalidagHeader
+      backgroundImage: headerGradient || "none",
+
+      marginTop: "-5px",
+
+      marginRight:
+        isBasketVisible &&
+        isDesktop &&
+        basketItems.length > 0
+          ? "150px"
+          : "0",
+    }}
+  >
+    <All />
+    <Type />
     {/* <Jewelry /> */}
-    </div>
-  );
+  </div>
+);
 };
 
 export default NavMenu;

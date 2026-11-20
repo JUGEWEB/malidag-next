@@ -1,7 +1,7 @@
 'use client';
 
 
-import React from "react";
+import React, { useSyncExternalStore } from "react";
 import MalidagHeader from "./malidagHeader";
 import BasketComponent from "./basketComponent";
 import InputSearch from "./inputSearch";
@@ -13,10 +13,20 @@ import MainSlider from "./MainSlider";
 import SpanWarnings from "./spanWarnings";
 import useScreenSize from "./useIsMobile";
 import { usePathname } from "next/navigation"; // ✅ Step 1
+import {
+  subscribeGradient,
+  getGradientSnapshot,
+  getGradientServerSnapshot,
+} from "./malidagGradient";
 import "./appHeader.css";
 
 function AppHeader(props) {
   const pathname = usePathname(); // ✅ Step 2
+  const headerGradient = useSyncExternalStore(
+  subscribeGradient,
+  getGradientSnapshot,
+  getGradientServerSnapshot
+);
     const {isMobile, isDesktop, isSmallMobile, isTablet, isVerySmall} = useScreenSize()
      const {
     basketItems, user, connectors, connect, address, disconnect,
@@ -51,7 +61,12 @@ const isCountryHome =
   >
     
                 {/* Header */}
-                <div style={{backgroundColor: "#333"}}>
+               <div
+              style={{
+                backgroundColor: "#333",
+                backgroundImage: headerGradient || "none",
+              }}
+            >
                <div className="header-container" style={{ backgroundColor: isDesktop || isTablet ? "" : "#333" }} >
                
                 <MalidagHeader  className="malidag-header"  basketItems={basketItems} user={user}  connectors={connectors} connect={connect} address={address} disconnect={disconnect} isConnected={isConnected}  pendingConnector={pendingConnector} allCountries={allCountries} country={country} setCountry={setCountry}  />
@@ -60,13 +75,13 @@ const isCountryHome =
                 </div>
                {(isMobile || isSmallMobile || isVerySmall || isTablet) &&
   !isPhoneCheckout && (
-                  <div style={{width: "100%", marginLeft: "0px", marginRight: "0px", backgroundColor: "#333", marginTop: "2px"}}>
+                  <div style={{width: "100%", marginLeft: "0px", marginRight: "0px", backgroundColor: "transparent", marginTop: "2px"}}>
             <InputSearch user={user} basketItems={basketItems} isBasketVisible={true} />
             </div>
           )}
            {/* ✅ Navigation Menu */}
            {(isMobile || isSmallMobile || isVerySmall) && (
-            <div style={{display: "flex", backgroundColor: "#333", padding: "10px",}}>
+            <div style={{display: "flex", backgroundColor: "transparent", padding: "10px",}}>
               <Type basketItems={basketItems} />
               </div>
                 )}

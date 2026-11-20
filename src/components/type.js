@@ -20,6 +20,7 @@ const Type = () => {
     isSmallMobile,
     isVerySmall,
   } = useScreenSize();
+ 
 
   const getSavedCountryCode = () => {
     try {
@@ -75,13 +76,13 @@ if (
 
   return (
     <div
-      className="type-scroll-container"
-      style={{
-        marginLeft: isDesktop || isTablet ? "0px" : "20px",
-        width: isDesktop || isTablet ? "60%" : "100%",
-        color: "white",
-      }}
-    >
+  className="type-scroll-container"
+  style={{
+    marginLeft: isDesktop || isTablet ? "0px" : "20px",
+    width: isDesktop || isTablet ? "60%" : "100%",
+    color: "white",
+  }}
+>
       <div className="type-scroll">
         <div
           className="type-item"

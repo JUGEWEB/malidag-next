@@ -2,7 +2,7 @@
 .type-scroll-container {
    
     overflow-x: auto;
-    background-color: #333;
+    background-color: transparent;
     display: flex; 
     align-items: center; 
   scrollbar-width: none;
@@ -19,7 +19,7 @@
   
   
   .type-item {
-    background-color: #333;
+    background-color: transparent;
     border-radius: 1px;
     margin: 0;
     font-weight: bold;
@@ -32,7 +32,7 @@
 
    
    .type-itemT {
-    background-color: #333;
+    background-color: transparent;
     border-radius: 1px;
     margin: 0; 
     font-weight: bold;

@@ -194,23 +194,38 @@ const basketCount = (basketItems || []).reduce(
 )}
 
   {/* MALIDAG text logo */}
- {(isSmallMobile || isMobile || isTablet || isDesktop) &&
+{/* MALIDAG image logo */}
+{(isSmallMobile || isMobile || isTablet || isDesktop) &&
   !hidePhoneCheckoutHeaderItems && (
     <button
+      type="button"
       className="logoStyle"
       onClick={home}
+      aria-label="Malidag home"
       style={{
         display: "flex",
         alignItems: "center",
+        justifyContent: "center",
         cursor: "pointer",
         width: "auto",
-        fontWeight: "bold",
-        color: "white",
+        padding: 0,
+        border: "none",
+        background: "transparent",
       }}
     >
-      MALIDAG
+      <img
+        src="https://cdn.malidag.com/themes/1795136984859-4011516e-b8ec-453e-9395-2dd77d97aeb8.webp"
+        alt="Malidag"
+        style={{
+          display: "block",
+          width: "auto",
+          height: "24px",
+          maxWidth: "150px",
+          objectFit: "contain",
+        }}
+      />
     </button>
-)}
+  )}
 
   {/* Image logo for very small devices */}
  {isVerySmall && !hidePhoneCheckoutHeaderItems && (

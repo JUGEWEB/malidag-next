@@ -1,0 +1,213 @@
+/* =========================================================
+   THEME C — PREMIUM BRAND STOREFRONT
+   ========================================================= */
+
+/* Mobile */
+@media (max-width: 640px) {
+  .th1-size-overlay {
+    padding: 12px;
+  }
+
+  .th1-size-modal {
+    max-width: 100%;
+    max-height: 85dvh;
+    padding: 26px 18px 20px;
+    border-radius: 16px;
+  }
+
+  .th1-size-modal h3 {
+    font-size: 1rem;
+    margin-bottom: 14px;
+  }
+
+  .th1-size-modal .th1-size-options {
+    gap: 8px;
+  }
+
+  .th1-size-modal .th1-size-options button {
+    min-height: 60px;
+    padding: 9px 4px;
+    border-radius: 10px;
+  }
+
+  .th1-size-modal .th1-add-basket-btn {
+    height: 46px;
+    min-height: 46px;
+    margin-top: 18px;
+  }
+}
+
+/* MWS product image edit dropdown */
+
+.th1-product-edit-menu {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 30;
+}
+
+.th1-product-edit-trigger {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #111827;
+  font-size: 21px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+}
+
+.th1-product-edit-trigger:hover {
+  background: #f1f5f9;
+}
+
+.th1-product-edit-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 31;
+  width: 190px;
+  max-width: calc(100vw - 30px);
+  padding: 5px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+}
+
+.th1-product-edit-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.th1-product-edit-dropdown button:hover,
+.th1-product-edit-dropdown button:focus-visible {
+  background: #f1f5f9;
+}
+
+.th1-product-edit-dropdown button span {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .th1-product-edit-menu {
+    top: 8px;
+    right: 8px;
+  }
+
+  .th1-product-edit-trigger {
+    width: 34px;
+    height: 34px;
+  }
+
+  .th1-product-edit-dropdown {
+    width: 175px;
+  }
+}
+
+/* Keep MWS basket buttons visually identical but inactive */
+.th1-add-basket-btn:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+/* Theme 1 horizontal department navigation */
+
+.th1-category-navigation {
+  position: relative;
+  width: 100%;
+  padding: 10px 12px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.th1-category-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  flex: 1;
+  min-width: 0;
+
+  flex-wrap: nowrap;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.th1-category-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.th1-category-dropdown {
+  min-width: 190px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.th1-category-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.th1-category-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.th1-category-trigger:hover,
+.th1-category-trigger.active {
+  background: #f3f4f6;
+}
+
+.th1-category-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  min-width: 190px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}

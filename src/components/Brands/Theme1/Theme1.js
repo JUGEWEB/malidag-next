@@ -45,11 +45,6 @@ import useDepartmentItems from "./hooks/useDepartmentItems";
 import useBrandDepartments from "./hooks/useBrandDepartments";
 import useBrandTheme from "./hooks/useBrandTheme";
 import useProductPricing from "./hooks/useProductPricing";
-import "./theme.css";
-import "./theme1.css";
-import "./themeA.css";
-import "./themeB.css";
-import "./themeC.css";
 
 const BASKET_API =
   "https://api.malidag.com/add-to-basket";
@@ -719,22 +714,14 @@ const renderDepartmentItems = () => (
           </main>
         </div>
       ) : (
-        <div className="th1-mobile">
-        
-<div className="th1-mobile-brand">
-  {brandDetails?.logo && (
-    <img
-      src={brandDetails.logo}
-      alt={`${brandName} Logo`}
-      className="th1-mobile-logo"
-    />
-  )}
+      
 
-  <div className="th1-mobile-brand-info">
-    <h1>{brandName}</h1>
-    <span>Official Brand Store</span>
-  </div>
-</div>
+
+
+<div className="th1-mobile">
+
+ 
+{/* MOBILE HERO BANNER */}
 
 {brandDetails?.headerImage && (
   <div className="th1-mobile-hero">
@@ -746,15 +733,37 @@ const renderDepartmentItems = () => (
   </div>
 )}
 
-<MobileNavigation
-  departments={departments}
-  expandedDeptIndex={expandedDeptIndex}
-  setExpandedDeptIndex={setExpandedDeptIndex}
-  selectedDepartment={selectedDepartment}
-  selectedBrandType={selectedBrandType}
-  handleBrandTypeClick={handleBrandTypeClick}
-  t={t}
-/>
+  {/* MOBILE BRAND & DEPARTMENT NAVIGATION */}
+
+  <div className="th1-mobile-brand-navigation">
+
+    <div className="th1-mobile-brand">
+      {brandDetails?.logo ? (
+        <img
+          src={brandDetails.logo}
+          alt={`${brandName} Logo`}
+          className="th1-mobile-logo"
+        />
+      ) : (
+        <span className="th1-mobile-brand-fallback">
+          {brandName?.charAt(0).toUpperCase()}
+        </span>
+      )}
+    </div>
+
+    <MobileNavigation
+      departments={departments}
+      expandedDeptIndex={expandedDeptIndex}
+      setExpandedDeptIndex={setExpandedDeptIndex}
+      selectedDepartment={selectedDepartment}
+      selectedBrandType={selectedBrandType}
+      handleBrandTypeClick={handleBrandTypeClick}
+      t={t}
+    />
+
+  </div>
+
+
 
 {selectedDepartment && selectedBrandType ? (
   renderDepartmentItems()

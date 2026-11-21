@@ -1,0 +1,642 @@
+
+/* =========================================================
+   MALIDAG — THEME 1
+   PREMIUM MOBILE STOREFRONT
+   ========================================================= */
+
+
+/* =========================================================
+   MOBILE HERO BANNER
+   ========================================================= */
+
+/* =========================================================
+   MOBILE HERO BANNER
+   ========================================================= */
+
+.th1-mobile .th1-mobile-hero {
+  position: relative;
+
+  width: 100%;
+  margin: 0;
+
+  overflow: hidden;
+  isolation: isolate;
+
+  background: #f5f5f5;
+  border-radius: 0 0 18px 18px;
+}
+
+.th1-mobile-hero-image {
+  display: block;
+
+  width: 100%;
+  height: auto;
+  max-height: 120px;
+
+  object-fit: contain;
+  object-position: center;
+
+  filter: brightness(1.08) contrast(1.02);
+}
+
+
+/* =========================================================
+   BRAND & DEPARTMENT NAVIGATION
+   ========================================================= */
+
+.th1-mobile-brand-navigation {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 16px 14px;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+  border-bottom: 1px solid #eeeeee;
+}
+
+/* CIRCULAR BRAND LOGO */
+
+.th1-mobile .th1-mobile-brand {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 84px;
+
+  width: 84px;
+  height: 84px;
+  min-height: 0;
+
+  padding: 10px;
+
+  box-sizing: border-box;
+  overflow: hidden;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.th1-mobile-brand .th1-mobile-logo {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+/* FALLBACK WHEN NO LOGO EXISTS */
+
+.th1-mobile-brand-fallback {
+  color: #111827;
+
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* =========================================================
+   DEPARTMENT NAVIGATION
+   ========================================================= */
+
+.th1-mobile .th1-category-navigation {
+  position: relative;
+
+  flex: 1 1 0;
+
+  width: 0;
+  min-width: 0;
+
+  padding: 0;
+
+  background: #ffffff;
+  border: none;
+}
+
+/* DEPARTMENT SECTION LABEL */
+
+.th1-mobile .th1-category-heading {
+  margin: 0;
+
+  padding: 0 0 8px;
+
+  color: #6b7280;
+
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* HORIZONTAL SCROLL CONTAINER */
+
+.th1-mobile .th1-category-scroll {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+
+  gap: 6px;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 2px 0 4px;
+
+  box-sizing: border-box;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.th1-mobile .th1-category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* DEPARTMENT BUTTON */
+
+.th1-mobile .th1-category-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  gap: 14px;
+
+  min-height: 44px;
+  padding: 8px 4px;
+
+  background: transparent;
+  color: #111827;
+
+  border: none;
+  border-radius: 0;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+
+  white-space: nowrap;
+  cursor: pointer;
+
+  scroll-snap-align: start;
+
+  transition: color 0.18s ease;
+}
+
+/* DEPARTMENT CHEVRON */
+
+.th1-mobile .th1-category-trigger span:last-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 10px;
+  flex-shrink: 0;
+
+  color: #111827;
+
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* SELECTED DEPARTMENT */
+
+.th1-mobile .th1-category-trigger.active {
+  background: transparent;
+  color: #111827;
+
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.th1-mobile .th1-category-trigger.active span:last-child {
+  color: #111827;
+}
+
+/* HOVER — POINTER DEVICES ONLY */
+
+@media (hover: hover) and (pointer: fine) {
+  .th1-mobile .th1-category-trigger:hover:not(.active) {
+    background: transparent;
+    color: #6b7280;
+  }
+}
+
+/* KEYBOARD ACCESSIBILITY */
+
+.th1-mobile .th1-category-trigger:focus-visible {
+  outline: 2px solid #64748b;
+  outline-offset: 1px;
+}
+
+/* =========================================================
+   MOBILE PRODUCT GRID SPACING
+   ========================================================= */
+
+.th1-mobile .th1-item-grid {
+  padding-top: 12px;
+}
+
+/* =========================================================
+   DEPARTMENT BOTTOM SHEET
+   Rendered through React createPortal
+   ========================================================= */
+
+.th1-sheet-layer {
+  position: fixed;
+  inset: 0;
+
+  z-index: 99999;
+  isolation: isolate;
+}
+
+/* PORTAL BOX SIZING */
+
+.th1-sheet-layer *,
+.th1-sheet-layer *::before,
+.th1-sheet-layer *::after {
+  box-sizing: border-box;
+}
+
+/* BACKDROP */
+
+.th1-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 0;
+
+  background: rgba(15, 23, 42, 0.48);
+
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+
+  cursor: pointer;
+
+  animation: th1SheetFadeIn 0.2s ease-out;
+}
+
+/* SHEET CONTAINER */
+
+.th1-sheet {
+  position: absolute;
+
+  bottom: 0;
+  left: 50%;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  max-width: 560px;
+
+  max-height: 80vh;
+  max-height: 80dvh;
+
+  box-sizing: border-box;
+
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  overflow: hidden;
+
+  background: #ffffff;
+  color: #111827;
+
+  border-radius: 22px 22px 0 0;
+
+  box-shadow: 0 -15px 60px rgba(0, 0, 0, 0.15);
+
+  transform: translateX(-50%);
+
+  animation: th1SheetSlideIn 0.25s ease-out;
+}
+
+/* SHEET HANDLE */
+
+.th1-sheet-handle {
+  width: 34px;
+  height: 4px;
+
+  flex-shrink: 0;
+
+  margin: 10px auto 6px;
+
+  background: #d1d5db;
+  border-radius: 999px;
+}
+
+/* SHEET HEADER */
+
+.th1-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  flex-shrink: 0;
+
+  gap: 16px;
+
+  padding: 10px 20px 16px;
+
+  border-bottom: 1px solid #eeeeee;
+}
+
+.th1-sheet-header h2 {
+  min-width: 0;
+
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+
+  overflow-wrap: anywhere;
+}
+
+/* SHEET CLOSE BUTTON */
+
+.th1-sheet-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+
+  flex-shrink: 0;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f5f5f5;
+  color: #111827;
+
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition: background 0.18s ease;
+}
+
+.th1-sheet-close:hover {
+  background: #e5e7eb;
+}
+
+/* =========================================================
+   SHEET DEPARTMENT OPTIONS
+   ========================================================= */
+
+.th1-sheet-options {
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  padding: 6px 16px 16px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  overscroll-behavior: contain;
+
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+/* INDIVIDUAL OPTION */
+
+.th1-sheet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  width: 100%;
+  min-height: 52px;
+
+  padding: 12px 14px;
+
+  background: #ffffff;
+  color: #374151;
+
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 0;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: start;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.th1-sheet-option span:first-child {
+  min-width: 0;
+
+  overflow-wrap: anywhere;
+}
+
+.th1-sheet-option span:last-child {
+  flex-shrink: 0;
+
+  color: #9ca3af;
+
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.th1-sheet-option:last-child {
+  border-bottom: none;
+}
+
+/* SELECTED CATEGORY */
+
+.th1-sheet-option.active {
+  background: #f3f4f6;
+  color: #111827;
+
+  border-bottom-color: transparent;
+  border-radius: 8px;
+
+  font-weight: 700;
+}
+
+.th1-sheet-option.active span:last-child {
+  color: #111827;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .th1-sheet-option:hover:not(.active) {
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+}
+
+/* SHEET KEYBOARD ACCESSIBILITY */
+
+.th1-sheet button:focus-visible {
+  outline: 2px solid #64748b;
+  outline-offset: -2px;
+}
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes th1SheetFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes th1SheetSlideIn {
+  from {
+    transform: translate(-50%, 100%);
+  }
+
+  to {
+    transform: translate(-50%, 0);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 390px) {
+
+  /* HERO */
+
+  .th1-mobile .th1-mobile-hero {
+    border-radius: 0 0 14px 14px;
+  }
+
+  .th1-mobile-hero-content {
+    bottom: 18px;
+    padding-inline: 16px;
+  }
+
+  .th1-mobile-hero-description {
+    font-size: 12px;
+  }
+
+  /* BRAND NAVIGATION */
+
+  .th1-mobile-brand-navigation {
+    gap: 10px;
+
+    padding: 12px 10px;
+  }
+
+  .th1-mobile .th1-mobile-brand {
+    flex-basis: 72px;
+
+    width: 72px;
+    height: 72px;
+
+    padding: 8px;
+  }
+
+  .th1-mobile-brand .th1-mobile-logo {
+    width: 100%;
+    height: 100%;
+  }
+
+  .th1-mobile-brand-fallback {
+    font-size: 26px;
+  }
+
+  /* DEPARTMENTS */
+
+  .th1-mobile .th1-category-heading {
+    padding: 0 0 6px;
+  }
+
+  .th1-mobile .th1-category-scroll {
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+  }
+
+  .th1-mobile .th1-category-trigger {
+  padding-inline: 3px;
+  font-size: 13px;
+}
+
+  /* BOTTOM SHEET */
+
+  .th1-sheet-header {
+    padding-inline: 16px;
+  }
+
+  .th1-sheet-options {
+    padding-inline: 12px;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .th1-sheet,
+  .th1-sheet-backdrop {
+    animation: none;
+  }
+
+  .th1-mobile .th1-category-trigger,
+  .th1-sheet-option,
+  .th1-sheet-close {
+    transition: none;
+  }
+
+  .th1-mobile .th1-category-scroll {
+    scroll-snap-type: none;
+  }
+}

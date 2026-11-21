@@ -1,0 +1,177 @@
+
+/* =========================================================
+   MALIDAG — THEME 1
+   STOREFRONT LAYOUT
+   ========================================================= */
+
+/* =========================================================
+   ROOT STOREFRONT
+   ========================================================= */
+
+.th1-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  background: #ffffff;
+  color: #111827;
+}
+
+.th1-wrapper *,
+.th1-wrapper *::before,
+.th1-wrapper *::after {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   DESKTOP LAYOUT
+   ========================================================= */
+
+.th1-container {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  background: #ffffff;
+}
+
+.th1-main {
+  flex: 1;
+  min-width: 0;
+  background: #ffffff;
+}
+
+/* =========================================================
+   DESKTOP SIDEBAR
+   ========================================================= */
+
+.th1-sidebar {
+  width: 235px;
+  flex-shrink: 0;
+  align-self: stretch;
+  background: #ffffff;
+  border-right: 1px solid #f0f0f0;
+}
+
+.th1-sidebar-inner {
+  position: sticky;
+  top: 0;
+  padding: 24px 18px 40px;
+}
+
+/* =========================================================
+   DESKTOP BRAND LOGO
+   ========================================================= */
+
+.th1-logo {
+  display: block;
+  width: 145px;
+  height: 80px;
+  margin: 0 auto 28px;
+  object-fit: contain;
+}
+
+/* =========================================================
+   DESKTOP DEPARTMENT NAVIGATION
+   ========================================================= */
+
+.th1-sidebar-title {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+
+  border-bottom: 1px solid #eeeeee;
+
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.th1-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.th1-department-block {
+  width: 100%;
+}
+
+.th1-department-name {
+  margin-bottom: 10px;
+
+  color: #111827;
+  font-size: 0.88rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.th1-brandtype-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.th1-type-item {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 9px;
+
+  color: #6b7280;
+  font-size: 0.84rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.th1-type-item:hover {
+  color: #111827;
+  background: #f8fafc;
+  transform: translateX(2px);
+}
+
+.th1-type-item.active {
+  color: #ffffff;
+  background: #111827;
+}
+
+/* =========================================================
+   DESKTOP HEADER IMAGE
+   ========================================================= */
+
+.th1-header-image {
+  display: block;
+  width: 100%;
+  height: clamp(180px, 25vw, 340px);
+  object-fit: contain;
+}
+
+/* =========================================================
+   BASE MOBILE CONTAINER
+   ========================================================= */
+
+.th1-mobile {
+  width: 100%;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+/* =========================================================
+   RESPONSIVE LAYOUT
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .th1-header-image {
+    height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .th1-header-image {
+    height: 165px;
+  }
+}

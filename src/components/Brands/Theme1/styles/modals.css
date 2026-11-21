@@ -1,0 +1,348 @@
+
+/* =========================================================
+   MALIDAG — THEME 1
+   SIZE & LENGTH SELECTION MODAL
+   ========================================================= */
+
+/* MODAL OVERLAY */
+
+.th1-size-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 16px;
+
+  background: rgba(15, 23, 42, 0.58);
+
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* MODAL CONTAINER */
+
+.th1-size-modal {
+  position: relative;
+
+  width: 100%;
+  max-width: 440px;
+  max-height: 85dvh;
+
+  padding: 30px 24px 24px;
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.22);
+
+  animation: th1SizeModalIn 0.2s ease-out;
+}
+
+.th1-size-modal *,
+.th1-size-modal *::before,
+.th1-size-modal *::after {
+  box-sizing: border-box;
+}
+
+/* MODAL ANIMATION */
+
+@keyframes th1SizeModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================================
+   MODAL CLOSE BUTTON
+   ========================================================= */
+
+.th1-size-modal > button:first-child {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  padding: 0;
+
+  background: #f3f4f6;
+  color: #111827;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+
+  font-size: 1.4rem;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+}
+
+.th1-size-modal > button:first-child:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+/* =========================================================
+   SIZE & LENGTH SECTION HEADINGS
+   ========================================================= */
+
+.th1-size-modal h3 {
+  margin: 0 40px 16px 0;
+
+  color: #111827;
+
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+/* Separation between size and length sections */
+
+.th1-size-modal .th1-size-options + h3 {
+  margin-top: 26px;
+}
+
+/* =========================================================
+   SIZE & LENGTH OPTIONS
+   ========================================================= */
+
+.th1-size-modal .th1-size-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.th1-size-modal .th1-size-options button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  min-width: 0;
+  min-height: 66px;
+
+  padding: 10px 6px;
+
+  background: #ffffff;
+  color: #111827;
+
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* AVAILABLE OPTIONS */
+
+.th1-size-modal .th1-size-options button:hover:not(:disabled) {
+  border-color: #111827;
+  background: #f8fafc;
+  transform: translateY(-2px);
+}
+
+/* SELECTED OPTIONS */
+
+.th1-size-modal .th1-size-options button.active,
+.th1-size-modal .th1-size-options button.active:hover:not(:disabled) {
+  background: #111827;
+  border-color: #111827;
+  color: #ffffff;
+}
+
+/* SIZE LABEL */
+
+.th1-size-modal .th1-size-options button span {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+/* STOCK AVAILABILITY LABEL */
+
+.th1-size-modal .th1-size-options button small {
+  color: #6b7280;
+
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.th1-size-modal .th1-size-options button.active small {
+  color: #e5e7eb;
+}
+
+/* UNAVAILABLE OPTIONS */
+
+.th1-size-modal .th1-size-options button:disabled,
+.th1-size-modal > button:first-child:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================================================
+   MODAL ADD TO BASKET BUTTON
+   ========================================================= */
+
+.th1-size-modal .th1-add-basket-btn {
+  position: static;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 48px;
+  min-height: 48px;
+
+  margin-top: 22px;
+  padding: 0 18px;
+
+  background: #111827;
+  color: #ffffff;
+
+  border: 1px solid #111827;
+  border-radius: 12px;
+
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* ENABLED BASKET BUTTON */
+
+.th1-size-modal .th1-add-basket-btn:hover:not(:disabled) {
+  background: #374151;
+  border-color: #374151;
+  color: #ffffff;
+}
+
+/* DISABLED BASKET BUTTON */
+
+.th1-size-modal .th1-add-basket-btn:disabled {
+  background: #d1d5db;
+  border-color: #d1d5db;
+  color: #6b7280;
+
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* =========================================================
+   KEYBOARD ACCESSIBILITY
+   ========================================================= */
+
+.th1-size-modal button:focus-visible {
+  outline: 3px solid #64748b;
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+  .th1-size-overlay {
+    padding: 12px;
+  }
+
+  .th1-size-modal {
+    max-width: 100%;
+    max-height: 85dvh;
+
+    padding: 26px 18px 20px;
+
+    border-radius: 16px;
+  }
+
+  .th1-size-modal h3 {
+    font-size: 1rem;
+    margin-bottom: 14px;
+  }
+
+  .th1-size-modal .th1-size-options {
+    gap: 8px;
+  }
+
+  .th1-size-modal .th1-size-options button {
+    min-height: 60px;
+
+    padding: 9px 4px;
+
+    border-radius: 10px;
+  }
+
+  .th1-size-modal .th1-size-options button span {
+    font-size: 0.9rem;
+  }
+
+  .th1-size-modal .th1-size-options button small {
+    font-size: 0.72rem;
+  }
+
+  .th1-size-modal .th1-add-basket-btn {
+    height: 46px;
+    min-height: 46px;
+
+    margin-top: 18px;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .th1-size-modal {
+    animation: none;
+  }
+
+  .th1-size-modal button {
+    transition: none;
+  }
+
+  .th1-size-modal .th1-size-options button:hover {
+    transform: none;
+  }
+}

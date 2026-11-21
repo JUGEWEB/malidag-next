@@ -1,0 +1,176 @@
+
+/* =========================================================
+   MALIDAG — THEME 1
+   BEST SELLER & FEATURED PRODUCTS
+   ========================================================= */
+
+/* BEST SELLER SECTION */
+
+.th1-best-seller-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+
+  width: calc(100% - 40px);
+  margin: 28px 20px;
+
+  overflow: hidden;
+
+  background: #f8fafc;
+  border: 1px solid #eef0f3;
+  border-radius: 18px;
+}
+
+/* PROMOTIONAL VIDEO CARD */
+
+.th1-best-video-card {
+  min-width: 0;
+  background: #f3f4f6;
+}
+
+.th1-video-container {
+  width: 100%;
+  height: 520px;
+
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.th1-video-container video {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+/* FEATURED PRODUCT CARD */
+
+.th1-best-image-card {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+
+  background: #ffffff;
+}
+
+/* FEATURED PRODUCT IMAGE */
+
+.th1-best-image-wrap {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 365px;
+
+  overflow: hidden;
+
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.th1-best-image {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+
+  transition: transform 0.3s ease;
+}
+
+.th1-best-image-wrap:hover .th1-best-image {
+  transform: scale(1.025);
+}
+
+/* FEATURED PRODUCT INFORMATION */
+
+.th1-best-image-card .th1-item-info {
+  padding: 18px 20px 22px;
+}
+
+/* =========================================================
+   RESPONSIVE — LARGE TABLET
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .th1-best-seller-section {
+    grid-template-columns:
+      minmax(0, 1.2fr)
+      minmax(300px, 0.8fr);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .th1-best-seller-section {
+    grid-template-columns: 1fr;
+
+    width: calc(100% - 20px);
+    margin: 20px 10px;
+  }
+
+  .th1-video-container {
+    height: 460px;
+  }
+
+  .th1-best-image-wrap {
+    height: 360px;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+  .th1-best-seller-section {
+    width: calc(100% - 10px);
+    margin: 12px 5px 20px;
+
+    border-radius: 13px;
+  }
+
+  .th1-video-container {
+    height: 390px;
+  }
+
+  .th1-best-image-wrap {
+    height: 300px;
+  }
+
+  .th1-best-image-card .th1-item-info {
+    padding: 14px 12px 18px;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 390px) {
+  .th1-video-container {
+    height: 340px;
+  }
+
+  .th1-best-image-wrap {
+    height: 260px;
+  }
+}
+
+/* REDUCED MOTION */
+
+@media (prefers-reduced-motion: reduce) {
+  .th1-best-image {
+    transition: none;
+  }
+
+  .th1-best-image-wrap:hover .th1-best-image {
+    transform: none;
+  }
+}

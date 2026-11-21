@@ -51,9 +51,6 @@ export default function MobileNavigation({
       className="th1-category-navigation"
       aria-label={t("departments_label", "Departments")}
     >
-      <div className="th1-category-heading">
-        {t("departments_label", "Departments")}
-      </div>
 
       <div className="th1-category-scroll">
         {departments.map((department, index) => {
@@ -75,9 +72,7 @@ export default function MobileNavigation({
               }
             >
               <span>{t(department.name)}</span>
-              <span aria-hidden="true">
-                {isOpen ? "⌃" : "⌄"}
-              </span>
+              <span aria-hidden="true">›</span>
             </button>
           );
         })}
